@@ -1,0 +1,9 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Disallow:
+
+
+//I have 10 form where all inputs are different except patient name and date of admission are same on all form so instead of filling that same input field again and again only once I'll fill and where these input are present at any form can auto fill. How we can do this in react JS
+
+
+//I have one register form where I have listed all common input filed which filed are present in every form. So can we like Firstly I fill register then that info we can store into context then when other form will come that common input filed will auto fill. Can we do like this is this possible?

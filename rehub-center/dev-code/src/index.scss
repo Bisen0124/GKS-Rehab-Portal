@@ -1,0 +1,64 @@
+@import './assets/scss/app.scss';
+
+
+//custome css start
+.register__wrapper,.pfa__wrapper
+{
+
+    H5{
+        // border-bottom: 1px solid #e1e7e9;
+        // margin: 0 0 24px 0;
+        padding: 0 0 12px 0;
+      }
+
+}
+
+//PFA Modal CSS
+
+//Login form CSS
+.theme-form img{
+  margin: 0 auto 30px auto;
+}
+.login-card .login-main {
+  border-radius: 10px !important;
+}
+
+
+//Page header css
+.dashboard__logo{
+  width: 80%;
+}
+
+//patient__Register
+.patient__Register{
+  padding: 0 0 10px 11px;
+  font-size: 25px;
+}
+
+
+form .form-control, .form-select{
+  border-color: #24695c !important;
+}
+
+.modal .common__info__header{
+background-color: #24695c0d !important;
+}
+
+//Fetching data from server msg for all forms css animation
+.loading-text {
+  font-weight: bold;
+  font-size: 14px;
+  text-align: center;
+  animation: pulse 1.5s infinite;
+  color: var(--theme-default);
+  margin: 15px;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+ 
+  //custome css end
