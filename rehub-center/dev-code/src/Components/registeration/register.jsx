@@ -12,6 +12,8 @@ import {
   patientName,
   registerYourDetail,
   name,
+  wardDetails,
+  wardOptions,
 } from "../../Constant";
 import {
   Form,
@@ -36,14 +38,17 @@ import { toast } from "react-toastify";
 import HeaderCard from "../Common/Component/HeaderCard";
 import { Data } from "../UiKits/Spinners/SpinnerData";
 
-
 import Swal from "sweetalert2"; // ✅ Make sure this is imported at the top
 import SweetAlert from "sweetalert2";
 
 function Register() {
- //spinner extract from other file
- const selectedSpinner = Data.find((item) => item.spinnerClass === 'loader-37');
+  //spinner extract from other file
+  const selectedSpinner = Data.find(
+    (item) => item.spinnerClass === "loader-37"
+  );
 
+  //Show hide password of register password filed.
+  const [showPassword, setShowPassword] = useState(false);
 
   const roleMapping = {
     ADMIN: 1,
@@ -123,14 +128,44 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Basic frontend validation
+    const requiredFields = {
+      date_of_admission: formData.date_of_admission,
+      patientName: formData.patientName,
+      email: formData.email,
+      patientRelativeName: formData.patientRelativeName,
+      phone: formData.phone,
+      gender: formData.gender,
+      dob: formData.dob,
+      address: formData.address,
+      password: formData.password,
+      whatsapp_no: formData.whatsapp_no,
+      is_role: formData.is_role,
+    };
+
+    for (const [key, value] of Object.entries(requiredFields)) {
+      const isEmpty =
+        value === null ||
+        value === undefined ||
+        (typeof value === "string" && value.trim() === "");
+
+      if (isEmpty) {
+        Swal.fire({
+          icon: "warning",
+          title: `Missing ${key.replace(/_/g, " ")}" field.`,
+          text: `Please fill out the "${key.replace(/_/g, " ")}" field.`,
+        });
+        return;
+      }
+    }
+
     setIsLoading(true); // Start loading
 
-   // The formatDate function seems good but let's ensure date is valid before formatting
-const formatDate = (date) => {
-  return date instanceof Date && !isNaN(date.getTime())
-    ? date.toISOString().split("T")[0]  // Format to YYYY-MM-DD
-    : "";
-};
+    const formatDate = (date) => {
+      return date instanceof Date && !isNaN(date.getTime())
+        ? date.toISOString().split("T")[0]
+        : "";
+    };
 
     const payload = {
       date_of_admission: formatDate(formData.date_of_admission),
@@ -144,42 +179,46 @@ const formatDate = (date) => {
       password: formData.password,
       whatsapp_no: formData.whatsapp_no,
       isRole: formData.is_role,
+      ward_type_id: formData.ward_type_id,
+      ward_name: formData.ward_name,
     };
 
-    console.log("Register Payload", payload);
-
     try {
-      const token = localStorage.getItem("Authorization"); // Assuming you stored token like this during login
+      const token = localStorage.getItem("Authorization");
       const response = await fetch("https://gks-yjdc.onrender.com/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `${token}`, // 👈 Pass token here
+          Authorization: `${token}`,
         },
         body: JSON.stringify(payload),
       });
 
       const result = await response.json();
 
-      console.log("Full Response:", response);
-      console.log("Response JSON:", result);
-
       if (!response.ok) {
-        console.error("Error status:", response.status); // Log status code
-        alert(`Registration failed! ${result.message || "Server error"}`);
+        // Check specific backend error
+        if (result.error === "Email already exists") {
+          Swal.fire({
+            icon: "warning",
+            title: "Email is already exists",
+            text: "This email is already registered. Please use a different one.",
+          });
+        } else if (result.error === "Phone number already exists") {
+          Swal.fire({
+            icon: "warning",
+            title: "Phone is already exist",
+            text: "This phone is already registered. Please use a different one.",
+          });
+        }
       } else {
-        // alert("Registration successful!");
-        // ✅ SweetAlert on success
         Swal.fire({
           title: "Good job!",
           text: "Registration successful!",
           icon: "success",
           confirmButtonText: "OK",
         }).then(() => {
-          // ✅ Close modal
           setModal(false);
-
-          // ✅ Clear form fields
           setFormData({
             date_of_admission: "",
             patientName: "",
@@ -191,9 +230,8 @@ const formatDate = (date) => {
             address: "",
             password: "",
             whatsapp_no: "",
-            is_role: "", // Or default value like "user"
+            is_role: "",
           });
-          // ✅ Fetch updated data
           fetchUsers();
         });
       }
@@ -201,7 +239,7 @@ const formatDate = (date) => {
       console.error("Fetch Error:", error);
       alert("Registration failed! Unknown error.");
     } finally {
-      setIsLoading(false); // End loading
+      setIsLoading(false);
     }
   };
 
@@ -244,6 +282,8 @@ const formatDate = (date) => {
       );
 
       const data = await response.json();
+
+      console.log("register user details: ", data);
 
       if (!response.ok) {
         console.error("User fetch error:", data);
@@ -331,19 +371,100 @@ const formatDate = (date) => {
     });
   };
 
+  //handle re-register user based on discahrge status
+  const [reregisterModal, setreregisterModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
+  //getting user_Id for re-registering
+  const handleReregisterUserID = async (user) => {
+    const userId = typeof user === "object" && user !== null ? user.id : user;
+    if (!userId) return;
+
+    setSelectedUserId(userId); // store user ID
+    setreregisterModal(true); // open modal
+
+    // alert(selectedUserId);
+  };
+
+  //It check if discharge status true then re-register user will perform and send userId, ward name and ward type id to backend
+  const handleReRegister = async (e) => {
+    e.preventDefault(); // prevent default form submission
+  setIsLoading(true); // Set loading to true when the update starts
+    if (!selectedUserId) {
+      console.error("No user selected for re-registration");
+      return;
+    }
+
+    const payload = {
+      user_id: selectedUserId,
+      ward_type_id: formData.ward_type_id,
+      ward_name: formData.ward_name,
+    };
+
+    try {
+      const token = localStorage.getItem("Authorization");
+      const response = await fetch(
+        "https://gks-yjdc.onrender.com/api/ipd/create-entry",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const result = await response.json();
+      console.log("Re-Registration payload data: ", result);
+
+      if (response.ok) {
+        await Swal.fire({
+          title: "Success!",
+          text: "Re-Registration successful!",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
+        setreregisterModal(false); // Close modal only after success
+         
+      } else if (
+        result.error ===
+        "User is not eligible for readmission. Please check discharge status and dates."
+      ) {
+        await Swal.fire({
+          title: "User Not Eligible",
+          text: "User is not eligible for re-admission. Please check the discharge status and dates.",
+          icon: "warning",
+          confirmButtonText: "OK",
+        });
+        setreregisterModal(false); // Keep modal open
+         
+      } else {
+        console.error("Unhandled error:", result?.error || result?.message);
+        // No alert shown for other errors, just log it
+      }
+    } catch (error) {
+      console.error("Fetch Error:", error);
+      // No alert shown here either, per your request
+    }
+    finally {
+      setIsLoading(false); // Set loading to false after the request is complete
+    }
+  };
+
   //close view data modal
   const closeUserViewModal = () => {
     setViewModal(false);
     setShowEditModal(false);
+    setreregisterModal(false);
   };
 
   //🔧 Convert DD/MM/YYYY to Date Object:
   const parseDateString = (dateStr) => {
-    const [day, month, year] = dateStr.split('/');
+    const [day, month, year] = dateStr.split("/");
     return new Date(`${year}-${month}-${day}`);
   };
 
-  
   //handle edit user details by id's
   const [editData, setEditData] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -353,7 +474,6 @@ const formatDate = (date) => {
     //   const date = new Date(dateString);
     //   return date instanceof Date && !isNaN(date) ? date : new Date(); // fallback to today's date if invalid
     // };
-    
 
     setEditData({
       id: user.id,
@@ -453,7 +573,7 @@ const formatDate = (date) => {
   const token = localStorage.getItem("Authorization");
 
   // ✅ Step 1: Move this into a reusable function
-  const [stillLoading, setstillLoading]=useState(true)
+  const [stillLoading, setstillLoading] = useState(true);
   const fetchUsers = () => {
     fetch("https://gks-yjdc.onrender.com/api/users", {
       method: "GET",
@@ -487,21 +607,22 @@ const formatDate = (date) => {
               ? "Subadmin"
               : "User",
           created_at: new Date(user.created_at).toLocaleString(),
+          gks_id: user.gks_id,
+          //discharge status
+          discharge_status: user.discharge_status, // ✅ Add this line
+          // discharge_status: 1, // ✅ Add this line
         }));
 
         setTimeout(() => {
-        setData(formatted);
-        setFilteredData(formatted);
-        setstillLoading(false)
+          setData(formatted);
+          setFilteredData(formatted);
+          setstillLoading(false);
         }, 3000);
-
-        
-    
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
         toast.error("Error fetching user data");
-        setstillLoading(true)
+        setstillLoading(true);
       });
   };
 
@@ -518,9 +639,15 @@ const formatDate = (date) => {
       sortable: true,
       center: true,
     },
+    {
+      name: "GKS ID",
+      selector: (row) => row.gks_id,
+      sortable: true,
+      center: true,
+    },
     { name: "Name", selector: (row) => row.name, sortable: true, center: true },
-    { name: "Phone", selector: (row) => row.phone, center: true },
-    { name: "Email", selector: (row) => row.email, center: true },
+    { name: "Phone", selector: (row) => row.phone,  sortable: true, center: true },
+    { name: "Email", selector: (row) => row.email,  sortable: true, center: true },
     {
       name: "Action",
       center: true,
@@ -600,6 +727,56 @@ const formatDate = (date) => {
               <line x1="14" y1="11" x2="14" y2="17"></line>
             </svg>
           </span>
+
+          {/* Re-register icon */}
+          {/* Conditionally render Re-register or Tooltip-only icon */}
+          {row.discharge_status === 1 ? (
+            <span
+              onClick={() => handleReregisterUserID(row.id)}
+              style={{ cursor: "pointer" }}
+              title="Re-register"
+            >
+              {/* Re-register SVG */}
+              <svg
+                style={{ color: "blue" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-refresh-ccw"
+              >
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <polyline points="23 20 23 14 17 14"></polyline>
+                <path d="M20.49 9A9 9 0 0 0 5.51 15M3.51 15A9 9 0 0 0 18.49 9"></path>
+              </svg>
+            </span>
+          ) : (
+            <span title="User not discharged">
+              {/* Disabled or info-only icon */}
+              <svg
+                style={{ color: "gray", opacity: 0.5 }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-alert-circle"
+              >
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12" y2="16"></line>
+              </svg>
+            </span>
+          )}
         </div>
       ),
     },
@@ -607,17 +784,33 @@ const formatDate = (date) => {
 
   //User data search filter function
   const handleSearchChange = (e) => {
-    const value = e.target.value.toLowerCase();
-    setSearchText(value);
+  const value = e.target.value.toLowerCase();
+  setSearchText(value);
 
-    const filtered = data.filter(
-      (item) =>
-        item.name.toLowerCase().includes(value) ||
-        item.email.toLowerCase().includes(value) ||
-        item.phone.toString().includes(value)
+  const filtered = data.filter((item) => {
+    return (
+      item.name?.toLowerCase().includes(value) ||
+      item.email?.toLowerCase().includes(value) ||
+      item.phone?.toString().includes(value) ||
+      item.id?.toString().includes(value) ||
+      item.gks_id?.toLowerCase().includes(value) // Only if gks_id is a string
     );
+  });
 
-    setFilteredData(filtered);
+  setFilteredData(filtered);
+};
+
+
+  //Generate password dynamically while regestering/entering password
+  const generatePassword = () => {
+    const length = 10;
+    const charset =
+      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+    let password = "";
+    for (let i = 0, n = charset.length; i < length; ++i) {
+      password += charset.charAt(Math.floor(Math.random() * n));
+    }
+    return password;
   };
 
   return (
@@ -634,7 +827,8 @@ const formatDate = (date) => {
                 <div class="d-flex pb-2 justify-content-between">
                   <HeaderCard
                     title="Registered Patient List"
-                    className="p-0"qweq
+                    className="p-0"
+                    qweq
                   />
                   <Btn attrBtn={{ color: "primary", onClick: toggle }}>
                     {registerYourDetail}
@@ -656,18 +850,21 @@ const formatDate = (date) => {
                     </InputGroup>
                   </div>
                 </div>
-                {stillLoading ? <div className="loading-text">
-    Data is fetching from server. Please wait...
-  </div> : <DataTable
-                  data={filteredData}
-                  columns={tableColumns}
-                  striped
-                  center
-                  highlightOnHover
-                  pagination
-                  persistTableHead
-                />}
-                
+                {stillLoading ? (
+                  <div className="loading-text">
+                    Data is fetching from server. Please wait...
+                  </div>
+                ) : (
+                  <DataTable
+                    data={filteredData}
+                    columns={tableColumns}
+                    striped
+                    center
+                    highlightOnHover
+                    pagination
+                    persistTableHead
+                  />
+                )}
               </CardBody>
             </Card>
           </Col>
@@ -707,13 +904,18 @@ const formatDate = (date) => {
     }
   /> */}
 
-<DatePicker
-  className="form-control digits"
-  selected={formData.date_of_admission ? new Date(formData.date_of_admission) : null} // Make sure it's a valid Date object
-  onChange={(date) => handleDateChange("dateOfAdmission", date)}
-  dateFormat="yyyy/MM/dd"
-/>
-
+                      <DatePicker
+                        className="form-control digits"
+                        selected={
+                          formData.date_of_admission
+                            ? new Date(formData.date_of_admission)
+                            : null
+                        } // Make sure it's a valid Date object
+                        onChange={(date) =>
+                          handleDateChange("dateOfAdmission", date)
+                        }
+                        dateFormat="yyyy/MM/dd"
+                      />
                     </Col>
                   </FormGroup>
                 </div>
@@ -791,13 +993,14 @@ const formatDate = (date) => {
                           selected={formData.dob}
                           onChange={(date) => handleDateChange("dob", date)}
                         /> */}
-                       <DatePicker
-  className="form-control digits"
-  selected={formData.dob ? new Date(formData.dob) : null} // Make sure it's a valid Date object
-  onChange={(date) => handleDateChange("dob", date)}
-  dateFormat="yyyy/MM/dd"
-/>
-
+                        <DatePicker
+                          className="form-control digits"
+                          selected={
+                            formData.dob ? new Date(formData.dob) : null
+                          } // Make sure it's a valid Date object
+                          onChange={(date) => handleDateChange("dob", date)}
+                          dateFormat="yyyy/MM/dd"
+                        />
                       </Col>
                     </FormGroup>
                   </div>
@@ -822,7 +1025,6 @@ const formatDate = (date) => {
                           }}
                           placeholder="Phone Number"
                           maxLength={10}
-                          required
                         />
                         {formData.phone.length > 0 &&
                           formData.phone.length !== 10 && (
@@ -904,7 +1106,6 @@ const formatDate = (date) => {
                             );
                           }}
                           placeholder="Enter Email"
-                          required
                         />
                         {emailError && (
                           <small className="text-danger">{emailError}</small>
@@ -920,18 +1121,67 @@ const formatDate = (date) => {
                         {Password}
                       </Label>
                       <Col xl="5" sm="12">
-                        <Input
-                          type="password"
-                          name="password"
-                          value={formData.password}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setFormData({ ...formData, password: value });
-                            validatePassword(value);
-                          }}
-                          placeholder="Enter Password"
-                          required
-                        />
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                          <label htmlFor="password">Password</label>
+                          <svg
+                            className="pe-auto d-block"
+                            onClick={() => {
+                              const generatedPassword = generatePassword();
+                              setFormData({
+                                ...formData,
+                                password: generatedPassword,
+                              });
+                              validatePassword(generatedPassword);
+                            }}
+                            width="30px"
+                            height="30px"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path
+                              fill-rule="evenodd"
+                              clip-rule="evenodd"
+                              d="M15.0614 9.67972L16.4756 11.0939L17.8787 9.69083L16.4645 8.27662L15.0614 9.67972ZM16.4645 6.1553L20 9.69083L8.6863 21.0045L5.15076 17.469L16.4645 6.1553Z"
+                              fill="#1F2328"
+                            />
+                            <path
+                              fill-rule="evenodd"
+                              clip-rule="evenodd"
+                              d="M11.364 5.06066L9.59619 6.82843L8.53553 5.76777L10.3033 4L11.364 5.06066ZM6.76778 6.82842L5 5.06067L6.06066 4L7.82843 5.76776L6.76778 6.82842ZM10.3033 10.364L8.53553 8.5962L9.59619 7.53554L11.364 9.3033L10.3033 10.364ZM7.82843 8.5962L6.06066 10.364L5 9.3033L6.76777 7.53554L7.82843 8.5962Z"
+                              fill="#1F2328"
+                            />
+                          </svg>
+                        </div>
+
+                        <div className="position-relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            name="password"
+                            value={formData.password}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setFormData({ ...formData, password: value });
+                              validatePassword(value);
+                            }}
+                            placeholder="Enter Password"
+                          />
+                          <span
+                            onClick={() => setShowPassword(!showPassword)}
+                            style={{
+                              position: "absolute",
+                              right: "10px",
+                              top: "50%",
+                              transform: "translateY(-50%)",
+                              cursor: "pointer",
+                              fontSize: "14px",
+                              color: "#007bff",
+                            }}
+                          >
+                            {showPassword ? "Hide" : "Show"}
+                          </span>
+                        </div>
+
                         {passwordError && (
                           <small className="text-danger">{passwordError}</small>
                         )}
@@ -951,8 +1201,41 @@ const formatDate = (date) => {
                     /> */}
 
                     {/* Read-only visible input showing text like "USER" */}
-                    <Input type="text" value="USER" readOnly style={{ position: "absolute", left: "-9999px" }} />
+                    <Input
+                      type="text"
+                      value="USER"
+                      readOnly
+                      style={{ position: "absolute", left: "-9999px" }}
+                    />
                   </div>
+                </div>
+              </div>
+
+              {/* Wards details */}
+              <div className="col-md-6">
+                <Label>{wardDetails}</Label>
+                <div className="radio radio-primary d-flex gap-3">
+                  {wardOptions.map((option) => (
+                    <div key={option.ward_type_id}>
+                      <Input
+                        type="radio"
+                        id={`wards-${option.ward_type_id}`}
+                        name="ward"
+                        value={option.ward_name}
+                        checked={formData.ward_type_id === option.ward_type_id}
+                        onChange={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            ward_type_id: option.ward_type_id,
+                            ward_name: option.ward_name,
+                          }))
+                        }
+                      />
+                      <Label for={`wards-${option.ward_type_id}`}>
+                        {option.ward_name}
+                      </Label>
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -1005,9 +1288,13 @@ const formatDate = (date) => {
                   {isLoading ? (
                     <tr>
                       <td colSpan="2" className="text-center">
-                      <div className="loader-box">
-        <Spinner className={selectedSpinner?.spinnerClass || 'spinner-border'} />
-      </div>
+                        <div className="loader-box">
+                          <Spinner
+                            className={
+                              selectedSpinner?.spinnerClass || "spinner-border"
+                            }
+                          />
+                        </div>
                       </td>
                     </tr>
                   ) : selectedUser && selectedUser.length > 0 ? (
@@ -1054,6 +1341,10 @@ const formatDate = (date) => {
                           ).toLocaleDateString()}
                         </td>
                       </tr>
+                      <tr>
+                        <th>Ward Name</th>
+                        <td>{selectedUser[0].ward_name}</td>
+                      </tr>
                     </>
                   ) : (
                     <tr>
@@ -1079,157 +1370,161 @@ const formatDate = (date) => {
           <div className="modal-overlay">
             <div className="modal-content border-0">
               <div className="row pb-3 px-3">
-              <Form
-  onSubmit={(e) => {
-    e.preventDefault();
-    handleUpdateSubmit();
-  }}
->
-  <div className="row pt-4">
-    <div className="col-md-6">
-      <Label>Name</Label>
-      <Input
-        type="text"
-        placeholder="Name"
-        value={editData.name}
-        onChange={(e) =>
-          setEditData({ ...editData, name: e.target.value })
-        }
-      />
-    </div>
-    <div className="col-md-6">
-      <Label>Relative Name</Label>
-      <Input
-        type="text"
-        placeholder="Relative Name"
-        value={editData.patientRelativeName}
-        onChange={(e) =>
-          setEditData({
-            ...editData,
-            patientRelativeName: e.target.value,
-          })
-        }
-      />
-    </div>
-  </div>
-  <br />
+                <Form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleUpdateSubmit();
+                  }}
+                >
+                  <div className="row pt-4">
+                    <div className="col-md-6">
+                      <Label>Name</Label>
+                      <Input
+                        type="text"
+                        placeholder="Name"
+                        value={editData.name}
+                        onChange={(e) =>
+                          setEditData({ ...editData, name: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="col-md-6">
+                      <Label>Relative Name</Label>
+                      <Input
+                        type="text"
+                        placeholder="Relative Name"
+                        value={editData.patientRelativeName}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            patientRelativeName: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <br />
 
-  <div className="form-group col-md-6">
-    <Label>Gender</Label>
-    <div className="radio radio-primary d-flex gap-3">
-      {["Male", "Female", "Other"].map((g) => (
-        <div key={g}>
-          <Input
-            className="radio_animated"
-            type="radio"
-            id={`gender-${g}`}
-            name="gender"
-            value={g}
-            checked={editData.gender === g}
-            onChange={(e) =>
-              setEditData({
-                ...editData,
-                gender: e.target.value,
-              })
-            }
-          />
-          <Label htmlFor={`gender-${g}`}>{g}</Label>
-        </div>
-      ))}
-    </div>
-  </div>
+                  <div className="form-group col-md-6">
+                    <Label>Gender</Label>
+                    <div className="radio radio-primary d-flex gap-3">
+                      {["Male", "Female", "Other"].map((g) => (
+                        <div key={g}>
+                          <Input
+                            className="radio_animated"
+                            type="radio"
+                            id={`gender-${g}`}
+                            name="gender"
+                            value={g}
+                            checked={editData.gender === g}
+                            onChange={(e) =>
+                              setEditData({
+                                ...editData,
+                                gender: e.target.value,
+                              })
+                            }
+                          />
+                          <Label htmlFor={`gender-${g}`}>{g}</Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-  <div className="row align-items-baseline">
-    <div className="col-md-4">
-      <Label>Phone</Label>
-      <Input
-        type="text"
-        placeholder="Phone"
-        value={editData.phone}
-        onChange={(e) => {
-          const newPhone = e.target.value;
-          setEditData((prev) => ({
-            ...prev,
-            phone: newPhone,
-            whatsapp_no: prev.isWhatsApp ? newPhone : prev.whatsapp_no,
-          }));
-        }}
-      />
-    </div>
-    <div className="col-md-3">
-      <Label>
-        <Input
-          className="checkbox_animated"
-          type="checkbox"
-          checked={editData.isWhatsApp}
-          onChange={(e) => {
-            const isChecked = e.target.checked;
-            setEditData((prev) => ({
-              ...prev,
-              isWhatsApp: isChecked,
-              whatsapp_no: isChecked ? prev.phone : "",
-            }));
-          }}
-        />
-        Is WhatsApp?
-      </Label>
-    </div>
-    <div className="col-md-5">
-      <Label>WhatsApp No.</Label>
-      <Input
-        type="text"
-        placeholder="WhatsApp No."
-        value={editData.whatsapp_no}
-        onChange={(e) =>
-          setEditData({
-            ...editData,
-            whatsapp_no: e.target.value,
-          })
-        }
-        disabled={editData.isWhatsApp}
-      />
-    </div>
-  </div>
-  <br />
+                  <div className="row align-items-baseline">
+                    <div className="col-md-4">
+                      <Label>Phone</Label>
+                      <Input
+                        type="text"
+                        placeholder="Phone"
+                        value={editData.phone}
+                        onChange={(e) => {
+                          const newPhone = e.target.value;
+                          setEditData((prev) => ({
+                            ...prev,
+                            phone: newPhone,
+                            whatsapp_no: prev.isWhatsApp
+                              ? newPhone
+                              : prev.whatsapp_no,
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div className="col-md-3">
+                      <Label>
+                        <Input
+                          className="checkbox_animated"
+                          type="checkbox"
+                          checked={editData.isWhatsApp}
+                          onChange={(e) => {
+                            const isChecked = e.target.checked;
+                            setEditData((prev) => ({
+                              ...prev,
+                              isWhatsApp: isChecked,
+                              whatsapp_no: isChecked ? prev.phone : "",
+                            }));
+                          }}
+                        />
+                        Is WhatsApp?
+                      </Label>
+                    </div>
+                    <div className="col-md-5">
+                      <Label>WhatsApp No.</Label>
+                      <Input
+                        type="text"
+                        placeholder="WhatsApp No."
+                        value={editData.whatsapp_no}
+                        onChange={(e) =>
+                          setEditData({
+                            ...editData,
+                            whatsapp_no: e.target.value,
+                          })
+                        }
+                        disabled={editData.isWhatsApp}
+                      />
+                    </div>
+                  </div>
+                  <br />
 
-  <div className="row">
-    <div className="col-md-6">
-      <Label>Email</Label>
-      <Input
-        type="email"
-        placeholder="Email"
-        value={editData.email}
-        onChange={(e) =>
-          setEditData({ ...editData, email: e.target.value })
-        }
-      />
-    </div>
-    <div className="col-md-6 d-flex align-items-end gap-4">
-      <Label>Date of Birth</Label>
-      <DatePicker
-        className="form-control"
-        selected={
-          editData.dob instanceof Date && !isNaN(editData.dob)
-            ? editData.dob
-            : null
-        }
-        onChange={(date) => setEditData({ ...editData, dob: date })}
-      />
-    </div>
-  </div>
-  <br />
-  <Label>Address</Label>
-  <Input
-    type="textarea"
-    rows="3"
-    placeholder="Address"
-    value={editData.address}
-    onChange={(e) =>
-      setEditData({ ...editData, address: e.target.value })
-    }
-  ></Input>
+                  <div className="row">
+                    <div className="col-md-6">
+                      <Label>Email</Label>
+                      <Input
+                        type="email"
+                        placeholder="Email"
+                        value={editData.email}
+                        onChange={(e) =>
+                          setEditData({ ...editData, email: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="col-md-6 d-flex align-items-end gap-4">
+                      <Label>Date of Birth</Label>
+                      <DatePicker
+                        className="form-control"
+                        selected={
+                          editData.dob instanceof Date && !isNaN(editData.dob)
+                            ? editData.dob
+                            : null
+                        }
+                        onChange={(date) =>
+                          setEditData({ ...editData, dob: date })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <br />
+                  <Label>Address</Label>
+                  <Input
+                    type="textarea"
+                    rows="3"
+                    placeholder="Address"
+                    value={editData.address}
+                    onChange={(e) =>
+                      setEditData({ ...editData, address: e.target.value })
+                    }
+                  ></Input>
 
-  {/* Optional: role dropdown if editable
+                  {/* Optional: role dropdown if editable
   <Label>Role</Label>
   <select
     value={editData.is_role}
@@ -1245,32 +1540,88 @@ const formatDate = (date) => {
     <option value={2}>Doctor</option>
   </select> */}
 
-  <br />
-  <div className="d-flex gap-3">
-    <Button color="primary" type="submit" disabled={isLoading}>
-      {isLoading ? (
-        <span
-          className="spinner-border spinner-border-sm"
-          role="status"
-          aria-hidden="true"
-        ></span>
-      ) : (
-        "Update"
-      )}
-    </Button>
-    <Button
-      color="primary"
-      type="button"
-      onClick={() => setShowEditModal(false)}
-    >
-      Cancel
-    </Button>
-  </div>
-</Form>
-
+                  <br />
+                  <div className="d-flex gap-3">
+                    <Button color="primary" type="submit" disabled={isLoading}>
+                      {isLoading ? (
+                        <span
+                          className="spinner-border spinner-border-sm"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                      ) : (
+                        "Update"
+                      )}
+                    </Button>
+                    <Button
+                      color="primary"
+                      type="button"
+                      onClick={() => setShowEditModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </Form>
               </div>
             </div>
           </div>
+        )}
+      </CommonModal>
+
+      {/* Readmission/Re-register modal pass ward name and type to backend for re-enter user registration field */}
+      <CommonModal
+        isOpen={reregisterModal}
+        title={"Re-Registeration User"}
+        toggler={closeUserViewModal}
+        maxWidth="500px"
+      >
+        {reregisterModal && (
+          <Form onSubmit={handleReRegister}>
+            <div className="col-md-12 pt-3 pb-3">
+              <Label>{wardDetails}</Label>
+              <div className="radio radio-primary d-flex gap-3">
+                {wardOptions.map((option) => (
+                  <div key={option.ward_type_id}>
+                    <Input
+                      type="radio"
+                      id={`wards-${option.ward_type_id}`}
+                      name="ward"
+                      value={option.ward_name}
+                      checked={formData.ward_type_id === option.ward_type_id}
+                      onChange={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          ward_type_id: option.ward_type_id,
+                          ward_name: option.ward_name,
+                        }))
+                      }
+                    />
+                    <Label for={`wards-${option.ward_type_id}`}>
+                      {option.ward_name}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                color="primary"
+                type="submit"
+                className="mt-3 mb-3"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                   <span
+                          className="spinner-border spinner-border-sm"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                ) : (
+                  "Re-Admission"
+                )}
+               
+              </Button>
+            </div>
+          </Form>
         )}
       </CommonModal>
     </Fragment>

@@ -1420,6 +1420,7 @@ export const dateOfAssessment = " Date of Assessment/परीक्षण क�
 export const patientName = "Name of Patient/मरीज का नाम : ";
 export const patientRelativeName = " Name of Patient Relative/ मरीज संबंधी का नाम : ";
 export const patientSex = "Sex/लिंग :";
+export const wardDetails = "Wards details / वार्डों का विवरण";
 export const male="Male/पुरुष";
 export const female="Female/महिला";
 export const other="Other/अन्य";
@@ -1979,3 +1980,8 @@ export const neurologicalOptions = [
 ];
 
 
+//Wardd data
+export const wardOptions = [
+  { ward_type_id: 1, ward_name: "Private" },
+  { ward_type_id: 2, ward_name: "Sem-Private" }
+];
