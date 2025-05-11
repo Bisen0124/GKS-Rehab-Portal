@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useCallback, Fragment } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  Fragment,
+  useRef,
+} from "react";
 import {
   patientFirstAssessment,
   dateOfAdmission,
@@ -62,7 +68,7 @@ import {
   InputGroup,
   Spinner,
 } from "reactstrap";
-import { H5, Btn, P } from "../../AbstractElements";
+import { H5, Btn, P, H4 } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import { toast } from "react-toastify";
@@ -78,7 +84,15 @@ import useCalculateAge from "../../CustomHook/useCalculateAge";
 //Show pateint/user common info like name, age and DOB by custom hook
 import PatientCommonInfo from "../../CustomHook/PatientCommonInfo";
 
+//editPFA download PDF library
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import html2pdf from "html2pdf.js";
+
 function PFA() {
+  const pdfRef = useRef();
+  const [isDownloading, setIsDownloading] = useState(false);
+
   //spinner extract from other file
   const selectedSpinner = Data.find(
     (item) => item.spinnerClass === "loader-37"
@@ -157,7 +171,7 @@ function PFA() {
   // const [selectedRows, setSelectedRows] = useState([]);
   const [stillLoading, setstillLoading] = useState(true);
   useEffect(() => {
-    const token = localStorage.getItem("Authorization"); // Assuming you stored token like this during login
+    const token = localStorage.getItem("Authorization");
 
     fetch("https://gks-yjdc.onrender.com/api/users", {
       method: "GET",
@@ -167,33 +181,31 @@ function PFA() {
       },
     })
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch users");
-        }
+        if (!response.ok) throw new Error("Failed to fetch users");
         return response.json();
       })
-      .then(async (resData) => {
+      .then(async (users) => {
         const formatted = await Promise.all(
-          resData.map(async (user) => {
-            // Fetch the latest assessment entry from user-assessment based on the latest ID, and update the status individually for each user using their latest assessment ID
+          users.map(async (user) => {
             try {
-              const statusResponse = await fetch(
+              const res = await fetch(
                 `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${user.user_id}`,
                 {
-                  headers: {
-                    Authorization: `${token}`,
-                  },
+                  headers: { Authorization: `${token}` },
                 }
               );
 
-              const assessmentData = await statusResponse.json();
+              const data = await res.json();
+              const activeAssessments = (data.assessments || []).filter(
+                (a) => a.isActive !== 0
+              );
 
-              const latest = assessmentData?.assessments?.sort(
+              const latest = activeAssessments.sort(
                 (a, b) => new Date(b.created_at) - new Date(a.created_at)
               )[0];
-        
-              const userStatus = latest?.status === "Completed" ? "Completed" : "Pending";
-              console.log(userStatus);
+
+              const userStatus =
+                latest?.status === "Completed" ? "Completed" : "Pending";
 
               return {
                 id: user.user_id,
@@ -201,14 +213,11 @@ function PFA() {
                 status: userStatus,
               };
             } catch (err) {
-              console.error(
-                `Failed to fetch status for user ${user.user_id}`,
-                err
-              );
+              console.error(`Error for user ${user.user_id}:`, err);
               return {
                 id: user.user_id,
                 name: user.name,
-                status: "Unknown", // fallback if something fails
+                status: "Unknown",
               };
             }
           })
@@ -373,6 +382,7 @@ function PFA() {
   ];
 
   //view pfa handler
+  //fetch the latest assessment based on created_at, then simply sort the assessments and pick the first one:
   const viewPFAToggle = async (userId = null) => {
     if (typeof userId === "object" && userId !== null) {
       userId = userId.id;
@@ -407,8 +417,17 @@ function PFA() {
         return;
       }
 
-      setSelectedUser(data.assessment); // ✅ extract assessment object
-      console.log("Selected User Assessment:", data.assessment);
+      const latestAssessment = (data.assessments || []).sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      )[0];
+
+      if (!latestAssessment) {
+        console.warn("No assessments found for this user.");
+        return;
+      }
+
+      setSelectedUser(latestAssessment);
+      console.log("Selected User Assessment:", latestAssessment);
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
@@ -529,53 +548,48 @@ function PFA() {
   };
 
   //PFA POST data API call
-  const [isActionEnabled, setIsActionEnabled] = useState(false);
-  //maintain status based on form sumit or not into table
-  const [trackStatus, setrackStatus] = useState("Pending"); // Initially set to 'Pending'
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true); // Start loader
 
     const requiredFields = [
-      // formData.dependentToData,
-      // formData.substanceUsePatternData,
-      // formData.last30DaysQuantityData,
-      // formData.medicalConfirmationData,
-      // formData.bloodConfirmationData,
-      // formData.weight,
-      // formData.pulse_rate,
-      // formData.blood_pressure,
-      // formData.temperature,
-      // formData.bloodTransfusionHistoryData,
-      // formData.complications.ulcer,
-      // formData.complications.respiratory_problem,
-      // formData.complications.jaundice,
-      // formData.complications.haematemesis,
-      // formData.complications.abdominal_complaints,
-      // formData.complications.cardiovascular,
-      // formData.complication_description,
-      // formData.neurological.delirium,
-      // formData.neurological.seizure,
-      // formData.neurological.blackout,
-      // formData.neurological.memory_loss,
-      // formData.neurological.trembling,
-      // formData.neurological.epilepsy,
-      // formData.neurological.neuropathy,
-      // formData.neuro_description,
-      // formData.other_findings,
-      // formData.consent,
-      // formData.consent_name,
-      // formData.consent_relationship,
-      // formData.consent_signature,
-      // formData.prepared_by,
+      formData.dependentToData,
+      formData.substanceUsePatternData,
+      formData.last30DaysQuantityData,
+      formData.medicalConfirmationData,
+      formData.bloodConfirmationData,
+      formData.weight,
+      formData.pulse_rate,
+      formData.blood_pressure,
+      formData.temperature,
+      formData.bloodTransfusionHistoryData,
+      formData.complications.ulcer,
+      formData.complications.respiratory_problem,
+      formData.complications.jaundice,
+      formData.complications.haematemesis,
+      formData.complications.abdominal_complaints,
+      formData.complications.cardiovascular,
+      formData.complication_description,
+      formData.neurological.delirium,
+      formData.neurological.seizure,
+      formData.neurological.blackout,
+      formData.neurological.memory_loss,
+      formData.neurological.trembling,
+      formData.neurological.epilepsy,
+      formData.neurological.neuropathy,
+      formData.neuro_description,
+      formData.other_findings,
+      formData.consent,
+      formData.consent_name,
+      formData.consent_relationship,
+      formData.consent_signature,
+      formData.prepared_by,
     ];
 
     const allFieldsFilled = requiredFields.every(
       (field) => field !== "" && field !== null && field !== undefined
     );
-
-    setrackStatus(allFieldsFilled ? "Completed" : "Pending");
 
     if (!allFieldsFilled) {
       setIsLoading(false);
@@ -644,96 +658,6 @@ function PFA() {
         });
         return;
       }
-
-      setIsActionEnabled(true);
-      // const userId = selectedUser[0].user_id;
-
-      // const statusResponse = await fetch(
-      //   `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${userId}`,
-      //   {
-      //     headers: {
-      //       Authorization: `${token}`,
-      //     },
-      //   }
-      // );
-
-      // const userAssessmentData = await statusResponse.json();
-      // const status =
-      //   userAssessmentData?.assessments?.status === "Completed"
-      //     ? "Completed"
-      //     : "Pending";
-
-      // setIsLoading(false);
-
-      // Swal.fire({
-      //   icon: "success",
-      //   title: "Assessment Submitted",
-      //   text: `Status: ${status}`,
-      // }).then(() => {
-      //   setModal(false);
-      // });
-
-      // console.log("Get data of PFA after submit by particular ID's ", userAssessmentData)
-
-      // ✅ Inline fetch to update table data
-      // const usersResponse = await fetch(
-      //   "https://gks-yjdc.onrender.com/api/users",
-      //   {
-      //     method: "GET",
-      //     headers: {
-      //       "Content-Type": "application/json",
-      //       Authorization: `${token}`,
-      //     },
-      //   }
-      // );
-
-      // if (!usersResponse.ok) {
-      //   throw new Error("Failed to fetch users");
-      // }
-
-      // const usersData = await usersResponse.json();
-
-      // const formatted = await Promise.all(
-      //   usersData.map(async (user) => {
-      //     try {
-      //       const statusResponse = await fetch(
-      //         `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${user.user_id}`,
-      //         {
-      //           headers: {
-      //             Authorization: `${token}`,
-      //           },
-      //         }
-      //       );
-      //       const assessmentData = await statusResponse.json();
-
-      //       // Get latest assessment from assessments array
-      //       const latest = assessmentData?.assessments?.sort(
-      //         (a, b) => new Date(b.created_at) - new Date(a.created_at)
-      //       )[0];
-      
-      //       const userStatus = latest?.status === "Completed" ? "Completed" : "Pending";
-
-      //       return {
-      //         id: user.user_id,
-      //         name: user.name,
-      //         status: userStatus,
-      //       };
-      //     } catch (err) {
-      //       console.error(
-      //         `Failed to fetch status for user ${user.user_id}`,
-      //         err
-      //       );
-      //       return {
-      //         id: user.user_id,
-      //         name: user.name,
-      //         status: "Unknown",
-      //       };
-      //     }
-      //   })
-      // );
-
-      // setData(formatted);
-      // setFilteredData(formatted);
     } catch (error) {
       setIsLoading(false);
       Swal.fire({
@@ -836,6 +760,7 @@ function PFA() {
   //PFA edit handler
   const [PFAeditData, setPFAeditData] = useState(null);
   const [PFAEditModal, setPFAEditModal] = useState(false);
+  //fetch the latest assessment based on created_at, then simply sort the assessments and pick the first one:
   const handleFAEdit = async (userId = null) => {
     if (typeof userId === "object" && userId !== null) {
       userId = userId.id;
@@ -867,54 +792,66 @@ function PFA() {
         return;
       }
 
-      setSelectedUser(data.assessment);
-      console.log("Selected User Assessment:", data.assessment);
+      // Sort assessments by created_at and pick the latest
+      const latestAssessment = (data.assessments || []).sort(
+        (a, b) => new Date(b.created_at) - new Date(a.created_at)
+      )[0];
+
+      if (!latestAssessment) {
+        console.warn("No assessments found for this user.");
+        return;
+      }
+
+      setSelectedUser(latestAssessment);
+      console.log("Selected User Assessment:", latestAssessment);
 
       setPFAeditData({
-        patientId: data.assessment.patient_id,
-        dependent_to: data.assessment.dependent_to,
-        substance_use_pattern: data.assessment.substance_use_pattern,
-        last_30_days_quantity: data.assessment.last_30_days_quantity,
+        patientId: latestAssessment.patient_id,
+        dependent_to: latestAssessment.dependent_to,
+        substance_use_pattern: latestAssessment.substance_use_pattern,
+        last_30_days_quantity: latestAssessment.last_30_days_quantity,
 
-        medicalConfirmationData: data?.assessment?.medical_history || "",
+        medicalConfirmationData: latestAssessment?.medical_history || "",
         bloodConfirmationData:
-          data?.assessment?.blood_transfusion_history || "",
-        weight: data?.assessment?.weight || "",
-        pulse_rate: data?.assessment?.pulse_rate || "",
-        blood_pressure: data?.assessment?.blood_pressure || "",
-        temperature: data?.assessment?.temperature || "",
-        temperature: data?.assessment?.lymphadenopathy || "",
+          latestAssessment?.blood_transfusion_history || "",
+
+        weight: Number(latestAssessment?.weight) || 0,
+        pulse_rate: Number(latestAssessment?.pulse_rate) || 0,
+        blood_pressure: latestAssessment?.blood_pressure || "",
+        temperature: Number(latestAssessment?.temperature) || 0,
+        lymphadenopathy: latestAssessment?.lymphadenopathy || "",
 
         medical_or_blood_history_details:
-          data.assessment.medical_or_blood_history_details,
-        complication_description: data.assessment.complication_description,
-        neuro_description: data.assessment.neuro_description,
-        other_findings: data.assessment.other_findings,
-        consent_name: data.assessment.consent_name,
-        consent_relationship: data.assessment.consent_relationship,
-        consent_signature: data.assessment.consent_signature,
-        prepared_by: data.assessment.prepared_by,
-
-        // 👇 Preserve nested structure
+          latestAssessment.medical_or_blood_history_details,
+        complication_description: latestAssessment.complication_description,
+        neuro_description: latestAssessment.neuro_description,
+        other_findings: latestAssessment.other_findings,
+        consent_name: latestAssessment.consent_name,
+        consent_relationship: latestAssessment.consent_relationship,
+        consent_signature: latestAssessment.consent_signature,
+        prepared_by: latestAssessment.prepared_by,
 
         complications: {
-          ulcer: data.assessment.ulcer,
-          respiratory_problem: data.assessment.respiratory_problem,
-          jaundice: data.assessment.jaundice,
-          haematemesis: data.assessment.haematemesis,
-          abdominal_complaints: data.assessment.abdominal_complaints,
-          cardiovascular: data.assessment.cardiovascular,
+          ulcer: latestAssessment.ulcer,
+          respiratory_problem: latestAssessment.respiratory_problem,
+          jaundice: latestAssessment.jaundice,
+          haematemesis: latestAssessment.haematemesis,
+          abdominal_complaints: latestAssessment.abdominal_complaints,
+          cardiovascular: latestAssessment.cardiovascular,
         },
 
         neurological: {
-          delirium: data.assessment.delirium,
-          seizure: data.assessment.seizure,
-          blackout: data.assessment.blackout,
-          memory_loss: data.assessment.memory_loss,
-          trembling: data.assessment.trembling,
-          epilepsy: data.assessment.epilepsy,
-          neuropathy: data.assessment.neuropathy,
+          delirium: latestAssessment.delirium,
+          seizure: latestAssessment.seizure,
+          blackout: latestAssessment.blackout,
+          memory_loss: latestAssessment.memory_loss,
+          trembling: latestAssessment.trembling,
+          epilepsy: latestAssessment.epilepsy,
+          neuropathy: latestAssessment.neuropathy,
         },
+
+        lymphadenopathy: latestAssessment.lymphadenopathy,
+        nutritional_status: latestAssessment.nutritional_status,
       });
     } catch (error) {
       console.error("Fetch error:", error);
@@ -935,11 +872,11 @@ function PFA() {
       medical_or_blood_history_details:
         PFAeditData.medical_or_blood_history_details,
 
-      weight: PFAeditData.weight,
-      pulse_rate: PFAeditData.pulse_rate,
+      weight: Number(PFAeditData.weight) || 0,
+      pulse_rate: Number(PFAeditData.pulse_rate) || 0,
       blood_pressure: PFAeditData.blood_pressure,
-      temperature: PFAeditData.temperature,
-      temperature: PFAeditData.lymphadenopathy,
+      temperature: Number(PFAeditData?.temperature) || 0,
+      lymphadenopathy: PFAeditData.lymphadenopathy,
 
       // Complications
       ulcer: PFAeditData.complications?.ulcer || "",
@@ -967,6 +904,8 @@ function PFA() {
       consent_relationship: PFAeditData.consent_relationship,
       consent_signature: PFAeditData.consent_signature,
       prepared_by: PFAeditData.prepared_by,
+
+      nutritional_status: PFAeditData.nutritional_status,
     };
 
     try {
@@ -1022,6 +961,41 @@ function PFA() {
     );
 
     setFilteredData(filtered);
+  };
+
+  //PDf view download pdf code handler
+  const [pfaDownload, setpfaDownload] = useState(false);
+  const handleDownloadPDF = () => {
+    const element = pdfRef.current;
+    setpfaDownload(true);
+
+    // Add a temporary class to scale fonts if needed
+    element.classList.add("pdf-scale");
+
+    const opt = {
+      margin: [10, 10, 10, 10], // top, left, bottom, right
+      filename: `user_data_${selectedUser.name}_${selectedUser.user_id}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        scrollY: 0,
+      },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
+      .then(() => {
+        toast.success("Download complete!");
+        element.classList.remove("pdf-scale");
+
+        setTimeout(() => {
+          setpfaDownload(false);
+        }, 2000);
+      });
   };
 
   return (
@@ -1628,172 +1602,339 @@ function PFA() {
           {/* PFA view data modal */}
           <CommonModal
             isOpen={viewModal}
-            title={"User Assessment Details"}
+            title={
+              "First Physical Assessment / प्रथम शारीरिक मूल्यांकन Details"
+            }
             toggler={closeUserViewModal}
-            maxWidth="800px"
+            maxWidth="1200px"
           >
             <Col sm="12">
-              <Card>
-                <div className="table-responsive">
-                  <Table size="sm" className="table-bordered">
-                    <tbody>
-                      {isLoading ? (
-                        <tr>
-                          <td colSpan="2" className="text-center">
-                            <div className="loader-box">
-                              <Spinner
-                                className={
-                                  selectedSpinner?.spinnerClass ||
-                                  "spinner-border"
-                                }
-                              />
-                            </div>
+              <div className="table-responsive p-4" ref={pdfRef}>
+                <h4
+                  style={{
+                    textAlign: "center",
+                    textDecoration: "underline",
+                    padding: "20px 0",
+                  }}
+                >
+                  First Physical Assessment / प्रथम शारीरिक मूल्यांकन
+                </h4>
+                <Table size="sm" className="table-bordered">
+                  <tbody style={{ fontSize: "14px" }}>
+                    {isLoading ? (
+                      <tr>
+                        <td colSpan="2" className="text-center">
+                          <div className="loader-box">
+                            <Spinner
+                              className={
+                                selectedSpinner?.spinnerClass ||
+                                "spinner-border"
+                              }
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ) : selectedUser ? (
+                      <>
+                        <tr className="fw-bold">
+                          <td colSpan="2" className="p-3">
+                            Date of Assessment / मूल्यांकन की तारीख:
+                          </td>
+                          <td colSpan="2" className="p-3">
+                            {new Date(
+                              selectedUser.date_of_assessment
+                            ).toLocaleDateString()}
                           </td>
                         </tr>
-                      ) : selectedUser ? (
-                        <>
-                          <tr>
-                            <th>User ID</th>
-                            <td>{selectedUser.user_id}</td>
-                          </tr>
-                          <tr>
-                            <th>Name</th>
-                            <td>{selectedUser.name}</td>
-                          </tr>
-                          <tr>
-                            <th>Date of Assessment</th>
-                            <td>
-                              {new Date(
-                                selectedUser.date_of_assessment
-                              ).toLocaleDateString()}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th>Age</th>
-                            <td>{selectedUser.age}</td>
-                          </tr>
-                          <tr>
-                            <th>Dependent To</th>
-                            <td>{selectedUser.dependent_to}</td>
-                          </tr>
-                          <tr>
-                            <th>Substance Use Pattern</th>
-                            <td>{selectedUser.substance_use_pattern}</td>
-                          </tr>
-                          <tr>
-                            <th>Last 30 Days Quantity</th>
-                            <td>{selectedUser.last_30_days_quantity}</td>
-                          </tr>
-                          <tr>
-                            <th>Medical History</th>
-                            <td>{selectedUser.medical_history}</td>
-                          </tr>
-                          <tr>
-                            <th>Blood Transfusion History</th>
-                            <td>{selectedUser.blood_transfusion_history}</td>
-                          </tr>
-                          <tr>
-                            <th>Medical/Blood History Details</th>
-                            <td>
-                              {selectedUser.medical_or_blood_history_details}
-                            </td>
-                          </tr>
-                          <tr>
-                            <th>Ulcer</th>
-                            <td>{selectedUser.ulcer}</td>
-                          </tr>
-                          <tr>
-                            <th>Respiratory Problem</th>
-                            <td>{selectedUser.respiratory_problem}</td>
-                          </tr>
-                          <tr>
-                            <th>Jaundice</th>
-                            <td>{selectedUser.jaundice}</td>
-                          </tr>
-                          <tr>
-                            <th>Haematemesis</th>
-                            <td>{selectedUser.haematemesis}</td>
-                          </tr>
-                          <tr>
-                            <th>Abdominal Complaints</th>
-                            <td>{selectedUser.abdominal_complaints}</td>
-                          </tr>
-                          <tr>
-                            <th>Cardiovascular</th>
-                            <td>{selectedUser.cardiovascular}</td>
-                          </tr>
-                          <tr>
-                            <th>Complication Description</th>
-                            <td>{selectedUser.complication_description}</td>
-                          </tr>
-                          <tr>
-                            <th>Seizure</th>
-                            <td>{selectedUser.seizure}</td>
-                          </tr>
-                          <tr>
-                            <th>Epilepsy</th>
-                            <td>{selectedUser.epilepsy}</td>
-                          </tr>
-                          <tr>
-                            <th>Delirium</th>
-                            <td>{selectedUser.delirium}</td>
-                          </tr>
-                          <tr>
-                            <th>Trembling</th>
-                            <td>{selectedUser.trembling}</td>
-                          </tr>
-                          <tr>
-                            <th>Memory Loss</th>
-                            <td>{selectedUser.memory_loss}</td>
-                          </tr>
-                          <tr>
-                            <th>Neuropathy</th>
-                            <td>{selectedUser.neuropathy}</td>
-                          </tr>
-                          <tr>
-                            <th>Blackout</th>
-                            <td>{selectedUser.blackout}</td>
-                          </tr>
-                          <tr>
-                            <th>Neuro Description</th>
-                            <td>{selectedUser.neuro_description}</td>
-                          </tr>
-                          <tr>
-                            <th>Other Findings</th>
-                            <td>{selectedUser.other_findings}</td>
-                          </tr>
-                          <tr>
-                            <th>Consent</th>
-                            <td>{selectedUser.consent}</td>
-                          </tr>
-                          <tr>
-                            <th>Consent Name</th>
-                            <td>{selectedUser.consent_name}</td>
-                          </tr>
-                          <tr>
-                            <th>Consent Relationship</th>
-                            <td>{selectedUser.consent_relationship}</td>
-                          </tr>
-                          <tr>
-                            <th>Consent Signature</th>
-                            <td>{selectedUser.consent_signature}</td>
-                          </tr>
-                          <tr>
-                            <th>Prepared By</th>
-                            <td>{selectedUser.prepared_by}</td>
-                          </tr>
-                        </>
-                      ) : (
                         <tr>
-                          <td colSpan="2" className="text-center">
-                            No data available
+                          <td colSpan="2" className="fw-semibold p-3">
+                            Name of Patient / मरीज का नाम:
+                          </td>
+                          <td colSpan="2" className="p-3">
+                            <span colSpan="2" className="fw-normal">
+                              {selectedUser.name}
+                            </span>
                           </td>
                         </tr>
-                      )}
-                    </tbody>
-                  </Table>
-                </div>
-              </Card>
+                        <tr>
+                          <td colSpan="2" className="fw-semibold p-3">
+                            Sex / Age / लिंग / उम्र:
+                          </td>
+                          <td colSpan="2" className="p-3">
+                            <span colSpan="2" className="fw-normal">
+                              {selectedUser.age}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colSpan="2" className="fw-semibold p-3">
+                            Dependent To / निर्भरता का प्रकार:
+                          </td>
+                          <td colSpan="2" className="p-3">
+                            <span colSpan="2" className="fw-normal">
+                              {selectedUser.dependent_to}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colSpan="2" className="fw-semibold p-3">
+                            Substance Use Pattern / उपयोग का पैटर्न:
+                          </td>
+                          <td colSpan="2" className="p-3">
+                            <span colSpan="2" className="fw-normal">
+                              {selectedUser.substance_use_pattern}
+                            </span>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colSpan="2" className="fw-semibold p-3">
+                            Last 30 Days Quantity / पिछले 30 दिनों की मात्रा:
+                          </td>
+                          <td colSpan="2" className="p-3">
+                            <span colSpan="2" className="fw-normal">
+                              {selectedUser.last_30_days_quantity}
+                            </span>
+                          </td>
+                        </tr>
+
+                        <br />
+                        <br />
+                        <tr className="table-secondary text-center fw-bold">
+                          <td colSpan="4" className="p-3">
+                            General Physical Examination / सामान्य शारीरिक
+                            परीक्षण
+                          </td>
+                        </tr>
+                        {[
+                          {
+                            label: "Weight / वजन",
+                            value: selectedUser.weight,
+                          },
+                          {
+                            label: "Pulse Rate / पल्स रेट",
+                            value: selectedUser.pulse_rate,
+                          },
+                          {
+                            label: "Blood pressure / रक्तचाप",
+                            value: selectedUser.blood_pressure,
+                          },
+                          {
+                            label: "Temperature / तापमान",
+                            value: selectedUser.temperature,
+                          },
+                          {
+                            label: "Medical History / चिकित्सा इतिहास",
+                            value: selectedUser.medical_history,
+                          },
+                          {
+                            label:
+                              "Blood Transfusion History / रक्त संक्रमण इतिहास",
+                            value: selectedUser.blood_transfusion_history,
+                          },
+                          {
+                            label: "Medical or Blood History Details",
+                            value:
+                              selectedUser.medical_or_blood_history_details,
+                          },
+                        ].map((item, i) => (
+                          <tr key={i}>
+                            <td colSpan="2" className="fw-semibold p-3">
+                              {item.label}
+                            </td>
+                            <td colSpan="2" className="p-3">
+                              {item.value || "—"}
+                            </td>
+                          </tr>
+                        ))}
+
+                        <br />
+                        <br />
+
+                        <tr className="table-secondary text-center fw-bold">
+                          <td colSpan="4" className="p-3">
+                            Complication Details / जटिलता विवरण
+                          </td>
+                        </tr>
+                        {[
+                          {
+                            label: "Ulcers / अल्सर",
+                            value: selectedUser.ulcer,
+                          },
+                          {
+                            label: "Respiratory Problem / श्वसन समस्या",
+                            value: selectedUser.respiratory_problem,
+                          },
+                          {
+                            label: "Jaundice / पीलिया",
+                            value: selectedUser.jaundice,
+                          },
+                          {
+                            label: "Haematemesis / मलैना",
+                            value: selectedUser.haematemesis,
+                          },
+                          {
+                            label: "Abdominal Complaints / पेट की शिकायतें",
+                            value: selectedUser.abdominal_complaints,
+                          },
+                          {
+                            label: "Cardiovascular / हृदय संबंधी",
+                            value: selectedUser.cardiovascular,
+                          },
+                          {
+                            label: "Complication Description",
+                            value: selectedUser.complication_description,
+                          },
+                        ].map((item, i) => (
+                          <tr key={i}>
+                            <td colSpan="2" className="fw-semibold p-3">
+                              {item.label}
+                            </td>
+                            <td colSpan="2" className="p-3">
+                              {item.value || "—"}
+                            </td>
+                          </tr>
+                        ))}
+
+                        <br />
+                        <br />
+
+                        <tr
+                          className="table-secondary text-center fw-bold"
+                          style={{
+                            pageBreakInside: "avoid",
+                            border: "1px solid #ccc",
+                            padding: "10px",
+                          }}
+                        >
+                          <td colSpan="4" className="p-3">
+                            Neurological / न्यूरोलॉजिकल
+                          </td>
+                        </tr>
+                        {[
+                          {
+                            label: "Seizure / फिट्स",
+                            value: selectedUser.seizure,
+                          },
+                          {
+                            label: "Epilepsy / मिर्गी",
+                            value: selectedUser.epilepsy,
+                          },
+                          {
+                            label: "Delirium / भ्रम",
+                            value: selectedUser.delirium,
+                          },
+                          {
+                            label: "Trembling / कांपना",
+                            value: selectedUser.trembling,
+                          },
+                          {
+                            label: "Memory Loss / स्मृति हानि",
+                            value: selectedUser.memory_loss,
+                          },
+                          {
+                            label: "Neuropathy / स्नायु रोग",
+                            value: selectedUser.neuropathy,
+                          },
+                          {
+                            label: "Blackout / बेहोशी",
+                            value: selectedUser.blackout,
+                          },
+                          {
+                            label: "Neuro Description",
+                            value: selectedUser.neuro_description,
+                          },
+                        ].map((item, i) => (
+                          <tr
+                            key={i}
+                            style={{
+                              pageBreakInside: "avoid",
+                              border: "1px solid #ccc",
+                              padding: "10px",
+                            }}
+                          >
+                            <td colSpan="2" className="fw-semibold p-3">
+                              {item.label}
+                            </td>
+                            <td colSpan="2" className="p-3">
+                              {item.value || "—"}
+                            </td>
+                          </tr>
+                        ))}
+
+                        <br />
+                        <br />
+
+                        <tr>
+                          <td colSpan="2" className="fw-semibold p-3">
+                            Nutritional Status / पोषण स्थिति:
+                          </td>
+                          <td colSpan="2" className="p-3">
+                            {selectedUser.nutritional_status}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colSpan="2" className="fw-semibold p-3">
+                            Lymphadenopathy (mention):
+                          </td>
+                          <td colSpan="2" className="p-3">
+                            {selectedUser.lymphadenopathy}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colSpan="2" className="fw-semibold p-3">
+                            Other Findings / अन्य खोज:
+                          </td>
+                          <td colSpan="2" className="p-3">
+                            {selectedUser.other_findings}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colSpan="2" className="fw-semibold p-3">
+                            Consent:
+                          </td>
+                          <td colSpan="2" className="p-3">
+                            {selectedUser.consent}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="fw-semibold p-3">Consent Name:</td>
+                          <td className="p-3">{selectedUser.consent_name}</td>
+                          <td className="fw-semibold p-3">Relationship:</td>
+                          <td className="p-3">
+                            {selectedUser.consent_relationship}
+                          </td>
+                        </tr>
+                        <tr className="table-light fw-bold">
+                          <td colSpan="1" className="fw-semibold p-3">
+                            Prepared by:{" "}
+                          </td>
+                          <td className="p-3" colSpan="3">
+                            {selectedUser.prepared_by}
+                          </td>
+                        </tr>
+                      </>
+                    ) : (
+                      <tr>
+                        <td colSpan="2" className="text-center">
+                          No data available
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </Table>
+              </div>
+              <div style={{ margin: "0 20px 20px 20px" }}>
+                <button
+                  disabled={pfaDownload}
+                  id="download-btn"
+                  className="btn btn-primary"
+                  onClick={handleDownloadPDF}
+                >
+                  {pfaDownload
+                    ? "Your PFA is being downloaded.../ आपका PFA डाउनलोड हो रहा है..."
+                    : "Download Your First Physical Assessment (PFA) / अपना प्रथम शारीरिक मूल्यांकन डाउनलोड करें"}
+                </button>
+              </div>
             </Col>
           </CommonModal>
 
@@ -1894,22 +2035,22 @@ function PFA() {
                           {
                             id: "7",
                             question: Weight,
-                            name: "Weight",
+                            name: "weight",
                           },
                           {
                             id: "8",
                             question: PulseRate,
-                            name: "PulseRate",
+                            name: "pulse_rate",
                           },
                           {
                             id: "9",
                             question: Bloodpressure,
-                            name: "Bloodpressure",
+                            name: "blood_pressure",
                           },
                           {
                             id: "10",
                             question: Temperature,
-                            name: "Temperature",
+                            name: "temperature",
                           },
                         ].map(({ id, question, name }) => (
                           <tr key={id}>
@@ -1917,15 +2058,25 @@ function PFA() {
                             <td>{question}</td>
                             <td>
                               <Input
-                                type="text"
+                                type={
+                                  [
+                                    "weight",
+                                    "pulse_rate",
+                                    "temperature",
+                                  ].includes(name)
+                                    ? "number"
+                                    : "text"
+                                }
                                 name={name}
                                 value={PFAeditData[name] || ""}
-                                onChange={(e) =>
-                                  setPFAeditData({
-                                    ...PFAeditData,
-                                    [name]: e.target.value,
-                                  })
-                                }
+                                onChange={(e) => {
+                                  const { name, value, type } = e.target;
+                                  setPFAeditData((prev) => ({
+                                    ...prev,
+                                    [name]:
+                                      type === "number" ? Number(value) : value,
+                                  }));
+                                }}
                               />
                             </td>
                           </tr>
@@ -2146,6 +2297,52 @@ function PFA() {
                         }
                       />
                     </FormGroup>
+                  </div>
+
+                  {/* Lymphadenopathy */}
+                  <div className="col-md-12">
+                    <FormGroup className="mb-0">
+                      <Label>{Lymphadenopathy}</Label>
+                      <Input
+                        type="textarea"
+                        rows="3"
+                        name="lymphadenopathy"
+                        value={PFAeditData.lymphadenopathy}
+                        onChange={(e) =>
+                          setPFAeditData({
+                            ...PFAeditData,
+                            lymphadenopathy: e.target.value,
+                          })
+                        }
+                      />
+                    </FormGroup>
+                  </div>
+
+                  {/* Nutritional Status / नुट्रिशन स्तिथि */}
+                  <div className="col-md-6">
+                    <Label>Nutritional Status / नुट्रिशन स्तिथि</Label>
+                    <div className="radio radio-primary d-flex gap-3">
+                      {["Good", "Average", "Poor"].map((Nstatus) => (
+                        <div key={Nstatus}>
+                          <Input
+                            type="radio"
+                            id={`nutritionalStatus-${Nstatus}`}
+                            name="nutritional_status"
+                            value={Nstatus}
+                            checked={PFAeditData.nutritional_status === Nstatus}
+                            onChange={(e) =>
+                              setPFAeditData({
+                                ...PFAeditData,
+                                nutritional_status: e.target.value,
+                              })
+                            }
+                          />
+                          <Label htmlFor={`nutritionalStatus-${Nstatus}`}>
+                            {Nstatus}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Consent Section */}
