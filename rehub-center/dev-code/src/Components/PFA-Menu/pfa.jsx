@@ -170,70 +170,76 @@ function PFA() {
   const [data, setData] = useState([]);
   // const [selectedRows, setSelectedRows] = useState([]);
   const [stillLoading, setstillLoading] = useState(true);
-  useEffect(() => {
-    const token = localStorage.getItem("Authorization");
+ useEffect(() => {
+  const token = localStorage.getItem("Authorization");
 
-    fetch("https://gks-yjdc.onrender.com/api/users", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `${token}`,
-      },
+  fetch("https://gks-yjdc.onrender.com/api/users", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    },
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to fetch users");
+      return response.json();
     })
-      .then((response) => {
-        if (!response.ok) throw new Error("Failed to fetch users");
-        return response.json();
-      })
-      .then(async (users) => {
-        const formatted = await Promise.all(
-          users.map(async (user) => {
-            try {
-              const res = await fetch(
-                `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${user.user_id}`,
-                {
-                  headers: { Authorization: `${token}` },
-                }
-              );
+    .then(async (users) => {
+      const formatted = await Promise.all(
+        users.map(async (user) => {
+          try {
+            const res = await fetch(
+              `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${user.user_id}`,
+              {
+                headers: { Authorization: `${token}` },
+              }
+            );
 
-              const data = await res.json();
-              const activeAssessments = (data.assessments || []).filter(
-                (a) => a.isActive !== 0
-              );
+            const data = await res.json();
 
-              const latest = activeAssessments.sort(
-                (a, b) => new Date(b.created_at) - new Date(a.created_at)
-              )[0];
+            const activeAssessments = (data.assessments || []).filter(
+              (a) => a.isActive !== 0
+            );
 
-              const userStatus =
-                latest?.status === "Completed" ? "Completed" : "Pending";
+            const latest = activeAssessments.sort(
+              (a, b) => new Date(b.created_at) - new Date(a.created_at)
+            )[0];
 
-              return {
-                id: user.user_id,
-                name: user.name,
-                status: userStatus,
-              };
-            } catch (err) {
-              console.error(`Error for user ${user.user_id}:`, err);
-              return {
-                id: user.user_id,
-                name: user.name,
-                status: "Unknown",
-              };
-            }
-          })
-        );
+            const userStatus =
+              latest?.status === "Completed" ? "Completed" : "Pending";
 
-        setTimeout(() => {
-          setData(formatted);
-          setFilteredData(formatted);
-          setstillLoading(false);
-        }, 3000);
-      })
-      .catch((error) => {
-        console.error("Error fetching user data:", error);
-        setstillLoading(true);
-      });
-  }, []);
+            const entry_gks_id = data.entry_gks_id || "N/A";
+
+            return {
+              id: user.user_id,
+              gks_id: entry_gks_id,
+              name: user.name,
+              status: userStatus,
+            };
+          } catch (err) {
+            console.error(`Error for user ${user.user_id}:`, err);
+            return {
+              id: user.user_id,
+              gks_id: "Unknown",
+              name: user.name,
+              status: "Unknown",
+            };
+          }
+        })
+      );
+
+      setTimeout(() => {
+        setData(formatted);
+        setFilteredData(formatted);
+        setstillLoading(false);
+      }, 3000);
+    })
+    .catch((error) => {
+      console.error("Error fetching user data:", error);
+      setstillLoading(true);
+    });
+}, []);
+
 
   //PFA view
   const [viewModal, setViewModal] = useState(false);
@@ -247,7 +253,13 @@ function PFA() {
   //status track for action button of PFA
 
   const tableColumns = [
-    { name: "ID", selector: (row) => row.id, sortable: true, center: true },
+    { name: "User ID", selector: (row) => row.id, sortable: true, center: true },
+    // {
+    //       name: "GKS ID",
+    //       selector: (row) => row.gks_id,
+    //       sortable: true,
+    //       center: true,
+    //     },
     {
       name: "Name",
       selector: (row) => row.name,
