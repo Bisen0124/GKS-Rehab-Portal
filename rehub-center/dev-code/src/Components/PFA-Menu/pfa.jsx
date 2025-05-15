@@ -168,12 +168,12 @@ function PFA() {
 
   //Registered Patient data
   const [data, setData] = useState([]);
-  // const [selectedRows, setSelectedRows] = useState([]);
+  const [selectedRows, setSelectedRows] = useState([]);
   const [stillLoading, setstillLoading] = useState(true);
- useEffect(() => {
+useEffect(() => {
   const token = localStorage.getItem("Authorization");
 
-  fetch("https://gks-yjdc.onrender.com/api/users", {
+  fetch("https://gks-yjdc.onrender.com/api/pfa/active-users-pfa-details", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -181,52 +181,23 @@ function PFA() {
     },
   })
     .then((response) => {
-      if (!response.ok) throw new Error("Failed to fetch users");
+      if (!response.ok) throw new Error("Failed to fetch PFA user details");
       return response.json();
     })
-    .then(async (users) => {
-      const formatted = await Promise.all(
-        users.map(async (user) => {
-          try {
-            const res = await fetch(
-              `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${user.user_id}`,
-              {
-                headers: { Authorization: `${token}` },
-              }
-            );
+    .then((res) => {
+      const users = res.userDetails || [];
 
-            const data = await res.json();
+      const formatted = users.map((user) => {
+        const userStatus =
+          user.latest_pfa_status === "Completed" ? "Completed" : "Pending";
 
-            const activeAssessments = (data.assessments || []).filter(
-              (a) => a.isActive !== 0
-            );
-
-            const latest = activeAssessments.sort(
-              (a, b) => new Date(b.created_at) - new Date(a.created_at)
-            )[0];
-
-            const userStatus =
-              latest?.status === "Completed" ? "Completed" : "Pending";
-
-            const entry_gks_id = data.entry_gks_id || "N/A";
-
-            return {
-              id: user.user_id,
-              gks_id: entry_gks_id,
-              name: user.name,
-              status: userStatus,
-            };
-          } catch (err) {
-            console.error(`Error for user ${user.user_id}:`, err);
-            return {
-              id: user.user_id,
-              gks_id: "Unknown",
-              name: user.name,
-              status: "Unknown",
-            };
-          }
-        })
-      );
+        return {
+          id: user.user_id,
+          gks_id: user.gks_id || "N/A",
+          name: user.name,
+          status: userStatus,
+        };
+      });
 
       setTimeout(() => {
         setData(formatted);
@@ -235,10 +206,11 @@ function PFA() {
       }, 3000);
     })
     .catch((error) => {
-      console.error("Error fetching user data:", error);
+      console.error("Error fetching PFA user data:", error);
       setstillLoading(true);
     });
 }, []);
+
 
 
   //PFA view
@@ -253,51 +225,45 @@ function PFA() {
   //status track for action button of PFA
 
   const tableColumns = [
-    { name: "User ID", selector: (row) => row.id, sortable: true, center: true },
-    // {
-    //       name: "GKS ID",
-    //       selector: (row) => row.gks_id,
-    //       sortable: true,
-    //       center: true,
-    //     },
-    {
-      name: "Name",
-      selector: (row) => row.name,
-      sortable: true,
-      cell: (row) => (
+  { name: "User ID", selector: (row) => row.id, sortable: true, center: true },
+  { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
+  {
+    name: "Name",
+    selector: (row) => row.name,
+    sortable: true,
+    cell: (row) => (
+      <span
+        style={{
+          color: row.disabled ? "#999" : "#000",
+          fontStyle: row.disabled ? "italic" : "normal",
+        }}
+      >
+        {row.name} {row.disabled && "(disabled)"}
+      </span>
+    ),
+  },
+  {
+    name: "Status",
+    selector: (row) => row.status,
+    sortable: true,
+    cell: (row) => (
+      <span style={{ color: row.disabled ? "#999" : "#000" }}>
+        {row.status}
+      </span>
+    ),
+  },
+{
+  name: "Action",
+  center: true,
+  cell: (row) => (
+    <div className="d-flex gap-2">
+      {row.status === "Pending" ? (
         <span
-          style={{
-            color: row.disabled ? "#999" : "#000",
-            fontStyle: row.disabled ? "italic" : "normal",
-          }}
+          onClick={() => toggle(row.id)}
+          style={{ cursor: "pointer" }}
+          title="Create PFA"
         >
-          {row.name} {row.disabled && "(disabled)"}
-        </span>
-      ),
-    },
-    {
-      name: "Status",
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
-        </span>
-      ),
-    },
-    {
-      name: "Action",
-      center: true,
-      cell: (row) => (
-        <div className="d-flex gap-2">
-          {row.status === "Pending" ? (
-            // Show only Create icon for Pending
-            <span
-              onClick={() => toggle(row.id)}
-              style={{ cursor: "pointer" }}
-              title="Create PFA"
-            >
-              <svg
+          <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
                 height="24"
@@ -312,86 +278,86 @@ function PFA() {
                 <line x1="12" y1="8" x2="12" y2="16"></line>
                 <line x1="8" y1="12" x2="16" y2="12"></line>
               </svg>
-            </span>
-          ) : (
-            // Show View, Edit, Delete for Completed
-            <>
-              <span
-                onClick={() => viewPFAToggle(row.id)}
-                style={{ cursor: "pointer" }}
-                title="View"
-              >
-                <svg
-                  style={{ color: "#d56337" }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="feather feather-eye"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </span>
+        </span>
+      ) : (
+        <>
+          <span
+            onClick={() => viewPFAToggle(row.id)}
+            style={{ cursor: "pointer" }}
+            title="View"
+          >
+            <svg
+              style={{ color: "#d56337" }}
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="feather feather-eye"
+            >
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </span>
+          <span
+            onClick={() => handleFAEdit(row.id)}
+            style={{ cursor: "pointer", marginLeft: "10px" }}
+            title="Edit"
+          >
+          <svg
+              style={{ color: "green" }}
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="feather feather-edit"
+            >
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </span>
+          <span
+            onClick={() => handlePFADelete(row.id)}
+            style={{ cursor: "pointer", marginLeft: "10px" }}
+            title="Delete"
+          >
+            <svg
+              style={{ color: "red" }}
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="feather feather-trash-2"
+            >
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </span>
+          
+        </>
+      )}
+    </div>
+  ),
+},
 
-              <span
-                onClick={() => handleFAEdit(row.id)}
-                style={{ cursor: "pointer", marginLeft: "10px" }}
-                title="Edit"
-              >
-                <svg
-                  style={{ color: "green" }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="feather feather-edit"
-                >
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-              </span>
+];
 
-              <span
-                onClick={() => handlePFADelete(row.id)}
-                style={{ cursor: "pointer", marginLeft: "10px" }}
-                title="Delete"
-              >
-                <svg
-                  style={{ color: "red" }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="feather feather-trash-2"
-                >
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  <line x1="10" y1="11" x2="10" y2="17"></line>
-                  <line x1="14" y1="11" x2="14" y2="17"></line>
-                </svg>
-              </span>
-            </>
-          )}
-        </div>
-      ),
-    },
-  ];
 
   //view pfa handler
   //fetch the latest assessment based on created_at, then simply sort the assessments and pick the first one:
@@ -667,9 +633,22 @@ function PFA() {
           icon: "error",
           title: "Submission Failed",
           text: result.message || "Server error",
-        });
+        }).then(() => {
+  // This runs after the user clicks "OK"
+  setModal(false);
+});
         return;
       }
+      // ✅ Success Case
+  setIsLoading(false);
+  Swal.fire({
+    icon: "success",
+    title: "PFA Created Successfully",
+    text: "The PFA assessment was submitted successfully.",
+  }).then(() => {
+  // This runs after the user clicks "OK"
+  setModal(false);
+});
     } catch (error) {
       setIsLoading(false);
       Swal.fire({

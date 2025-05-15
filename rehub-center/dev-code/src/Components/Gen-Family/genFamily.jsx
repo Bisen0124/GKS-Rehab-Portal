@@ -568,76 +568,82 @@ function GenFamily() {
   //Fetch register user data ino datatable by user API & display Updated status completed or pending from create-gen-family API start
   const [data, setData] = useState([]);
   // const [selectedRows, setSelectedRows] = useState([]);
-  useEffect(() => {
-    const token = localStorage.getItem("Authorization"); // Assuming you stored token like this during login
+    const [loading, setLoading] = useState(true);
+useEffect(() => {
+  const token = localStorage.getItem("Authorization");
 
-    fetch("https://gks-yjdc.onrender.com/api/users", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `${token}`,
-      },
+  fetch("https://gks-yjdc.onrender.com/api/users", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    },
+  })
+    .then((response) => {
+      if (!response.ok) throw new Error("Failed to fetch users");
+      return response.json();
     })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch users");
-        }
-        return response.json();
-      })
-      .then(async (resData) => {
-        const formatted = await Promise.all(
-          resData.map(async (user) => {
-            // Fetch individual user's assessment status
-            try {
-              const res = await fetch(
-                `https://gks-yjdc.onrender.com/api/gen-family/gen-family-details/${user.user_id}`,
-                {
-                  headers: {
-                    Authorization: `${token}`,
-                  },
-                }
-              );
-              const data = await res.json();
-              const activeAssessments = (data.assessments || []).filter(
-                (a) => a.isActive !== 0
-              );
+    .then(async (resData) => {
+      const formatted = await Promise.all(
+        resData.map(async (user) => {
+          try {
+            const res = await fetch(
+              `https://gks-yjdc.onrender.com/api/gen-family/gen-family-details/${user.user_id}`,
+              {
+                headers: {
+                  Authorization: `${token}`,
+                },
+              }
+            );
+            const data = await res.json();
 
-              const latest = activeAssessments.sort(
-                (a, b) => new Date(b.created_at) - new Date(a.created_at)
-              )[0];
-
-              const userStatus =
-                latest?.status === "Completed" ? "Completed" : "Pending";
-
-              return {
-                id: user.user_id,
-                name: user.name,
-                status: userStatus,
-              };
-            } catch (err) {
-              console.error(
-                `Failed to fetch status for user ${user.user_id}`,
-                err
+            // Sort entries by latest updated_at (or created_at as fallback)
+            const sortedByLatest = [...data].sort((a, b) => {
+              return (
+                new Date(b.updated_at || b.created_at) -
+                new Date(a.updated_at || a.created_at)
               );
-              return {
-                id: user.user_id,
-                name: user.name,
-                status: "Unknown", // fallback if something fails
-              };
-            }
-          })
-        );
-        setTimeout(() => {
-          setData(formatted);
-          setFilteredData(formatted);
-          setstillLoading(false);
-        }, 3000);
-      })
-      .catch((error) => {
-        console.error("Error fetching user data:", error);
-        setstillLoading(true);
-      });
-  }, []);
+            });
+
+            const latestEntry = sortedByLatest[0]; // the latest entry by timestamp
+            const userStatus =
+              latestEntry?.status === "Completed" ? "Completed" : "Pending";
+
+            // ✅ Logging details
+            console.log("User:", user.name);
+            console.log("Latest Entry ID:", latestEntry?.entry_id);
+            console.log("Status:", userStatus);
+
+            return {
+              id: user.user_id,
+              name: user.name,
+              email: user.email,
+              latestEntry,
+              status: userStatus,
+            };
+          } catch (err) {
+            console.error(`Error fetching for user ${user.user_id}`, err);
+            return {
+              id: user.user_id,
+              name: user.name,
+              status: "Unknown",
+              latestEntry: null,
+            };
+          }
+        })
+      );
+
+      setTimeout(() => {
+        setData(formatted);
+        setFilteredData(formatted);
+        setstillLoading(false);
+      }, 3000);
+    })
+    .catch((error) => {
+      console.error("Error fetching user data:", error);
+      setstillLoading(true);
+    });
+}, []);
 
   //Fetch register user data ino datatable by user API & display Updated status completed or pending from create-gen-family API end
 
