@@ -191,11 +191,16 @@ useEffect(() => {
         const userStatus =
           user.latest_pfa_status === "Completed" ? "Completed" : "Pending";
 
+          //Getting discharge status
+          const dischargeStatus = user.discharge_status_text || "Unknown";
+
         return {
           id: user.user_id,
           gks_id: user.gks_id || "N/A",
           name: user.name,
           status: userStatus,
+          dischargeStatus: user.discharge_status, // This is needed for action logic
+    dischargeStatusText: dischargeStatus,   // Optional: if you want to show this in table
         };
       });
 
@@ -258,11 +263,17 @@ useEffect(() => {
   cell: (row) => (
     <div className="d-flex gap-2">
       {row.status === "Pending" ? (
-        <span
-          onClick={() => toggle(row.id)}
-          style={{ cursor: "pointer" }}
-          title="Create PFA"
-        >
+      <span
+    onClick={() => {
+  if (row.dischargeStatus === 0) {
+    toggle(row.id); // Create new PFA
+  } else {
+    handleFAEdit(row.id); // Edit existing PFA
+  }
+}}
+title={row.dischargeStatus === 0 ? "Create PFA" : "Edit PFA"}
+
+  >
           <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -429,7 +440,7 @@ useEffect(() => {
 
     // Make sure this is set correctly
     setPFAeditData({
-      patientId: selectedRow.patient_id, // or selectedRow.patientId if that’s what you named it
+      pfa_id: selectedRow.pfa_id, // or selectedRow.pfa_id if that’s what you named it
       name: selectedRow.name,
       // include other fields if needed
     });
@@ -683,7 +694,7 @@ useEffect(() => {
     if (!confirm.isConfirmed) return;
 
     try {
-      // First, get patientId using userId
+      // First, get pfa_id using userId
       const getResponse = await fetch(
         `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${userId}`,
         {
@@ -703,12 +714,12 @@ useEffect(() => {
         return;
       }
 
-      const patientId = data.assessment.patient_id;
-      console.log("Fetched patientId:", patientId);
+      const pfa_id = data.assessment.patient_id;
+      console.log("Fetched pfa_id:", pfa_id);
 
-      // Now delete using patientId
+      // Now delete using pfa_id
       const delResponse = await fetch(
-        `https://gks-yjdc.onrender.com/api/pfa/delete-assessment/${patientId}`,
+        `https://gks-yjdc.onrender.com/api/pfa/delete-assessment/${pfa_id}`,
         {
           method: "DELETE",
           headers: {
@@ -797,7 +808,7 @@ useEffect(() => {
       console.log("Selected User Assessment:", latestAssessment);
 
       setPFAeditData({
-        patientId: latestAssessment.patient_id,
+        pfa_id: latestAssessment.pfa_id,
         dependent_to: latestAssessment.dependent_to,
         substance_use_pattern: latestAssessment.substance_use_pattern,
         last_30_days_quantity: latestAssessment.last_30_days_quantity,
@@ -901,7 +912,7 @@ useEffect(() => {
 
     try {
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/pfa/update-assessment/${PFAeditData.patientId}`,
+        `https://gks-yjdc.onrender.com/api/pfa/update-assessment/${PFAeditData.pfa_id}`,
         {
           method: "PUT",
           headers: {
