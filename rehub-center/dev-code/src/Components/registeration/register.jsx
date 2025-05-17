@@ -574,57 +574,54 @@ function Register() {
 
   // ✅ Step 1: Move this into a reusable function
   const [stillLoading, setstillLoading] = useState(true);
-  const fetchUsers = () => {
-    fetch("https://gks-yjdc.onrender.com/api/users", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `${token}`,
-      },
+ const fetchUsers = () => {
+  fetch("https://gks-yjdc.onrender.com/api/users", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Unauthorized or failed to fetch");
+      }
+      return response.json();
     })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Unauthorized or failed to fetch");
-        }
-        return response.json();
-      })
-      .then((resData) => {
-        const formatted = resData.map((user) => ({
-          id: user.user_id,
-          name: user.name,
-          relative_name: user.relative_name,
-          email: user.email,
-          gender: user.gender,
-          address: user.address,
-          dob: new Date(user.dob).toLocaleDateString(),
-          phone: user.phone,
-          whatsapp: user.whatsapp_no,
-          status: user.isActive === 1 ? "Active" : "Inactive",
-          role:
-            user.isRole === 1
-              ? "Admin"
-              : user.isRole === 2
-              ? "Subadmin"
-              : "User",
-          created_at: new Date(user.created_at).toLocaleString(),
-          gks_id: user.gks_id,
-          //discharge status
-          discharge_status: user.discharge_status, // ✅ Add this line
-          // discharge_status: 1, // ✅ Add this line
-        }));
+    .then((resData) => {
+      const formatted = resData.users.map((user) => ({
+        id: user.user_id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        gks_id: user.gks_id,
+        discharge_status: user.discharge_status,
+        discharge_status_text: user.discharge_status_text,
+        is_readmission: user.is_readmission,
+        recent_admit_date: user.recent_admit_date
+          ? new Date(user.recent_admit_date).toLocaleDateString()
+          : "N/A",
+        recent_pfa_date: user.recent_pfa_date
+          ? new Date(user.recent_pfa_date).toLocaleDateString()
+          : "N/A",
+        recent_gen_fam_date: user.recent_gen_fam_date
+          ? new Date(user.recent_gen_fam_date).toLocaleDateString()
+          : "N/A",
+      }));
 
-        setTimeout(() => {
-          setData(formatted);
-          setFilteredData(formatted);
-          setstillLoading(false);
-        }, 3000);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        toast.error("Error fetching user data");
-        setstillLoading(true);
-      });
-  };
+      setTimeout(() => {
+        setData(formatted);
+        setFilteredData(formatted);
+        setstillLoading(false);
+      }, 1000); // You can reduce the delay to 1s if 3s is too much
+    })
+    .catch((error) => {
+      console.error("Error fetching data:", error);
+      toast.error("Error fetching user data");
+      setstillLoading(true);
+    });
+};
+
 
   // ✅ Step 2: Run this once when component mounts
   useEffect(() => {
@@ -782,8 +779,110 @@ function Register() {
     },
   ];
 
+  //Get All IPD Entries for Users:-
+   const [filteredIPDData, setFilteredIPDData] = useState([]);
+  const fetchIPDEntries = () => {
+  fetch("https://gks-yjdc.onrender.com/api/ipd/active-ipd-entries", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Unauthorized or failed to fetch");
+      }
+      return response.json();
+    })
+    .then((entriesData) => {
+      const filteredIPDData = entriesData.entries.map((entries) => ({
+        id: entries.user_id,
+        gks_id: entries.gks_id,
+        name: entries.name,
+        email: entries.email,
+        phone: entries.phone,
+        wardName: entries.ward_name,
+        dischargeDate: entries.discharge_date
+          ? new Date(entries.discharge_date).toLocaleDateString()
+          : "Not Discharge yet",
+      }));
+
+      setTimeout(() => {
+        // setData(formatted);
+        setFilteredIPDData(filteredIPDData);
+        setstillLoading(false);
+      }, 1000); // You can reduce the delay to 1s if 3s is too much
+    })
+    .catch((error) => {
+      console.error("Error fetching data:", error);
+      toast.error("Error fetching user data");
+      setstillLoading(true);
+    });
+};
+
+
+  // ✅ Step 2: Run this once when component mounts
+  useEffect(() => {
+    fetchIPDEntries();
+  }, []);
+
+  // ✅ Define table columns
+  const tableIPDColumns = [
+    {
+      name: "User ID",
+      selector: (row) => row.id,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: "GKS ID",
+      selector: (row) => row.gks_id,
+      sortable: true,
+      center: true,
+    },
+    { name: "Name", selector: (row) => row.name, sortable: true, center: true },
+    { name: "Phone", selector: (row) => row.phone,  sortable: true, center: true },
+    { name: "Email", selector: (row) => row.email,  sortable: true, center: true },
+    { name: "Ward Name", selector: (row) => row.wardName,  sortable: true, center: true },
+    { name: "Discharge Date", selector: (row) => row.dischargeDate,  sortable: true, center: true },
+    {
+      name: "Action",
+      center: true,
+      cell: (row) => (
+        <div className="d-flex gap-2">
+          {/* View icon */}
+          <span
+            onClick={() => userViewToggle(row.id)}
+            style={{ cursor: "pointer" }}
+            title="View"
+          >
+            <svg
+              style={{ color: "#d56337" }}
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="feather feather-eye"
+            >
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </span>
+
+          
+        </div>
+      ),
+    },
+  ];
+
   //User data search filter function
-  const handleSearchChange = (e) => {
+  const handleLatestSearchChange = (e) => {
   const value = e.target.value.toLowerCase();
   setSearchText(value);
 
@@ -798,6 +897,25 @@ function Register() {
   });
 
   setFilteredData(filtered);
+};
+
+  const handleIPDSearchChange = (e) => {
+  const value = e.target.value.toLowerCase();
+  setSearchText(value);
+
+  const IPDfiltered = data.filter((item) => {
+    return (
+      item.name?.toLowerCase().includes(value) ||
+      item.email?.toLowerCase().includes(value) ||
+      item.phone?.toString().includes(value) ||
+      item.userID?.toString().includes(value) ||
+      item.GKSID?.toLowerCase().includes(value) || // Only if gks_id is a string 
+      item.wardName?.toLowerCase().includes(value) || 
+      item.dischargeDate?.toLowerCase().includes(value)
+    );
+  });
+
+  setFilteredIPDData(IPDfiltered);
 };
 
 
@@ -842,7 +960,7 @@ function Register() {
                         type="text"
                         placeholder="Search......."
                         value={searchText}
-                        onChange={handleSearchChange}
+                        onChange={handleLatestSearchChange}
                       />
                       <span className="input-group-text">
                         <i className="fa fa-search"></i>
@@ -871,6 +989,55 @@ function Register() {
         </Row>
       </Container>
 
+      {/* Get All IPD Datils In Table View */}
+<Container fluid={true} className="datatables">
+        <Row>
+          <Col sm="12">
+            <Card>
+              <CardBody>
+                <div class="d-flex pb-2 justify-content-between">
+                  <HeaderCard
+                    title="All Registered Patient List"
+                    className="p-0"
+                    qweq
+                  />
+                </div>
+                <div className="row pb-2">
+                  <div className="col-md-4">
+                    <InputGroup>
+                      <Input
+                        className="form-control"
+                        type="text"
+                        placeholder="Search......."
+                        value={searchText}
+                        onChange={handleIPDSearchChange}
+                      />
+                      <span className="input-group-text">
+                        <i className="fa fa-search"></i>
+                      </span>
+                    </InputGroup>
+                  </div>
+                </div>
+                {stillLoading ? (
+                  <div className="loading-text">
+                    Data is fetching from server. Please wait...
+                  </div>
+                ) : (
+                  <DataTable
+                    data={filteredIPDData}
+                    columns={tableIPDColumns}
+                    striped
+                    center
+                    highlightOnHover
+                    pagination
+                    persistTableHead
+                  />
+                )}
+              </CardBody>
+            </Card>
+          </Col>
+        </Row>
+      </Container>
       <CommonModal
         isOpen={modal}
         title={patientRegisterTitle}

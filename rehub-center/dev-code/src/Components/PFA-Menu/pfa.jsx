@@ -173,7 +173,7 @@ function PFA() {
 useEffect(() => {
   const token = localStorage.getItem("Authorization");
 
-  fetch("https://gks-yjdc.onrender.com/api/pfa/active-users-pfa-details", {
+  fetch("https://gks-yjdc.onrender.com/api/users", {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -185,22 +185,31 @@ useEffect(() => {
       return response.json();
     })
     .then((res) => {
-      const users = res.userDetails || [];
+      const users = res.users || [];
 
       const formatted = users.map((user) => {
-        const userStatus =
-          user.latest_pfa_status === "Completed" ? "Completed" : "Pending";
+        const admitDate = user.recent_admit_date
+          ? new Date(user.recent_admit_date)
+          : null;
+        const pfaDate = user.recent_pfa_date
+          ? new Date(user.recent_pfa_date)
+          : null;
 
-          //Getting discharge status
-          const dischargeStatus = user.discharge_status_text || "Unknown";
+        let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
+        if (admitDate && pfaDate && admitDate > pfaDate) {
+          userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+        }
+
+        const dischargeStatus = user.discharge_status_text || "Unknown";
 
         return {
           id: user.user_id,
           gks_id: user.gks_id || "N/A",
           name: user.name,
           status: userStatus,
-          dischargeStatus: user.discharge_status, // This is needed for action logic
-    dischargeStatusText: dischargeStatus,   // Optional: if you want to show this in table
+          dischargeStatus: user.discharge_status,
+          dischargeStatusText: dischargeStatus,
+          isReadmission: user.is_readmission,
         };
       });
 
@@ -208,13 +217,14 @@ useEffect(() => {
         setData(formatted);
         setFilteredData(formatted);
         setstillLoading(false);
-      }, 3000);
+      }, 1000); // You can reduce this to 1s
     })
     .catch((error) => {
       console.error("Error fetching PFA user data:", error);
       setstillLoading(true);
     });
 }, []);
+
 
 
 
@@ -257,115 +267,162 @@ useEffect(() => {
       </span>
     ),
   },
+  //Old code
+// {
+//   name: "Action",
+//   center: true,
+//   cell: (row) => (
+//     <div className="d-flex gap-2">
+//       <span
+//             onClick={() => toggle(row.id)}
+//             style={{ cursor: "pointer" }}
+//             title="View"
+//           >
+//           <svg
+//                 xmlns="http://www.w3.org/2000/svg"
+//                 width="24"
+//                 height="24"
+//                 viewBox="0 0 24 24"
+//                 fill="none"
+//                 stroke="currentColor"
+//                 stroke-width="2"
+//                 stroke-linecap="round"
+//                 stroke-linejoin="round"
+//               >
+//                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+//                 <line x1="12" y1="8" x2="12" y2="16"></line>
+//                 <line x1="8" y1="12" x2="16" y2="12"></line>
+//               </svg>
+//         </span>
+//         <>
+//           {/* <span
+//             onClick={() => viewPFAToggle(row.id)}
+//             style={{ cursor: "pointer" }}
+//             title="View"
+//           >
+//             <svg
+//               style={{ color: "#d56337" }}
+//               xmlns="http://www.w3.org/2000/svg"
+//               width="20"
+//               height="20"
+//               viewBox="0 0 24 24"
+//               fill="none"
+//               stroke="currentColor"
+//               strokeWidth="2"
+//               strokeLinecap="round"
+//               strokeLinejoin="round"
+//               className="feather feather-eye"
+//             >
+//               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+//               <circle cx="12" cy="12" r="3"></circle>
+//             </svg>
+//           </span>
+//           <span
+//             onClick={() => handleFAEdit(row.id)}
+//             style={{ cursor: "pointer", marginLeft: "10px" }}
+//             title="Edit"
+//           >
+//           <svg
+//               style={{ color: "green" }}
+//               xmlns="http://www.w3.org/2000/svg"
+//               width="20"
+//               height="20"
+//               viewBox="0 0 24 24"
+//               fill="none"
+//               stroke="currentColor"
+//               strokeWidth="2"
+//               strokeLinecap="round"
+//               strokeLinejoin="round"
+//               className="feather feather-edit"
+//             >
+//               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+//               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+//             </svg>
+//           </span>
+//           <span
+//             onClick={() => handlePFADelete(row.id)}
+//             style={{ cursor: "pointer", marginLeft: "10px" }}
+//             title="Delete"
+//           >
+//             <svg
+//               style={{ color: "red" }}
+//               xmlns="http://www.w3.org/2000/svg"
+//               width="20"
+//               height="20"
+//               viewBox="0 0 24 24"
+//               fill="none"
+//               stroke="currentColor"
+//               strokeWidth="2"
+//               strokeLinecap="round"
+//               strokeLinejoin="round"
+//               className="feather feather-trash-2"
+//             >
+//               <polyline points="3 6 5 6 21 6"></polyline>
+//               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+//               <line x1="10" y1="11" x2="10" y2="17"></line>
+//               <line x1="14" y1="11" x2="14" y2="17"></line>
+//             </svg>
+//           </span> */}
+          
+//         </>
+      
+//     </div>
+//   ),
+// },
+
+//Updated code
 {
   name: "Action",
   center: true,
-  cell: (row) => (
-    <div className="d-flex gap-2">
-      {row.status === "Pending" ? (
-      <span
-    onClick={() => {
-  if (row.dischargeStatus === 0) {
-    toggle(row.id); // Create new PFA
-  } else {
-    handleFAEdit(row.id); // Edit existing PFA
-  }
-}}
-title={row.dischargeStatus === 0 ? "Create PFA" : "Edit PFA"}
+  cell: (row) => {
+    // Hide all actions if discharged
+    if (row.dischargeStatus === 1) {
+      return null;
+    }
 
-  >
-          <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="12" y1="8" x2="12" y2="16"></line>
-                <line x1="8" y1="12" x2="16" y2="12"></line>
-              </svg>
-        </span>
-      ) : (
-        <>
-          <span
-            onClick={() => viewPFAToggle(row.id)}
-            style={{ cursor: "pointer" }}
-            title="View"
-          >
-            <svg
-              style={{ color: "#d56337" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-eye"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </span>
+    return (
+      <div className="d-flex gap-2">
+        {/* Show Edit only if not discharged and readmission */}
+        {row.dischargeStatus === 0 && row.isReadmission === 1 && (
           <span
             onClick={() => handleFAEdit(row.id)}
-            style={{ cursor: "pointer", marginLeft: "10px" }}
+            style={{ cursor: "pointer" }}
             title="Edit"
           >
-          <svg
-              style={{ color: "green" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-edit"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
+            ✏️
           </span>
+        )}
+
+        {/* Show Create PFA if not discharged and not readmission */}
+        {row.dischargeStatus === 0 && row.isReadmission === 0 && (
           <span
-            onClick={() => handlePFADelete(row.id)}
-            style={{ cursor: "pointer", marginLeft: "10px" }}
-            title="Delete"
+            onClick={() => toggle(row.id)}
+            style={{ cursor: "pointer" }}
+            title="Create PFA"
           >
             <svg
-              style={{ color: "red" }}
               xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
+              width="24"
+              height="24"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="feather feather-trash-2"
             >
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              <line x1="10" y1="11" x2="10" y2="17"></line>
-              <line x1="14" y1="11" x2="14" y2="17"></line>
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
           </span>
-          
-        </>
-      )}
-    </div>
-  ),
-},
+        )}
+      </div>
+    );
+  },
+}
+
+
 
 ];
 
