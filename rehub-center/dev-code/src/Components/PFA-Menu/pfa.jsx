@@ -210,6 +210,7 @@ useEffect(() => {
           dischargeStatus: user.discharge_status,
           dischargeStatusText: dischargeStatus,
           isReadmission: user.is_readmission,
+          recent_pfa_id: user.recent_pfa_id,
         };
       });
 
@@ -385,9 +386,9 @@ useEffect(() => {
         {/* Show Edit only if not discharged and readmission */}
         {row.dischargeStatus === 0 && row.isReadmission === 1 && (
           <span
-            onClick={() => handleFAEdit(row.id)}
+            onClick={() => handleFAEdit(row.recent_pfa_id)}
             style={{ cursor: "pointer" }}
-            title="Edit"
+            title="Readmission PFA"
           >
             ✏️
           </span>
@@ -819,110 +820,123 @@ useEffect(() => {
   //PFA edit handler
   const [PFAeditData, setPFAeditData] = useState(null);
   const [PFAEditModal, setPFAEditModal] = useState(false);
-  //fetch the latest assessment based on created_at, then simply sort the assessments and pick the first one:
-  const handleFAEdit = async (userId = null) => {
-    if (typeof userId === "object" && userId !== null) {
-      userId = userId.id;
-    }
+  //fetch the latest assessment based on created_at, then simply sort the assessments and pick the first one: - Not applicable
+  //Re-admission patient by handlePDAEdit
+    //🔧 Convert DD/MM/YYYY to Date Object:
+const parseDateString = (dateStr) => {
+  if (!dateStr) return null;
 
-    if (!userId) {
-      console.error("Invalid userId provided to toggle");
+  const date = new Date(dateStr);
+  return isNaN(date.getTime()) ? null : date;
+};
+ const handleFAEdit = async (recentPFAiD = null) => {
+  if (typeof recentPFAiD === "object" && recentPFAiD !== null) {
+    recentPFAiD = recentPFAiD.recent_pfa_id;
+  }
+
+  if (!recentPFAiD) {
+    console.error("Invalid userId provided to toggle");
+    return;
+  }
+
+  setPFAEditModal(true);
+
+  const token = localStorage.getItem("Authorization");
+  try {
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/pfa/patient-assessment/${recentPFAiD}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log("Latest PFA:", data);
+
+    if (!response.ok) {
+      console.error("User fetch error:", data);
       return;
     }
-    setPFAEditModal(true);
 
-    const token = localStorage.getItem("Authorization");
-    try {
-      const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${userId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-        }
-      );
+    const latestAssessment = data.assessment || data;
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.error("User fetch error:", data);
-        return;
-      }
-
-      // Sort assessments by created_at and pick the latest
-      const latestAssessment = (data.assessments || []).sort(
-        (a, b) => new Date(b.created_at) - new Date(a.created_at)
-      )[0];
-
-      if (!latestAssessment) {
-        console.warn("No assessments found for this user.");
-        return;
-      }
-
-      setSelectedUser(latestAssessment);
-      console.log("Selected User Assessment:", latestAssessment);
-
-      setPFAeditData({
-        pfa_id: latestAssessment.pfa_id,
-        dependent_to: latestAssessment.dependent_to,
-        substance_use_pattern: latestAssessment.substance_use_pattern,
-        last_30_days_quantity: latestAssessment.last_30_days_quantity,
-
-        medicalConfirmationData: latestAssessment?.medical_history || "",
-        bloodConfirmationData:
-          latestAssessment?.blood_transfusion_history || "",
-
-        weight: Number(latestAssessment?.weight) || 0,
-        pulse_rate: Number(latestAssessment?.pulse_rate) || 0,
-        blood_pressure: latestAssessment?.blood_pressure || "",
-        temperature: Number(latestAssessment?.temperature) || 0,
-        lymphadenopathy: latestAssessment?.lymphadenopathy || "",
-
-        medical_or_blood_history_details:
-          latestAssessment.medical_or_blood_history_details,
-        complication_description: latestAssessment.complication_description,
-        neuro_description: latestAssessment.neuro_description,
-        other_findings: latestAssessment.other_findings,
-        consent_name: latestAssessment.consent_name,
-        consent_relationship: latestAssessment.consent_relationship,
-        consent_signature: latestAssessment.consent_signature,
-        prepared_by: latestAssessment.prepared_by,
-
-        complications: {
-          ulcer: latestAssessment.ulcer,
-          respiratory_problem: latestAssessment.respiratory_problem,
-          jaundice: latestAssessment.jaundice,
-          haematemesis: latestAssessment.haematemesis,
-          abdominal_complaints: latestAssessment.abdominal_complaints,
-          cardiovascular: latestAssessment.cardiovascular,
-        },
-
-        neurological: {
-          delirium: latestAssessment.delirium,
-          seizure: latestAssessment.seizure,
-          blackout: latestAssessment.blackout,
-          memory_loss: latestAssessment.memory_loss,
-          trembling: latestAssessment.trembling,
-          epilepsy: latestAssessment.epilepsy,
-          neuropathy: latestAssessment.neuropathy,
-        },
-
-        lymphadenopathy: latestAssessment.lymphadenopathy,
-        nutritional_status: latestAssessment.nutritional_status,
-      });
-    } catch (error) {
-      console.error("Fetch error:", error);
+    if (!latestAssessment) {
+      console.warn("No assessment found for this user.");
+      return;
     }
-  };
 
-  //PFA update patient assessment handler
+    setSelectedUser(latestAssessment);
+    console.log("Selected User Assessment:", latestAssessment);
+
+    console.log(latestAssessment.date_of_assessment)
+
+    setPFAeditData({
+      pfa_id: latestAssessment.pfa_id,
+      // date_of_assessment: latestAssessment.date_of_assessment,
+       date_of_assessment: latestAssessment.date_of_assessment ? parseDateString(latestAssessment.date_of_assessment) : "", // Use your date parser here
+      dependent_to: latestAssessment.dependent_to,
+      substance_use_pattern: latestAssessment.substance_use_pattern,
+      last_30_days_quantity: latestAssessment.last_30_days_quantity,
+
+      medicalConfirmationData: latestAssessment?.medical_history || "",
+      bloodConfirmationData: latestAssessment?.blood_transfusion_history || "",
+
+      weight: Number(latestAssessment?.weight) || 0,
+      pulse_rate: Number(latestAssessment?.pulse_rate) || 0,
+      blood_pressure: latestAssessment?.blood_pressure || "",
+      temperature: Number(latestAssessment?.temperature) || 0,
+      lymphadenopathy: latestAssessment?.lymphadenopathy || "",
+
+      medical_or_blood_history_details:
+        latestAssessment.medical_or_blood_history_details,
+      complication_description: latestAssessment.complication_description,
+      neuro_description: latestAssessment.neuro_description,
+      other_findings: latestAssessment.other_findings,
+      consent_name: latestAssessment.consent_name,
+      consent_relationship: latestAssessment.consent_relationship,
+      consent_signature: latestAssessment.consent_signature,
+      prepared_by: latestAssessment.prepared_by,
+
+      complications: {
+        ulcer: latestAssessment.ulcer,
+        respiratory_problem: latestAssessment.respiratory_problem,
+        jaundice: latestAssessment.jaundice,
+        haematemesis: latestAssessment.haematemesis,
+        abdominal_complaints: latestAssessment.abdominal_complaints,
+        cardiovascular: latestAssessment.cardiovascular,
+      },
+
+      neurological: {
+        delirium: latestAssessment.delirium,
+        seizure: latestAssessment.seizure,
+        blackout: latestAssessment.blackout,
+        memory_loss: latestAssessment.memory_loss,
+        trembling: latestAssessment.trembling,
+        epilepsy: latestAssessment.epilepsy,
+        neuropathy: latestAssessment.neuropathy,
+      },
+
+      lymphadenopathy: latestAssessment.lymphadenopathy,
+      nutritional_status: latestAssessment.nutritional_status,
+    });
+  } catch (error) {
+    console.error("Fetch error:", error);
+  }
+};
+
+
+  //PFA update patient assessment handler - Not applicable
+  //Readmission patient PFA Handler
   const handleUpdateAssessment = async () => {
     setIsLoading(true); // Start loading
-    const token = localStorage.getItem("Authorization");
 
     const payload = {
+      // user_id: selectedUser[0].user_id,
+      date_of_assessment: PFAeditData.date_of_assessment?.toISOString(),
       dependent_to: PFAeditData.dependent_to,
       substance_use_pattern: PFAeditData.substance_use_pattern,
       last_30_days_quantity: PFAeditData.last_30_days_quantity,
@@ -967,11 +981,51 @@ useEffect(() => {
       nutritional_status: PFAeditData.nutritional_status,
     };
 
+    // try {
+    //   const response = await fetch(
+    //     `https://gks-yjdc.onrender.com/api/pfa/update-assessment/${PFAeditData.pfa_id}`,
+    //     {
+    //       method: "PUT",
+    //       headers: {
+    //         "Content-Type": "application/json",
+    //         Authorization: `${token}`,
+    //       },
+    //       body: JSON.stringify(payload),
+    //     }
+    //   );
+
+    //   const data = await response.json();
+
+    //   if (!response.ok) {
+    //     Swal.fire({
+    //       icon: "error",
+    //       title: "Update Failed",
+    //       text: data.errors?.[0]?.message || "Unknown error occurred.",
+    //     });
+    //     return;
+    //   }
+
+    //   Swal.fire({
+    //     icon: "success",
+    //     title: "Assessment Updated",
+    //     text: "The assessment was updated successfully!",
+    //   });
+
+    //   setPFAEditModal(false);
+    // } catch (error) {
+    //   Swal.fire({
+    //     icon: "error",
+    //     title: "Error",
+    //     text: "An error occurred while updating the assessment.",
+    //   });
+    // }
     try {
+      const token = localStorage.getItem("Authorization");
+
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/pfa/update-assessment/${PFAeditData.pfa_id}`,
+        "https://gks-yjdc.onrender.com/api/pfa/create-assessment",
         {
-          method: "PUT",
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `${token}`,
@@ -980,29 +1034,38 @@ useEffect(() => {
         }
       );
 
-      const data = await response.json();
+      console.log("payload", payload);
+      const result = await response.json();
+      console.log("result", result);
 
       if (!response.ok) {
+        setIsLoading(false);
         Swal.fire({
           icon: "error",
-          title: "Update Failed",
-          text: data.errors?.[0]?.message || "Unknown error occurred.",
-        });
+          title: "Readmission Submission Failed",
+          text: result.message || "Server error",
+        }).then(() => {
+  // This runs after the user clicks "OK"
+  setModal(false);
+});
         return;
       }
-
-      Swal.fire({
-        icon: "success",
-        title: "Assessment Updated",
-        text: "The assessment was updated successfully!",
-      });
-
-      setPFAEditModal(false);
+      // ✅ Success Case
+  setIsLoading(false);
+  Swal.fire({
+    icon: "success",
+    title: "PFA Readmission Created Successfully",
+    text: "The PFA readmission was submitted successfully.",
+  }).then(() => {
+  // This runs after the user clicks "OK"
+  setModal(false);
+});
     } catch (error) {
+      setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "An error occurred while updating the assessment.",
+        title: "Unexpected Error",
+        text: "PFA Readmission failed! Unknown error occurred.",
       });
     }
   };
@@ -2000,7 +2063,7 @@ useEffect(() => {
           {/* PFA Edit Modal */}
           <CommonModal
             isOpen={PFAEditModal}
-            title={"Update Your PFA Data"}
+            title={"Readmission PFA"}
             toggler={closeUserViewModal}
             maxWidth="800px"
           >
@@ -2012,8 +2075,33 @@ useEffect(() => {
                     handleUpdateAssessment();
                   }}
                 >
+                  {/* Date of assesment */}
+                    <div className="col-md-6">
+                      <FormGroup className="form-group row">
+                        <Label className="col-sm-12 col-form-label  col-xl-6">
+                          {dateOfAssessment}
+                        </Label>
+                        <Col xl="5" sm="12">
+                          <div className="input-group">
+                            <DatePicker
+                              className="form-control digits"
+                              selected={PFAeditData.date_of_assessment instanceof Date && !isNaN(PFAeditData.date_of_assessment)
+                            ? PFAeditData.date_of_assessment
+                            : null }
+                              onChange={(date) =>
+  setPFAeditData({
+    ...PFAeditData,
+    date_of_assessment: date, // this is already a Date object
+  })
+}
+
+                            />
+                          </div>
+                        </Col>
+                      </FormGroup>
+                    </div>
                   {/* Dependent To */}
-                  <div className="col-md-12">
+                  <div className="col-md-12 pt-3">
                     <FormGroup className="mb-0">
                       <Label>{dependentTo}</Label>
                       <Input
@@ -2507,7 +2595,7 @@ useEffect(() => {
                           aria-hidden="true"
                         ></span>
                       ) : (
-                        "Update"
+                        "Create PFA"
                       )}
                     </Button>
                   </div>

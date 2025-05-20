@@ -460,39 +460,82 @@ function Register() {
   };
 
   //🔧 Convert DD/MM/YYYY to Date Object:
-  const parseDateString = (dateStr) => {
-    const [day, month, year] = dateStr.split("/");
-    return new Date(`${year}-${month}-${day}`);
-  };
+const parseDateString = (dateStr) => {
+  if (!dateStr) return null;
+
+  const date = new Date(dateStr);
+  return isNaN(date.getTime()) ? null : date;
+};
+
+
 
   //handle edit user details by id's
   const [editData, setEditData] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const handleEdit = (user) => {
-    // const parseDate = (dateString) => {
-    //   const date = new Date(dateString);
-    //   return date instanceof Date && !isNaN(date) ? date : new Date(); // fallback to today's date if invalid
-    // };
+  const handleEdit = async (userId = null) => {
+ 
+  if (typeof userId === "object" && userId !== null) {
+    userId = userId.id;
+  }
 
+  if (!userId) {
+    console.error("Invalid userId provided to handleEdit");
+    return;
+  }
+
+  const token = localStorage.getItem("Authorization");
+
+  try {
+    const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}`, {
+      method: "GET",
+      headers: {
+        Authorization: `${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch user data.");
+    }
+
+   const data = await response.json();
+    const user = Array.isArray(data) ? data[0] : data;
+
+    console.log(user)
+
+    if (!user) {
+      throw new Error("User not found in response.");
+    }
+
+    // Handle null/undefined safely and set editData
     setEditData({
-      id: user.id,
-      // date_of_admission: parseDate(data.date_of_admission),
-      name: user.name || "", // Name
-      patientRelativeName: user.relative_name || "", // Relative Name
-      dob: parseDateString(user.dob),
+    
+      name: user.name || "",
+      patientRelativeName: user.relative_name || "",
+      dob: user.dob ? parseDateString(user.dob) : "", // Use your date parser here
       email: user.email || "",
       phone: user.phone || "",
       whatsapp_no: user.whatsapp_no || "",
       isWhatsApp: user.isWhatsApp || false,
       address: user.address || "",
       is_role: user.isRole || 3,
-      password: "", // Keep empty
+      password: "", // Reset password field
       gender: user.gender || "",
     });
+ setShowEditModal(true);
+   
+  } catch (error) {
+    console.error("Error fetching user details:", error);
+    Swal.fire({
+      title: "Error!",
+      text: "Failed to load user data for editing.",
+      icon: "error",
+      confirmButtonText: "OK",
+    });
+  }
+};
 
-    setShowEditModal(true);
-  };
 
   //User handle update function
   const handleUpdateSubmit = async () => {
@@ -501,6 +544,7 @@ function Register() {
 
     // Make sure you match your form fields to the API payload structure
     const updatedData = {
+    
       name: editData.name,
       relative_name: editData.patientRelativeName, // Assuming this is mapped correctly
       email: editData.email,
@@ -676,12 +720,12 @@ function Register() {
 
           {/* Edit icon */}
           <span
-            onClick={() => handleEdit(row)}
+            onClick={() => handleEdit(row.id)}
             style={{ cursor: "pointer" }}
             title="Edit"
           >
             {/* Edit/Pencil icon */}
-            <svg
+           <svg
               style={{ color: "green" }}
               xmlns="http://www.w3.org/2000/svg"
               width="20"
