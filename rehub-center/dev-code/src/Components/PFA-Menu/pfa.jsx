@@ -90,6 +90,9 @@ import jsPDF from "jspdf";
 import html2pdf from "html2pdf.js";
 
 function PFA() {
+
+
+
   const pdfRef = useRef();
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -427,6 +430,41 @@ useEffect(() => {
 
 ];
 
+const tablePFAPatientListColumns = [
+  { name: "User ID", selector: (row) => row.user_id, sortable: true, center: true },
+  { name: "PFA ID", selector: (row) => row.pfa_id, sortable: true, center: true },
+  { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
+  { name: "Phone", selector: (row) => row.phone, sortable: true, center: true },
+  { name: "Email", selector: (row) => row.email, sortable: true, center: true },
+  {
+    name: "Name",
+    selector: (row) => row.name,
+    sortable: true,
+    cell: (row) => (
+      <span
+        style={{
+          color: row.disabled ? "#999" : "#000",
+          fontStyle: row.disabled ? "italic" : "normal",
+        }}
+      >
+        {row.name} {row.disabled && "(disabled)"}
+      </span>
+    ),
+  },
+  {
+    name: "Status",
+    selector: (row) => row.status,
+    sortable: true,
+    cell: (row) => (
+      <span style={{ color: row.disabled ? "#999" : "#000" }}>
+        <p className="badge bg-success p-2">PFA {row.status}</p>
+      </span>
+    ),
+  }
+  
+
+
+];
 
   //view pfa handler
   //fetch the latest assessment based on created_at, then simply sort the assessments and pick the first one:
@@ -680,6 +718,7 @@ useEffect(() => {
     try {
       const token = localStorage.getItem("Authorization");
 
+      //new pfa API 
       const response = await fetch(
         "https://gks-yjdc.onrender.com/api/pfa/create-assessment",
         {
@@ -873,11 +912,10 @@ const parseDateString = (dateStr) => {
     console.log("Selected User Assessment:", latestAssessment);
 
     console.log(latestAssessment.date_of_assessment)
+    
 
     setPFAeditData({
-      pfa_id: latestAssessment.pfa_id,
-      // date_of_assessment: latestAssessment.date_of_assessment,
-       date_of_assessment: latestAssessment.date_of_assessment ? parseDateString(latestAssessment.date_of_assessment) : "", // Use your date parser here
+      date_of_assessment: latestAssessment.date_of_assessment ? parseDateString(latestAssessment.date_of_assessment) : "", // Use your date parser here
       dependent_to: latestAssessment.dependent_to,
       substance_use_pattern: latestAssessment.substance_use_pattern,
       last_30_days_quantity: latestAssessment.last_30_days_quantity,
@@ -922,6 +960,12 @@ const parseDateString = (dateStr) => {
 
       lymphadenopathy: latestAssessment.lymphadenopathy,
       nutritional_status: latestAssessment.nutritional_status,
+
+      readmissionConsent : latestAssessment.consent,
+      readmissionVerification : latestAssessment.verification,
+      readmissionUserId : latestAssessment.user_id,
+
+      
     });
   } catch (error) {
     console.error("Fetch error:", error);
@@ -935,7 +979,6 @@ const parseDateString = (dateStr) => {
     setIsLoading(true); // Start loading
 
     const payload = {
-      // user_id: selectedUser[0].user_id,
       date_of_assessment: PFAeditData.date_of_assessment?.toISOString(),
       dependent_to: PFAeditData.dependent_to,
       substance_use_pattern: PFAeditData.substance_use_pattern,
@@ -979,6 +1022,15 @@ const parseDateString = (dateStr) => {
       prepared_by: PFAeditData.prepared_by,
 
       nutritional_status: PFAeditData.nutritional_status,
+
+      consent:PFAeditData.readmissionConsent,
+
+      verification:PFAeditData.readmissionVerification,
+      user_id: PFAeditData.readmissionUserId,
+
+
+
+
     };
 
     // try {
@@ -1022,6 +1074,7 @@ const parseDateString = (dateStr) => {
     try {
       const token = localStorage.getItem("Authorization");
 
+      //Readmission PFA API
       const response = await fetch(
         "https://gks-yjdc.onrender.com/api/pfa/create-assessment",
         {
@@ -1085,6 +1138,26 @@ const parseDateString = (dateStr) => {
     setFilteredData(filtered);
   };
 
+  //All pfa patient list data search 
+  const handlePFASearchChange = (e) => {
+    const value = e.target.value.toLowerCase();
+    setSearchText(value);
+
+    const filtered = getpfaData.filter((item) =>{
+      return(
+        item.name?.toLowerCase().includes(value) ||
+        item.gks_id?.toLowerCase().includes(value) ||
+        item.pfa_id?.toString().includes(value) ||
+        item.user_id?.toString().includes(value) ||
+        item.phone?.toLowerCase().includes(value) ||
+        item.email?.toLowerCase().includes(value) 
+      );
+    }
+    );
+
+    setpfaFilterData(filtered);
+  };
+
   //PDf view download pdf code handler
   const [pfaDownload, setpfaDownload] = useState(false);
   const handleDownloadPDF = () => {
@@ -1120,15 +1193,123 @@ const parseDateString = (dateStr) => {
       });
   };
 
+
+    // All pfa patient data list state
+    const [getpfaData, setgetpfaData]=useState([]);
+    const [pfaFilterData, setpfaFilterData]=useState([]);
+    useEffect(() => {
+      const token = localStorage.getItem("Authorization");
+    
+      fetch("https://gks-yjdc.onrender.com/api/pfa/all-pfa-entries", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Failed to fetch PFA all list user details");
+          return response.json();
+        })
+        .then((res) => {
+          const pfaPatient = res.entries || [];
+    
+          const formattedPFAPatient = pfaPatient.map((item) => {
+            return {
+              pfa_id: item.pfa_id,
+              status: item.status,
+    
+              user_id: item.user?.user_id,
+              name: item.user?.name,
+              phone: item.user?.phone,
+              email: item.user?.email,
+              gks_id: item.user?.gks_id,
+    
+              entry_id: item.entry?.entry_id,
+              visit_no: item.entry?.visit_no,
+              admit_date: item.entry?.admit_date,
+              discharge_date: item.entry?.discharge_date,
+              discharge_status: item.entry?.discharge_status,
+              ward_name: item.entry?.ward_name,
+    
+              assessment_date: item.assessment?.date_of_assessment,
+              age: item.assessment?.age,
+              dependent_to: item.assessment?.dependent_to,
+              substance_use_pattern: item.assessment?.substance_use_pattern,
+              last_30_days_quantity: item.assessment?.last_30_days_quantity,
+    
+              medical_history: item.medical_history?.medical_history,
+              blood_transfusion_history: item.medical_history?.blood_transfusion_history,
+              medical_or_blood_history_details: item.medical_history?.medical_or_blood_history_details,
+    
+              ulcer: item.medical_conditions?.ulcer,
+              respiratory_problem: item.medical_conditions?.respiratory_problem,
+              jaundice: item.medical_conditions?.jaundice,
+              haematemesis: item.medical_conditions?.haematemesis,
+              abdominal_complaints: item.medical_conditions?.abdominal_complaints,
+              cardiovascular: item.medical_conditions?.cardiovascular,
+              complication_description: item.medical_conditions?.complication_description,
+    
+              seizure: item.neurological_conditions?.seizure,
+              epilepsy: item.neurological_conditions?.epilepsy,
+              delirium: item.neurological_conditions?.delirium,
+              trembling: item.neurological_conditions?.trembling,
+              memory_loss: item.neurological_conditions?.memory_loss,
+              neuropathy: item.neurological_conditions?.neuropathy,
+              blackout: item.neurological_conditions?.blackout,
+              neuro_description: item.neurological_conditions?.neuro_description,
+    
+              weight: item.health_metrics?.weight,
+              pulse_rate: item.health_metrics?.pulse_rate,
+              blood_pressure: item.health_metrics?.blood_pressure,
+              temperature: item.health_metrics?.temperature,
+              lymphadenopathy: item.health_metrics?.lymphadenopathy,
+              nutritional_status: item.health_metrics?.nutritional_status,
+              other_findings: item.health_metrics?.other_findings,
+    
+              consent: item.consent?.consent,
+              consent_name: item.consent?.consent_name,
+              consent_relationship: item.consent?.consent_relationship,
+              consent_signature: item.consent?.consent_signature,
+              prepared_by: item.consent?.prepared_by,
+              verification: item.consent?.verification,
+    
+              created_by: item.audit?.created_by,
+              updated_by: item.audit?.updated_by,
+              created_at: item.audit?.created_at,
+              updated_at: item.audit?.updated_at,
+              branch_id: item.audit?.branch_id,
+            };
+          });
+
+          console.log(formattedPFAPatient)
+    
+          setTimeout(() => {
+            setgetpfaData(formattedPFAPatient);
+            setpfaFilterData(formattedPFAPatient);
+            setstillLoading(false);
+          }, 1000);
+        })
+        .catch((error) => {
+          console.error("Error fetching PFA user data:", error);
+          setstillLoading(true);
+        });
+    }, []);
+    
+
+
+
   return (
     <Fragment>
       <div className="pfa__wrapper p-20">
         {/* <H5>{patientFirstAssessment}</H5> */}
 
+{/* register user data into data table format start */}
         <Container fluid={true} className="datatables">
           <Row>
             <Col sm="12">
               <CardBody>
+                {/* Register pateint list/user list */}
                 <Card>
                   {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                   <CardBody>
@@ -1182,11 +1363,79 @@ const parseDateString = (dateStr) => {
                       />
                     )}
                   </CardBody>
+                  
+                </Card>
+
+{/* PFA pateint all list */}
+                <Card>
+                  {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
+                  <CardBody>
+                    <div class="d-flex pb-2 justify-content-between">
+                      <HeaderCard
+                        title="All Patient First Assessment (PFA) List"
+                        className="p-0"
+                      />
+                    </div>
+                    <div className="row pb-2">
+                      <div className="col-md-4">
+                        <InputGroup>
+                          <Input
+                            className="form-control"
+                            type="text"
+                            placeholder="Search......."
+                            value={searchText}
+                            onChange={handlePFASearchChange}
+                          />
+                          <span className="input-group-text">
+                            <i className="fa fa-search"></i>
+                          </span>
+                        </InputGroup>
+                      </div>
+                    </div>
+                    {stillLoading ? (
+                      <div className="loading-text">
+                        Data is fetching from server. Please wait...
+                      </div>
+                    ) : (
+                      <DataTable
+                        data={pfaFilterData}
+                        columns={tablePFAPatientListColumns}
+                        striped
+                        center
+                        highlightOnHover
+                        pagination
+                        persistTableHead
+                        onSelectedRowsChange={handleRowSelected}
+                        selectableRowDisabled={selectableRowDisabled}
+                        conditionalRowStyles={[
+                          {
+                            when: (row) => row.disabled,
+                            style: {
+                              backgroundColor: "#f5f5f5",
+                              color: "#999",
+                              pointerEvents: "none",
+                            },
+                          },
+                        ]}
+                      />
+                    )}
+                  </CardBody>
+                  
                 </Card>
               </CardBody>
             </Col>
           </Row>
         </Container>
+
+{/* register user data into data table format end */}
+
+
+{/* all pfa patient data into data table format start */}
+
+
+
+{/* all pfa patient data into data table format end */}
+
 
         <div className="generalInfo__section">
           {/* PFA data form modal */}
@@ -2060,7 +2309,7 @@ const parseDateString = (dateStr) => {
             </Col>
           </CommonModal>
 
-          {/* PFA Edit Modal */}
+          {/* Readmission PFA Edit Modal */}
           <CommonModal
             isOpen={PFAEditModal}
             title={"Readmission PFA"}
@@ -2494,22 +2743,22 @@ const parseDateString = (dateStr) => {
 
                   {/* Consent Section */}
                   <div className="col-md-12 mt-4">
-                    {/* <div className="checkbox ms-3">
+                    <div className="checkbox ms-3">
                     <Input
                       id="checkbox1"
                       type="checkbox"
-                      checked={PFAeditData.consent === "Yes"}
+                      checked={PFAeditData.readmissionConsent === "Yes"}
                       onChange={(e) =>
                         setPFAeditData({
                           ...PFAeditData,
-                          consent: e.target.checked ? "Yes" : "No",
+                          readmissionConsent: e.target.checked ? "Yes" : "No",
                         })
                       }
                     />
                     <Label className="text-muted" for="checkbox1">
                       {consent}
                     </Label>
-                  </div> */}
+                  </div>
 
                     <Row>
                       <Col md="4">
@@ -2585,6 +2834,27 @@ const parseDateString = (dateStr) => {
                     </FormGroup>
                   </div>
 
+                  <div className="col-md-12 mt-4">
+                        <div className="checkbox ms-3">
+                          <Input
+                            id="checkbox3"
+                            type="checkbox"
+                            checked={PFAeditData.readmissionVerification === "Yes"}
+                            onChange={(e) =>
+                              setPFAeditData((prev) => ({
+                                ...prev,
+                                readmissionVerification: e.target.checked ? "Yes" : "No",
+                              }))
+                            }
+                          />
+                          <Label className="text-muted" for="checkbox3">
+                            {
+                              "Varification from parent side before PFA submitting"
+                            }
+                          </Label>
+                        </div>
+                      </div>
+
                   {/* Submit Button */}
                   <div className="d-flex gap-3">
                     <Button color="primary" type="submit" disabled={isLoading}>
@@ -2606,6 +2876,8 @@ const parseDateString = (dateStr) => {
         </div>
       </div>
     </Fragment>
+
+   
   );
 }
 

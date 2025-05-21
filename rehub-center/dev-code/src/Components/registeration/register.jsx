@@ -510,7 +510,7 @@ const parseDateString = (dateStr) => {
 
     // Handle null/undefined safely and set editData
     setEditData({
-    
+      id: user.user_id || "",
       name: user.name || "",
       patientRelativeName: user.relative_name || "",
       dob: user.dob ? parseDateString(user.dob) : "", // Use your date parser here
@@ -544,7 +544,6 @@ const parseDateString = (dateStr) => {
 
     // Make sure you match your form fields to the API payload structure
     const updatedData = {
-    
       name: editData.name,
       relative_name: editData.patientRelativeName, // Assuming this is mapped correctly
       email: editData.email,
@@ -556,6 +555,9 @@ const parseDateString = (dateStr) => {
       whatsapp_no: editData.whatsapp_no, // Make sure this is correctly handled
       isRole: editData.is_role, // Ensure the role field is being mapped correctly
     };
+
+    console.log("User ID:", editData.id, typeof editData.id);
+
 
     try {
       const response = await fetch(
