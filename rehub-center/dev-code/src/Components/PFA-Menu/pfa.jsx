@@ -241,8 +241,8 @@ useEffect(() => {
     setPFAEditModal(false);
   };
 
-  //status track for action button of PFA
 
+//Getting registred patient data into table row 
   const tableColumns = [
   { name: "User ID", selector: (row) => row.id, sortable: true, center: true },
   { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
