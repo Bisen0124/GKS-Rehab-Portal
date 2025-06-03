@@ -615,6 +615,36 @@ function GenFamily() {
     }
   ];
 
+  //All gen family data into datatabble column 
+  const tableGenFamilyListColumns = [
+    { name: "GKS ID's", selector: (row) => row.gks_id, sortable: true, center: true },  
+    {
+      name: "Name",
+      selector: (row) => row.genFamilyPateintname,
+      sortable: true,
+      cell: (row) => (
+        <span
+          style={{
+            color: row.disabled ? "#999" : "#000",
+            fontStyle: row.disabled ? "italic" : "normal",
+          }}
+        >
+          {row.genFamilyPateintname} {row.disabled && "(disabled)"}
+        </span>
+      ),
+    },
+    { name: "Email", selector: (row) => row.genfamiltEmail, sortable: true, center: true },  
+    { name: "Number", selector: (row) => row.genfamiltNumber, sortable: true, center: true },  
+    {
+      name: "Status",
+      selector: (row) => row.genFammiltStatus,
+      cell: (row) => (
+        <span className="badge bg-success p-2 text-white" style={{ color: row.disabled ? "#999" : "#000" }}>
+          {row.genFammiltStatus}
+        </span>
+      ),
+    },
+  ];
 
 
  //Registered Patient Data
@@ -693,6 +723,23 @@ function GenFamily() {
     );
 
     setFilteredData(filtered);
+  };
+
+  //Filter all gen familt data from data table
+  const [searchgenText, setgenSearchText] = useState("");
+  const handleSearchGenFamily = (e) => {
+    const value = e.target.value.toLowerCase();
+    setgenSearchText(value);
+
+    const genfamilyFiltered = getgenfamData.filter((item) =>
+      item.genFamilyPateintname?.toLowerCase().includes(value) ||
+      item.genFammiltStatus?.toLowerCase().includes(value) ||
+      item.genfamiltEmail?.toLowerCase().includes(value) ||
+      item.genfamiltNumber?.toString().includes(value) ||
+      item.gks_id?.toString().includes(value)
+    );
+
+    setgenFilterData(genfamilyFiltered);
   };
 
   //Search filter on register user list table end
@@ -1516,9 +1563,6 @@ function GenFamily() {
   const [GeneditModal, setGeneditModal] = useState(false);
 
   const handleGenEdit = async (recentGenfamID = null)=>{
-    
-
-
     if (typeof recentGenfamID === "object" && recentGenfamID !==null){
       recentGenfamID = recentGenfamID.recent_gen_fam_id;
     }
@@ -1705,7 +1749,44 @@ function GenFamily() {
       signature: latestGenFamilyData.signature,
       status: latestGenFamilyData.status,
       created_by: latestGenFamilyData.created_by,
-      updated_by: latestGenFamilyData.updated_by
+      updated_by: latestGenFamilyData.updated_by,
+
+
+      //Patient Behaviour 
+      patientBehaviour: {
+        uses_alone: latestGenFamilyData.uses_alone,
+        moody: latestGenFamilyData.moody,
+        worried: latestGenFamilyData.worried,
+        sad: latestGenFamilyData.sad,
+        lacks_confidence: latestGenFamilyData.lacks_confidence,
+        stubborn: latestGenFamilyData.stubborn,
+        aggressive: latestGenFamilyData.aggressive,
+        uses_slang: latestGenFamilyData.uses_slang,
+        disrespects_parents: latestGenFamilyData.disrespects_parents,
+        fights_argue: latestGenFamilyData.fights_argue,
+        vandalizes: latestGenFamilyData.vandalizes,
+        fights_at_home: latestGenFamilyData.fights_at_home,
+        tells_lies: latestGenFamilyData.tells_lies,
+        too_expensive: latestGenFamilyData.too_expensive,
+        theft: latestGenFamilyData.theft,
+        borrows: latestGenFamilyData.borrows,
+        gambles: latestGenFamilyData.gambles,
+        bluffs: latestGenFamilyData.bluffs,
+        admits_mistake: latestGenFamilyData.admits_mistake,
+        irresponsible: latestGenFamilyData.irresponsible,
+        selfish: latestGenFamilyData.selfish,
+        has_empathy: latestGenFamilyData.has_empathy,
+        lazy: latestGenFamilyData.lazy,
+        nervous_anxiety_symptoms: latestGenFamilyData.nervous_anxiety_symptoms,
+        emotional_post_use: latestGenFamilyData.emotional_post_use,
+        prioritizes_substance: latestGenFamilyData.prioritizes_substance,
+        feels_guilty: latestGenFamilyData.feels_guilty,
+        avoids_people: latestGenFamilyData.avoids_people,
+        sleep_eat_problem: latestGenFamilyData.sleep_eat_problem,
+        uses_knowing_consequence: latestGenFamilyData.uses_knowing_consequence,
+        suicide_thoughts: latestGenFamilyData.suicide_thoughts,
+        loved_one_dependence: latestGenFamilyData.loved_one_dependence,
+      }
     });
 
      // Only open modal after data is ready
@@ -1713,6 +1794,8 @@ function GenFamily() {
 
 
     console.log(GenfamiltEditData.gen_fam_id)
+
+    console.log("patientBehaviour", GenfamiltEditData.patientBehaviour)
 
     console.log("occupational_status" ,GenfamiltEditData.occupational_status)
 
@@ -1723,6 +1806,290 @@ function GenFamily() {
     setviewGenFamilyModel((setGeneditModal)=>!setGeneditModal);
   }
 
+  //Recreate the GenFamily entry using the latest ID, and fetch all data to refill the form for editing when the pending icon is clicked.
+
+  
+
+  const handlereGenfamily = async () => {
+    const payload = {
+      user_id: GenfamiltEditData.user_id,
+    
+      gen_family: {
+        gen_fam_id: GenfamiltEditData.gen_fam_id,
+        uid: GenfamiltEditData.uid,
+        form_fill_date: GenfamiltEditData.form_fill_date,
+        occupational_status: GenfamiltEditData.occupational_status,
+        marital_status: GenfamiltEditData.marital_status,
+        living_situation: GenfamiltEditData.living_situation,
+        religion: GenfamiltEditData.religion,
+        entry_id: GenfamiltEditData.entry_id,
+        visit_no: GenfamiltEditData.visit_no,
+        isActive: GenfamiltEditData.isActive,
+        name: GenfamiltEditData.name,
+        relative_name: GenfamiltEditData.relative_name,
+        email: GenfamiltEditData.email,
+        gender: GenfamiltEditData.gender,
+        phone: GenfamiltEditData.phone,
+        Branch_id: GenfamiltEditData.Branch_id,
+        dob: GenfamiltEditData.dob,
+        custom_code: GenfamiltEditData.custom_code,
+      },
+    
+      substance_use_dependency: {
+        duration_of_use: GenfamiltEditData.duration_of_use,
+        daily_spent_amount: GenfamiltEditData.daily_spent_amount,
+        patient_monthly_income: GenfamiltEditData.patient_monthly_income,
+        family_monthly_income: GenfamiltEditData.family_monthly_income,
+        source_family: GenfamiltEditData.source_family,
+        source_friends: GenfamiltEditData.source_friends,
+        source_borrowings: GenfamiltEditData.source_borrowings,
+        source_thefting: GenfamiltEditData.source_thefting,
+        source_theft_in_home: GenfamiltEditData.source_theft_in_home,
+        source_by_bluff: GenfamiltEditData.source_by_bluff,
+        source_illegal: GenfamiltEditData.source_illegal,
+        source_any_other: GenfamiltEditData.source_any_other,
+        source_other_text: GenfamiltEditData.source_other_text,
+        family_reaction: GenfamiltEditData.family_reaction,
+        first_action_when_known: GenfamiltEditData.first_action_when_known,
+        pattern_of_use: GenfamiltEditData.pattern_of_use,
+        residence_status_during_use: GenfamiltEditData.residence_status_during_use,
+        trauma_experience: GenfamiltEditData.trauma_experience,
+        behavior_change: GenfamiltEditData.behavior_change,
+        social_circle_change: GenfamiltEditData.social_circle_change,
+        life_effect: GenfamiltEditData.life_effect,
+      },
+    
+      treatment_history: {
+        chief_complaints: GenfamiltEditData.chief_complaints,
+        prior_treatment: GenfamiltEditData.prior_treatment,
+        how_many_times: GenfamiltEditData.how_many_times,
+        // treatment_records: JSON.parse(GenfamiltEditData.treatment_records || '[]'),
+        treatment_records: GenfamiltEditData.treatment_records.map((record) => ({
+          treatment_year: record.treatment_year.trim(),
+          treatment_place: record.treatment_place.trim(),
+          treatment_duration: record.treatment_duration.trim(),
+          days_of_sobriety: record.days_of_sobriety.trim(),
+        })),
+
+
+        asked_to_stop: GenfamiltEditData.asked_to_stop,
+        reason_to_stop: GenfamiltEditData.reason_to_stop,
+        work_after_stop: GenfamiltEditData.work_after_stop,
+        relapse_details: GenfamiltEditData.relapse_details,
+        post_relapse_change: GenfamiltEditData.post_relapse_change,
+        mental_physical_issues: GenfamiltEditData.mental_physical_issues,
+        injuries_due_to_substance: GenfamiltEditData.injuries_due_to_substance,
+        diagnosis_treatment: GenfamiltEditData.diagnosis_treatment,
+        doctor_info: GenfamiltEditData.doctor_info,
+        traditional_treatment: GenfamiltEditData.traditional_treatment,
+        effect_of_treatment: GenfamiltEditData.effect_of_treatment,
+      },
+    
+      family_info: {
+        relationship_status: GenfamiltEditData.relationship_status,
+        marriage_arrangement: GenfamiltEditData.marriage_arrangement,
+        post_marriage_status: GenfamiltEditData.post_marriage_status,
+        relatives_interference: GenfamiltEditData.relatives_interference,
+      },
+    
+      family_members: {
+        members: GenfamiltEditData.members,
+        disorder_desc: GenfamiltEditData.disorder_desc,
+        family_history_data: GenfamiltEditData.family_history_data,
+        psych_problem_desc: GenfamiltEditData.psych_problem_desc,
+        current_status: GenfamiltEditData.current_status,
+        relationship_with_user: GenfamiltEditData.relationship_with_user,
+        family_behavior: GenfamiltEditData.family_behavior,
+        head_of_family: GenfamiltEditData.head_of_family,
+        relationships_with_family: GenfamiltEditData.relationships_with_family,
+      },
+    
+      childhood_history: {
+        birth_conditions: GenfamiltEditData.birth_conditions,
+        parenting_history: GenfamiltEditData.parenting_history,
+        family_conflict: GenfamiltEditData.family_conflict,
+        sociality_living: GenfamiltEditData.sociality_living,
+        high_risk_behavior: GenfamiltEditData.high_risk_behavior,
+        impact_of_movies: GenfamiltEditData.impact_of_movies,
+        abuse_history: GenfamiltEditData.abuse_history,
+      },
+    
+      education_employment: {
+        education_status: GenfamiltEditData.education_status,
+        occupation_status: GenfamiltEditData.occupation_status,
+        dropout_reason: GenfamiltEditData.dropout_reason,
+        work_details: GenfamiltEditData.work_details,
+        hobbies: GenfamiltEditData.hobbies,
+        skills: GenfamiltEditData.skills,
+        achievements: GenfamiltEditData.achievements,
+      },
+    
+      social_behavior: {
+        social_behavior: GenfamiltEditData.social_behavior,
+        with_whom_spend_time: GenfamiltEditData.with_whom_spend_time,
+        number_of_friends: GenfamiltEditData.number_of_friends,
+        friends_social_status: GenfamiltEditData.friends_social_status,
+        substance_dependent_friends: GenfamiltEditData.substance_dependent_friends,
+        well_wisher_person: GenfamiltEditData.well_wisher_person,
+      },
+    
+      legal_history: {
+        domestic_violence: GenfamiltEditData.domestic_violence,
+        violence_reason: GenfamiltEditData.violence_reason,
+        drug_status_qty: GenfamiltEditData.drug_status_qty,
+        criminal_case: GenfamiltEditData.criminal_case,
+        case_details: GenfamiltEditData.case_details,
+        case_status: GenfamiltEditData.case_status,
+        jail_duration: GenfamiltEditData.jail_duration,
+      },
+    
+      patient_behavior: {
+        life_priority: GenfamiltEditData.life_priority,
+        life_aim: GenfamiltEditData.life_aim,
+        uses_alone: GenfamiltEditData.patientBehaviour.uses_alone,
+        moody: GenfamiltEditData.patientBehaviour.moody,
+        worried: GenfamiltEditData.patientBehaviour.worried,
+        sad: GenfamiltEditData.patientBehaviour.sad,
+        lacks_confidence: GenfamiltEditData.patientBehaviour.lacks_confidence,
+        stubborn: GenfamiltEditData.patientBehaviour.stubborn,
+        aggressive: GenfamiltEditData.patientBehaviour.aggressive,
+        uses_slang: GenfamiltEditData.patientBehaviour.uses_slang,
+        disrespects_parents: GenfamiltEditData.patientBehaviour.disrespects_parents,
+        fights_argue: GenfamiltEditData.patientBehaviour.fights_argue,
+        vandalizes: GenfamiltEditData.patientBehaviour.vandalizes,
+        fights_at_home: GenfamiltEditData.patientBehaviour.fights_at_home,
+        tells_lies: GenfamiltEditData.patientBehaviour.tells_lies,
+        too_expensive: GenfamiltEditData.patientBehaviour.too_expensive,
+        theft: GenfamiltEditData.patientBehaviour.theft,
+        borrows: GenfamiltEditData.patientBehaviour.borrows,
+        gambles: GenfamiltEditData.patientBehaviour.gambles,
+        bluffs: GenfamiltEditData.patientBehaviour.bluffs,
+        admits_mistake: GenfamiltEditData.patientBehaviour.admits_mistake,
+        irresponsible: GenfamiltEditData.patientBehaviour.irresponsible,
+        selfish: GenfamiltEditData.patientBehaviour.selfish,
+        has_empathy: GenfamiltEditData.patientBehaviour.has_empathy,
+        lazy: GenfamiltEditData.patientBehaviour.lazy,
+        nervous_anxiety_symptoms: GenfamiltEditData.patientBehaviour.nervous_anxiety_symptoms,
+        emotional_post_use: GenfamiltEditData.patientBehaviour.emotional_post_use,
+        prioritizes_substance: GenfamiltEditData.patientBehaviour.prioritizes_substance,
+        feels_guilty: GenfamiltEditData.patientBehaviour.feels_guilty,
+        avoids_people: GenfamiltEditData.patientBehaviour.avoids_people,
+        sleep_eat_problem: GenfamiltEditData.patientBehaviour.sleep_eat_problem,
+        uses_knowing_consequence: GenfamiltEditData.patientBehaviour.uses_knowing_consequence,
+        suicide_thoughts: GenfamiltEditData.patientBehaviour.suicide_thoughts,
+        loved_one_dependence: GenfamiltEditData.patientBehaviour.loved_one_dependence,
+      },
+    
+      consent_info: {
+        consent: GenfamiltEditData.consent,
+        consent_name: GenfamiltEditData.consent_name,
+        relationship: GenfamiltEditData.relationship,
+        prepared_by: GenfamiltEditData.prepared_by,
+        signature: GenfamiltEditData.signature,
+      },
+    
+    };
+    
+    try {
+          const token = localStorage.getItem("Authorization");
+    
+          //Readmission PFA API
+          const response = await fetch(
+            "https://gks-yjdc.onrender.com/api/gen-family/create-gen-family",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `${token}`,
+              },
+              body: JSON.stringify(payload),
+            }
+          );
+    
+          console.log("Gen Family Re admission", payload);
+          const result = await response.json();
+          console.log("result", result);
+    
+          if (!response.ok) {
+            setIsLoading(false);
+            Swal.fire({
+              icon: "error",
+              title: "Readmission Submission Failed",
+              text: result.message || "Server error",
+            }).then(() => {
+      // This runs after the user clicks "OK"
+      // setModal(false);
+    });
+            return;
+          }
+          // ✅ Success Case
+      setIsLoading(false);
+      Swal.fire({
+        icon: "success",
+        title: "Gen Familt Readmission Created Successfully",
+        text: "The Gen Family readmission was submitted successfully.",
+      }).then(() => {
+      // This runs after the user clicks "OK"
+      // setModal(false);
+    });
+        } catch (error) {
+          setIsLoading(false);
+          Swal.fire({
+            icon: "error",
+            title: "Unexpected Error",
+            text: "Gen Family Readmission failed! Unknown error occurred.",
+          });
+        }
+  }
+
+
+
+  //Get all gen family data
+  const [getgenfamData, setgenfamData]=useState([]);
+  const [genFilterData, setgenFilterData]=useState([]);
+
+  useEffect(()=>{
+    const token = localStorage.getItem("Authorization");
+
+    fetch("https://gks-yjdc.onrender.com/api/gen-family/all-gen-family-entries",{
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `${token}`,
+      },
+    })
+    .then((response)=>{
+      if(!response.ok) throw new Error("Failed to fetch Gen Family all list details data");
+      return response.json();
+    })
+    .then((res)=>{
+      const genfamiltEntries = res.entries || [];
+      console.log("genfamily all data", genfamiltEntries)
+
+      const genfamiltallEntriesData = genfamiltEntries.map((list)=>{
+        return {
+          // gen_fam_id:list.gen_fam_id,
+          genFamilyPateintname:list.user.name,
+          genFammiltStatus:list.consent.status,
+          genfamiltEmail:list.user.email,
+          genfamiltNumber:list.user.phone,
+          gks_id:list.user.gks_id,
+
+        }
+      });
+
+      console.log("genfamiltallEntriesData", genfamiltallEntriesData);
+      setTimeout(() => {
+        setgenfamData(genfamiltallEntriesData);
+        setgenFilterData(genfamiltallEntriesData);
+            setstillLoading(false);
+      }, 1000);
+    })
+    .catch((error)=>{
+      console.error("Error fetching Gen Family data:", error);
+          setstillLoading(true);
+    })
+  },[])
 
   return (
     <Fragment>
@@ -3942,6 +4309,72 @@ function GenFamily() {
       </Container>
       {/* Showing user list data list by register end */}
 
+
+
+      {/* Showing all gen family data start */}
+      <Container fluid={true} className="datatables">
+        <Row>
+          <Col sm="12">
+            <CardBody>
+              <Card>
+                {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
+                <CardBody>
+                  <div class="d-flex pb-2 justify-content-between">
+                    <HeaderCard title="Showing All Gen Family Data" className="p-0" />
+                  </div>
+                  <div className="row pb-2">
+                    <div className="col-md-4">
+                      <InputGroup>
+                        <Input
+                          className="form-control"
+                          type="text"
+                          placeholder="Search......."
+                          value={searchgenText}
+                          onChange={handleSearchGenFamily}
+                        />
+                        <span className="input-group-text">
+                          <i className="fa fa-search"></i>
+                        </span>
+                      </InputGroup>
+                    </div>
+                  </div>
+                  {stillLoading ? (
+                    <div className="loading-text">
+                      Data is fetching from server. Please wait...
+                    </div>
+                  ) : (
+                    <DataTable
+                      data={genFilterData}
+                      columns={tableGenFamilyListColumns}
+                      striped
+                      center
+                      highlightOnHover
+                      pagination
+                      persistTableHead
+                      // onSelectedRowsChange={handleRowSelected}
+                      selectableRowDisabled={selectableRowDisabled}
+                      conditionalRowStyles={[
+                        {
+                          when: (row) => row.disabled,
+                          style: {
+                            backgroundColor: "#f5f5f5",
+                            color: "#999",
+                            pointerEvents: "none",
+                          },
+                        },
+                      ]}
+                    />
+                  )}
+                </CardBody>
+              </Card>
+            </CardBody>
+          </Col>
+        </Row>
+      </Container>
+      {/* Showing all gen family data end */}
+
+
+
       {/* View Gen Family Data Modal start */}
       <CommonModal
         isOpen={viewGenFamilyModel}
@@ -6082,7 +6515,10 @@ function GenFamily() {
   maxWidth="1200px"
 >
   {GenfamiltEditData ? (
-    <form className="theme-form">
+    <form className="theme-form" onSubmit={(e)=>{
+      e.preventDefault();
+      handlereGenfamily();
+    }}>
       {/* UID */}
       <div className="row pt-3 pb-3">
         <FormGroup className="form-group row col-md-6">
@@ -8364,22 +8800,23 @@ function GenFamily() {
           <Input
             id={inputId}
             type="radio"
+            className="form-check-input"
             name={`patientBehavior_${key}`}
             value={value}
             checked={
-              GenfamiltEditData?.patient_behavior?.[key]?.toString() === value.toString()
+              GenfamiltEditData?.patientBehaviour?.[key]?.toString() === value.toString()
             }
             onChange={() =>
               setGenfamilyEditData((prev) => ({
                 ...prev,
-                patient_behavior: {
-                  ...prev.patient_behavior,
+                patientBehaviour: {
+                  ...prev.patientBehaviour,
                   [key]: value,
                 },
               }))
             }
           />
-          <Label htmlFor={inputId}>{value}</Label>
+          <Label className="form-check-label" htmlFor={inputId}>{value}</Label>
         </td>
       );
     })}
@@ -8417,8 +8854,13 @@ function GenFamily() {
                     type="text"
                     placeholder="Name"
                     name="consent_name"
-                    value={formData.consent_name}
-                    onChange={onChangeEventHandler}
+                    value={GenfamiltEditData.consent_name}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        consent_name: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="col-md-4">
@@ -8427,8 +8869,13 @@ function GenFamily() {
                     type="text"
                     placeholder="Relationship"
                     name="relationship"
-                    value={formData.relationship}
-                    onChange={onChangeEventHandler}
+                    value={GenfamiltEditData.relationship}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        relationship: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="col-md-4">
@@ -8437,8 +8884,13 @@ function GenFamily() {
                     type="text"
                     placeholder="Signature"
                     name="signature"
-                    value={formData.signature}
-                    onChange={onChangeEventHandler}
+                    value={GenfamiltEditData.signature}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        signature: e.target.value,
+                      })
+                    }
                   />
                 </div>
                 <div className="col-md-12 mt-3 mb-3">
@@ -8447,8 +8899,13 @@ function GenFamily() {
                     type="text"
                     placeholder="Prepared By"
                     name="prepared_by"
-                    value={formData.prepared_by}
-                    onChange={onChangeEventHandler}
+                    value={GenfamiltEditData.prepared_by}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        prepared_by: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
@@ -8462,7 +8919,7 @@ function GenFamily() {
                       aria-hidden="true"
                     ></span>
                   ) : (
-                    "Submit PFA"
+                    "Create Re Gen Family Admission"
                   )}
                 </Button>
               </div>
