@@ -95,10 +95,21 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "FAD+SUD",
+        "title": "First Dependency Assessment (FDA)",
         "icon": "icon-class",
         "type": "link",
-        "path": `${process.env.PUBLIC_URL}/FDA_SUD/FdaSud`
+        "path": `${process.env.PUBLIC_URL}/FDA/first-dependency-assessment`
+      }
+    ]
+  },
+  {
+    "menucontent": "Dashboards,Widgets",
+    "Items": [
+      {
+        "title": "Substance Use Dependency (SUD)",
+        "icon": "icon-class",
+        "type": "link",
+        "path": `${process.env.PUBLIC_URL}/SUD/substance-use-dependency`
       }
     ]
   },

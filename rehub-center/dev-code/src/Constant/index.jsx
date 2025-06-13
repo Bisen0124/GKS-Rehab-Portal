@@ -1980,8 +1980,127 @@ export const neurologicalOptions = [
 ];
 
 
-//Wardd data
+//Ward data
 export const wardOptions = [
   { ward_type_id: 1, ward_name: "Private" },
   { ward_type_id: 2, ward_name: "Sem-Private" }
+];
+
+
+//FDA Data
+export const fda = "First Dependency Assessment / प्रथम निर्भरता मूल्यांकन";
+
+export const mentalBehaviour = "Mental and behavioral disorders due to psychoactive substance use / मनो-सक्रिय पदार्थों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार";
+
+
+// Data with separate English and Hindi
+export const mentalBehavioursData  = [
+  {
+    index:1,
+    code: "F10.",
+    english: "Mental and behavioral disorders due to use of alcohol",
+    hindi: "शराब के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+  },
+  {
+    index:2,
+    code: "F11.",
+    english: "Mental and behavioural disorders due to use of opioids",
+    hindi: "ओपिओइड के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+  },
+  {
+    index:3,
+    code: "F12.",
+    english: "Mental and behavioural disorders due to use of cannabinoids",
+    hindi: "कैनाबिनोइड के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+  },
+  {
+    index:4,
+    code: "F13.",
+    english: "Mental and behavioural disorders due to use of sedatives or hypnotics",
+    hindi: "शामक या कृत्रिम निद्रावस्था के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+  },
+  {
+    index:5,
+    code: "F14.",
+    english: "Mental and behavioural disorders due to use of cocaine",
+    hindi: "कोकीन के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+  },
+  {
+    index:6,
+    code: "F15.",
+    english: "Mental and behavioural disorders due to use of other stimulants, including caffeine",
+    hindi: "कैफीन सहित अन्य उत्तेजक पदार्थों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+  },
+  {
+    index:7,
+    code: "F16.",
+    english: "Mental and behavioural disorders due to use of hallucinogens (Substance)",
+    hindi: "मतिभ्रम के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार (पदार्थ)",
+  },
+  {
+    index:8,
+    code: "F17.",
+    english: "Mental and behavioural disorders due to use of tobacco",
+    hindi: "तंबाकू के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+  },
+  {
+    index:9,
+    code: "F18.",
+    english: "Mental and behavioural disorders due to use of volatile solvents",
+    hindi: "वाष्पशील विलायकों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+  },
+  {
+    index:10,
+    code: "F19.",
+    english: "Mental and behavioural disorders due to multiple drug use and use of other psychoactive substances",
+    hindi: "दवाओं के उपयोग और अन्य मनोवैज्ञानिक पदार्थों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+  },
+];
+
+
+export const kindlyMentioned = "Kindly Mention  applied code. / कृपया जो कोड लागु होता है  मेंशन करें |";
+
+export const addictionSeverity = "Addiction severity  index / एडिक्शन गंभीरता सूचकांक";
+
+
+export const fdaAdsiction = [
+  { key: "desire_to_quit", label: "Having the desire to quit but is unsuccessful / छोड़ने की इच्छा होना लेकिन असफल होना" },
+  { key: "lack_control", label: "Lacking control over substance use / पदार्थ के उपयोग पर नियंत्रण की कमी" },
+  { key: "lack_responsibility", label: "Lacking responsibility in life aspects / जीवन के पहलुओं में जिम्मेदारी की कमी" },
+  { key: "time_purchasing_using", label: "Spending a majority of time purchasing and using the substance / अधिकांश समय पदार्थ खरीदने और उसका उपयोग करने में व्यतीत करना" },
+  { key: "cravings", label: "Having cravings / लालसा होना" },
+  { key: "relationship_problems", label: "Experiencing problems with relationships / रिश्तों में समस्याएँ आना" },
+  { key: "using_dangerously", label: "Using substances dangerously / पदार्थों का खतरनाक तरीके से उपयोग करना" },
+  { key: "losing_interest", label: "Losing interest in hobbies, activities or relationships / शौक, गतिविधियों या रिश्तों में रुचि खोना" },
+  { key: "increasing_tolerance", label: "Increasing tolerance / बढ़ती सहनशीलता" },
+  { key: "experiencing_withdrawal", label: "Experiencing withdrawal / वापसी का अनुभव करना" },
+];
+
+
+
+export const addictionIndexRating = "Addiction severity  index Rating (out of 10) / एडिक्शन गंभीरता सूचकांक रेटिंग   (10 में से)";
+
+
+
+//SUD Data JSON
+
+export const sud = "Substance Use Dependency (SUD) / पदार्थ उपयोग निर्भरता";
+
+export const substanceList = [
+  "Tobacco / तम्बाकू",
+  "Alcohol / शराब",
+  "Heroin / हेरोइन",
+  "Opium / अफीम",
+  "Cocaine / कोकेन",
+  "Inhalants / इन्हेलेट्स",
+  "Smake Heroin / स्मैक हेरोइन",
+  "Cannabis Munnaka / गांजा भांग मुनक्का",
+  "Charas / चरस",
+  "MD / एमडी",
+  "Medical Abuse / मेडिकल नशा",
+  "D-Propoxyphene / डी-प्रोपॉक्सिफीन",
+  "Buprenophine / ब्यूप्रीनॉर्फिन",
+  "Pentazocine / पेंटाज़ोसीन",
+  "Sedative/Hypnotics / शान्तक/कृत्रिम निद्रावस्था वाली दवाएँ",
+  "Amphetamine and Other ATS / एम्फेटामाइन और अन्य ATS"
 ];

@@ -192,8 +192,10 @@ import FE from '../Components/FE/First-Examination';
 import BA from '../Components/BA/Blood-Analysis';
 //Detoxfications
 import Detoxfications from '../Components/Detoxification/Detoxification';
-//FAD+SUD
-import FdaSud from '../Components/FDA_SUD/FdaSud';
+//FAD
+import FDA from "../Components/FDA/first-dependency-assessment";
+//SUD
+import SUD from "../Components/SUD/substance-use-dependency";
 //CBT _Intake_Sex_D
 import CbtIntakeSexD from '../Components/CBT_Intake_Sex_D/CbtIntakeSexD';
 //6.1 CBT
@@ -421,8 +423,11 @@ export const routes = [
    //Detoxifications
    { path: `${process.env.PUBLIC_URL}/Detoxification/Detoxification`, Component : <Detoxfications/>},
 
-   //Fad+Sud
-   { path: `${process.env.PUBLIC_URL}/FDA_SUD/FdaSud`, Component : <FdaSud/>},
+   //FDA
+   { path: `${process.env.PUBLIC_URL}/FDA/first-dependency-assessment`, Component : <FDA/>},
+
+   //SUD
+   { path: `${process.env.PUBLIC_URL}/SUD/substance-use-dependency`, Component : <SUD/>},
 
    //CBT , Intake ,Sex_D
    { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/CbtIntakeSexD`, Component : <CbtIntakeSexD/>},
