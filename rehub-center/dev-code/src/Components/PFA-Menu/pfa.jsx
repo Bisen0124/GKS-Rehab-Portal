@@ -239,6 +239,7 @@ useEffect(() => {
   const closeUserViewModal = () => {
     setViewModal(false);
     setPFAEditModal(false);
+    setPFAEditIndividualDataModal(false);
   };
 
 
@@ -389,7 +390,7 @@ useEffect(() => {
         {/* Show Edit only if not discharged and readmission */}
         {row.dischargeStatus === 0 && row.isReadmission === 1 && (
           <span
-            onClick={() => handleFAEdit(row.recent_pfa_id)}
+            onClick={() => handlePreeFillCreateReadmissionPFA(row.recent_pfa_id)}
             style={{ cursor: "pointer" }}
             title="Readmission PFA"
           >
@@ -489,8 +490,8 @@ const tablePFAPatientListColumns = [
                 <circle cx="12" cy="12" r="3"></circle>
               </svg>
             </span>
-            {/* <span
-              onClick={() => handleFAEdit(row.id)}
+            <span
+              onClick={() => handleAllPFAEditData(row.user_id)}
               style={{ cursor: "pointer", marginLeft: "10px" }}
               title="Edit"
             >
@@ -510,7 +511,7 @@ const tablePFAPatientListColumns = [
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
-            </span> */}
+            </span>
             {/* <span
               onClick={() => handlePFADelete(row.id)}
               style={{ cursor: "pointer", marginLeft: "10px" }}
@@ -598,6 +599,7 @@ const tablePFAPatientListColumns = [
       setIsLoading(false);
     }
   };
+  
 
   const selectableRowDisabled = (row) => row.disabled === true;
 
@@ -670,6 +672,8 @@ const tablePFAPatientListColumns = [
 
   const closePFAModal = () => {
     setModal(false);
+   
+
   };
   const toggle = async (userId = null) => {
     // Always open the modal immediately
@@ -848,96 +852,98 @@ const tablePFAPatientListColumns = [
 
   //Partially delete, delete row will show but it's disbaled
 
-  const handlePFADelete = async (userId) => {
-    const token = localStorage.getItem("Authorization");
+  // const handlePFADelete = async (userId) => {
+  //   const token = localStorage.getItem("Authorization");
 
-    if (!userId) {
-      console.error("No userId provided for deletion");
-      Swal.fire("Error", "No user selected for deletion", "error");
-      return;
-    }
+  //   if (!userId) {
+  //     console.error("No userId provided for deletion");
+  //     Swal.fire("Error", "No user selected for deletion", "error");
+  //     return;
+  //   }
 
-    console.log("Delete called with userId:", userId);
+  //   console.log("Delete called with userId:", userId);
 
-    const confirm = await Swal.fire({
-      title: "Are you sure?",
-      text: "You are about to delete this assessment.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Yes, delete it!",
-    });
+  //   const confirm = await Swal.fire({
+  //     title: "Are you sure?",
+  //     text: "You are about to delete this assessment.",
+  //     icon: "warning",
+  //     showCancelButton: true,
+  //     confirmButtonText: "Yes, delete it!",
+  //   });
 
-    if (!confirm.isConfirmed) return;
+  //   if (!confirm.isConfirmed) return;
 
-    try {
-      // First, get pfa_id using userId
-      const getResponse = await fetch(
-        `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${userId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-        }
-      );
+  //   try {
+  //     // First, get pfa_id using userId
+  //     const getResponse = await fetch(
+  //       `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${userId}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `${token}`,
+  //         },
+  //       }
+  //     );
 
-      const data = await getResponse.json();
+  //     const data = await getResponse.json();
 
-      if (!getResponse.ok || !data?.assessment?.patient_id) {
-        console.error("Failed to get assessment data:", data);
-        Swal.fire("Error", "Could not fetch assessment info.", "error");
-        return;
-      }
+  //     if (!getResponse.ok || !data?.assessment?.patient_id) {
+  //       console.error("Failed to get assessment data:", data);
+  //       Swal.fire("Error", "Could not fetch assessment info.", "error");
+  //       return;
+  //     }
 
-      const pfa_id = data.assessment.patient_id;
-      console.log("Fetched pfa_id:", pfa_id);
+  //     const pfa_id = data.assessment.patient_id;
+  //     console.log("Fetched pfa_id:", pfa_id);
 
-      // Now delete using pfa_id
-      const delResponse = await fetch(
-        `https://gks-yjdc.onrender.com/api/pfa/delete-assessment/${pfa_id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-        }
-      );
+  //     // Now delete using pfa_id
+  //     const delResponse = await fetch(
+  //       `https://gks-yjdc.onrender.com/api/pfa/delete-assessment/${pfa_id}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `${token}`,
+  //         },
+  //       }
+  //     );
 
-      const result = await delResponse.json();
+  //     const result = await delResponse.json();
 
-      if (!delResponse.ok) {
-        console.error("Delete failed:", result);
-        Swal.fire("Error", "Assessment deletion failed!", "error");
-        return;
-      }
+  //     if (!delResponse.ok) {
+  //       console.error("Delete failed:", result);
+  //       Swal.fire("Error", "Assessment deletion failed!", "error");
+  //       return;
+  //     }
 
-      Swal.fire("Deleted!", "Assessment has been deleted.", "success");
+  //     Swal.fire("Deleted!", "Assessment has been deleted.", "success");
 
-      // // Disable that row
-      // setData((prev) =>
-      //   prev.map((user) =>
-      //     user.id === userId ? { ...user, disabled: true } : user
-      //   )
-      // );
-      // setFilteredData((prev) =>
-      //   prev.map((user) =>
-      //     user.id === userId ? { ...user, disabled: true } : user
-      //   )
-      // );/
-      // Completely remove the row
-      setData((prev) => prev.filter((user) => user.id !== userId));
-      setFilteredData((prev) => prev.filter((user) => user.id !== userId));
-    } catch (error) {
-      console.error("Error deleting assessment:", error);
-      Swal.fire("Error", "Something went wrong.", "error");
-    }
-  };
+  //     // // Disable that row
+  //     // setData((prev) =>
+  //     //   prev.map((user) =>
+  //     //     user.id === userId ? { ...user, disabled: true } : user
+  //     //   )
+  //     // );
+  //     // setFilteredData((prev) =>
+  //     //   prev.map((user) =>
+  //     //     user.id === userId ? { ...user, disabled: true } : user
+  //     //   )
+  //     // );/
+  //     // Completely remove the row
+  //     setData((prev) => prev.filter((user) => user.id !== userId));
+  //     setFilteredData((prev) => prev.filter((user) => user.id !== userId));
+  //   } catch (error) {
+  //     console.error("Error deleting assessment:", error);
+  //     Swal.fire("Error", "Something went wrong.", "error");
+  //   }
+  // };
 
   //PFA edit handler
   const [PFAeditData, setPFAeditData] = useState(null);
   const [PFAEditModal, setPFAEditModal] = useState(false);
+
+  const [PFAEditIndividualDataModal, setPFAEditIndividualDataModal] = useState(false);
   //fetch the latest assessment based on created_at, then simply sort the assessments and pick the first one: - Not applicable
   //Re-admission patient by handlePDAEdit
     //🔧 Convert DD/MM/YYYY to Date Object:
@@ -947,7 +953,7 @@ const parseDateString = (dateStr) => {
   const date = new Date(dateStr);
   return isNaN(date.getTime()) ? null : date;
 };
- const handleFAEdit = async (recentPFAiD = null) => {
+ const handlePreeFillCreateReadmissionPFA = async (recentPFAiD = null) => {
   if (typeof recentPFAiD === "object" && recentPFAiD !== null) {
     recentPFAiD = recentPFAiD.recent_pfa_id;
   }
@@ -1106,10 +1112,6 @@ const parseDateString = (dateStr) => {
 
       verification:PFAeditData.readmissionVerification,
       user_id: PFAeditData.readmissionUserId,
-
-
-
-
     };
 
     // try {
@@ -1200,6 +1202,252 @@ const parseDateString = (dateStr) => {
         text: "PFA Readmission failed! Unknown error occurred.",
       });
     }
+  };
+
+
+  //Edit like view PFA data by userID and get pateint id through user id and pass to update edit PFA to backend hanlder
+  const handleAllPFAEditData = async (userId = null) => {
+    setPFAEditIndividualDataModal(true);
+  
+    if (typeof userId === "object" && userId !== null) {
+      userId = userId.id;
+    }
+  
+    if (!userId) {
+      console.error("Invalid userId provided to toggle");
+      return;
+    }
+  
+    console.log("user id for edit PFA =>", userId);
+  
+    const token = localStorage.getItem("Authorization");
+  
+    try {
+      const response = await fetch(
+        `https://gks-yjdc.onrender.com/api/pfa/user-assessment/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`,
+          },
+        }
+      );
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        console.error("User fetch error:", data);
+        return;
+      }
+  
+      const assessmentsArray = data.assessments;
+  
+      if (!Array.isArray(assessmentsArray) || assessmentsArray.length === 0) {
+        console.warn("No assessments found for this user.");
+        return;
+      }
+  
+      // Pick latest or first assessment
+      const latestAssessmentMeta = assessmentsArray[0]; // or use sort/filter logic
+  
+      const pfaId = Number(latestAssessmentMeta?.pfa_id);
+  
+      if (!pfaId) {
+        console.error("Invalid or missing pfa_id:", latestAssessmentMeta);
+        return;
+      }
+  
+      setPFAeditData((prev) => ({ ...prev, pfa_id: pfaId }));
+  
+      console.log("Selected PFA User Assessment:", latestAssessmentMeta);
+  
+      // Fetch full details using pfa_id
+      const detailResponse = await fetch(
+        `https://gks-yjdc.onrender.com/api/pfa/patient-assessment/${pfaId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`,
+          },
+        }
+      );
+  
+      const detailData = await detailResponse.json();
+  
+      if (!detailResponse.ok) {
+        console.error("Detail fetch error:", detailData);
+        return;
+      }
+  
+      const latestAssessment = detailData.assessment || detailData;
+  
+      if (!latestAssessment) {
+        console.warn("No detailed assessment found.");
+        return;
+      }
+  
+      setSelectedUser(latestAssessment);
+  
+      setPFAeditData((prev) => ({
+        ...prev,
+        date_of_assessment: latestAssessment.date_of_assessment
+          ? parseDateString(latestAssessment.date_of_assessment)
+          : "",
+        dependent_to: latestAssessment.dependent_to,
+        substance_use_pattern: latestAssessment.substance_use_pattern,
+        last_30_days_quantity: latestAssessment.last_30_days_quantity,
+  
+        medicalConfirmationData: latestAssessment?.medical_history || "",
+        bloodConfirmationData: latestAssessment?.blood_transfusion_history || "",
+  
+        weight: Number(latestAssessment?.weight) || 0,
+        pulse_rate: Number(latestAssessment?.pulse_rate) || 0,
+        blood_pressure: latestAssessment?.blood_pressure || "",
+        temperature: Number(latestAssessment?.temperature) || 0,
+        lymphadenopathy: latestAssessment?.lymphadenopathy || "",
+  
+        medical_or_blood_history_details:
+          latestAssessment.medical_or_blood_history_details,
+        complication_description: latestAssessment.complication_description,
+        neuro_description: latestAssessment.neuro_description,
+        other_findings: latestAssessment.other_findings,
+        consent_name: latestAssessment.consent_name,
+        consent_relationship: latestAssessment.consent_relationship,
+        consent_signature: latestAssessment.consent_signature,
+        prepared_by: latestAssessment.prepared_by,
+  
+        complications: {
+          ulcer: latestAssessment.ulcer,
+          respiratory_problem: latestAssessment.respiratory_problem,
+          jaundice: latestAssessment.jaundice,
+          haematemesis: latestAssessment.haematemesis,
+          abdominal_complaints: latestAssessment.abdominal_complaints,
+          cardiovascular: latestAssessment.cardiovascular,
+        },
+  
+        neurological: {
+          delirium: latestAssessment.delirium,
+          seizure: latestAssessment.seizure,
+          blackout: latestAssessment.blackout,
+          memory_loss: latestAssessment.memory_loss,
+          trembling: latestAssessment.trembling,
+          epilepsy: latestAssessment.epilepsy,
+          neuropathy: latestAssessment.neuropathy,
+        },
+  
+        nutritional_status: latestAssessment.nutritional_status,
+        readmissionConsent: latestAssessment.consent,
+        readmissionVerification: latestAssessment.verification,
+        readmissionUserId: latestAssessment.user_id,
+      }));
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+
+
+  //Edit and submit PFA individual assessment data hanlder
+  const handlerEditPFAIndividualAssessmentData = async () => {
+    setIsLoading(true); // Start loading
+
+    const payload = {
+      date_of_assessment: PFAeditData.date_of_assessment?.toISOString(),
+      dependent_to: PFAeditData.dependent_to,
+      substance_use_pattern: PFAeditData.substance_use_pattern,
+      last_30_days_quantity: PFAeditData.last_30_days_quantity,
+      medical_history: PFAeditData.medical_history,
+      blood_transfusion_history: PFAeditData.blood_transfusion_history,
+      medical_or_blood_history_details:
+        PFAeditData.medical_or_blood_history_details,
+
+      weight: Number(PFAeditData.weight) || 0,
+      pulse_rate: Number(PFAeditData.pulse_rate) || 0,
+      blood_pressure: PFAeditData.blood_pressure,
+      temperature: Number(PFAeditData?.temperature) || 0,
+      lymphadenopathy: PFAeditData.lymphadenopathy,
+
+      // Complications
+      ulcer: PFAeditData.complications?.ulcer || "",
+      respiratory_problem: PFAeditData.complications?.respiratory_problem || "",
+      jaundice: PFAeditData.complications?.jaundice || "",
+      haematemesis: PFAeditData.complications?.haematemesis || "",
+      abdominal_complaints:
+        PFAeditData.complications?.abdominal_complaints || "",
+      cardiovascular: PFAeditData.complications?.cardiovascular || "",
+      complication_description: PFAeditData.complication_description,
+
+      // Neurological
+      seizure: PFAeditData.neurological?.seizure || "",
+      epilepsy: PFAeditData.neurological?.epilepsy || "",
+      delirium: PFAeditData.neurological?.delirium || "",
+      trembling: PFAeditData.neurological?.trembling || "",
+      memory_loss: PFAeditData.neurological?.memory_loss || "",
+      neuropathy: PFAeditData.neurological?.neuropathy || "",
+      blackout: PFAeditData.neurological?.blackout || "",
+      neuro_description: PFAeditData.neuro_description,
+
+      other_findings: PFAeditData.other_findings,
+
+      consent_name: PFAeditData.consent_name,
+      consent_relationship: PFAeditData.consent_relationship,
+      consent_signature: PFAeditData.consent_signature,
+      prepared_by: PFAeditData.prepared_by,
+
+      nutritional_status: PFAeditData.nutritional_status,
+
+      consent:PFAeditData.readmissionConsent,
+
+      verification:PFAeditData.readmissionVerification,
+      user_id: PFAeditData.readmissionUserId,
+
+      pfa_id:PFAeditData.pfa_id,
+    };
+
+    try {
+      const token = localStorage.getItem("Authorization");
+      const response = await fetch(
+        `https://gks-yjdc.onrender.com/api/pfa/update-assessment/${PFAeditData.pfa_id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        Swal.fire({
+          icon: "error",
+          title: "Update Failed",
+          text: data.errors?.[0]?.message || "Unknown error occurred.",
+        });
+        return;
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "Assessment Updated",
+        text: "The assessment was updated successfully!",
+      });
+
+      setPFAEditIndividualDataModal(false);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "An error occurred while updating the assessment.",
+      });
+    }
+    
   };
 
   //Search filter on register datalist
@@ -2945,6 +3193,573 @@ const parseDateString = (dateStr) => {
                         ></span>
                       ) : (
                         "Create PFA"
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+              </div>
+            )}
+          </CommonModal>
+
+
+
+           {/* Edit individual PFA by user_id modal */}
+           <CommonModal
+            isOpen={PFAEditIndividualDataModal}
+            title={"Readmission PFA"}
+            toggler={closeUserViewModal}
+            maxWidth="800px"
+          >
+            {PFAEditIndividualDataModal && PFAeditData && (
+              <div className="row">
+                <Form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handlerEditPFAIndividualAssessmentData();
+                  }}
+                >
+                  {/* Date of assesment */}
+                    <div className="col-md-6">
+                      <FormGroup className="form-group row">
+                        <Label className="col-sm-12 col-form-label  col-xl-6">
+                          {dateOfAssessment}
+                        </Label>
+                        <Col xl="5" sm="12">
+                          <div className="input-group">
+                            <DatePicker
+                              className="form-control digits"
+                              selected={PFAeditData.date_of_assessment instanceof Date && !isNaN(PFAeditData.date_of_assessment)
+                            ? PFAeditData.date_of_assessment
+                            : null }
+                              onChange={(date) =>
+  setPFAeditData({
+    ...PFAeditData,
+    date_of_assessment: date, // this is already a Date object
+  })
+}
+
+                            />
+                          </div>
+                        </Col>
+                      </FormGroup>
+                    </div>
+                  {/* Dependent To */}
+                  <div className="col-md-12 pt-3">
+                    <FormGroup className="mb-0">
+                      <Label>{dependentTo}</Label>
+                      <Input
+                        type="textarea"
+                        rows="3"
+                        name="dependentToData"
+                        value={PFAeditData.dependent_to}
+                        onChange={(e) =>
+                          setPFAeditData({
+                            ...PFAeditData,
+                            dependent_to: e.target.value,
+                          })
+                        }
+                      />
+                    </FormGroup>
+                  </div>
+
+                  {/* Substance Use Pattern */}
+                  <div className="col-md-12">
+                    <FormGroup className="mb-0">
+                      <Label>{substanceUsePattern}</Label>
+                      <Input
+                        type="textarea"
+                        rows="3"
+                        name="substanceUsePatternData"
+                        value={PFAeditData.substance_use_pattern}
+                        onChange={(e) =>
+                          setPFAeditData({
+                            ...PFAeditData,
+                            substance_use_pattern: e.target.value,
+                          })
+                        }
+                      />
+                    </FormGroup>
+                  </div>
+
+                  {/* Last 30 Days Quantity */}
+                  <div className="col-md-12">
+                    <FormGroup className="mb-0">
+                      <Label>{last30DaysQuantity}</Label>
+                      <Input
+                        type="textarea"
+                        rows="3"
+                        name="last30DaysQuantityData"
+                        value={PFAeditData.last_30_days_quantity}
+                        onChange={(e) =>
+                          setPFAeditData({
+                            ...PFAeditData,
+                            last_30_days_quantity: e.target.value,
+                          })
+                        }
+                      />
+                    </FormGroup>
+                  </div>
+
+                  {/* General Physical Examination */}
+                  <div className="table-responsive">
+                    <Table bordered>
+                      <thead>
+                        <tr>
+                          <th>{tableNumber}</th>
+                          <th>{genralPhysicalExamination}</th>
+                          <th>{Observation}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          {
+                            id: "5",
+                            question: anyMedicalHistory,
+                            name: "medicalConfirmationData",
+                          },
+                          {
+                            id: "6",
+                            question: anyBloodTransfusionHistory,
+                            name: "bloodConfirmationData",
+                          },
+                          {
+                            id: "7",
+                            question: Weight,
+                            name: "weight",
+                          },
+                          {
+                            id: "8",
+                            question: PulseRate,
+                            name: "pulse_rate",
+                          },
+                          {
+                            id: "9",
+                            question: Bloodpressure,
+                            name: "blood_pressure",
+                          },
+                          {
+                            id: "10",
+                            question: Temperature,
+                            name: "temperature",
+                          },
+                        ].map(({ id, question, name }) => (
+                          <tr key={id}>
+                            <td>{id}</td>
+                            <td>{question}</td>
+                            <td>
+                              <Input
+                                type={
+                                  [
+                                    "weight",
+                                    "pulse_rate",
+                                    "temperature",
+                                  ].includes(name)
+                                    ? "number"
+                                    : "text"
+                                }
+                                name={name}
+                                value={PFAeditData[name] || ""}
+                                onChange={(e) => {
+                                  const { name, value, type } = e.target;
+                                  setPFAeditData((prev) => ({
+                                    ...prev,
+                                    [name]:
+                                      type === "number" ? Number(value) : value,
+                                  }));
+                                }}
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+
+                    <div className="col-md-12">
+                      <FormGroup className="mb-0">
+                        <Label>{mentionIfAny}</Label>
+                        <Input
+                          type="textarea"
+                          rows="3"
+                          name="bloodTransfusionHistoryData"
+                          value={PFAeditData.medical_or_blood_history_details}
+                          onChange={(e) =>
+                            setPFAeditData({
+                              ...PFAeditData,
+                              medical_or_blood_history_details: e.target.value,
+                            })
+                          }
+                        />
+                      </FormGroup>
+                    </div>
+                  </div>
+
+                  {/* Complication Details */}
+                  <div className="table-responsive">
+                    <Table bordered>
+                      <thead>
+                        <tr>
+                          <th>{tableNumber2}</th>
+                          <th>{complicationDetails}</th>
+                          <th>{yes1}</th>
+                          <th>{no1}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[
+                          { key: "ulcer", label: ulcers },
+                          {
+                            key: "respiratory_problem",
+                            label: respiratoryProblem,
+                          },
+                          { key: "jaundice", label: jaundice },
+                          { key: "haematemesis", label: Haematemesis },
+                          {
+                            key: "abdominal_complaints",
+                            label: otherAbdominalComplaints,
+                          },
+                          { key: "cardiovascular", label: cardiovascular },
+                        ].map(({ key, label }, index) => (
+                          <tr key={key}>
+                            <td>{index + 1}</td>
+                            <td>{label}</td>
+                            <td colSpan="2">
+                              <div className="radio radio-primary d-flex gap-3">
+                                {["Yes", "No"].map((value) => {
+                                  const inputId = `complication_${key}_${value}`;
+                                  return (
+                                    <div
+                                      key={inputId}
+                                      className="form-check form-check-inline"
+                                    >
+                                      <Input
+                                        id={inputId}
+                                        type="radio"
+                                        className="form-check-input"
+                                        name={`complication_${key}`}
+                                        value={value}
+                                        checked={
+                                          PFAeditData?.complications?.[
+                                            key
+                                          ]?.toString() === value.toString()
+                                        }
+                                        onChange={() => {
+                                          console.log(
+                                            `Setting complication ${key} to:`,
+                                            value
+                                          );
+                                          setPFAeditData((prev) => ({
+                                            ...prev,
+                                            complications: {
+                                              ...prev.complications,
+                                              [key]: value,
+                                            },
+                                          }));
+                                        }}
+                                      />
+
+                                      <Label
+                                        className="form-check-label"
+                                        for={inputId}
+                                      >
+                                        {value}
+                                      </Label>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+
+                    <div className="col-md-12">
+                      <FormGroup className="mb-0">
+                        <Label>{mentionIfAny2}</Label>
+                        <Input
+                          type="textarea"
+                          rows="3"
+                          name="complication_description"
+                          value={PFAeditData.complication_description}
+                          onChange={(e) =>
+                            setPFAeditData({
+                              ...PFAeditData,
+                              complication_description: e.target.value,
+                            })
+                          }
+                        />
+                      </FormGroup>
+                    </div>
+                  </div>
+
+                  {/* Neurological Section */}
+                  <div className="table-responsive">
+                    <Table bordered>
+                      <thead>
+                        <tr>
+                          <th>{tableNumber3}</th>
+                          <th>{neurological}</th>
+                          <th>{yes1}</th>
+                          <th>{no1}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {neurologicalOptions.map((option, index) => (
+                          <tr key={option.key}>
+                            <td>{index + 1}</td>
+                            <td>{option.label}</td>
+                            {["Yes", "No"].map((value) => {
+                              const inputId = `neuro_${option.key}_${value}`;
+                              return (
+                                <td key={inputId}>
+                                  <div className="radio radio-primary d-flex gap-3">
+                                    <div className="form-check form-check-inline">
+                                      <Input
+                                        id={inputId}
+                                        type="radio"
+                                        className="form-check-input"
+                                        name={`neuro_${option.key}`}
+                                        value={value}
+                                        checked={
+                                          PFAeditData?.neurological?.[
+                                            option.key
+                                          ]?.toString() === value.toString()
+                                        }
+                                        onChange={() =>
+                                          setPFAeditData((prev) => ({
+                                            ...prev,
+                                            neurological: {
+                                              ...prev.neurological,
+                                              [option.key]: value,
+                                            },
+                                          }))
+                                        }
+                                      />
+                                      <Label
+                                        className="form-check-label"
+                                        htmlFor={inputId}
+                                      >
+                                        {value}
+                                      </Label>
+                                    </div>
+                                  </div>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+
+                    <div className="col-md-12">
+                      <FormGroup className="mb-0">
+                        <Label>{mentionIfAny2}</Label>
+                        <Input
+                          type="textarea"
+                          rows="3"
+                          name="neuro_description"
+                          value={PFAeditData.neuro_description}
+                          onChange={(e) =>
+                            setPFAeditData({
+                              ...PFAeditData,
+                              neuro_description: e.target.value,
+                            })
+                          }
+                        />
+                      </FormGroup>
+                    </div>
+                  </div>
+
+                  {/* Any Other Findings */}
+                  <div className="col-md-12">
+                    <FormGroup className="mb-0">
+                      <Label>{anyOtherFindings}</Label>
+                      <Input
+                        type="textarea"
+                        rows="3"
+                        name="other_findings"
+                        value={PFAeditData.other_findings}
+                        onChange={(e) =>
+                          setPFAeditData({
+                            ...PFAeditData,
+                            other_findings: e.target.value,
+                          })
+                        }
+                      />
+                    </FormGroup>
+                  </div>
+
+                  {/* Lymphadenopathy */}
+                  <div className="col-md-12">
+                    <FormGroup className="mb-0">
+                      <Label>{Lymphadenopathy}</Label>
+                      <Input
+                        type="textarea"
+                        rows="3"
+                        name="lymphadenopathy"
+                        value={PFAeditData.lymphadenopathy}
+                        onChange={(e) =>
+                          setPFAeditData({
+                            ...PFAeditData,
+                            lymphadenopathy: e.target.value,
+                          })
+                        }
+                      />
+                    </FormGroup>
+                  </div>
+
+                  {/* Nutritional Status / नुट्रिशन स्तिथि */}
+                  <div className="col-md-6">
+                    <Label>Nutritional Status / नुट्रिशन स्तिथि</Label>
+                    <div className="radio radio-primary d-flex gap-3">
+                      {["Good", "Average", "Poor"].map((Nstatus) => (
+                        <div key={Nstatus}>
+                          <Input
+                            type="radio"
+                            id={`nutritionalStatus-${Nstatus}`}
+                            name="nutritional_status"
+                            value={Nstatus}
+                            checked={PFAeditData.nutritional_status === Nstatus}
+                            onChange={(e) =>
+                              setPFAeditData({
+                                ...PFAeditData,
+                                nutritional_status: e.target.value,
+                              })
+                            }
+                          />
+                          <Label htmlFor={`nutritionalStatus-${Nstatus}`}>
+                            {Nstatus}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Consent Section */}
+                  <div className="col-md-12 mt-4">
+                    <div className="checkbox ms-3">
+                    <Input
+                      id="checkbox1"
+                      type="checkbox"
+                      checked={PFAeditData.readmissionConsent === "Yes"}
+                      onChange={(e) =>
+                        setPFAeditData({
+                          ...PFAeditData,
+                          readmissionConsent: e.target.checked ? "Yes" : "No",
+                        })
+                      }
+                    />
+                    <Label className="text-muted" for="checkbox1">
+                      {consent}
+                    </Label>
+                  </div>
+
+                    <Row>
+                      <Col md="4">
+                        <FormGroup>
+                          <Label>{name}</Label>
+                          <Input
+                            type="text"
+                            name="consent_name"
+                            placeholder="Name"
+                            value={PFAeditData.consent_name}
+                            onChange={(e) =>
+                              setPFAeditData({
+                                ...PFAeditData,
+                                consent_name: e.target.value,
+                              })
+                            }
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col md="4">
+                        <FormGroup>
+                          <Label>{relationship}</Label>
+                          <Input
+                            type="text"
+                            name="consent_relationship"
+                            placeholder="Relationship"
+                            value={PFAeditData.consent_relationship}
+                            onChange={(e) =>
+                              setPFAeditData({
+                                ...PFAeditData,
+                                consent_relationship: e.target.value,
+                              })
+                            }
+                          />
+                        </FormGroup>
+                      </Col>
+                      <Col md="4">
+                        <FormGroup>
+                          <Label>{signature}</Label>
+                          <Input
+                            type="text"
+                            name="consent_signature"
+                            placeholder="Signature"
+                            value={PFAeditData.consent_signature}
+                            onChange={(e) =>
+                              setPFAeditData({
+                                ...PFAeditData,
+                                consent_signature: e.target.value,
+                              })
+                            }
+                          />
+                        </FormGroup>
+                      </Col>
+                    </Row>
+                  </div>
+
+                  {/* Prepared By Section */}
+                  <div className="col-md-12 mt-3">
+                    <FormGroup>
+                      <Label>{prepared}</Label>
+                      <Input
+                        type="text"
+                        name="prepared_by"
+                        placeholder="Prepared By"
+                        value={PFAeditData.prepared_by}
+                        onChange={(e) =>
+                          setPFAeditData({
+                            ...PFAeditData,
+                            prepared_by: e.target.value,
+                          })
+                        }
+                      />
+                    </FormGroup>
+                  </div>
+
+                  <div className="col-md-12 mt-4">
+                        <div className="checkbox ms-3">
+                          <Input
+                            id="checkbox3"
+                            type="checkbox"
+                            checked={PFAeditData.readmissionVerification === "Yes"}
+                            onChange={(e) =>
+                              setPFAeditData((prev) => ({
+                                ...prev,
+                                readmissionVerification: e.target.checked ? "Yes" : "No",
+                              }))
+                            }
+                          />
+                          <Label className="text-muted" for="checkbox3">
+                            {
+                              "Varification from parent side before PFA submitting"
+                            }
+                          </Label>
+                        </div>
+                      </div>
+
+                  {/* Submit Button */}
+                  <div className="d-flex gap-3">
+                    <Button color="primary" type="submit" disabled={isLoading}>
+                      {isLoading ? (
+                        <span
+                          className="spinner-border spinner-border-sm"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
+                      ) : (
+                        "Update PFA"
                       )}
                     </Button>
                   </div>
