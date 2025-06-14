@@ -442,79 +442,202 @@ function SUD() {
 
             const result = await response.json();
             console.log("API Response:", result);
-                // ✅ Success Case
-  setIsLoading(false);
-             Swal.fire({
-               icon: "success",
-               title: "SUD Created Successfully",
-               text: "The SUD assessment was submitted successfully.",
-             }).then(() => {
-             // This runs after the user clicks "OK"
-             setModal(false);
-           });
+            // ✅ Success Case
+            setIsLoading(false);
+            Swal.fire({
+                icon: "success",
+                title: "SUD Created Successfully",
+                text: "The SUD assessment was submitted successfully.",
+            }).then(() => {
+                // This runs after the user clicks "OK"
+                setModal(false);
+            });
         } catch (error) {
             console.error("Submission error:", error);
             setIsLoading(false);
             Swal.fire({
-                   icon: "error",
-                   title: "Unexpected Error",
-                   text: "SUD failed! Unknown error occurred.",
-                 });
+                icon: "error",
+                title: "Unexpected Error",
+                text: "SUD failed! Unknown error occurred.",
+            });
         }
     };
 
 
 
     //On click pencil icon like edit icon on form will open where all pre fill data to your form by recent_sda_id. 
-    const [SUDeditModal, setSUDeditModal]=useState(false);
-    const handleSUDPreFill= async (recentSUDID)=>{
-        setSUDeditModal(true)
-       if(typeof recentSUDID === "object" && recentSUDID !== null){
-        recentSUDID = recentSUDID.recent_sda_id;
-       }
-       if (!recentSUDID) {
-        console.error("Invalid recentSUDID provided");
-        return;
-      }
-       console.log("recentSUDID =>", recentSUDID);
-       const token = localStorage.getItem("Authorization");
-       
-           try {
-             const response = await fetch(
-               `https://gks-yjdc.onrender.com/api/sda/assessment/${recentSUDID}`,
-               {
-                 method: "GET",
-                 headers: {
-                   "Content-Type": "application/json",
-                   Authorization: `${token}`,
-                 },
-               }
-             );
-       
-             const data = await response.json();
-       
-             if (!response.ok) {
-               console.error("User fetch error:", data);
-               return;
-             }
-       
-             const latestAssessment = data.assessment || data;
-             console.log("SUD => ", latestAssessment);
-       
-             if (!latestAssessment) {
-               console.warn("No assessment found for this FDA ID.");
-               return;
-             }
-       
-           } catch (error) {
-             console.error("Fetch error:", error);
-           }
-    }
+    const [SUDeditModal, setSUDeditModal] = useState(false);
+    const [SUDselectedUser, setSUDselectedUser] = useState(null);
 
-     //close view data modal
-  const closeSUDmodal = () => {
-    setSUDeditModal(false)
-  };
+    const handleSUDPreFill = async (recentSUDID) => {
+        setSUDeditModal(true);
+
+        if (typeof recentSUDID === "object" && recentSUDID !== null) {
+            recentSUDID = recentSUDID.recent_sda_id;
+        }
+
+        if (!recentSUDID) {
+            console.error("Invalid recentSUDID provided");
+            return;
+        }
+
+        console.log("recentSUDID =>", recentSUDID);
+
+        const token = localStorage.getItem("Authorization");
+
+        try {
+            const response = await fetch(
+                `https://gks-yjdc.onrender.com/api/sda/assessment/${recentSUDID}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `${token}`,
+                    },
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error("User fetch error:", data);
+                return;
+            }
+
+            const latestAssessment = data.assessment || data;
+
+            console.log("SUD => ", latestAssessment);
+
+            if (!latestAssessment) {
+                console.warn("No assessment found for this SUD ID.");
+                return;
+            }
+
+            setSUDselectedUser({
+                user_id: latestAssessment.user_id,
+                date_of_assessment: latestAssessment.date_of_assessment
+                    ? parseDateString(latestAssessment.date_of_assessment)
+                    : "",
+                substance_details: latestAssessment.substance_details.map((item) => ({
+                    substance_id: item.substance_id,
+                    substance_name: item.substance_name,
+                    ever_used: item.ever_used,
+                    duration: item.duration,
+                    current_use: item.current_use,
+                    current_use_pattern: item.current_use_pattern,
+                    usual_dose: item.usual_dose,
+                    remarks: item.remarks,
+                })),
+                consent: latestAssessment.consent,
+                signature: latestAssessment.signature
+            });
+
+            console.log("signature=>", SUDselectedUser.signature)
+            console.log("consent=>", SUDselectedUser.consent)
+
+        } catch (error) {
+            console.error("Fetch error:", error);
+        }
+    };
+
+
+    //close view data modal
+    const closeSUDmodal = () => {
+        setSUDeditModal(false)
+    };
+
+
+    //Readmission SUD form handler
+    //🔧 Convert DD/MM/YYYY to Date Object:
+    const parseDateString = (dateStr) => {
+        if (!dateStr) return null;
+
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? null : date;
+    };
+
+    const handleEditSubstances = (index, field, value) => {
+        const updatedUser = { ...SUDselectedUser };
+        updatedUser.substance_details = [...updatedUser.substance_details];
+        updatedUser.substance_details[index] = {
+            ...updatedUser.substance_details[index],
+            [field]: value,
+        };
+        setSUDselectedUser(updatedUser);
+    };
+
+
+    const handleSUDReadmission = async () => {
+        setIsLoading(true);
+
+        const payload = {
+            user_id: SUDselectedUser?.user_id,
+            date_of_assessment: SUDselectedUser?.date_of_assessment,
+            // patient_name: SUDselectedUser?.name,
+            substance_details: SUDselectedUser?.substance_details?.map((item) => ({
+                substance_id: item.substance_id,
+                substance_name: item.substance_name,
+                ever_used: item.ever_used,
+                duration: item.duration,
+                current_use: item.current_use,
+                current_use_pattern: item.current_use_pattern,
+                usual_dose: item.usual_dose,
+                remarks: item.remarks,
+            })),
+            consent: SUDselectedUser?.consent,
+            signature: SUDselectedUser?.signature,
+        };
+
+
+        console.log("POST Readmission SUD payload =>", payload);
+
+
+        // Now you can send the payload
+        try {
+            const token = localStorage.getItem("Authorization");
+
+            const response = await fetch("https://gks-yjdc.onrender.com/api/sda/create-assessment", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `${token}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await response.json();
+
+            console.log("POST Readmission SUD result =>", result);
+
+
+            if (!response.ok) {
+                Swal.fire({
+                    icon: "error",
+                    title: "SUD Failed",
+                    text: "The SUD readmission has been failed!",
+                }).then(() => {
+                    // This runs after the user clicks "OK"
+                    setModal(false);
+                });
+            } else {
+                Swal.fire({
+                    icon: "success",
+                    title: "SUD Readmission Success",
+                    text: "The SUD readmission has been successfully created.",
+                }).then(() => {
+                    // This runs after the user clicks "OK"
+                    setModal(false);
+                });
+                console.log("SUD Readmission Data =>", result);
+            }
+        } catch (error) {
+            console.error("Fetch error:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+
 
     return (
         <Fragment>
@@ -835,19 +958,179 @@ function SUD() {
                     </Form>
                 </div>
             </CommonModal>
- {/* Create SUD form popup modal end */}
+            {/* Create SUD form popup modal end */}
 
 
- {/* Readmission SUD form modal start */}
- <CommonModal
-        isOpen={SUDeditModal}
-        title="Readmission SUD"
-        toggler={closeSUDmodal}
-        maxWidth="1200px"
-      >
-        <p>Hello Readmision form by recent SUD ID's</p>
-      </CommonModal>
- {/* Readmission SUD form modal end */}
+            {/* Readmission SUD form modal start */}
+            <CommonModal
+                isOpen={SUDeditModal}
+                title="Readmission SUD"
+                toggler={closeSUDmodal}
+                maxWidth="1200px"
+            >
+                <form onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSUDReadmission();
+                }}>
+                    <div className="row px-3 pt-4 pb-3">
+                        <div className="col-md-6">
+                            <FormGroup className="form-group row">
+                                <Label className="col-sm-12 col-form-label col-xl-6">
+                                    Date of Assessment
+                                </Label>
+                                <Col xl="5" sm="12">
+                                    <div className="input-group">
+                                        <DatePicker
+                                            className="form-control digits"
+                                            selected={SUDselectedUser?.date_of_assessment || null}
+                                            onChange={(date) =>
+                                                setSUDselectedUser((prev) => ({
+                                                    ...prev,
+                                                    date_of_assessment: date,
+                                                }))
+                                            }
+                                        />
+                                    </div>
+                                </Col>
+                            </FormGroup>
+
+                        </div>
+
+
+                        <div className="col-md-12">
+                            <Table className="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>S.No</th>
+                                        <th>Substance<br />मादक पदार्थ</th>
+                                        <th>Ever Used<br />उपयोग किया</th>
+                                        <th>Duration<br />अवधि</th>
+                                        <th>Current Use<br />वर्तमान उपयोग</th>
+                                        <th>Current Use Pattern<br />यूज़ पैटर्न</th>
+                                        <th>Usual Dose<br />मात्रा</th>
+                                        <th>Remarks<br />टिप्पणियाँ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {SUDselectedUser?.substance_details?.map((item, index) => (
+                                        <tr key={index}>
+                                            <td>{index + 1}</td>
+                                            <td>{item.substance_name}</td>
+                                            <td width="10%">
+                                                <select
+                                                    className="form-control"
+                                                    value={item.ever_used || ""}
+                                                    onChange={(e) => handleEditSubstances(index, "ever_used", e.target.value)}
+                                                >
+                                                    <option value="">Select</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={item.duration || ""}
+                                                    onChange={(e) => handleEditSubstances(index, "duration", e.target.value)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={item.current_use || ""}
+                                                    onChange={(e) => handleEditSubstances(index, "current_use", e.target.value)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={item.current_use_pattern || ""}
+                                                    onChange={(e) => handleEditSubstances(index, "current_use_pattern", e.target.value)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={item.usual_dose || ""}
+                                                    onChange={(e) => handleEditSubstances(index, "usual_dose", e.target.value)}
+                                                />
+                                            </td>
+                                            <td>
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    value={item.remarks || ""}
+                                                    onChange={(e) => handleEditSubstances(index, "remarks", e.target.value)}
+                                                />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                            <div className="col-md-12">
+                                <div className="checkbox ms-3">
+                                    <Input
+                                        id="checkbox2"
+                                        type="checkbox"
+                                        checked={SUDselectedUser?.consent === "Yes"}
+                                        onChange={(e) =>
+                                            setSUDselectedUser({
+                                                ...SUDselectedUser,
+                                                consent: e.target.checked ? "Yes" : "No",
+                                            })
+                                        }
+                                    />
+                                    <Label className="text-muted" for="checkbox2">
+                                        {consent}
+                                    </Label>
+                                </div>
+                            </div>
+
+                            <div className="col-md-12">
+                                <Col md="4">
+                                    <FormGroup>
+                                        <Label>{signature}</Label>
+                                        <Input
+                                            type="text"
+                                            name="signature"
+                                            placeholder="Signature"
+                                            value={SUDselectedUser?.signature}
+                                            onChange={(e) =>
+                                                setSUDselectedUser({
+                                                    ...SUDselectedUser,
+                                                    signature: e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </FormGroup>
+                                </Col>
+                            </div>
+
+
+                            {/* Submit Button */}
+                            <div className="d-flex gap-3">
+                                <Button color="primary" type="submit" disabled={isLoading}>
+                                    {isLoading ? (
+                                        <span
+                                            className="spinner-border spinner-border-sm"
+                                            role="status"
+                                            aria-hidden="true"
+                                        ></span>
+                                    ) : (
+                                        "Create Readmission SUD"
+                                    )}
+                                </Button>
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+            </CommonModal>
+            {/* Readmission SUD form modal end */}
 
         </Fragment>
     )
