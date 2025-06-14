@@ -1054,7 +1054,7 @@ const parseDateString = (dateStr) => {
 
   //PFA update patient assessment handler - Not applicable
   //Readmission patient PFA Handler
-  const handleUpdateAssessment = async () => {
+  const handleReadmissionAssessment = async () => {
     setIsLoading(true); // Start loading
 
     const payload = {
@@ -2400,7 +2400,7 @@ const parseDateString = (dateStr) => {
                 <Form
                   onSubmit={(e) => {
                     e.preventDefault();
-                    handleUpdateAssessment();
+                    handleReadmissionAssessment();
                   }}
                 >
                   {/* Date of assesment */}
