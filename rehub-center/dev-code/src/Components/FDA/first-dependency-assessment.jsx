@@ -244,6 +244,28 @@ function FDA() {
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
           </span>
+          <span
+              onClick={() => handleFDAindividualEdit(row.fda_id)}
+              style={{ cursor: "pointer", marginLeft: "10px" }}
+              title="Edit"
+            >
+            <svg
+                style={{ color: "green" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-edit"
+              >
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </span>
         </div>
       ),
     },
@@ -747,6 +769,145 @@ function FDA() {
           }, 2000);
         });
     };
+
+
+
+    //Edit individual FDA assessment form handler
+    const handleFDAindividualEdit = async (editFDAID = null) => {
+      setFDAeditModal(true)
+      if (typeof editFDAID === "object" && editFDAID !== null) {
+        editFDAID = editFDAID.fda_id;
+      }
+  
+      if (!editFDAID) {
+        console.error("Invalid editFDAID provided");
+        return;
+      }
+  
+      console.log("FDA ID For Edit:", editFDAID);
+      const token = localStorage.getItem("Authorization");
+  
+      try {
+        const response = await fetch(
+          `https://gks-yjdc.onrender.com/api/fda/assessment/${editFDAID}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        );
+  
+        const data = await response.json();
+  
+        if (!response.ok) {
+          console.error("User fetch error:", data);
+          return;
+        }
+  
+        const latestAssessment = data.assessment || data;
+  
+        if (!latestAssessment) {
+          console.warn("No assessment found for this FDA ID.");
+          return;
+        }
+  
+        setSelectedUser(latestAssessment);
+        console.log("Selected FDA User Assessment for edit:", latestAssessment);
+  
+        setFDAEditData({
+          user_id: latestAssessment.user_id,
+          date_of_assessment: latestAssessment.date_of_assessment
+            ? parseDateString(latestAssessment.date_of_assessment)
+            : "",
+  
+          addictionSeverity: {
+            desire_to_quit: latestAssessment.desire_to_quit,
+            lack_control: latestAssessment.lack_control,
+            lack_responsibility: latestAssessment.lack_responsibility,
+            time_purchasing_using: latestAssessment.time_purchasing_using,
+            cravings: latestAssessment.cravings,
+            relationship_problems: latestAssessment.relationship_problems,
+            using_dangerously: latestAssessment.using_dangerously,
+            losing_interest: latestAssessment.losing_interest,
+            increasing_tolerance: latestAssessment.increasing_tolerance,
+            experiencing_withdrawal: latestAssessment.experiencing_withdrawal,
+            addiction_severity_rating: latestAssessment.addiction_severity_rating
+          },
+          remarks: latestAssessment.remarks,
+          prepared_by: latestAssessment.prepared_by,
+        });
+  
+  
+        console.log(FDAEditData?.addictionSeverity)
+      } catch (error) {
+        console.error("Fetch error:", error);
+      }
+    };
+
+
+    //Update individual FDA assessment form hanlder
+    const handleFDAindividualAssessment = async () => {
+      console.log("FDAEditData.fda_id:", viewFDAData.fda_id);
+      setIsLoading(true); // Start loading
+  
+      const payload = {
+        // user_id: FDAEditData.user_id,
+        // date_of_assessment: FDAEditData?.date_of_assessment || null,
+        // substance_type_id: 1,
+        desire_to_quit: FDAEditData?.addictionSeverity?.desire_to_quit,
+        lack_control: FDAEditData?.addictionSeverity?.lack_control,
+        lack_responsibility: FDAEditData?.addictionSeverity?.lack_responsibility,
+        time_purchasing_using: FDAEditData?.addictionSeverity?.time_purchasing_using,
+        cravings: FDAEditData?.addictionSeverity?.cravings,
+        relationship_problems: FDAEditData?.addictionSeverity?.relationship_problems,
+        using_dangerously: FDAEditData?.addictionSeverity?.using_dangerously,
+        losing_interest: FDAEditData?.addictionSeverity?.losing_interest,
+        increasing_tolerance: FDAEditData?.addictionSeverity?.increasing_tolerance,
+        experiencing_withdrawal: FDAEditData?.addictionSeverity?.experiencing_withdrawal,
+        addiction_severity_rating: FDAEditData?.addictionSeverity?.addiction_severity_rating,
+        remarks: FDAEditData?.remarks || "",
+        prepared_by: FDAEditData?.prepared_by || ""
+      };
+  
+      try {
+        const token = localStorage.getItem("Authorization");
+        const response = await fetch(`https://gks-yjdc.onrender.com/api/fda/update-assessment/${viewFDAData.fda_id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization:
+              `${token}`,
+          },
+          body: JSON.stringify(payload),
+        });
+  
+        if (!response.ok) throw new Error("API call failed");
+  
+        const data = await response.json();
+        setIsLoading(false);
+        Swal.fire({
+          icon: "success",
+          title: "FDA Update Successfully!",
+          text: "FDA has been update successfully!",
+        }).then(() => {
+          // This runs after the user clicks "OK"
+          setFDAeditModal(true)
+        });
+        console.log("FAD Update Data", data);
+        console.log("FAD Update Payload", payload);
+      } catch (err) {
+        console.error(err);
+        Swal.fire({
+          icon: "error",
+          title: "Unexpected Error",
+          text: "Failed to submit. Check console for error.",
+        }).then(()=>{
+          setIsLoading(false); // Start loading
+        });
+      }
+    }
 
 
   return (
@@ -1266,6 +1427,141 @@ function FDA() {
               </div>
       </CommonModal>
       {/* View FDA data into modal end */}
+
+
+      {/* Edit FDA individual form data start */}
+      <CommonModal
+        isOpen={FDAeditModal}
+        title="Edit First Dependency Assessment (FDA)"
+        toggler={closeUserViewModal}
+        maxWidth="1200px"
+      >
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          handleFDAindividualAssessment();
+           
+        }}>
+          <div className="row px-3 pt-4 pb-3">
+
+            <div className="col-md-6">
+              <FormGroup className="form-group row">
+                <Label className="col-sm-12 col-form-label col-xl-6">
+                  Date of Assessment
+                </Label>
+                <Col xl="5" sm="12">
+                  <div className="input-group">
+                    <DatePicker
+                      className="form-control digits"
+                      selected={FDAEditData?.date_of_assessment || null}
+                      onChange={(date) =>
+                        setFDAEditData((prev) => ({
+                          ...prev,
+                          date_of_assessment: date,
+                        }))
+                      }
+                    />
+                  </div>
+                </Col>
+              </FormGroup>
+            </div>
+          </div>
+
+          <div className="col-md-12 table-responsive">
+            <Table bordered>
+              <thead>
+                <tr>
+                  <th>{tableNumber2}</th>
+                  <th>{addictionSeverity}</th>
+                  <th>{yes1}</th>
+                  <th>{no1}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fdaAdsiction.map(({ key, label }, index) => (
+                  <tr key={key}>
+                    <td>{index + 1}</td>
+                    <td>{label}</td>
+                    {["Yes", "No"].map((value) => {
+                      const inputId = `addiction_${key}_${value}`;
+                      const currentValue = FDAEditData?.addictionSeverity?.[key] || "";
+
+                      return (
+                        <td key={inputId} className="radio radio-primary">
+                          <Input
+                            id={inputId}
+                            type="radio"
+                            name={`addiction_${key}`}
+                            value={value}
+                            checked={currentValue === value}
+                            onChange={() =>
+                              setFDAEditData((prev) => ({
+                                ...prev,
+                                addictionSeverity: {
+                                  ...prev.addictionSeverity,
+                                  [key]: value,
+                                },
+                              }))
+                            }
+                          />
+                          <Label for={inputId}>{value}</Label>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+
+          <div className="col-md-12">
+            <FormGroup className="mb-4 mt-4">
+              <Label>Remarks</Label>
+              <Input
+                type="text"
+                className="form-control"
+                value={FDAEditData?.remarks || ""}
+                onChange={(e) =>
+                  setFDAEditData((prev) => ({ ...prev, remarks: e.target.value }))
+                }
+              />
+            </FormGroup>
+          </div>
+
+          <div className="col-md-12">
+            <FormGroup className="mb-4 mt-4">
+              <Label>Prepared By</Label>
+              <Input
+                type="text"
+                className="form-control"
+                value={FDAEditData?.prepared_by || ""}
+                onChange={(e) =>
+                  setFDAEditData((prev) => ({
+                    ...prev,
+                    prepared_by: e.target.value,
+                  }))
+                }
+              />
+            </FormGroup>
+          </div>
+
+          {/* Submit Button */}
+          <div className="d-flex gap-3">
+            <Button color="primary" type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <span
+                  className="spinner-border spinner-border-sm"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+              ) : (
+                "First Dependency Assessment (FDA) Update"
+              )}
+            </Button>
+          </div>
+
+        </form>
+      </CommonModal>
+       {/* Edit FDA individual form data end */}
 
     </Fragment>
   )
