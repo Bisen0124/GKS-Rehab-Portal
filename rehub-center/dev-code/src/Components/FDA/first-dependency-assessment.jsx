@@ -2,6 +2,7 @@ import React, {
   useEffect,
   useState,
   Fragment,
+  useRef,
 } from "react";
 import {
   dateOfAssessment,
@@ -30,11 +31,14 @@ import {
   Table,
   Button,
   InputGroup,
+  Spinner,
 } from "reactstrap";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
 import DataTable from "react-data-table-component";
+import { Data } from "../UiKits/Spinners/SpinnerData";
+import { toast } from "react-toastify";
 
 import Swal from "sweetalert2"; // ✅ Make sure this is imported at the top
 
@@ -45,11 +49,16 @@ import useCalculateAge from "../../CustomHook/useCalculateAge";
 import PatientCommonInfo from "../../CustomHook/PatientCommonInfo";
 
 //editPFA download PDF library
-// import html2canvas from "html2canvas";
-// import jsPDF from "jspdf";
-// import html2pdf from "html2pdf.js";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import html2pdf from "html2pdf.js";
 
 function FDA() {
+    const pdfRef = useRef();
+  //spinner extract from other file
+  const selectedSpinner = Data.find(
+    (item) => item.spinnerClass === "loader-37"
+  );
   //Modal
   const [modal, setModal] = useState(false);
   //Loading spinner
@@ -179,6 +188,7 @@ function FDA() {
 
 
   const tableColumnsFDAList = [
+    { name: "FDA ID", selector: (row) => row.fda_id, sortable: true, center: true },
     { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
     {
       name: "Name",
@@ -207,7 +217,36 @@ function FDA() {
         </span>
       ),
     },
-
+    {
+      name: "Action",
+      center: true,
+      cell: (row) => (
+        <div className="d-flex gap-2">
+          <span
+            onClick={() => viewFDAFamily(row.fda_id)}
+            style={{ cursor: "pointer" }}
+            title="View"
+          >
+            <svg
+              style={{ color: "#d56337" }}
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="feather feather-eye"
+            >
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </span>
+        </div>
+      ),
+    },
 
 
 
@@ -279,6 +318,7 @@ function FDA() {
   //Close all modal handler
   const closePFAModal = () => {
     setModal(false);
+    setviewDADataModal(false);
   };
 
   //Accepting fda form data state
@@ -524,7 +564,7 @@ function FDA() {
       console.log("Selected User Assessment:", latestAssessment);
 
       setFDAEditData({
-        user_id:latestAssessment.user_id,
+        user_id: latestAssessment.user_id,
         date_of_assessment: latestAssessment.date_of_assessment
           ? parseDateString(latestAssessment.date_of_assessment)
           : "",
@@ -555,9 +595,9 @@ function FDA() {
 
 
   //FDA Readmission Hanlder
-  const handleFDAReadmission = async () =>{
+  const handleFDAReadmission = async () => {
     setIsLoading(true); // Start loading
-   
+
     const payload = {
       user_id: FDAEditData.user_id,
       date_of_assessment: FDAEditData?.date_of_assessment || null,
@@ -618,6 +658,96 @@ function FDA() {
   const closeUserViewModal = () => {
     setFDAeditModal(false)
   };
+
+  const [viewFDAData, setviewFDAData] = useState(null)
+  const [viewFDADataModal, setviewDADataModal] = useState(false);
+  const viewFDAFamily = async (FDAID) => {
+    setviewDADataModal(true);
+    console.log("FDAID =>", FDAID);
+
+    if (typeof FDAID === "object" && FDAID !== null) {
+      FDAID = FDAID.fda_id;
+    }
+
+    if (!FDAID) {
+      console.error("Invalid FDA ID provided");
+      return;
+    }
+
+    setIsLoading(true);
+    const token = localStorage.getItem("Authorization");
+
+    try {
+      const response = await fetch(
+        `https://gks-yjdc.onrender.com/api/fda/assessment/${FDAID}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Fetch error:", data);
+        return;
+      }
+
+      const ViewFdaDataEntry = data.assessment || null;
+
+      if (!ViewFdaDataEntry) {
+        console.warn("No FDA assessment data found.");
+        return;
+      }
+
+      setviewFDAData(ViewFdaDataEntry); // ✅ Correct
+      console.log("FDA Data Fetched:", ViewFdaDataEntry); // ✅ Log the correct data
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+   //PDf view download pdf code handler
+    const [pfaDownload, setpfaDownload] = useState(false);
+    const handleDownloadPDF = () => {
+      const element = pdfRef.current;
+      setpfaDownload(true);
+  
+      // Add a temporary class to scale fonts if needed
+      element.classList.add("pdf-scale");
+  
+      const opt = {
+        margin: [10, 10, 10, 10], // top, left, bottom, right
+        filename: `user_data_${viewFDAData?.name}_${viewFDAData?.user_id}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          scrollY: 0,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+  
+      html2pdf()
+        .set(opt)
+        .from(element)
+        .save()
+        .then(() => {
+          toast.success("Download complete!");
+          element.classList.remove("pdf-scale");
+  
+          setTimeout(() => {
+            setpfaDownload(false);
+          }, 2000);
+        });
+    };
+
 
   return (
     <Fragment>
@@ -920,115 +1050,115 @@ function FDA() {
         toggler={closeUserViewModal}
         maxWidth="1200px"
       >
-        <form onSubmit={(e)=>{
+        <form onSubmit={(e) => {
           e.preventDefault();
           handleFDAReadmission();
         }}>
-        <div className="row px-3 pt-4 pb-3">
-         
-          <div className="col-md-6">
-            <FormGroup className="form-group row">
-              <Label className="col-sm-12 col-form-label col-xl-6">
-                Date of Assessment
-              </Label>
-              <Col xl="5" sm="12">
-                <div className="input-group">
-                  <DatePicker
-                    className="form-control digits"
-                    selected={FDAEditData?.date_of_assessment || null}
-                    onChange={(date) =>
-                      setFDAEditData((prev) => ({
-                        ...prev,
-                        date_of_assessment: date,
-                      }))
-                    }
-                  />
-                </div>
-              </Col>
+          <div className="row px-3 pt-4 pb-3">
+
+            <div className="col-md-6">
+              <FormGroup className="form-group row">
+                <Label className="col-sm-12 col-form-label col-xl-6">
+                  Date of Assessment
+                </Label>
+                <Col xl="5" sm="12">
+                  <div className="input-group">
+                    <DatePicker
+                      className="form-control digits"
+                      selected={FDAEditData?.date_of_assessment || null}
+                      onChange={(date) =>
+                        setFDAEditData((prev) => ({
+                          ...prev,
+                          date_of_assessment: date,
+                        }))
+                      }
+                    />
+                  </div>
+                </Col>
+              </FormGroup>
+            </div>
+          </div>
+
+          <div className="col-md-12 table-responsive">
+            <Table bordered>
+              <thead>
+                <tr>
+                  <th>{tableNumber2}</th>
+                  <th>{addictionSeverity}</th>
+                  <th>{yes1}</th>
+                  <th>{no1}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fdaAdsiction.map(({ key, label }, index) => (
+                  <tr key={key}>
+                    <td>{index + 1}</td>
+                    <td>{label}</td>
+                    {["Yes", "No"].map((value) => {
+                      const inputId = `addiction_${key}_${value}`;
+                      const currentValue = FDAEditData?.addictionSeverity?.[key] || "";
+
+                      return (
+                        <td key={inputId} className="radio radio-primary">
+                          <Input
+                            id={inputId}
+                            type="radio"
+                            name={`addiction_${key}`}
+                            value={value}
+                            checked={currentValue === value}
+                            onChange={() =>
+                              setFDAEditData((prev) => ({
+                                ...prev,
+                                addictionSeverity: {
+                                  ...prev.addictionSeverity,
+                                  [key]: value,
+                                },
+                              }))
+                            }
+                          />
+                          <Label for={inputId}>{value}</Label>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          </div>
+
+          <div className="col-md-12">
+            <FormGroup className="mb-4 mt-4">
+              <Label>Remarks</Label>
+              <Input
+                type="text"
+                className="form-control"
+                value={FDAEditData?.remarks || ""}
+                onChange={(e) =>
+                  setFDAEditData((prev) => ({ ...prev, remarks: e.target.value }))
+                }
+              />
             </FormGroup>
           </div>
-        </div>
 
-        <div className="col-md-12 table-responsive">
-          <Table bordered>
-            <thead>
-              <tr>
-                <th>{tableNumber2}</th>
-                <th>{addictionSeverity}</th>
-                <th>{yes1}</th>
-                <th>{no1}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {fdaAdsiction.map(({ key, label }, index) => (
-                <tr key={key}>
-                  <td>{index + 1}</td>
-                  <td>{label}</td>
-                  {["Yes", "No"].map((value) => {
-                    const inputId = `addiction_${key}_${value}`;
-                    const currentValue = FDAEditData?.addictionSeverity?.[key] || "";
+          <div className="col-md-12">
+            <FormGroup className="mb-4 mt-4">
+              <Label>Prepared By</Label>
+              <Input
+                type="text"
+                className="form-control"
+                value={FDAEditData?.prepared_by || ""}
+                onChange={(e) =>
+                  setFDAEditData((prev) => ({
+                    ...prev,
+                    prepared_by: e.target.value,
+                  }))
+                }
+              />
+            </FormGroup>
+          </div>
 
-                    return (
-                      <td key={inputId} className="radio radio-primary">
-                        <Input
-                          id={inputId}
-                          type="radio"
-                          name={`addiction_${key}`}
-                          value={value}
-                          checked={currentValue === value}
-                          onChange={() =>
-                            setFDAEditData((prev) => ({
-                              ...prev,
-                              addictionSeverity: {
-                                ...prev.addictionSeverity,
-                                [key]: value,
-                              },
-                            }))
-                          }
-                        />
-                        <Label for={inputId}>{value}</Label>
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </Table>
-        </div>
-
-        <div className="col-md-12">
-          <FormGroup className="mb-4 mt-4">
-            <Label>Remarks</Label>
-            <Input
-              type="text"
-              className="form-control"
-              value={FDAEditData?.remarks || ""}
-              onChange={(e) =>
-                setFDAEditData((prev) => ({ ...prev, remarks: e.target.value }))
-              }
-            />
-          </FormGroup>
-        </div>
-
-        <div className="col-md-12">
-          <FormGroup className="mb-4 mt-4">
-            <Label>Prepared By</Label>
-            <Input
-              type="text"
-              className="form-control"
-              value={FDAEditData?.prepared_by || ""}
-              onChange={(e) =>
-                setFDAEditData((prev) => ({
-                  ...prev,
-                  prepared_by: e.target.value,
-                }))
-              }
-            />
-          </FormGroup>
-        </div>
-
-{/* Submit Button */}
-<div className="d-flex gap-3">
+          {/* Submit Button */}
+          <div className="d-flex gap-3">
             <Button color="primary" type="submit" disabled={isLoading}>
               {isLoading ? (
                 <span
@@ -1044,7 +1174,99 @@ function FDA() {
 
         </form>
       </CommonModal>
-      
+
+
+      {/* View FDA data into modal start */}
+      <CommonModal
+        isOpen={viewFDADataModal}
+        title={"First Dependency Assessment / प्रथम निर्भरता मूल्यांकन Details"}
+        toggler={closePFAModal}
+        maxWidth="1200px"
+      >
+        <div className="table-responsive p-4" ref={pdfRef}>
+          <h4
+            style={{
+              textAlign: "center",
+              textDecoration: "underline",
+              padding: "20px 0",
+            }}
+          >
+            First Dependency Assessment / प्रथम निर्भरता मूल्यांकन
+          </h4>
+
+          <Table size="sm" className="table-auto table-bordered">
+            <tbody style={{ fontSize: "14px" }}>
+              {isLoading ? (
+                <tr>
+                  <td colSpan="2" className="text-center">
+                    <div className="loader-box">
+                      <Spinner
+                        className={
+                          selectedSpinner?.spinnerClass ||
+                          "spinner-border"
+                        }
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ) : viewFDAData ? (
+                <>
+
+                  <tr><th className="text-start p-3">Name</th><td className="border p-3">{viewFDAData.name}</td></tr>
+                  <tr><th className="text-start p-3">Relative Name</th><td className="border p-3">{viewFDAData.relative_name}</td></tr>
+                  <tr><th className="text-start p-3">Gender</th><td className="border p-3">{viewFDAData.gender}</td></tr>
+                  <tr><th className="text-start p-3">Phone</th><td className="border p-3">{viewFDAData.phone}</td></tr>
+                  <tr><th className="text-start p-3">Email</th><td className="border p-3">{viewFDAData.email}</td></tr>
+                  <tr><th className="text-start p-3">User GKS ID</th><td className="border p-3">{viewFDAData.user_gks_id}</td></tr>
+                  <tr><th className="text-start p-3">Entry GKS ID</th><td className="border p-3">{viewFDAData.entry_gks_id}</td></tr>
+                  <tr><th className="text-start p-3">Visit No</th><td className="border p-3">{viewFDAData.visit_no}</td></tr>
+                  <tr><th className="text-start p-3">Substance Type</th><td className="border p-3">{viewFDAData.substance_description}</td></tr>
+                  <tr><th className="text-start p-3">Substance Code</th><td className="border p-3">{viewFDAData.substance_code}</td></tr>
+                  <tr><th className="text-start p-3">Desire to Quit</th><td className="border p-3">{viewFDAData.desire_to_quit}</td></tr>
+                  <tr><th className="text-start p-3">Lack of Control</th><td className="border p-3">{viewFDAData.lack_control}</td></tr>
+                  <tr><th className="text-start p-3">Lack of Responsibility</th><td className="border p-3">{viewFDAData.lack_responsibility}</td></tr>
+                  <tr><th className="text-start p-3">Time Spent Using</th><td className="border p-3">{viewFDAData.time_purchasing_using}</td></tr>
+                  <tr><th className="text-start p-3">Cravings</th><td className="border p-3">{viewFDAData.cravings}</td></tr>
+                  <tr><th className="text-start p-3">Relationship Problems</th><td className="border p-3">{viewFDAData.relationship_problems}</td></tr>
+                  <tr><th className="text-start p-3">Using Dangerously</th><td className="border p-3">{viewFDAData.using_dangerously}</td></tr>
+                  <tr><th className="text-start p-3">Losing Interest</th><td className="border p-3">{viewFDAData.losing_interest}</td></tr>
+                  <tr><th className="text-start p-3">Increasing Tolerance</th><td className="border p-3">{viewFDAData.increasing_tolerance}</td></tr>
+                  <tr><th className="text-start p-3">Experiencing Withdrawal</th><td className="border p-3">{viewFDAData.experiencing_withdrawal}</td></tr>
+                  <tr><th className="text-start p-3">Addiction Severity</th><td className="border p-3">{viewFDAData.addiction_severity_rating}</td></tr>
+                  <tr><th className="text-start p-3">Remarks</th><td className="border p-3">{viewFDAData.remarks}</td></tr>
+                  <tr><th className="text-start p-3">Prepared By</th><td className="border p-3">{viewFDAData.prepared_by}</td></tr>
+                  <tr><th className="text-start p-3">Assessment Date</th><td className="border p-3">{new Date(viewFDAData.date_of_assessment).toLocaleDateString()}</td></tr>
+                  <tr><th className="text-start p-3">Created By</th><td className="border p-3">{viewFDAData.created_by_name}</td></tr>
+                  <tr><th className="text-start p-3">Updated By</th><td className="border p-3">{viewFDAData.updated_by_name}</td></tr>
+                  <tr><th className="text-start p-3">Status</th><td className="border p-3">{viewFDAData.status}</td></tr>
+                </>
+              ) : (
+                <tr>
+                  <td colSpan="2" className="text-center">
+                    No data available
+                  </td>
+                </tr>
+              )}
+
+            </tbody>
+          </Table>
+
+        </div>
+        <div style={{ margin: "0 20px 20px 20px" }}>
+                <button
+                  disabled={pfaDownload}
+                  id="download-btn"
+                  className="btn btn-primary"
+                  onClick={handleDownloadPDF}
+                >
+                  {pfaDownload
+                    ? "Your FDA is being downloaded.../ आपका FDA डाउनलोड हो रहा है..."
+                    : "Download Your First Dependency Assessment / प्रथम निर्भरता मूल्यांकन डाउनलोड करें"}
+                </button>
+              </div>
+      </CommonModal>
+      {/* View FDA data into modal end */}
+
     </Fragment>
   )
 }

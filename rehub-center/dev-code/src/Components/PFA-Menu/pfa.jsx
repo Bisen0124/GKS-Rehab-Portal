@@ -2639,9 +2639,9 @@ const parseDateString = (dateStr) => {
           {/* Readmission PFA Edit Modal */}
           <CommonModal
             isOpen={PFAEditModal}
-            title={"Readmission PFA"}
+            title={"Readmission Patient First Assessment (PFA)"}
             toggler={closeUserViewModal}
-            maxWidth="800px"
+            maxWidth="1200px"
           >
             {PFAEditModal && PFAeditData && (
               <div className="row">
@@ -2652,7 +2652,7 @@ const parseDateString = (dateStr) => {
                   }}
                 >
                   {/* Date of assesment */}
-                    <div className="col-md-6">
+                    <div className="col-md-6 mt-3">
                       <FormGroup className="form-group row">
                         <Label className="col-sm-12 col-form-label  col-xl-6">
                           {dateOfAssessment}
@@ -3206,9 +3206,9 @@ const parseDateString = (dateStr) => {
            {/* Edit individual PFA by user_id modal */}
            <CommonModal
             isOpen={PFAEditIndividualDataModal}
-            title={"Readmission PFA"}
+            title={"Edit Patient First Assessment (PFA)"}
             toggler={closeUserViewModal}
-            maxWidth="800px"
+            maxWidth="1200px"
           >
             {PFAEditIndividualDataModal && PFAeditData && (
               <div className="row">
@@ -3219,7 +3219,7 @@ const parseDateString = (dateStr) => {
                   }}
                 >
                   {/* Date of assesment */}
-                    <div className="col-md-6">
+                    <div className="col-md-6 mt-3">
                       <FormGroup className="form-group row">
                         <Label className="col-sm-12 col-form-label  col-xl-6">
                           {dateOfAssessment}
