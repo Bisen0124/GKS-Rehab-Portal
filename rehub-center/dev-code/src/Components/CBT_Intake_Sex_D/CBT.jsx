@@ -621,6 +621,8 @@ function CBT() {
 
     console.log("CBT Payload =>", payload);
 
+    //Create CBT POST API
+
     try {
       const token = localStorage.getItem("Authorization");
       const response = await fetch(
