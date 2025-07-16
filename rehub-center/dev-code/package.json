@@ -2,7 +2,7 @@
   "name": "rihub-center-react",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://react.pixelstrap.com/rihub-center",
+  "homepage": ".",
   "dependencies": {
     "@auth0/auth0-react": "^2.0.1",
     "@babel/eslint-parser": "^7.21.3",
