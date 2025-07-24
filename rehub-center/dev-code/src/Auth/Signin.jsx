@@ -51,15 +51,19 @@ const Login = ({ selected }) => {
   
       const data = await response.json();
   
-      if (response.ok) {
-        // ✅ Store login data
-        localStorage.setItem("login", true);
-        localStorage.setItem("Authorization", data.token);
-        localStorage.setItem("user_id", data.user.user_id);
-        localStorage.setItem("profileURL", man);
-        localStorage.setItem("Name", data.user.name);
+      if (response.ok && data.success) {
+        // ✅ Extract token and user from nested data
+        const token = data.data.token;
+        const user = data.data.user;
   
-        // ✅ Remember Me
+        // ✅ Store login data in localStorage
+        localStorage.setItem("login", "true");
+        localStorage.setItem("Authorization", token);
+        localStorage.setItem("user_id", user.user_id);
+        localStorage.setItem("profileURL", man);
+        localStorage.setItem("Name", user.name);
+  
+        // ✅ Handle Remember Me
         if (rememberMe) {
           localStorage.setItem("rememberMe", "true");
           localStorage.setItem("rememberedIdentifier", identifier);
@@ -69,28 +73,35 @@ const Login = ({ selected }) => {
         }
   
         toast.success("Login successful!");
+  
+        // ✅ Redirect to dashboard after short delay
         setTimeout(() => {
           window.location.href = `${process.env.PUBLIC_URL}/dashboard/default`;
-        }, 1000); // 1 second delay
-        
+        }, 1000);
       } else {
-        // ✅ Handle invalid login cases based on API message
+        // ✅ Handle invalid login attempts
         const message = data.message?.toLowerCase();
   
         if (message?.includes("password")) {
           toast.error("Invalid Password!");
-        } else if (message?.includes("identifier") || message?.includes("email") || message?.includes("phone")) {
+        } else if (
+          message?.includes("identifier") ||
+          message?.includes("email") ||
+          message?.includes("phone")
+        ) {
           toast.error("Invalid Email or Phone!");
         } else {
           toast.error(data.message || "Invalid credentials!");
         }
       }
     } catch (error) {
+      console.error("Login error:", error);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+  
   
 
   return (
