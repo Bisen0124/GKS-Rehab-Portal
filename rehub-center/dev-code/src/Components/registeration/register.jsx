@@ -50,10 +50,14 @@ function Register() {
   //Show hide password of register password filed.
   const [showPassword, setShowPassword] = useState(false);
 
+
+
   const roleMapping = {
-    ADMIN: 1,
-    SUBADMIN: 2,
-    USER: 3,
+    SuperAdmin: 1,
+    BranchAdmin: 2,
+    BranchOperator: 3,
+    Patient: 4
+
   };
 
   //loading

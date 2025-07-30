@@ -201,7 +201,7 @@ import CbtIntakeSexD from '../Components/CBT_Intake_Sex_D/CbtIntakeSexD';
 //6.1 CBT
 import CBT from "../Components/CBT_Intake_Sex_D/CBT";
 //6.2.1 Personal Details 
-import PersonalDetail from "../Components/JobSearch/Apply/Form/PersonalDetail";
+import PersonalDetail from "../Components/CBT_Intake_Sex_D/PersonalDetails";
 //6.2.2 SUD Brief 
 import SUDBrief from "../Components/CBT_Intake_Sex_D/SUDBrief";
 //6.2.3 Relationship & Family 
