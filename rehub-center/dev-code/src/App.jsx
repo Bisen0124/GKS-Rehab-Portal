@@ -25,6 +25,9 @@ import CustomizerProvider from './_helper/Customizer/CustomizerProvider';
 
 import { jwtDecode } from 'jwt-decode';
 import { toast } from 'react-toastify';
+import { BranchProvider } from './contexts/BranchContext';
+
+
 
 const App = () => {
   useEffect(() => {
@@ -58,6 +61,7 @@ const App = () => {
 
   return (
     <div className="App">
+      <BranchProvider>
       <CustomizerProvider>
         <FaqProvider>
           <LearningProvider>
@@ -103,6 +107,7 @@ const App = () => {
           </LearningProvider>
         </FaqProvider>
       </CustomizerProvider>
+      </BranchProvider>
     </div>
   );
 };

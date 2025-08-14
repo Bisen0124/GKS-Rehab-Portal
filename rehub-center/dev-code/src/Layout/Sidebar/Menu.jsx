@@ -1,6 +1,19 @@
 // import { Airplay, BarChart, Box, Calendar, CheckSquare, Clock, Cloud, Command, Database, Edit, File, FolderPlus, GitPullRequest, Heart, HelpCircle, Home, Image, Layers, Layout, List, Mail, Map, MessageCircle, Package, Radio, Search, Server, ShoppingBag, Sliders, Sunrise, UserCheck, Users, Zap } from "react-feather";
 
 export const MENUITEMS = [
+
+  {
+    "menucontent": "Dashboards,Widgets",
+    "Items": [
+      {
+        "title": "Dashboard",
+        "icon": "icon-class",
+        "type": "link",
+        "path": `${process.env.PUBLIC_URL}/Dashboard/Default`
+      }
+    ]
+  },
+
   {
     "menucontent": "Dashboards,Widgets",
     "Items": [

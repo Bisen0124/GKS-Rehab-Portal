@@ -41,7 +41,12 @@ import { Data } from "../UiKits/Spinners/SpinnerData";
 import Swal from "sweetalert2"; // ✅ Make sure this is imported at the top
 import SweetAlert from "sweetalert2";
 
+import { useBranch } from "../../contexts/BranchContext";
+
 function Register() {
+  //Branches selection
+  const { selectedBranch } = useBranch();
+
   //spinner extract from other file
   const selectedSpinner = Data.find(
     (item) => item.spinnerClass === "loader-37"
@@ -50,15 +55,13 @@ function Register() {
   //Show hide password of register password filed.
   const [showPassword, setShowPassword] = useState(false);
 
+  // const roleMapping = {
+  //   SuperAdmin: 1,
+  //   BranchAdmin: 2,
+  //   BranchOperator: 3,
+  //   Patient: 4
 
-
-  const roleMapping = {
-    SuperAdmin: 1,
-    BranchAdmin: 2,
-    BranchOperator: 3,
-    Patient: 4
-
-  };
+  // };
 
   //loading
   const [isLoading, setIsLoading] = useState(false);
@@ -92,7 +95,7 @@ function Register() {
     password: "",
     dob: new Date(),
     address: "",
-    is_role: roleMapping.USER, // This will be 3
+    is_role: "", // This will be 3
   });
 
   const handleChange = (e) => {
@@ -120,13 +123,13 @@ function Register() {
     }));
   };
 
-  // const handleIsRoleChange = (e) => {
-  //   const { name, value } = e.target;
-  //   setFormData({
-  //     ...formData,
-  //     [name]: name === "is_role" ? Number(value) : value,
-  //   });
-  // };
+  const handleIsRoleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: name === "is_role" ? Number(value) : value,
+    });
+  };
 
   //Register form data submit funtion
   const handleSubmit = async (e) => {
@@ -188,8 +191,10 @@ function Register() {
     };
 
     try {
+      const branch_id = selectedBranch; // make sure `selectedBranch` 
       const token = localStorage.getItem("Authorization");
-      const response = await fetch("https://gks-yjdc.onrender.com/api/users", {
+      // const response = await fetch("https://gks-yjdc.onrender.com/api/users", {
+        const response = await fetch(`https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -274,8 +279,11 @@ function Register() {
     const token = localStorage.getItem("Authorization");
 
     try {
+      // ✅ Get selected branch from context or state
+      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
+
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/users/${userId}`,
+        `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
         {
           method: "GET",
           headers: {
@@ -294,7 +302,15 @@ function Register() {
         return;
       }
 
-      setSelectedUser(data);
+      const userData = data.data?.[0];
+      console.log("userData", userData);
+
+      if (!userData) {
+        console.error("User not found in response");
+        return;
+      }
+
+      setSelectedUser(userData);
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
@@ -330,8 +346,9 @@ function Register() {
         const token = localStorage.getItem("Authorization");
 
         try {
+          const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
           const response = await fetch(
-            `https://gks-yjdc.onrender.com/api/users/${userId}`,
+            `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
             {
               method: "DELETE",
               headers: {
@@ -393,7 +410,7 @@ function Register() {
   //It check if discharge status true then re-register user will perform and send userId, ward name and ward type id to backend
   const handleReRegister = async (e) => {
     e.preventDefault(); // prevent default form submission
-  setIsLoading(true); // Set loading to true when the update starts
+    setIsLoading(true); // Set loading to true when the update starts
     if (!selectedUserId) {
       console.error("No user selected for re-registration");
       return;
@@ -430,7 +447,6 @@ function Register() {
           confirmButtonText: "OK",
         });
         setreregisterModal(false); // Close modal only after success
-         
       } else if (
         result.error ===
         "User is not eligible for readmission. Please check discharge status and dates."
@@ -442,7 +458,6 @@ function Register() {
           confirmButtonText: "OK",
         });
         setreregisterModal(false); // Keep modal open
-         
       } else {
         console.error("Unhandled error:", result?.error || result?.message);
         // No alert shown for other errors, just log it
@@ -450,8 +465,7 @@ function Register() {
     } catch (error) {
       console.error("Fetch Error:", error);
       // No alert shown here either, per your request
-    }
-    finally {
+    } finally {
       setIsLoading(false); // Set loading to false after the request is complete
     }
   };
@@ -464,82 +478,86 @@ function Register() {
   };
 
   //🔧 Convert DD/MM/YYYY to Date Object:
-const parseDateString = (dateStr) => {
-  if (!dateStr) return null;
+  const parseDateString = (dateStr) => {
+    if (!dateStr) return null;
 
-  const date = new Date(dateStr);
-  return isNaN(date.getTime()) ? null : date;
-};
-
-
+    const date = new Date(dateStr);
+    return isNaN(date.getTime()) ? null : date;
+  };
 
   //handle edit user details by id's
   const [editData, setEditData] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
   const handleEdit = async (userId = null) => {
- 
-  if (typeof userId === "object" && userId !== null) {
-    userId = userId.id;
-  }
-
-  if (!userId) {
-    console.error("Invalid userId provided to handleEdit");
-    return;
-  }
-
-  const token = localStorage.getItem("Authorization");
-
-  try {
-    const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch user data.");
+    if (typeof userId === "object" && userId !== null) {
+      userId = userId.id;
     }
 
-   const data = await response.json();
-    const user = Array.isArray(data) ? data[0] : data;
-
-    console.log(user)
-
-    if (!user) {
-      throw new Error("User not found in response.");
+    if (!userId) {
+      console.error("Invalid userId provided to handleEdit");
+      return;
     }
 
-    // Handle null/undefined safely and set editData
-    setEditData({
-      id: user.user_id || "",
-      name: user.name || "",
-      patientRelativeName: user.relative_name || "",
-      dob: user.dob ? parseDateString(user.dob) : "", // Use your date parser here
-      email: user.email || "",
-      phone: user.phone || "",
-      whatsapp_no: user.whatsapp_no || "",
-      isWhatsApp: user.isWhatsApp || false,
-      address: user.address || "",
-      is_role: user.isRole || 3,
-      password: "", // Reset password field
-      gender: user.gender || "",
-    });
- setShowEditModal(true);
-   
-  } catch (error) {
-    console.error("Error fetching user details:", error);
-    Swal.fire({
-      title: "Error!",
-      text: "Failed to load user data for editing.",
-      icon: "error",
-      confirmButtonText: "OK",
-    });
-  }
-};
+    const token = localStorage.getItem("Authorization");
 
+    try {
+      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
+
+      const response = await fetch(
+        `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch user data.");
+      }
+
+      const responseData = await response.json();
+      // The actual user object is inside responseData.data[0]
+      const user = Array.isArray(responseData.data)
+        ? responseData.data[0]
+        : responseData.data;
+
+      console.log("Edit", user);
+
+      if (!user) {
+        throw new Error("User not found in response.");
+      }
+
+      // Handle null/undefined safely and set editData
+      setEditData({
+        id: user.user_id || "",
+        name: user.name || "",
+        patientRelativeName: user.relative_name || "",
+        dob: user.dob ? parseDateString(user.dob) : "",
+        email: user.email || "",
+        phone: user.phone || "",
+        whatsapp_no: user.whatsapp_no || "",
+        isWhatsApp: user.isWhatsApp || false,
+        address: user.address || "",
+        // is_role: user.isRole || "",
+        is_role: Number(user.isRole) || "",
+        password: "",
+        gender: user.gender || "",
+      });
+      setShowEditModal(true);
+    } catch (error) {
+      console.error("Error fetching user details:", error);
+      Swal.fire({
+        title: "Error!",
+        text: "Failed to load user data for editing.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    }
+  };
 
   //User handle update function
   const handleUpdateSubmit = async () => {
@@ -557,15 +575,16 @@ const parseDateString = (dateStr) => {
       dob: editData.dob, // Ensure dob is in 'yyyy-mm-dd' format
       phone: editData.phone,
       whatsapp_no: editData.whatsapp_no, // Make sure this is correctly handled
-      isRole: editData.is_role, // Ensure the role field is being mapped correctly
+      isRole: editData.is_role // ✅ match DB column name exactly
     };
 
     console.log("User ID:", editData.id, typeof editData.id);
 
-
     try {
+      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/users/${editData.id}`,
+        `https://gks-yjdc.onrender.com/api/users/${editData.id}?branch_id=${branch_id}`,
+
         {
           method: "PUT",
           headers: {
@@ -624,59 +643,64 @@ const parseDateString = (dateStr) => {
 
   // ✅ Step 1: Move this into a reusable function
   const [stillLoading, setstillLoading] = useState(true);
- const fetchUsers = () => {
-  fetch("https://gks-yjdc.onrender.com/api/users", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `${token}`,
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Unauthorized or failed to fetch");
+  const fetchUsers = () => {
+    if (!selectedBranch) return; // avoid empty branch fetch
+
+    fetch(
+      `https://gks-yjdc.onrender.com/api/users?branch_id=${selectedBranch}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
       }
-      return response.json();
-    })
-    .then((resData) => {
-      const formatted = resData.users.map((user) => ({
-        id: user.user_id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        gks_id: user.gks_id,
-        discharge_status: user.discharge_status,
-        discharge_status_text: user.discharge_status_text,
-        is_readmission: user.is_readmission,
-        recent_admit_date: user.recent_admit_date
-          ? new Date(user.recent_admit_date).toLocaleDateString()
-          : "N/A",
-        recent_pfa_date: user.recent_pfa_date
-          ? new Date(user.recent_pfa_date).toLocaleDateString()
-          : "N/A",
-        recent_gen_fam_date: user.recent_gen_fam_date
-          ? new Date(user.recent_gen_fam_date).toLocaleDateString()
-          : "N/A",
-      }));
+    )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Unauthorized or failed to fetch");
+        }
+        return response.json();
+      })
+      .then((resData) => {
+        const formatted = resData.data.map((user) => ({
+          id: user.user_id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          gks_id: user.gks_id,
+          discharge_status: user.discharge_status,
+          discharge_status_text: user.discharge_status_text,
+          is_readmission: user.is_readmission,
+          recent_admit_date: user.recent_admit_date
+            ? new Date(user.recent_admit_date).toLocaleDateString()
+            : "N/A",
+          recent_pfa_date: user.recent_pfa_date
+            ? new Date(user.recent_pfa_date).toLocaleDateString()
+            : "N/A",
+          recent_gen_fam_date: user.recent_gen_fam_date
+            ? new Date(user.recent_gen_fam_date).toLocaleDateString()
+            : "N/A",
+        }));
 
-      setTimeout(() => {
-        setData(formatted);
-        setFilteredData(formatted);
-        setstillLoading(false);
-      }, 1000); // You can reduce the delay to 1s if 3s is too much
-    })
-    .catch((error) => {
-      console.error("Error fetching data:", error);
-      toast.error("Error fetching user data");
-      setstillLoading(true);
-    });
-};
-
+        setTimeout(() => {
+          setData(formatted);
+          setFilteredData(formatted);
+          setstillLoading(false);
+          console.log("data", data);
+        }, 1000); // You can reduce the delay to 1s if 3s is too much
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        toast.error("Error fetching user data");
+        setstillLoading(true);
+      });
+  };
 
   // ✅ Step 2: Run this once when component mounts
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [selectedBranch]);
 
   // ✅ Define table columns
   const tableColumns = [
@@ -693,8 +717,18 @@ const parseDateString = (dateStr) => {
       center: true,
     },
     { name: "Name", selector: (row) => row.name, sortable: true, center: true },
-    { name: "Phone", selector: (row) => row.phone,  sortable: true, center: true },
-    { name: "Email", selector: (row) => row.email,  sortable: true, center: true },
+    {
+      name: "Phone",
+      selector: (row) => row.phone,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: "Email",
+      selector: (row) => row.email,
+      sortable: true,
+      center: true,
+    },
     {
       name: "Action",
       center: true,
@@ -731,7 +765,7 @@ const parseDateString = (dateStr) => {
             title="Edit"
           >
             {/* Edit/Pencil icon */}
-           <svg
+            <svg
               style={{ color: "green" }}
               xmlns="http://www.w3.org/2000/svg"
               width="20"
@@ -829,53 +863,56 @@ const parseDateString = (dateStr) => {
     },
   ];
 
-  //Get All IPD Entries for Users:-
-   const [filteredIPDData, setFilteredIPDData] = useState([]);
+  const [allIPDData, setAllIPDData] = useState([]);
+  const [filteredIPDData, setFilteredIPDData] = useState([]);
+
+  // Fetch IPD entries
   const fetchIPDEntries = () => {
-  fetch("https://gks-yjdc.onrender.com/api/ipd/active-ipd-entries", {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `${token}`,
-    },
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Unauthorized or failed to fetch");
+    if (!selectedBranch) return;
+
+    fetch(
+      `https://gks-yjdc.onrender.com/api/ipd/active-ipd-entries?branch_id=${selectedBranch}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
       }
-      return response.json();
-    })
-    .then((entriesData) => {
-      const filteredIPDData = entriesData.entries.map((entries) => ({
-        id: entries.user_id,
-        gks_id: entries.gks_id,
-        name: entries.name,
-        email: entries.email,
-        phone: entries.phone,
-        wardName: entries.ward_name,
-        dischargeDate: entries.discharge_date
-          ? new Date(entries.discharge_date).toLocaleDateString()
-          : "Not Discharge yet",
-      }));
+    )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Unauthorized or failed to fetch");
+        }
+        return response.json();
+      })
+      .then((entriesData) => {
+        const mappedData = (entriesData.data || []).map((entry) => ({
+          id: entry.user_id,
+          gks_id: entry.gks_id,
+          name: entry.name,
+          email: entry.email,
+          phone: entry.phone,
+          wardName: entry.ward_name,
+          dischargeDate: entry.discharge_date
+            ? new Date(entry.discharge_date).toLocaleDateString()
+            : "Not Discharge yet",
+        }));
 
-      setTimeout(() => {
-        // setData(formatted);
-        setFilteredIPDData(filteredIPDData);
+        setAllIPDData(mappedData); // keep the full data
+        setFilteredIPDData(mappedData); // also show full data initially
         setstillLoading(false);
-      }, 1000); // You can reduce the delay to 1s if 3s is too much
-    })
-    .catch((error) => {
-      console.error("Error fetching data:", error);
-      toast.error("Error fetching user data");
-      setstillLoading(true);
-    });
-};
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        toast.error("Error fetching user data");
+        setstillLoading(true);
+      });
+  };
 
-
-  // ✅ Step 2: Run this once when component mounts
   useEffect(() => {
     fetchIPDEntries();
-  }, []);
+  }, [selectedBranch]);
 
   // ✅ Define table columns
   const tableIPDColumns = [
@@ -892,10 +929,30 @@ const parseDateString = (dateStr) => {
       center: true,
     },
     { name: "Name", selector: (row) => row.name, sortable: true, center: true },
-    { name: "Phone", selector: (row) => row.phone,  sortable: true, center: true },
-    { name: "Email", selector: (row) => row.email,  sortable: true, center: true },
-    { name: "Ward Name", selector: (row) => row.wardName,  sortable: true, center: true },
-    { name: "Discharge Date", selector: (row) => row.dischargeDate,  sortable: true, center: true },
+    {
+      name: "Phone",
+      selector: (row) => row.phone,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: "Email",
+      selector: (row) => row.email,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: "Ward Name",
+      selector: (row) => row.wardName,
+      sortable: true,
+      center: true,
+    },
+    {
+      name: "Discharge Date",
+      selector: (row) => row.dischargeDate,
+      sortable: true,
+      center: true,
+    },
     {
       name: "Action",
       center: true,
@@ -924,50 +981,55 @@ const parseDateString = (dateStr) => {
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
           </span>
-
-          
         </div>
       ),
     },
   ];
 
   //User data search filter function
+  const [IPDsearchText, setSIPDearchText] = useState("");
   const handleLatestSearchChange = (e) => {
-  const value = e.target.value.toLowerCase();
-  setSearchText(value);
+    const value = e.target.value.toLowerCase();
+    setSIPDearchText(value);
 
-  const filtered = data.filter((item) => {
-    return (
-      item.name?.toLowerCase().includes(value) ||
-      item.email?.toLowerCase().includes(value) ||
-      item.phone?.toString().includes(value) ||
-      item.id?.toString().includes(value) ||
-      item.gks_id?.toLowerCase().includes(value) // Only if gks_id is a string
-    );
-  });
+    const filtered = data.filter((item) => {
+      return (
+        item.name?.toLowerCase().includes(value) ||
+        item.email?.toLowerCase().includes(value) ||
+        item.phone?.toString().includes(value) ||
+        item.id?.toString().includes(value) ||
+        item.gks_id?.toLowerCase().includes(value) // Only if gks_id is a string
+      );
+    });
 
-  setFilteredData(filtered);
-};
+    setFilteredData(filtered);
+  };
 
+  // Search handler IPD all entries
   const handleIPDSearchChange = (e) => {
-  const value = e.target.value.toLowerCase();
-  setSearchText(value);
+    const value = e.target.value.toLowerCase();
+    setSearchText(value);
 
-  const IPDfiltered = data.filter((item) => {
-    return (
-      item.name?.toLowerCase().includes(value) ||
-      item.email?.toLowerCase().includes(value) ||
-      item.phone?.toString().includes(value) ||
-      item.userID?.toString().includes(value) ||
-      item.GKSID?.toLowerCase().includes(value) || // Only if gks_id is a string 
-      item.wardName?.toLowerCase().includes(value) || 
-      item.dischargeDate?.toLowerCase().includes(value)
-    );
-  });
+    if (!value) {
+      // Reset to original data if search is empty
+      setFilteredIPDData(allIPDData);
+      return;
+    }
 
-  setFilteredIPDData(IPDfiltered);
-};
+    const IPDfiltered = allIPDData.filter((item) => {
+      return (
+        item.name?.toLowerCase().includes(value) ||
+        item.email?.toLowerCase().includes(value) ||
+        item.phone?.toString().includes(value) ||
+        item.id?.toString().includes(value) ||
+        item.gks_id?.toLowerCase().includes(value) ||
+        item.wardName?.toLowerCase().includes(value) ||
+        item.dischargeDate?.toLowerCase().includes(value)
+      );
+    });
 
+    setFilteredIPDData(IPDfiltered);
+  };
 
   //Generate password dynamically while regestering/entering password
   const generatePassword = () => {
@@ -1009,7 +1071,7 @@ const parseDateString = (dateStr) => {
                         className="form-control"
                         type="text"
                         placeholder="Search......."
-                        value={searchText}
+                        value={IPDsearchText}
                         onChange={handleLatestSearchChange}
                       />
                       <span className="input-group-text">
@@ -1040,7 +1102,7 @@ const parseDateString = (dateStr) => {
       </Container>
 
       {/* Get All IPD Datils In Table View */}
-<Container fluid={true} className="datatables">
+      <Container fluid={true} className="datatables">
         <Row>
           <Col sm="12">
             <Card>
@@ -1407,16 +1469,38 @@ const parseDateString = (dateStr) => {
                   </div>
 
                   {/* Role */}
-                  <div className="col-md-6">
+                  <div className="col-md-12">
                     {/* <Label>User Role</Label> */}
 
-                    {/* Hidden input sends the numeric value (required by backend) */}
-                    {/* <Input
-                      type="hidden"
+                    {/* Role while register */}
+                    <div className="form-group row mb-4 mt-3">
+                    <label
+                      className="col-sm-12 col-form-label col-xl-6 form-label"
+                      htmlFor="selectRole"
+                    >
+                      Select Role
+                    </label>
+                    <div className="col-sm-12 col-xl-5">
+                    <select
+                      className="form-select"
+                      aria-label="Select Role"
                       name="is_role"
                       value={formData.is_role}
-                    /> */}
-
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          is_role: Number(e.target.value),
+                        })
+                      }
+                    >
+                      <option value="">Select a role</option>
+                      <option value="1">SuperAdmin</option>
+                      <option value="2">BranchAdmin</option>
+                      <option value="3">BranchOperator</option>
+                      <option value="4">Patient</option>
+                    </select>
+                    </div>
+                    </div>
                     {/* Read-only visible input showing text like "USER" */}
                     <Input
                       type="text"
@@ -1514,54 +1598,65 @@ const parseDateString = (dateStr) => {
                         </div>
                       </td>
                     </tr>
-                  ) : selectedUser && selectedUser.length > 0 ? (
+                  ) : selectedUser && typeof selectedUser === "object" ? (
                     <>
                       <tr>
                         <th>Name</th>
-                        <td>{selectedUser[0].name}</td>
+                        <td>{selectedUser.name}</td>
                       </tr>
                       <tr>
                         <th>Email</th>
-                        <td>{selectedUser[0].email}</td>
+                        <td>{selectedUser.email}</td>
                       </tr>
                       <tr>
                         <th>Phone</th>
-                        <td>{selectedUser[0].phone}</td>
+                        <td>{selectedUser.phone}</td>
                       </tr>
                       <tr>
                         <th>WhatsApp No</th>
-                        <td>{selectedUser[0].whatsapp_no}</td>
+                        <td>{selectedUser.whatsapp_no}</td>
                       </tr>
                       <tr>
                         <th>Date of Birth</th>
                         <td>
-                          {new Date(selectedUser[0].dob).toLocaleDateString()}
+                          {new Date(selectedUser.dob).toLocaleDateString()}
                         </td>
                       </tr>
                       <tr>
                         <th>Gender</th>
-                        <td>{selectedUser[0].gender}</td>
+                        <td>{selectedUser.gender}</td>
                       </tr>
                       <tr>
                         <th>Address</th>
-                        <td>{selectedUser[0].address}</td>
+                        <td>{selectedUser.address}</td>
                       </tr>
                       <tr>
                         <th>Relative Name</th>
-                        <td>{selectedUser[0].relative_name}</td>
+                        <td>{selectedUser.relative_name}</td>
                       </tr>
                       <tr>
                         <th>Date of Admission</th>
                         <td>
                           {new Date(
-                            selectedUser[0].date_of_admission
+                            selectedUser.date_of_admission
                           ).toLocaleDateString()}
                         </td>
                       </tr>
                       <tr>
                         <th>Ward Name</th>
-                        <td>{selectedUser[0].ward_name}</td>
+                        <td>{selectedUser.ward_name || "N/A"}</td>
                       </tr>
+                      <tr>
+  <th>User Role</th>
+  <td>
+    {{
+      1: "SuperAdmin",
+      2: "BranchAdmin",
+      3: "BranchOperator",
+      4: "Patient"
+    }[selectedUser.isRole] || "N/A"}
+  </td>
+</tr>
                     </>
                   ) : (
                     <tr>
@@ -1741,21 +1836,26 @@ const parseDateString = (dateStr) => {
                     }
                   ></Input>
 
-                  {/* Optional: role dropdown if editable
-  <Label>Role</Label>
-  <select
-    value={editData.is_role}
-    onChange={(e) =>
-      setEditData({
-        ...editData,
-        is_role: parseInt(e.target.value),
-      })
-    }
-  >
-    <option value={3}>User</option>
-    <option value={1}>Admin</option>
-    <option value={2}>Doctor</option>
-  </select> */}
+                  {/* Optional: role dropdown if editable */}
+                  {/* <Label className="mt-4 mb-2">Role</Label>
+                  <select
+  className="form-select"
+  aria-label="Select Role"
+  value={editData.is_role}
+  onChange={(e) =>
+    setEditData({
+      ...editData,
+      is_role: Number(e.target.value),
+    })
+  }
+>
+  <option value="">Select a role</option>
+  <option value={1}>SuperAdmin</option>
+  <option value={2}>BranchAdmin</option>
+  <option value={3}>BranchOperator</option>
+  <option value={4}>Patient</option>
+</select> */}
+
 
                   <br />
                   <div className="d-flex gap-3">
@@ -1827,15 +1927,14 @@ const parseDateString = (dateStr) => {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                   <span
-                          className="spinner-border spinner-border-sm"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
+                  <span
+                    className="spinner-border spinner-border-sm"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                 ) : (
                   "Re-Admission"
                 )}
-               
               </Button>
             </div>
           </Form>

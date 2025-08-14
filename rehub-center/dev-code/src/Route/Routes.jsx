@@ -402,6 +402,11 @@ export const routes = [
   //Faq
   { path: `${process.env.PUBLIC_URL}/app/faq`, Component: <FAQContent /> },
 
+
+    //Dashboard Form
+   { path: `${process.env.PUBLIC_URL}/Dashboard/Default`, Component : <Default/>},
+
+
    //Registration Form
    { path: `${process.env.PUBLIC_URL}/registeration/register`, Component : <Register/>},
 

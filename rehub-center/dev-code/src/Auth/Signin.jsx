@@ -55,6 +55,9 @@ const Login = ({ selected }) => {
         // ✅ Extract token and user from nested data
         const token = data.data.token;
         const user = data.data.user;
+
+        // ✅ Store branches in localStorage
+        localStorage.setItem("Branch_Detail", JSON.stringify(user.Branch_Detail));
   
         // ✅ Store login data in localStorage
         localStorage.setItem("login", "true");
@@ -62,6 +65,7 @@ const Login = ({ selected }) => {
         localStorage.setItem("user_id", user.user_id);
         localStorage.setItem("profileURL", man);
         localStorage.setItem("Name", user.name);
+        localStorage.setItem("isRoleType", user.isRoleType);
   
         // ✅ Handle Remember Me
         if (rememberMe) {
