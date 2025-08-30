@@ -59,7 +59,11 @@ import html2pdf from "html2pdf.js";
 
 import { substanceList } from '../../Constant/index';
 
+import { useBranch } from "../../contexts/BranchContext";
+
 function SUD() {
+     //Branches selection
+        const { selectedBranch } = useBranch();
     
     //Download view SUD form data into PDF 
      const pdfRef = useRef();
@@ -101,8 +105,10 @@ function SUD() {
     const [stillLoading, setstillLoading] = useState(true);
     useEffect(() => {
         const token = localStorage.getItem("Authorization");
+         //Branches selection
+         if (!selectedBranch) return; // avoid empty branch fetch
 
-        fetch("https://gks-yjdc.onrender.com/api/users", {
+        fetch(`https://gks-yjdc.onrender.com/api/users?branch_id=${selectedBranch}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -114,7 +120,7 @@ function SUD() {
                 return response.json();
             })
             .then((res) => {
-                const users = res.users || [];
+                const users = res.data || [];
 
                 const formatted = users.map((user) => {
                     const admitDate = user.recent_admit_date
@@ -154,7 +160,7 @@ function SUD() {
                 console.error("Error fetching PFA user data:", error);
                 setstillLoading(true);
             });
-    }, []);
+    }, [selectedBranch]);
 
     //Getting registred patient data into table row 
     const tableColumns = [
@@ -415,8 +421,9 @@ function SUD() {
         setModal(true);
         if (userId) {
             const token = localStorage.getItem("Authorization");
+            const branch_id = selectedBranch;
             try {
-                const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}`, {
+                const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`, {
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `${token}`,
@@ -424,7 +431,8 @@ function SUD() {
                 });
                 const data = await response.json();
                 if (!response.ok) throw new Error("User fetch failed");
-                setSelectedUser(data);
+                // ✅ store the user object
+        setSelectedUser(data.data[0]); 
             } catch (error) {
                 console.error("Fetch error:", error);
             }

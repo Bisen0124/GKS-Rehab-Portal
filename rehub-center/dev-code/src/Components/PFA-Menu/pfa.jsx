@@ -406,6 +406,16 @@ function PFA() {
           </span>
         )}
 
+ 
+          {/* <span
+            onClick={() => handlePreeFillCreateReadmissionPFA(row.recent_pfa_id)}
+            style={{ cursor: "pointer" }}
+            title="Readmission PFA"
+          >
+            ✏️
+          </span> */}
+     
+
         {/* Show Create PFA if not discharged and not readmission */}
         {row.dischargeStatus === 0 && row.isReadmission === 0 && (
           <span
@@ -978,8 +988,9 @@ const parseDateString = (dateStr) => {
 
   const token = localStorage.getItem("Authorization");
   try {
+    const branch_id = selectedBranch; // make sure `selectedBranch` 
     const response = await fetch(
-      `https://gks-yjdc.onrender.com/api/pfa/patient-assessment/${recentPFAiD}`,
+      `https://gks-yjdc.onrender.com/api/pfa/assessment/${recentPFAiD}?branch_id=${branch_id}`,
       {
         method: "GET",
         headers: {
@@ -1011,58 +1022,59 @@ const parseDateString = (dateStr) => {
     
 
     setPFAeditData({
-      date_of_assessment: latestAssessment.date_of_assessment ? parseDateString(latestAssessment.date_of_assessment) : "", // Use your date parser here
-      dependent_to: latestAssessment.dependent_to,
-      substance_use_pattern: latestAssessment.substance_use_pattern,
-      last_30_days_quantity: latestAssessment.last_30_days_quantity,
-
+      date_of_assessment: latestAssessment.date_of_assessment
+        ? new Date(latestAssessment.date_of_assessment) // ✅ always Date object
+        : null,
+    
+      dependent_to: latestAssessment.dependent_to || "",
+      substance_use_pattern: latestAssessment.substance_use_pattern || "",
+      last_30_days_quantity: latestAssessment.last_30_days_quantity || "",
+    
       medicalConfirmationData: latestAssessment?.medical_history || "",
       bloodConfirmationData: latestAssessment?.blood_transfusion_history || "",
-
+    
       weight: Number(latestAssessment?.weight) || 0,
       pulse_rate: Number(latestAssessment?.pulse_rate) || 0,
       blood_pressure: latestAssessment?.blood_pressure || "",
       temperature: Number(latestAssessment?.temperature) || 0,
       lymphadenopathy: latestAssessment?.lymphadenopathy || "",
-
+    
       medical_or_blood_history_details:
-        latestAssessment.medical_or_blood_history_details,
-      complication_description: latestAssessment.complication_description,
-      neuro_description: latestAssessment.neuro_description,
-      other_findings: latestAssessment.other_findings,
-      consent_name: latestAssessment.consent_name,
-      consent_relationship: latestAssessment.consent_relationship,
-      consent_signature: latestAssessment.consent_signature,
-      prepared_by: latestAssessment.prepared_by,
-
+        latestAssessment.medical_or_blood_history_details || "",
+      complication_description: latestAssessment.complication_description || "",
+      neuro_description: latestAssessment.neuro_description || "",
+      other_findings: latestAssessment.other_findings || "",
+      consent_name: latestAssessment.consent_name || "",
+      consent_relationship: latestAssessment.consent_relationship || "",
+      consent_signature: latestAssessment.consent_signature || "",
+      prepared_by: latestAssessment.prepared_by || "",
+    
       complications: {
-        ulcer: latestAssessment.ulcer,
-        respiratory_problem: latestAssessment.respiratory_problem,
-        jaundice: latestAssessment.jaundice,
-        haematemesis: latestAssessment.haematemesis,
-        abdominal_complaints: latestAssessment.abdominal_complaints,
-        cardiovascular: latestAssessment.cardiovascular,
+        ulcer: latestAssessment.ulcer || "No",
+        respiratory_problem: latestAssessment.respiratory_problem || "No",
+        jaundice: latestAssessment.jaundice || "No",
+        haematemesis: latestAssessment.haematemesis || "No",
+        abdominal_complaints: latestAssessment.abdominal_complaints || "No",
+        cardiovascular: latestAssessment.cardiovascular || "No",
       },
-
+    
       neurological: {
-        delirium: latestAssessment.delirium,
-        seizure: latestAssessment.seizure,
-        blackout: latestAssessment.blackout,
-        memory_loss: latestAssessment.memory_loss,
-        trembling: latestAssessment.trembling,
-        epilepsy: latestAssessment.epilepsy,
-        neuropathy: latestAssessment.neuropathy,
+        delirium: latestAssessment.delirium || "No",
+        seizure: latestAssessment.seizure || "No",
+        blackout: latestAssessment.blackout || "No",
+        memory_loss: latestAssessment.memory_loss || "No",
+        trembling: latestAssessment.trembling || "No",
+        epilepsy: latestAssessment.epilepsy || "No",
+        neuropathy: latestAssessment.neuropathy || "No",
       },
-
-      lymphadenopathy: latestAssessment.lymphadenopathy,
-      nutritional_status: latestAssessment.nutritional_status,
-
-      readmissionConsent : latestAssessment.consent,
-      readmissionVerification : latestAssessment.verification,
-      readmissionUserId : latestAssessment.user_id,
-
-      
+    
+      nutritional_status: latestAssessment.nutritional_status || "",
+    
+      readmissionConsent: latestAssessment.consent || "No",
+      readmissionVerification: latestAssessment.verification || "No",
+      readmissionUserId: latestAssessment.user_id || null,
     });
+    
   } catch (error) {
     console.error("Fetch error:", error);
   }
@@ -1165,10 +1177,10 @@ const parseDateString = (dateStr) => {
     // }
     try {
       const token = localStorage.getItem("Authorization");
-
+      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
       //Readmission PFA API
       const response = await fetch(
-        "https://gks-yjdc.onrender.com/api/pfa/create-assessment",
+        `https://gks-yjdc.onrender.com/api/pfa/create-assessment?branch_id=${branch_id}`,
         {
           method: "POST",
           headers: {
@@ -1289,12 +1301,18 @@ const parseDateString = (dateStr) => {
       );
   
       const detailData = await detailResponse.json();
+
+      console.log("detailData Edit Data", detailData.date_of_assessment);
+
       if (!detailResponse.ok) {
         console.error("Detail fetch error:", detailData);
         return;
       }
   
       const latestAssessment = detailData?.data || detailData.assessment;
+
+      console.log(latestAssessment.date_of_assessment)
+
       if (!latestAssessment) {
         console.warn("No detailed assessment found.");
         return;
@@ -1305,6 +1323,9 @@ const parseDateString = (dateStr) => {
       setPFAeditData({
         pfa_id: pfaId,
         ...latestAssessment,
+        date_of_assessment: latestAssessment.date_of_assessment
+          ? new Date(latestAssessment.date_of_assessment) // Convert string → Date object
+          : null,
       });
   
     } catch (error) {
@@ -1322,64 +1343,66 @@ const parseDateString = (dateStr) => {
 
   //Edit and submit PFA individual assessment data hanlder
   const handlerEditPFAIndividualAssessmentData = async () => {
-    setIsLoading(true); // Start loading
-
+    setIsLoading(true);
+  
+    const yesNo = (val) => (val === "Yes" ? "Yes" : "No"); // Ensures Yes/No only
+  
     const payload = {
-      date_of_assessment: PFAeditData.date_of_assessment?.toISOString(),
+      date_of_assessment: PFAeditData.date_of_assessment
+      ? PFAeditData.date_of_assessment.toISOString()
+      : null,
+  
       dependent_to: PFAeditData.dependent_to,
       substance_use_pattern: PFAeditData.substance_use_pattern,
       last_30_days_quantity: PFAeditData.last_30_days_quantity,
       medical_history: PFAeditData.medical_history,
       blood_transfusion_history: PFAeditData.blood_transfusion_history,
-      medical_or_blood_history_details:
-        PFAeditData.medical_or_blood_history_details,
-
+      medical_or_blood_history_details: PFAeditData.medical_or_blood_history_details,
+  
       weight: Number(PFAeditData.weight) || 0,
       pulse_rate: Number(PFAeditData.pulse_rate) || 0,
       blood_pressure: PFAeditData.blood_pressure,
-      temperature: Number(PFAeditData?.temperature) || 0,
+      temperature: Number(PFAeditData.temperature) || 0,
       lymphadenopathy: PFAeditData.lymphadenopathy,
+  
+      // Complications - flat
+  ulcer: yesNo(PFAeditData.ulcer),
+  respiratory_problem: yesNo(PFAeditData.respiratory_problem),
+  jaundice: yesNo(PFAeditData.jaundice),
+  haematemesis: yesNo(PFAeditData.haematemesis),
+  abdominal_complaints: yesNo(PFAeditData.abdominal_complaints),
+  cardiovascular: yesNo(PFAeditData.cardiovascular),
+  complication_description: PFAeditData.complication_description,
 
-      // Complications
-      ulcer: PFAeditData.complications?.ulcer || "",
-      respiratory_problem: PFAeditData.complications?.respiratory_problem || "",
-      jaundice: PFAeditData.complications?.jaundice || "",
-      haematemesis: PFAeditData.complications?.haematemesis || "",
-      abdominal_complaints:
-        PFAeditData.complications?.abdominal_complaints || "",
-      cardiovascular: PFAeditData.complications?.cardiovascular || "",
-      complication_description: PFAeditData.complication_description,
-
-      // Neurological
-      seizure: PFAeditData.neurological?.seizure || "",
-      epilepsy: PFAeditData.neurological?.epilepsy || "",
-      delirium: PFAeditData.neurological?.delirium || "",
-      trembling: PFAeditData.neurological?.trembling || "",
-      memory_loss: PFAeditData.neurological?.memory_loss || "",
-      neuropathy: PFAeditData.neurological?.neuropathy || "",
-      blackout: PFAeditData.neurological?.blackout || "",
-      neuro_description: PFAeditData.neuro_description,
-
+  // Neurological - flat
+  seizure: yesNo(PFAeditData.seizure),
+  epilepsy: yesNo(PFAeditData.epilepsy),
+  delirium: yesNo(PFAeditData.delirium),
+  trembling: yesNo(PFAeditData.trembling),
+  memory_loss: yesNo(PFAeditData.memory_loss),
+  neuropathy: yesNo(PFAeditData.neuropathy),
+  blackout: yesNo(PFAeditData.blackout),
+  neuro_description: PFAeditData.neuro_description,
+  
       other_findings: PFAeditData.other_findings,
-
       consent_name: PFAeditData.consent_name,
       consent_relationship: PFAeditData.consent_relationship,
       consent_signature: PFAeditData.consent_signature,
       prepared_by: PFAeditData.prepared_by,
-
       nutritional_status: PFAeditData.nutritional_status,
-
-      consent:PFAeditData.readmissionConsent,
-
-      verification:PFAeditData.readmissionVerification,
+  
+      consent: yesNo(PFAeditData.readmissionConsent),
+      // verification: yesNo(PFAeditData.readmissionVerification),
+      verification:PFAeditData.verification,
+  
       user_id: PFAeditData.readmissionUserId,
-
-      pfa_id:PFAeditData.pfa_id,
+      pfa_id: PFAeditData.pfa_id,
     };
-
+  
     try {
-      const branch_id = selectedBranch; // make sure `selectedBranch` 
+      const branch_id = selectedBranch;
       const token = localStorage.getItem("Authorization");
+  
       const response = await fetch(
         `https://gks-yjdc.onrender.com/api/pfa/update-assessment/${PFAeditData.pfa_id}?branch_id=${branch_id}`,
         {
@@ -1391,9 +1414,9 @@ const parseDateString = (dateStr) => {
           body: JSON.stringify(payload),
         }
       );
-
+  
       const data = await response.json();
-
+  
       if (!response.ok) {
         Swal.fire({
           icon: "error",
@@ -1402,13 +1425,13 @@ const parseDateString = (dateStr) => {
         });
         return;
       }
-
+  
       Swal.fire({
         icon: "success",
         title: "Assessment Updated",
         text: "The assessment was updated successfully!",
       });
-
+  
       setPFAEditIndividualDataModal(false);
     } catch (error) {
       Swal.fire({
@@ -1416,9 +1439,11 @@ const parseDateString = (dateStr) => {
         title: "Error",
         text: "An error occurred while updating the assessment.",
       });
+    } finally {
+      setTimeout(() => setIsLoading(false), 300); // show spinner at least 300ms
     }
-    
   };
+  
 
   //Search filter on register datalist
   const [searchText, setSearchText] = useState("");
@@ -2723,12 +2748,12 @@ const parseDateString = (dateStr) => {
                           {
                             id: "5",
                             question: anyMedicalHistory,
-                            name: "medicalConfirmationData",
+                            name: "medical_history",
                           },
                           {
                             id: "6",
                             question: anyBloodTransfusionHistory,
-                            name: "bloodConfirmationData",
+                            name: "blood_transfusion_history",
                           },
                           {
                             id: "7",
@@ -3167,7 +3192,7 @@ const parseDateString = (dateStr) => {
                           aria-hidden="true"
                         ></span>
                       ) : (
-                        "Create PFA"
+                        "ReCreate PFA"
                       )}
                     </Button>
                   </div>
@@ -3186,12 +3211,8 @@ const parseDateString = (dateStr) => {
             maxWidth="1200px"
           >
 
-
-            
-      {isLoading ? (
-  <div className="p-5 text-center">Loading data...</div>
-) : (
-  PFAEditIndividualDataModal && PFAeditData && (
+ 
+  {PFAEditIndividualDataModal && (
       <div className="row">
         <Form
           onSubmit={(e) => {
@@ -3207,19 +3228,17 @@ const parseDateString = (dateStr) => {
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
-                      className="form-control digits"
-                      selected={PFAeditData.date_of_assessment instanceof Date && !isNaN(PFAeditData.date_of_assessment)
-                    ? PFAeditData.date_of_assessment
-                    : null }
-                      onChange={(date) =>
-setPFAeditData({
-...PFAeditData,
-date_of_assessment: date, // this is already a Date object
-})
-}
+                  <DatePicker
+  className="form-control digits"
+  selected={PFAeditData.date_of_assessment} // Always Date object or null
+  onChange={(date) =>
+    setPFAeditData({
+      ...PFAeditData,
+      date_of_assessment: date, // Store as Date object
+    })
+  }
+/>
 
-                    />
                   </div>
                 </Col>
               </FormGroup>
@@ -3296,12 +3315,12 @@ date_of_assessment: date, // this is already a Date object
                   {
                     id: "5",
                     question: anyMedicalHistory,
-                    name: "medicalConfirmationData",
+                    name: "medical_history",
                   },
                   {
                     id: "6",
                     question: anyBloodTransfusionHistory,
-                    name: "bloodConfirmationData",
+                    name: "blood_transfusion_history",
                   },
                   {
                     id: "7",
@@ -3376,180 +3395,163 @@ date_of_assessment: date, // this is already a Date object
 
           {/* Complication Details */}
           <div className="table-responsive">
-            <Table bordered>
-              <thead>
-                <tr>
-                  <th>{tableNumber2}</th>
-                  <th>{complicationDetails}</th>
-                  <th>{yes1}</th>
-                  <th>{no1}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { key: "ulcer", label: ulcers },
-                  {
-                    key: "respiratory_problem",
-                    label: respiratoryProblem,
-                  },
-                  { key: "jaundice", label: jaundice },
-                  { key: "haematemesis", label: Haematemesis },
-                  {
-                    key: "abdominal_complaints",
-                    label: otherAbdominalComplaints,
-                  },
-                  { key: "cardiovascular", label: cardiovascular },
-                ].map(({ key, label }, index) => (
-                  <tr key={key}>
-                    <td>{index + 1}</td>
-                    <td>{label}</td>
-                    <td colSpan="2">
-                      <div className="radio radio-primary d-flex gap-3">
-                        {["Yes", "No"].map((value) => {
-                          const inputId = `complication_${key}_${value}`;
-                          return (
-                            <div
-                              key={inputId}
-                              className="form-check form-check-inline"
-                            >
-                              <Input
-                                id={inputId}
-                                type="radio"
-                                className="form-check-input"
-                                name={`complication_${key}`}
-                                value={value}
-                                checked={
-                                  PFAeditData?.complications?.[
-                                    key
-                                  ]?.toString() === value.toString()
-                                }
-                                onChange={() => {
-                                  console.log(
-                                    `Setting complication ${key} to:`,
-                                    value
-                                  );
-                                  setPFAeditData((prev) => ({
-                                    ...prev,
-                                    complications: {
-                                      ...prev.complications,
-                                      [key]: value,
-                                    },
-                                  }));
-                                }}
-                              />
+  <Table bordered>
+    <thead>
+      <tr>
+        <th>{tableNumber2}</th>
+        <th>{complicationDetails}</th>
+        <th>{yes1}</th>
+        <th>{no1}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {[
+        { key: "ulcer", label: ulcers },
+        { key: "respiratory_problem", label: respiratoryProblem },
+        { key: "jaundice", label: jaundice },
+        { key: "haematemesis", label: Haematemesis },
+        { key: "abdominal_complaints", label: otherAbdominalComplaints },
+        { key: "cardiovascular", label: cardiovascular },
+      ].map(({ key, label }, index) => (
+        <tr key={key}>
+          <td>{index + 1}</td>
+          <td>{label}</td>
+          <td colSpan="2">
+            <div className="radio radio-primary d-flex gap-3">
+              {["Yes", "No"].map((value) => {
+                const inputId = `complication_${key}_${value}`;
+                return (
+                  <div
+                    key={inputId}
+                    className="form-check form-check-inline"
+                  >
+                    <Input
+                      id={inputId}
+                      type="radio"
+                      className="form-check-input"
+                      name={`complication_${key}`}
+                      value={value}
+                      checked={
+                        PFAeditData?.[key]?.toString() === value.toString()
+                      }
+                      onChange={() => {
+                        console.log(`Setting complication ${key} to:`, value);
+                        setPFAeditData((prev) => ({
+                          ...prev,
+                          [key]: value, // store directly in flat structure
+                        }));
+                      }}
+                    />
 
-                              <Label
-                                className="form-check-label"
-                                for={inputId}
-                              >
-                                {value}
-                              </Label>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-
-            <div className="col-md-12">
-              <FormGroup className="mb-0">
-                <Label>{mentionIfAny2}</Label>
-                <Input
-                  type="textarea"
-                  rows="3"
-                  name="complication_description"
-                  value={PFAeditData.complication_description}
-                  onChange={(e) =>
-                    setPFAeditData({
-                      ...PFAeditData,
-                      complication_description: e.target.value,
-                    })
-                  }
-                />
-              </FormGroup>
+                    <Label
+                      className="form-check-label"
+                      for={inputId}
+                    >
+                      {value}
+                    </Label>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </Table>
+
+  <div className="col-md-12">
+    <FormGroup className="mb-0">
+      <Label>{mentionIfAny2}</Label>
+      <Input
+        type="textarea"
+        rows="3"
+        name="complication_description"
+        value={PFAeditData.complication_description || ""}
+        onChange={(e) =>
+          setPFAeditData({
+            ...PFAeditData,
+            complication_description: e.target.value,
+          })
+        }
+      />
+    </FormGroup>
+  </div>
+</div>
+
 
           {/* Neurological Section */}
           <div className="table-responsive">
-            <Table bordered>
-              <thead>
-                <tr>
-                  <th>{tableNumber3}</th>
-                  <th>{neurological}</th>
-                  <th>{yes1}</th>
-                  <th>{no1}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {neurologicalOptions.map((option, index) => (
-                  <tr key={option.key}>
-                    <td>{index + 1}</td>
-                    <td>{option.label}</td>
-                    {["Yes", "No"].map((value) => {
-                      const inputId = `neuro_${option.key}_${value}`;
-                      return (
-                        <td key={inputId}>
-                          <div className="radio radio-primary d-flex gap-3">
-                            <div className="form-check form-check-inline">
-                              <Input
-                                id={inputId}
-                                type="radio"
-                                className="form-check-input"
-                                name={`neuro_${option.key}`}
-                                value={value}
-                                checked={
-                                  PFAeditData?.neurological?.[
-                                    option.key
-                                  ]?.toString() === value.toString()
-                                }
-                                onChange={() =>
-                                  setPFAeditData((prev) => ({
-                                    ...prev,
-                                    neurological: {
-                                      ...prev.neurological,
-                                      [option.key]: value,
-                                    },
-                                  }))
-                                }
-                              />
-                              <Label
-                                className="form-check-label"
-                                htmlFor={inputId}
-                              >
-                                {value}
-                              </Label>
-                            </div>
-                          </div>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
+  <Table bordered>
+    <thead>
+      <tr>
+        <th>{tableNumber3}</th>
+        <th>{neurological}</th>
+        <th>{yes1}</th>
+        <th>{no1}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {neurologicalOptions.map((option, index) => (
+        <tr key={option.key}>
+          <td>{index + 1}</td>
+          <td>{option.label}</td>
+          {["Yes", "No"].map((value) => {
+            const inputId = `neuro_${option.key}_${value}`;
+            return (
+              <td key={inputId}>
+                <div className="radio radio-primary d-flex gap-3">
+                  <div className="form-check form-check-inline">
+                    <Input
+                      id={inputId}
+                      type="radio"
+                      className="form-check-input"
+                      name={`neuro_${option.key}`}
+                      value={value}
+                      checked={
+                        PFAeditData?.[option.key]?.toString() === value.toString()
+                      }
+                      onChange={() =>
+                        setPFAeditData((prev) => ({
+                          ...prev,
+                          [option.key]: value, // store in flat structure
+                        }))
+                      }
+                    />
+                    <Label
+                      className="form-check-label"
+                      htmlFor={inputId}
+                    >
+                      {value}
+                    </Label>
+                  </div>
+                </div>
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </Table>
 
-            <div className="col-md-12">
-              <FormGroup className="mb-0">
-                <Label>{mentionIfAny2}</Label>
-                <Input
-                  type="textarea"
-                  rows="3"
-                  name="neuro_description"
-                  value={PFAeditData.neuro_description}
-                  onChange={(e) =>
-                    setPFAeditData({
-                      ...PFAeditData,
-                      neuro_description: e.target.value,
-                    })
-                  }
-                />
-              </FormGroup>
-            </div>
-          </div>
+  <div className="col-md-12">
+    <FormGroup className="mb-0">
+      <Label>{mentionIfAny2}</Label>
+      <Input
+        type="textarea"
+        rows="3"
+        name="neuro_description"
+        value={PFAeditData.neuro_description || ""}
+        onChange={(e) =>
+          setPFAeditData({
+            ...PFAeditData,
+            neuro_description: e.target.value,
+          })
+        }
+      />
+    </FormGroup>
+  </div>
+</div>
+
 
           {/* Any Other Findings */}
           <div className="col-md-12">
@@ -3622,11 +3624,11 @@ date_of_assessment: date, // this is already a Date object
             <Input
               id="checkbox1"
               type="checkbox"
-              checked={PFAeditData.readmissionConsent === "Yes"}
+              checked={PFAeditData.consent === "Yes"}
               onChange={(e) =>
                 setPFAeditData({
                   ...PFAeditData,
-                  readmissionConsent: e.target.checked ? "Yes" : "No",
+                  consent: e.target.checked ? "Yes" : "No",
                 })
               }
             />
@@ -3714,11 +3716,11 @@ date_of_assessment: date, // this is already a Date object
                   <Input
                     id="checkbox3"
                     type="checkbox"
-                    checked={PFAeditData.readmissionVerification === "Yes"}
+                    checked={PFAeditData.verification === "Yes"}
                     onChange={(e) =>
                       setPFAeditData((prev) => ({
                         ...prev,
-                        readmissionVerification: e.target.checked ? "Yes" : "No",
+                        verification: e.target.checked ? "Yes" : "No",
                       }))
                     }
                   />
@@ -3746,8 +3748,8 @@ date_of_assessment: date, // this is already a Date object
           </div>
         </Form>
       </div>
-  )
-    )}
+  )}
+    
 
 
 

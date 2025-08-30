@@ -170,7 +170,12 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import html2pdf from "html2pdf.js";
 
+import { useBranch } from "../../contexts/BranchContext";
+
 function GenFamily() {
+
+   //Branches selection
+    const { selectedBranch } = useBranch();
 
   const pdfRef = useRef();
    //PDf view download pdf code handler
@@ -429,9 +434,10 @@ function GenFamily() {
     setgetFamilyModal(true);
     if (userId) {
       const token = localStorage.getItem("Authorization");
+      const branch_id = selectedBranch;
       try {
         const response = await fetch(
-          `https://gks-yjdc.onrender.com/api/users/${userId}`,
+          `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -439,21 +445,25 @@ function GenFamily() {
             },
           }
         );
-        const data = await response.json();
+        const result = await response.json();
 
         if (response.ok) {
           console.log(selectedUser);
         }
 
         if (!response.ok) {
-          console.error("User fetch error:", data);
+          console.error("User fetch error:", result);
           return;
         }
-        setSelectedUser(data);
-        console.log(selectedUser);
-      } catch (error) {
-        console.error("Fetch error:", error);
-      }
+       // If your API wraps user data in `data`
+       const userData = result.data || result; 
+  
+       setSelectedUser(userData);
+       console.log("Fetched user:", userData);
+       console.log("User DOB:", userData?.dob);
+     } catch (error) {
+       console.error("Fetch error:", error);
+     }
     }
     setgetFamilyModal(!genFamilyModal);
   };
@@ -780,9 +790,12 @@ function GenFamily() {
   const [selectedRows, setSelectedRows] = useState([]);
   const [stillLoading, setstillLoading] = useState(true);
   useEffect(() => {
+
+    if (!selectedBranch) return; // avoid empty branch fetch
+
     const token = localStorage.getItem("Authorization");
 
-    fetch("https://gks-yjdc.onrender.com/api/users", {
+    fetch(`https://gks-yjdc.onrender.com/api/users?branch_id=${selectedBranch}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -794,7 +807,7 @@ function GenFamily() {
         return response.json();
       })
       .then((res) => {
-        const users = res.users || [];
+        const users = res.data || []; // <-- FIXED
 
         const formatted = users.map((user) => {
           const admitDate = user.recent_admit_date
@@ -836,7 +849,7 @@ function GenFamily() {
         console.error("Error fetching PFA user data:", error);
         setstillLoading(true);
       });
-  }, []);
+  }, [selectedBranch]);
 
   //Fetch register user data ino datatable by user API & display Updated status completed or pending from create-gen-family API end
 
@@ -1023,44 +1036,82 @@ function GenFamily() {
       jail_duration: "",
     },
     //Patient behaviour
+      patient_behavior: {
+        life_priority: "",
+        life_aim: "",
+        uses_alone: "No",
+        moody: "No",
+        worried: "No",
+        sad: "No",
+        lacks_confidence: "No",
+        stubborn: "No",
+        aggressive: "No",
+        uses_slang: "No",
+        disrespects_parents: "No",
+        fights_argue: "No",
+        vandalizes: "No",
+        fights_at_home: "No",
+        tells_lies: "No",
+        too_expensive: "No",
+        theft: "No",
+        borrows: "No",
+        gambles: "No",
+        bluffs: "No",
+        admits_mistake: "No",
+        irresponsible: "No",
+        selfish: "No",
+        has_empathy: "No",
+        lazy: "No",
+        nervous_anxiety_symptoms: "No",
+        emotional_post_use: "No",
+        prioritizes_substance: "No",
+        feels_guilty: "No",
+        avoids_people: "No",
+        sleep_eat_problem: "No",
+        uses_knowing_consequence: "No",
+        suicide_thoughts: "No",
+        loved_one_dependence: "No",
+      },
 
-    patient_behavior: {
-      life_priority: "",
-      life_aim: "",
-      //Patient behaviour table options
-      uses_alone: "",
-      moody: "",
-      worried: "",
-      sad: "",
-      lacks_confidence: "",
-      stubborn: "",
-      aggressive: "",
-      uses_slang: "",
-      disrespects_parents: "",
-      fights_argue: "",
-      vandalizes: "",
-      fights_at_home: "",
-      tells_lies: "",
-      too_expensive: "",
-      theft: "",
-      borrows: "",
-      gambles: "",
-      bluffs: "",
-      admits_mistake: "",
-      irresponsible: "",
-      selfish: "",
-      has_empathy: "",
-      lazy: "",
-      nervous_anxiety_symptoms: "",
-      emotional_post_use: "",
-      prioritizes_substance: "",
-      feels_guilty: "",
-      avoids_people: "",
-      sleep_eat_problem: "",
-      uses_knowing_consequence: "",
-      suicide_thoughts: "",
-      loved_one_dependence: "",
-    },
+    
+    // patient_behavior: {
+    //   life_priority: "",
+    //   life_aim: "",
+    //   //Patient behaviour table options
+    //   uses_alone: "",
+    //   moody: "",
+    //   worried: "",
+    //   sad: "",
+    //   lacks_confidence: "",
+    //   stubborn: "",
+    //   aggressive: "",
+    //   uses_slang: "",
+    //   disrespects_parents: "",
+    //   fights_argue: "",
+    //   vandalizes: "",
+    //   fights_at_home: "",
+    //   tells_lies: "",
+    //   too_expensive: "",
+    //   theft: "",
+    //   borrows: "",
+    //   gambles: "",
+    //   bluffs: "",
+    //   admits_mistake: "",
+    //   irresponsible: "",
+    //   selfish: "",
+    //   has_empathy: "",
+    //   lazy: "",
+    //   nervous_anxiety_symptoms: "",
+    //   emotional_post_use: "",
+    //   prioritizes_substance: "",
+    //   feels_guilty: "",
+    //   avoids_people: "",
+    //   sleep_eat_problem: "",
+    //   uses_knowing_consequence: "",
+    //   suicide_thoughts: "",
+    //   loved_one_dependence: "",
+    // },
+
     //consents info value
     consent: "Yes",
     consent_name: "",
@@ -1113,97 +1164,210 @@ function GenFamily() {
 
   const handleTreatmentInputChange = (index, e) => {
     const { name, value } = e.target;
-    //Chief Complaint
+  
+    // Update formData safely
     const updated = [...formData.treatment_records];
     updated[index][name] = value;
+  
     setFormData((prev) => ({
       ...prev,
       treatment_records: updated,
     }));
-
-    const updatedRecords = [...GenfamiltEditData.treatment_records];
-    updatedRecords[index][name] = value;
-
-    setGenfamilyEditData((prev) => ({
-      ...prev,
-      treatment_records: updatedRecords,
-    }));
+  
+    // ✅ Only update GenfamiltEditData if it exists
+    if (GenfamiltEditData) {
+      const updatedRecords = [...(GenfamiltEditData.treatment_records || [])];
+      if (!updatedRecords[index]) updatedRecords[index] = {};
+      updatedRecords[index][name] = value;
+  
+      setGenfamilyEditData((prev) => ({
+        ...prev,
+        treatment_records: updatedRecords,
+      }));
+    }
   };
+  
+
+  // const handleTreatmentInputChange = (index, e) => {
+  //   const { name, value } = e.target;
+  //   //Chief Complaint
+  //   const updated = [...formData.treatment_records];
+  //   updated[index][name] = value;
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     treatment_records: updated,
+  //   }));
+
+  //   const updatedRecords = [...GenfamiltEditData.treatment_records];
+  //   updatedRecords[index][name] = value;
+
+  //   setGenfamilyEditData((prev) => ({
+  //     ...prev,
+  //     treatment_records: updatedRecords,
+  //   }));
+  // };
+
+
 
   // {/*Chief Complaint*/} and
   // Relationship & Family Status table  row data
-
   const handleMemberInputChange = (index, e) => {
     const { name, value } = e.target;
-
-    const updatedMembers = [...formData.members];
+  
+    // ✅ Update formData safely
+    const updatedMembers = [...(formData.members || [])];
+    if (!updatedMembers[index]) updatedMembers[index] = {}; // ensure row exists
     updatedMembers[index][name] = value;
-
+  
     setFormData((prev) => ({
       ...prev,
       members: updatedMembers,
     }));
-
-    const editupdatedMembers = [...GenfamiltEditData.members];
-    editupdatedMembers[index][name] = value;
-
-    setGenfamilyEditData((prev) => ({
-      ...prev,
-      members: editupdatedMembers,
-    }));
+  
+    // ✅ Update GenfamiltEditData safely
+    setGenfamilyEditData((prev) => {
+      const prevMembers = prev?.members || [];
+      const editupdatedMembers = [...prevMembers];
+      if (!editupdatedMembers[index]) editupdatedMembers[index] = {};
+      editupdatedMembers[index][name] = value;
+  
+      return {
+        ...prev,
+        members: editupdatedMembers,
+      };
+    });
   };
+  
+
+  // const handleMemberInputChange = (index, e) => {
+  //   const { name, value } = e.target;
+
+  //   const updatedMembers = [...formData.members];
+  //   updatedMembers[index][name] = value;
+
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     members: updatedMembers,
+  //   }));
+
+  //   const editupdatedMembers = [...GenfamiltEditData.members];
+  //   editupdatedMembers[index][name] = value;
+
+  //   setGenfamilyEditData((prev) => ({
+  //     ...prev,
+  //     members: editupdatedMembers,
+  //   }));
+  // };
 
   // ✅ Add a new treatment record row
   // {/*Chief Complaint*/}
   const addTreatmentRow = () => {
+    const newRow = {
+      treatment_year: "",
+      treatment_place: "",
+      treatment_duration: "",
+      days_of_sobriety: "",
+    };
+  
+    // Always safe for formData (you already initialize it)
     setFormData((prev) => ({
       ...prev,
-      treatment_records: [
-        ...prev.treatment_records,
-        {
-          treatment_year: "",
-          treatment_place: "",
-          treatment_duration: "",
-          days_of_sobriety: "",
-        },
-      ],
+      treatment_records: [...prev.treatment_records, newRow],
     }));
-
-    setGenfamilyEditData((prev) => ({
-      ...prev,
-      treatment_records: [
-        ...prev.treatment_records,
-        {
-          treatment_year: "",
-          treatment_place: "",
-          treatment_duration: "",
-          days_of_sobriety: "",
-        },
-      ],
-    }));
+  
+    // ✅ Safe check for GenfamilyEditData
+    setGenfamilyEditData((prev) => {
+      const prevRecords = prev?.treatment_records || [];
+      return {
+        ...prev,
+        treatment_records: [...prevRecords, newRow],
+      };
+    });
   };
+  
+  // const addTreatmentRow = () => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     treatment_records: [
+  //       ...prev.treatment_records,
+  //       {
+  //         treatment_year: "",
+  //         treatment_place: "",
+  //         treatment_duration: "",
+  //         days_of_sobriety: "",
+  //       },
+  //     ],
+  //   }));
+
+  //   setGenfamilyEditData((prev) => ({
+  //     ...prev,
+  //     treatment_records: [
+  //       ...prev.treatment_records,
+  //       {
+  //         treatment_year: "",
+  //         treatment_place: "",
+  //         treatment_duration: "",
+  //         days_of_sobriety: "",
+  //       },
+  //     ],
+  //   }));
+  // };
+  
 
   //Interference relation table add row
-  const addInterferenceRow = () => {
-    setFormData((prev) => ({
-      ...prev,
-      members: [
-        ...prev.members,
-        {
-          name: "",
-          relation: "",
-          age: "",
-          living_status: "",
-          physical_disorder: "",
-        },
-      ],
-    }));
+  // const addInterferenceRow = () => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     members: [
+  //       ...prev.members,
+  //       {
+  //         name: "",
+  //         relation: "",
+  //         age: "",
+  //         living_status: "",
+  //         physical_disorder: "",
+  //       },
+  //     ],
+  //   }));
 
-    //gen family pre fill data
-    setGenfamilyEditData((prev) => ({
-      ...prev,
+  //   //gen family pre fill data
+  //   setGenfamilyEditData((prev) => ({
+  //     ...prev,
+  //     members: [
+  //       ...prev.members,
+  //       {
+  //         name: "",
+  //         relation: "",
+  //         age: "",
+  //         living_status: "",
+  //         physical_disorder: "",
+  //       },
+  //     ],
+  //   }));
+  // };
+  // Interference relation table add row
+const addInterferenceRow = () => {
+  setFormData((prev) => ({
+    ...prev,
+    members: [
+      ...(prev.members || []), // fallback to [] if undefined
+      {
+        name: "",
+        relation: "",
+        age: "",
+        living_status: "",
+        physical_disorder: "",
+      },
+    ],
+  }));
+
+  // gen family pre fill data
+  setGenfamilyEditData((prev) => {
+    const safePrev = prev || {}; // fallback to empty object
+    return {
+      ...safePrev,
       members: [
-        ...prev.members,
+        ...(safePrev.members || []), // fallback to []
         {
           name: "",
           relation: "",
@@ -1212,8 +1376,11 @@ function GenFamily() {
           physical_disorder: "",
         },
       ],
-    }));
-  };
+    };
+  });
+  
+};
+
 
   // ✅ Remove a treatment record row
   // {/*Chief Complaint*/}
@@ -1253,35 +1420,80 @@ function GenFamily() {
 
 
   //Family History
-  const handleFamilyHistoryChange = (side, relation, field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      family_history_data: {
-        ...prev.family_history_data,
-        [side]: {
-          ...prev.family_history_data[side],
-          [relation]: {
-            ...prev.family_history_data[side][relation],
-            [field]: value,
-          },
-        },
-      },
-    }));
+  // const handleFamilyHistoryChange = (side, relation, field, value) => {
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     family_history_data: {
+  //       ...prev.family_history_data,
+  //       [side]: {
+  //         ...prev.family_history_data[side],
+  //         [relation]: {
+  //           ...prev.family_history_data[side][relation],
+  //           [field]: value,
+  //         },
+  //       },
+  //     },
+  //   }));
 
-    setGenfamilyEditData((prev) => ({
+  //   setGenfamilyEditData((prev) => ({
+  //     ...prev,
+  //     family_history_data: {
+  //       ...prev.family_history_data,
+  //       [side]: {
+  //         ...prev.family_history_data[side],
+  //         [relation]: {
+  //           ...prev.family_history_data[side][relation],
+  //           [field]: value,
+  //         },
+  //       },
+  //     },
+  //   }));
+  // };
+  // Family History change handler
+const handleFamilyHistoryChange = (side, relation, field, value) => {
+  // ✅ Update formData safely
+  setFormData((prev) => {
+    const prevHistory = prev.family_history_data || {};
+    const prevSide = prevHistory[side] || {};
+    const prevRelation = prevSide[relation] || {};
+
+    return {
       ...prev,
       family_history_data: {
-        ...prev.family_history_data,
+        ...prevHistory,
         [side]: {
-          ...prev.family_history_data[side],
+          ...prevSide,
           [relation]: {
-            ...prev.family_history_data[side][relation],
+            ...prevRelation,
             [field]: value,
           },
         },
       },
-    }));
-  };
+    };
+  });
+
+  // ✅ Update GenfamilyEditData safely
+  setGenfamilyEditData((prev) => {
+    const prevHistory = prev?.family_history_data || {};
+    const prevSide = prevHistory[side] || {};
+    const prevRelation = prevSide[relation] || {};
+
+    return {
+      ...prev,
+      family_history_data: {
+        ...prevHistory,
+        [side]: {
+          ...prevSide,
+          [relation]: {
+            ...prevRelation,
+            [field]: value,
+          },
+        },
+      },
+    };
+  });
+};
+
 
 
 
@@ -1505,12 +1717,14 @@ function GenFamily() {
     };
 
     try {
+      const branch_id = selectedBranch; // make sure `selectedBranch` 
       const token = localStorage.getItem("Authorization");
 
       console.log("Payload to be sent:", JSON.stringify(payload));
 
+      //Normal create gen family
       const response = await fetch(
-        "https://gks-yjdc.onrender.com/api/gen-family/create-gen-family",
+        `https://gks-yjdc.onrender.com/api/gen-family/create-gen-family?branch_id=${branch_id}`,
         {
           method: "POST",
           headers: {
@@ -1546,7 +1760,7 @@ function GenFamily() {
 
       // ✅ Fetch all users and update their status
       const usersResponse = await fetch(
-        "https://gks-yjdc.onrender.com/api/users",
+        `https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`,
         {
           method: "GET",
           headers: {
@@ -1624,22 +1838,23 @@ function GenFamily() {
   const viewGenFamily = async (userId = null) => {
     setviewGenFamilyModel(true);
     console.log("userId =>", userId);
-
+  
     if (typeof userId === "object" && userId !== null) {
       userId = userId.id;
     }
-
+  
     if (!userId) {
       console.error("Invalid userId provided");
       return;
     }
-
+  
     const token = localStorage.getItem("Authorization");
-
+    const branch_id = selectedBranch;
+  
     try {
-      // Step 1: Get gen_fam_id from user-gen-family
+      // Step 1: get gen_fam_id
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/gen-family/user-gen-family/${userId}`,
+        `https://gks-yjdc.onrender.com/api/gen-family/user-gen-families/${userId}?branch_id=${branch_id}`,
         {
           method: "GET",
           headers: {
@@ -1648,23 +1863,19 @@ function GenFamily() {
           },
         }
       );
-
+  
       const famIdData = await response.json();
-
-
-      if (!response.ok || !famIdData.genFamilies || !famIdData.genFamilies.length) {
+  
+      if (!response.ok || !famIdData.data || !famIdData.data.length) {
         console.error("Failed to get gen_fam_id");
         return;
       }
-
-      console.log("famIdData By User ID:=>", famIdData);
-
-      const gen_fam_id = famIdData.genFamilies[0].gen_fam_id;
-      console.log("gen_fam_id =>", gen_fam_id);
-
-      // Step 2: Get full gen-family data using gen_fam_id
+  
+      const gen_fam_id = famIdData.data[0].gen_family.gen_fam_id;
+  
+      // Step 2: Get full gen-family data
       const fullDataResponse = await fetch(
-        `https://gks-yjdc.onrender.com/api/gen-family/gen-family/${gen_fam_id}`,
+        `https://gks-yjdc.onrender.com/api/gen-family/gen-family/${gen_fam_id}?branch_id=${branch_id}`,
         {
           method: "GET",
           headers: {
@@ -1673,22 +1884,26 @@ function GenFamily() {
           },
         }
       );
-
+  
       const fullData = await fullDataResponse.json();
       console.log("Full Gen Family Data:", fullData);
-
-      if (!fullDataResponse.ok || !fullData.genFamily) {
+  
+      if (!fullDataResponse.ok || !fullData.data) {
         console.error("Failed to get gen family details");
         return;
       }
-
-      // Set data to display in table
-      setviewgenData(fullData.genFamily);
-
+  
+      // ✅ Save the whole "data" object (which has all sections)
+      setviewgenData(fullData.data);
+      console.log("Updated viewgenData:", fullData.data);
+      
+  
     } catch (error) {
       console.error("Fetch error:", error);
     }
   };
+  
+ 
 
 
 
@@ -1712,9 +1927,10 @@ function GenFamily() {
     //Getting latest genfamily data like if current ID's is 5 so the latest previous id will be 4 and through this id we can get latest genfamily data for readmission gen family form
 
     const token = localStorage.getItem("Authorization");
+    const branch_id = selectedBranch; // make sure `selectedBranch` 
     try {
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/gen-family/gen-family/${recentGenfamID}`,
+        `https://gks-yjdc.onrender.com/api/gen-family/gen-family/${recentGenfamID}?branch_id=${branch_id}`,
         {
           method: "GET",
           headers: {
@@ -2125,11 +2341,12 @@ function GenFamily() {
     };
 
     try {
+      const branch_id = selectedBranch; // make sure `selectedBranch` 
       const token = localStorage.getItem("Authorization");
 
       //Readmission PFA API
       const response = await fetch(
-        "https://gks-yjdc.onrender.com/api/gen-family/create-gen-family",
+        `https://gks-yjdc.onrender.com/api/gen-family/create-gen-family?branch_id=${branch_id}`,
         {
           method: "POST",
           headers: {
@@ -2183,9 +2400,12 @@ function GenFamily() {
   const [genFilterData, setgenFilterData] = useState([]);
 
   useEffect(() => {
+
+    if (!selectedBranch) return; // avoid empty branch fetch
+
     const token = localStorage.getItem("Authorization");
 
-    fetch("https://gks-yjdc.onrender.com/api/gen-family/all-gen-family-entries", {
+    fetch(`https://gks-yjdc.onrender.com/api/gen-family/all-entries?branch_id=${selectedBranch}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -2197,7 +2417,7 @@ function GenFamily() {
         return response.json();
       })
       .then((res) => {
-        const genfamiltEntries = res.entries || [];
+        const genfamiltEntries = res.data || [];
         console.log("genfamily all data", genfamiltEntries)
 
         const genfamiltallEntriesData = genfamiltEntries.map((list) => {
@@ -2224,7 +2444,7 @@ function GenFamily() {
         console.error("Error fetching Gen Family data:", error);
         setstillLoading(true);
       })
-  }, [])
+  }, [selectedBranch])
 
 
 
@@ -2246,11 +2466,13 @@ function GenFamily() {
     }
   
     const token = localStorage.getItem("Authorization");
+    const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
   
     try {
+     
       // Step 1: Get gen_fam_id from user-gen-family
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/gen-family/user-gen-family/${userId}`,
+        `https://gks-yjdc.onrender.com/api/gen-family/user-gen-families/${userId}?branch_id=${branch_id}`,
         {
           method: "GET",
           headers: {
@@ -2262,19 +2484,19 @@ function GenFamily() {
   
       const famIdData = await response.json();
   
-      if (!response.ok || !famIdData.genFamilies || !famIdData.genFamilies.length) {
+      if (!response.ok || !famIdData.data || !famIdData.data.length) {
         console.error("Failed to get gen_fam_id");
         return;
       }
   
       console.log("famIdData By User ID:=>", famIdData);
   
-      const gen_fam_id = famIdData.genFamilies[0].gen_fam_id;
+      const gen_fam_id = famIdData.data[0].gen_family.gen_fam_id;
       console.log("gen_fam_id =>", gen_fam_id);
   
       // Step 2: Fetch full GenFamily data using gen_fam_id
       const genFamResponse = await fetch(
-        `https://gks-yjdc.onrender.com/api/gen-family/gen-family/${gen_fam_id}`,
+        `https://gks-yjdc.onrender.com/api/gen-family/gen-family/${gen_fam_id}?branch_id=${branch_id}`,
         {
           method: "GET",
           headers: {
@@ -2285,14 +2507,17 @@ function GenFamily() {
       );
   
       const data = await genFamResponse.json();
-      console.log("Latest GenFamily Data:", data);
-  
-      if (!genFamResponse.ok || !data) {
-        console.error("Failed to fetch GenFamily details");
-        return;
-      }
-  
-      const latestGenFamilyData = data.genFamily || data;
+console.log("Latest GenFamily Data:", data);
+
+if (!genFamResponse.ok || !data || !data.data) {
+  console.error("Failed to fetch GenFamily details");
+  return;
+}
+
+// ✅ Extract actual payload
+const latestGenFamilyData = data.data;
+
+console.log(latestGenFamilyData.substance_use_dependency)
   
       if (!latestGenFamilyData) {
         console.warn("No GenFamily data found");
@@ -2300,45 +2525,78 @@ function GenFamily() {
       }
   
       setGenfamilyEditData({
-        ...latestGenFamilyData,
-        treatment_records: JSON.parse(latestGenFamilyData.treatment_records || "[]"),
-        members: JSON.parse(latestGenFamilyData.members || "[]"),
-        family_history_data: JSON.parse(latestGenFamilyData.family_history_data || "{}"),
+        ...latestGenFamilyData?.gen_family,   // basic info
+
+      
+        treatment_records: latestGenFamilyData.treatment_history?.treatment_records || [],
+
+        ...latestGenFamilyData?.treatment_history, 
+
+        members: latestGenFamilyData.family_members?.members || [],
+        family_history_data: latestGenFamilyData.family_members?.family_history_data || {},
+
+        ...latestGenFamilyData?.family_info,
+        ...latestGenFamilyData?.family_members,
+        ...latestGenFamilyData?.childhood_history,
+        ...latestGenFamilyData?.education_employment,
+        ...latestGenFamilyData?.social_behavior,
+        ...latestGenFamilyData?.legal_history,
+        ...latestGenFamilyData?.consent_info,
+
+        
+        
+
+        
+        
+      
+        // ✅ Substance Use Dependency mapping added
+        ...latestGenFamilyData.substance_use_dependency,
+        
+         
+      
+        // ✅ Patient behaviour mapping stays the same
+
+        ...latestGenFamilyData.patient_behavior,
+
         patientBehaviour: {
-          uses_alone: latestGenFamilyData.uses_alone,
-          moody: latestGenFamilyData.moody,
-          worried: latestGenFamilyData.worried,
-          sad: latestGenFamilyData.sad,
-          lacks_confidence: latestGenFamilyData.lacks_confidence,
-          stubborn: latestGenFamilyData.stubborn,
-          aggressive: latestGenFamilyData.aggressive,
-          uses_slang: latestGenFamilyData.uses_slang,
-          disrespects_parents: latestGenFamilyData.disrespects_parents,
-          fights_argue: latestGenFamilyData.fights_argue,
-          vandalizes: latestGenFamilyData.vandalizes,
-          fights_at_home: latestGenFamilyData.fights_at_home,
-          tells_lies: latestGenFamilyData.tells_lies,
-          too_expensive: latestGenFamilyData.too_expensive,
-          theft: latestGenFamilyData.theft,
-          borrows: latestGenFamilyData.borrows,
-          gambles: latestGenFamilyData.gambles,
-          bluffs: latestGenFamilyData.bluffs,
-          admits_mistake: latestGenFamilyData.admits_mistake,
-          irresponsible: latestGenFamilyData.irresponsible,
-          selfish: latestGenFamilyData.selfish,
-          has_empathy: latestGenFamilyData.has_empathy,
-          lazy: latestGenFamilyData.lazy,
-          nervous_anxiety_symptoms: latestGenFamilyData.nervous_anxiety_symptoms,
-          emotional_post_use: latestGenFamilyData.emotional_post_use,
-          prioritizes_substance: latestGenFamilyData.prioritizes_substance,
-          feels_guilty: latestGenFamilyData.feels_guilty,
-          avoids_people: latestGenFamilyData.avoids_people,
-          sleep_eat_problem: latestGenFamilyData.sleep_eat_problem,
-          uses_knowing_consequence: latestGenFamilyData.uses_knowing_consequence,
-          suicide_thoughts: latestGenFamilyData.suicide_thoughts,
-          loved_one_dependence: latestGenFamilyData.loved_one_dependence,
+          life_priority: latestGenFamilyData.patient_behavior?.life_priority,
+        life_aim: latestGenFamilyData.patient_behavior?.life_aim,
+          uses_alone: latestGenFamilyData.patient_behavior?.uses_alone,
+          moody: latestGenFamilyData.patient_behavior?.moody,
+          worried: latestGenFamilyData.patient_behavior?.worried,
+          sad: latestGenFamilyData.patient_behavior?.sad,
+          lacks_confidence: latestGenFamilyData.patient_behavior?.lacks_confidence,
+          stubborn: latestGenFamilyData.patient_behavior?.stubborn,
+          aggressive: latestGenFamilyData.patient_behavior?.aggressive,
+          uses_slang: latestGenFamilyData.patient_behavior?.uses_slang,
+          disrespects_parents: latestGenFamilyData.patient_behavior?.disrespects_parents,
+          fights_argue: latestGenFamilyData.patient_behavior?.fights_argue,
+          vandalizes: latestGenFamilyData.patient_behavior?.vandalizes,
+          fights_at_home: latestGenFamilyData.patient_behavior?.fights_at_home,
+          tells_lies: latestGenFamilyData.patient_behavior?.tells_lies,
+          too_expensive: latestGenFamilyData.patient_behavior?.too_expensive,
+          theft: latestGenFamilyData.patient_behavior?.theft,
+          borrows: latestGenFamilyData.patient_behavior?.borrows,
+          gambles: latestGenFamilyData.patient_behavior?.gambles,
+          bluffs: latestGenFamilyData.patient_behavior?.bluffs,
+          admits_mistake: latestGenFamilyData.patient_behavior?.admits_mistake,
+          irresponsible: latestGenFamilyData.patient_behavior?.irresponsible,
+          selfish: latestGenFamilyData.patient_behavior?.selfish,
+          has_empathy: latestGenFamilyData.patient_behavior?.has_empathy,
+          lazy: latestGenFamilyData.patient_behavior?.lazy,
+          nervous_anxiety_symptoms: latestGenFamilyData.patient_behavior?.nervous_anxiety_symptoms,
+          emotional_post_use: latestGenFamilyData.patient_behavior?.emotional_post_use,
+          prioritizes_substance: latestGenFamilyData.patient_behavior?.prioritizes_substance,
+          feels_guilty: latestGenFamilyData.patient_behavior?.feels_guilty,
+          avoids_people: latestGenFamilyData.patient_behavior?.avoids_people,
+          sleep_eat_problem: latestGenFamilyData.patient_behavior?.sleep_eat_problem,
+          uses_knowing_consequence: latestGenFamilyData.patient_behavior?.uses_knowing_consequence,
+          suicide_thoughts: latestGenFamilyData.patient_behavior?.suicide_thoughts,
+          loved_one_dependence: latestGenFamilyData.patient_behavior?.loved_one_dependence,
         }
       });
+      
+      
   
       
       console.log("patientBehaviour", latestGenFamilyData.patientBehaviour);
@@ -2535,11 +2793,12 @@ function GenFamily() {
     };
 
     try {
+      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
       const token = localStorage.getItem("Authorization");
 
       //Readmission PFA API
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/gen-family/update-gen-family/${GenfamiltEditData.gen_fam_id}`,
+        `https://gks-yjdc.onrender.com/api/gen-family/update-gen-family/${GenfamiltEditData.gen_fam_id}?branch_id=${branch_id}`,
         {
           method: "PUT",
           headers: {
@@ -4734,7 +4993,7 @@ function GenFamily() {
                       aria-hidden="true"
                     ></span>
                   ) : (
-                    "Submit PFA"
+                    "Submit Gen Family Form"
                   )}
                 </Button>
               </div>
@@ -4906,142 +5165,176 @@ function GenFamily() {
 
               ) : viewgenData ? (
                   <>
-                  {Object.entries(viewgenData).map(([key, value]) => {
-                    let displayValue = value;
+                 {Object.entries(viewgenData).map(([key, value]) => {
+  let displayValue = value;
 
-                    try {
-                      if (typeof value === "string" && (value.startsWith("[") || value.startsWith("{"))) {
-                        const parsed = JSON.parse(value);
+  try {
+    let parsed = value;
 
-                        // MEMBERS
-                        if (key === "members" && Array.isArray(parsed)) {
-                          // Extract all unique keys across all members to use as table headers
-                          const allKeys = Array.from(
-                            new Set(parsed.flatMap((member) => Object.keys(member)))
-                          );
-                        
-                          displayValue = (
-                            <div className="table-responsive">
-                              <table className="table table-bordered table-sm">
-                                <thead className="table-light">
-                                  <tr>
-                                    <th>#</th>
-                                    {allKeys.map((colKey) => (
-                                      <th key={colKey}>{colKey.replace(/_/g, " ")}</th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {parsed.map((member, idx) => (
-                                    <tr key={idx}>
-                                      <td>{idx + 1}</td>
-                                      {allKeys.map((colKey) => (
-                                        <td key={colKey}>{member[colKey] || "—"}</td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          );
-                        }
-                        
+    // Parse JSON strings safely
+    if (typeof value === "string" && (value.startsWith("{") || value.startsWith("["))) {
+      parsed = JSON.parse(value);
+    }
 
-                        // FAMILY HISTORY
-                        else if (key === "family_history_data" && typeof parsed === "object") {
-                          displayValue = Object.entries(parsed).map(([side, members]) => (
-                            <div key={side} className="mb-4">
-                              <h6 className="text-capitalize fw-bold mb-3">{side.replace(/_/g, " ")}</h6>
-                              <div className="table-responsive">
-                                <table className="table table-bordered table-sm">
-                                  <thead className="table-light">
-                                    <tr>
-                                      <th>Role</th>
-                                      <th>Details</th>
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {Object.entries(members).map(([role, details]) => {
-                                      // If not object (note or remark), render in a single row
-                                      if (typeof details !== "object") {
-                                        return (
-                                          <tr key={role}>
-                                            <td className="text-capitalize">{role.replace(/_/g, " ")}</td>
-                                            <td>{details}</td>
-                                          </tr>
-                                        );
-                                      }
-                        
-                                      // Otherwise, render nested details in key-value format
-                                      return (
-                                        <tr key={role}>
-                                          <td className="text-capitalize">{role.replace(/_/g, " ")}</td>
-                                          <td>
-                                            <ul className="mb-0 ps-3 d-flex gap-4 family__history">
-                                              {Object.entries(details).map(([k, v]) => (
-                                                <li key={k}>
-                                                  <strong>{k.replace(/_/g, " ")} : </strong> {v}
-                                                </li>
-                                              ))}
-                                            </ul>
-                                          </td>
-                                        </tr>
-                                      );
-                                    })}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
-                          ));
-                        }
-                        
+    // MEMBERS TABLE
+    if (key === "members" && Array.isArray(parsed)) {
+      const allKeys = Array.from(new Set(parsed.flatMap((m) => Object.keys(m))));
+      displayValue = (
+        <div className="table-responsive">
+          <table className="table table-bordered table-sm">
+            <thead className="table-light">
+              <tr>
+                <th>#</th>
+                {allKeys.map((colKey) => (
+                  <th key={colKey}>{colKey.replace(/_/g, " ")}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {parsed.map((member, idx) => (
+                <tr key={idx}>
+                  <td>{idx + 1}</td>
+                  {allKeys.map((colKey) => (
+                    <td key={colKey}>{member[colKey] || "—"}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
 
-                        // TREATMENT RECORDS
-                        else if (key === "treatment_records" && Array.isArray(parsed)) {
-                          displayValue = (
-                            <div className="table-responsive">
-                              <table className="table table-bordered table-sm">
-                                <thead className="table-light">
-                                  <tr>
-                                    <th className="p-3">Treatment Year</th>
-                                    <th className="p-3">Treatment Place</th>
-                                    <th className="p-3">Treatment Duration</th>
-                                    <th className="p-3">Days of Sobriety</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {parsed.map((record, index) => (
-                                    <tr key={index}>
-                                      <td className="p-3">{record.treatment_year || "-"}</td>
-                                      <td className="p-3">{record.treatment_place || "-"}</td>
-                                      <td className="p-3">{record.treatment_duration || "-"}</td>
-                                      <td className="p-3">{record.days_of_sobriety || "-"}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          );
-                        }
-
-                        // DEFAULT OBJECT/ARRAY
-                        else {
-                          displayValue = <pre className="mb-0">{JSON.stringify(parsed, null, 2)}</pre>;
-                        }
-                      }
-                    } catch (err) {
-                      // Do nothing, use raw value
-                    }
-
+    // FAMILY HISTORY TABLE
+    else if (key === "family_history_data" && typeof parsed === "object" && parsed !== null) {
+      displayValue = Object.entries(parsed).map(([side, members]) => (
+        <div key={side} className="mb-4">
+          <h6 className="text-capitalize fw-bold mb-3">{side.replace(/_/g, " ")}</h6>
+          <div className="table-responsive">
+            <table className="table table-bordered table-sm">
+              <thead className="table-light">
+                <tr>
+                  <th>Role</th>
+                  <th>Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(members).map(([role, details]) => {
+                  if (typeof details !== "object") {
                     return (
-                      <tr key={key}>
-                        <th className="text-capitalize p-3" style={{ whiteSpace: "nowrap", width: "30%" }}>
-                          {key.replace(/_/g, " ")}
-                        </th>
-                        <td className="p-3">{displayValue || "—"}</td>
+                      <tr key={role}>
+                        <td className="text-capitalize">{role.replace(/_/g, " ")}</td>
+                        <td>{details}</td>
                       </tr>
                     );
-                  })}
+                  }
+                  return (
+                    <tr key={role}>
+                      <td className="text-capitalize">{role.replace(/_/g, " ")}</td>
+                      <td>
+                        <table className="table table-sm mb-0">
+                          <tbody>
+                            {Object.entries(details).map(([k, v]) => (
+                              <tr key={k}>
+                                <td><strong>{k.replace(/_/g, " ")}:</strong></td>
+                                <td>{v}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ));
+    }
+
+    // TREATMENT RECORDS TABLE
+    else if (key === "treatment_records" && Array.isArray(parsed)) {
+      displayValue = (
+        <div className="table-responsive">
+          <table className="table table-bordered table-sm">
+            <thead className="table-light">
+              <tr>
+                <th className="p-3">Treatment Year</th>
+                <th className="p-3">Treatment Place</th>
+                <th className="p-3">Treatment Duration</th>
+                <th className="p-3">Days of Sobriety</th>
+              </tr>
+            </thead>
+            <tbody>
+              {parsed.map((record, index) => (
+                <tr key={index}>
+                  <td className="p-3">{record.treatment_year || "-"}</td>
+                  <td className="p-3">{record.treatment_place || "-"}</td>
+                  <td className="p-3">{record.treatment_duration || "-"}</td>
+                  <td className="p-3">{record.days_of_sobriety || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    // GENERIC ARRAY HANDLING (show as table)
+    else if (Array.isArray(parsed)) {
+      displayValue = (
+        <div className="table-responsive">
+          <table className="table table-bordered table-sm">
+            <tbody>
+              {parsed.map((item, i) => (
+                <tr key={i}>
+                  <td>{typeof item === "object" ? JSON.stringify(item) : item}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    // GENERIC OBJECT HANDLING (key-value table)
+    else if (typeof parsed === "object" && parsed !== null) {
+      displayValue = (
+        <div className="table-responsive">
+          <table className="table table-bordered table-sm">
+            <tbody>
+              {Object.entries(parsed).map(([k, v]) => (
+                <tr key={k}>
+                  <td className="fw-bold text-capitalize">{k.replace(/_/g, " ")}</td>
+                  <td>{typeof v === "object" ? JSON.stringify(v) : v}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    // Keep primitive values as they are
+    else {
+      displayValue = parsed;
+    }
+  } catch (err) {
+    displayValue = value; // fallback to raw value
+  }
+
+  return (
+    <tr key={key}>
+      <th className="text-capitalize p-3" style={{ whiteSpace: "nowrap", width: "30%" }}>
+        {key.replace(/_/g, " ")}
+      </th>
+      <td className="p-3">{displayValue || "—"}</td>
+    </tr>
+  );
+})}
+
+
                   </>
                 ) : (
                   <tr>
@@ -5517,7 +5810,9 @@ function GenFamily() {
                       </tr>
                     </thead>
                     <tbody>
-                      {GenfamiltEditData.treatment_records.map((treatment, index) => (
+                      {/* {GenfamiltEditData.treatment_records.map((treatment, index) => ( 
+                        */}
+                        {(GenfamiltEditData.treatment_records || []).map((treatment, index) => (
                         <tr key={index}>
                           <td>
                             <Input
@@ -5914,6 +6209,69 @@ function GenFamily() {
                         </tr>
                       </thead>
                       <tbody>
+  {(GenfamiltEditData?.members || []).map((inter, index) => (
+    <tr key={index}>
+      <td>
+        <Input
+          type="text"
+          name="name"
+          value={inter.name}
+          onChange={(e) => handleMemberInputChange(index, e)}
+          placeholder="Name / नाम"
+        />
+      </td>
+      <td>
+        <Input
+          type="text"
+          name="relation"
+          value={inter.relation}
+          onChange={(e) => handleMemberInputChange(index, e)}
+          placeholder="Relation / संबंध"
+        />
+      </td>
+      <td>
+        <Input
+          type="text"
+          name="age"
+          value={inter.age}
+          onChange={(e) => handleMemberInputChange(index, e)}
+          placeholder="Age / आयु"
+        />
+      </td>
+      <td>
+        <Input
+          type="text"
+          name="living_status"
+          value={inter.living_status}
+          onChange={(e) => handleMemberInputChange(index, e)}
+          placeholder="Living Status / रहने की स्तिथि"
+        />
+      </td>
+      <td>
+        <Input
+          type="text"
+          name="physical_disorder"
+          value={inter.physical_disorder}
+          onChange={(e) => handleMemberInputChange(index, e)}
+          placeholder="Any physical Disorder / कोई भी शारीरिक विकार"
+        />
+      </td>
+      <td>
+        {index > 0 && (
+          <Button
+            type="button"
+            className="btn btn-danger"
+            onClick={() => removeInterferenceRow(index)}
+          >
+            Remove
+          </Button>
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
+
+                      {/* <tbody>
                         {GenfamiltEditData.members.map((inter, index) => (
                           <tr key={index}>
                             <td>
@@ -5974,7 +6332,8 @@ function GenFamily() {
                             </td>
                           </tr>
                         ))}
-                      </tbody>
+                      </tbody> */}
+
                     </Table>
 
                     <Button
@@ -7944,7 +8303,8 @@ function GenFamily() {
                       </tr>
                     </thead>
                     <tbody>
-                      {GenfamiltEditData.treatment_records.map((treatment, index) => (
+                      {/* {GenfamiltEditData.treatment_records.map((treatment, index) => ( */}
+                      {(GenfamiltEditData.treatment_records || []).map((treatment, index) => (
                         <tr key={index}>
                           <td>
                             <Input
@@ -8341,7 +8701,8 @@ function GenFamily() {
                         </tr>
                       </thead>
                       <tbody>
-                        {GenfamiltEditData.members.map((inter, index) => (
+                        {/* {GenfamiltEditData.members.map((inter, index) => ( */}
+                        {(GenfamiltEditData?.members || []).map((inter, index) => (
                           <tr key={index}>
                             <td>
                               <Input

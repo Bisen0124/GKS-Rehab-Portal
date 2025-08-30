@@ -53,7 +53,13 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import html2pdf from "html2pdf.js";
 
+import { useBranch } from "../../contexts/BranchContext";
+
 function FDA() {
+
+    //Branches selection
+    const { selectedBranch } = useBranch();
+
     const pdfRef = useRef();
   //spinner extract from other file
   const selectedSpinner = Data.find(
@@ -107,7 +113,9 @@ function FDA() {
   useEffect(() => {
     const token = localStorage.getItem("Authorization");
 
-    fetch("https://gks-yjdc.onrender.com/api/fda/all-fda-entries", {
+    if (!selectedBranch) return; // avoid empty branch fetch
+
+    fetch(`https://gks-yjdc.onrender.com/api/fda/all-fda-entries?branch_id=${selectedBranch}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -183,7 +191,7 @@ function FDA() {
         console.error("Error fetching FDA user data:", error);
         setstillLoading(true);
       });
-  }, []);
+  }, [selectedBranch]);
 
 
 
@@ -283,7 +291,9 @@ function FDA() {
   useEffect(() => {
     const token = localStorage.getItem("Authorization");
 
-    fetch("https://gks-yjdc.onrender.com/api/users", {
+    if (!selectedBranch) return; // avoid empty branch fetch
+  
+    fetch(`https://gks-yjdc.onrender.com/api/users?branch_id=${selectedBranch}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -295,8 +305,8 @@ function FDA() {
         return response.json();
       })
       .then((res) => {
-        const users = res.users || [];
-
+        const users = res.data || []; // <-- Corrected from res.users
+  
         const formatted = users.map((user) => {
           const admitDate = user.recent_admit_date
             ? new Date(user.recent_admit_date)
@@ -304,14 +314,16 @@ function FDA() {
           const FDADate = user.recent_fda_date
             ? new Date(user.recent_fda_date)
             : null;
-
-          let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
+  
+          let userStatus = (
+            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+          );
           if (admitDate && FDADate && admitDate > FDADate) {
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
-
+  
           const dischargeStatus = user.discharge_status_text || "Unknown";
-
+  
           return {
             id: user.user_id,
             gks_id: user.gks_id || "N/A",
@@ -323,18 +335,19 @@ function FDA() {
             recent_fda_id: user.recent_fda_id,
           };
         });
-
+  
         setTimeout(() => {
           setData(formatted);
           setFilteredData(formatted);
           setstillLoading(false);
-        }, 1000); // You can reduce this to 1s
+        }, 1000); // optional delay
       })
       .catch((error) => {
-        console.error("Error fetching PFA user data:", error);
+        console.error("Error fetching FDA user data:", error);
         setstillLoading(true);
       });
-  }, []);
+  }, [selectedBranch]);
+  
 
 
   //Close all modal handler
@@ -464,8 +477,10 @@ function FDA() {
     setModal(true);
     if (userId) {
       const token = localStorage.getItem("Authorization");
+      const branch_id = selectedBranch;
+  
       try {
-        const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}`, {
+        const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `${token}`,
@@ -473,19 +488,22 @@ function FDA() {
         });
         const data = await response.json();
         if (!response.ok) throw new Error("User fetch failed");
-        setSelectedUser(data);
+  
+        // ✅ store the user object
+        setSelectedUser(data.data[0]); 
       } catch (error) {
         console.error("Fetch error:", error);
       }
     }
   };
+  
 
   const handleSubmit = async (e) => {
-    setIsLoading(true); // Start loader
     e.preventDefault();
-
+    setIsLoading(true); // Start loader
+  
     const payload = {
-      user_id: selectedUser[0]?.user_id,
+      user_id: selectedUser?.user_id, // ✅ corrected
       date_of_assessment: formData.dateOfAssessment?.toISOString(),
       substance_type_id: 1,
       addiction_severity_rating: Object.values(formData.addiction).filter((v) => v === "Yes").length,
@@ -493,35 +511,38 @@ function FDA() {
       prepared_by: formData.prepared_by,
       ...formData.addiction,
     };
-
+  
     try {
       const token = localStorage.getItem("Authorization");
-      const response = await fetch("https://gks-yjdc.onrender.com/api/fda/create-assessment", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization:
-            `${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
+      const branch_id = selectedBranch;
+      const response = await fetch(
+        `https://gks-yjdc.onrender.com/api/fda/create-assessment?branch_id=${branch_id}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+  
       if (!response.ok) throw new Error("API call failed");
-
+  
       const data = await response.json();
       setIsLoading(false);
+  
       Swal.fire({
         icon: "success",
         title: "FDA Created Successfully",
         text: "The FDA assessment was submitted successfully.",
-      }).then(() => {
-        // This runs after the user clicks "OK"
-        setModal(false);
-      });
-      console.log("FAD Data", data);
-      console.log("FAD Payload", payload);
+      }).then(() => setModal(false));
+  
+      console.log("FDA Data", data);
+      console.log("FDA Payload", payload);
     } catch (err) {
       console.error(err);
+      setIsLoading(false);
       Swal.fire({
         icon: "error",
         title: "Unexpected Error",
@@ -529,6 +550,7 @@ function FDA() {
       });
     }
   };
+  
 
 
   //Re-Admission FDA Form Handler
@@ -557,8 +579,9 @@ function FDA() {
     const token = localStorage.getItem("Authorization");
 
     try {
+      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/fda/assessment/${recentFDAiD}`,
+        `https://gks-yjdc.onrender.com/api/fda/assessment/${recentFDAiD}?branch_id=${branch_id}`,
         {
           method: "GET",
           headers: {
@@ -700,8 +723,9 @@ function FDA() {
     const token = localStorage.getItem("Authorization");
 
     try {
+      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/fda/assessment/${FDAID}`,
+        `https://gks-yjdc.onrender.com/api/fda/assessment/${FDAID}?branch_id=${branch_id}`,
         {
           method: "GET",
           headers: {
@@ -726,7 +750,7 @@ function FDA() {
       }
 
       setviewFDAData(ViewFdaDataEntry); // ✅ Correct
-      console.log("FDA Data Fetched:", ViewFdaDataEntry); // ✅ Log the correct data
+      console.log("FDA Data Fetched:", ViewFdaDataEntry.fda_id); // ✅ Log the correct data
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
@@ -788,8 +812,9 @@ function FDA() {
       const token = localStorage.getItem("Authorization");
   
       try {
+        const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
         const response = await fetch(
-          `https://gks-yjdc.onrender.com/api/fda/assessment/${editFDAID}`,
+          `https://gks-yjdc.onrender.com/api/fda/assessment/${editFDAID}?branch_id=${branch_id}`,
           {
             method: "GET",
             headers: {
@@ -849,8 +874,13 @@ function FDA() {
 
     //Update individual FDA assessment form hanlder
     const handleFDAindividualAssessment = async () => {
+      if (!viewFDAData?.fda_id) {
+        console.error("FDA ID is not available yet.");
+        return;
+      }
+    
       console.log("FDAEditData.fda_id:", viewFDAData.fda_id);
-      setIsLoading(true); // Start loading
+      setIsLoading(true);
   
       const payload = {
         // user_id: FDAEditData.user_id,
@@ -872,8 +902,11 @@ function FDA() {
       };
   
       try {
+
+        const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
+
         const token = localStorage.getItem("Authorization");
-        const response = await fetch(`https://gks-yjdc.onrender.com/api/fda/update-assessment/${viewFDAData.fda_id}`, {
+        const response = await fetch(`https://gks-yjdc.onrender.com/api/fda/update-assessment/${viewFDAData.fda_id}?branch_id=${branch_id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
