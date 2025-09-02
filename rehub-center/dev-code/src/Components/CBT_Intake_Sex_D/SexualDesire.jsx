@@ -104,7 +104,12 @@ import html2pdf from "html2pdf.js";
 //Show pateint/user common info like name, age and DOB by custom hook
 import PatientCommonInfo from "../../CustomHook/PatientCommonInfo";
 
+import { useBranch } from "../../contexts/BranchContext";
+
 function SexualDesire() {
+
+    //Branches selection
+    const { selectedBranch } = useBranch();
 
   //Downloading view sexual desire form into pdf format
   const pdfRef = useRef();
@@ -208,7 +213,9 @@ function SexualDesire() {
   useEffect(() => {
     const token = localStorage.getItem("Authorization");
 
-    fetch("https://gks-yjdc.onrender.com/api/users", {
+    if (!selectedBranch) return; // avoid empty branch fetch
+
+    fetch(`https://gks-yjdc.onrender.com/api/users?branch_id=${selectedBranch}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -220,7 +227,7 @@ function SexualDesire() {
         return response.json();
       })
       .then((res) => {
-        const users = res.users || [];
+        const users = res.data || [];
 
         const formatted = users.map((user) => {
           const admitDate = user.recent_admit_date
@@ -373,7 +380,9 @@ function SexualDesire() {
   useEffect(() => {
     const token = localStorage.getItem("Authorization");
 
-    fetch("https://gks-yjdc.onrender.com/api/sha/all-sha-entries", {
+    if (!selectedBranch) return; // avoid empty branch fetch
+
+    fetch(`https://gks-yjdc.onrender.com/api/sha/all-sha-entries?branch_id=${selectedBranch}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -667,8 +676,9 @@ function SexualDesire() {
     console.log("Sexual Desire Recent SD ID's =>", recentSexualId);
     if (recentSexualId) {
       const token = localStorage.getItem("Authorization");
+      const branch_id = selectedBranch;
       try {
-        const response = await fetch(`https://gks-yjdc.onrender.com/api/sha/assessment/${recentSexualId}`, {
+        const response = await fetch(`https://gks-yjdc.onrender.com/api/sha/assessment/${recentSexualId}?branch_id=${branch_id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `${token}`,
@@ -852,8 +862,9 @@ function SexualDesire() {
     setSexualDataModal(true);
     if (viewSexualId) {
       const token = localStorage.getItem("Authorization");
+      const branch_id = selectedBranch;
       try {
-        const response = await fetch(`https://gks-yjdc.onrender.com/api/sha/assessment/${viewSexualId}`, {
+        const response = await fetch(`https://gks-yjdc.onrender.com/api/sha/assessment/${viewSexualId}?branch_id=${branch_id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `${token}`,
@@ -889,10 +900,11 @@ function SexualDesire() {
     console.log("editIndiSDID =>", editIndiSDID);
   
     const token = localStorage.getItem("Authorization");
+    const branch_id = selectedBranch;
   
     try {
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/sha/assessment/${editIndiSDID}`,
+        `https://gks-yjdc.onrender.com/api/sha/assessment/${editIndiSDID}?branch_id=${branch_id}`,
         {
           method: "GET",
           headers: {

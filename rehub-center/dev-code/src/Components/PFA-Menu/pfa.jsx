@@ -3230,13 +3230,14 @@ const parseDateString = (dateStr) => {
                   <div className="input-group">
                   <DatePicker
   className="form-control digits"
-  selected={PFAeditData.date_of_assessment} // Always Date object or null
+  selected={PFAeditData?.date_of_assessment} // Always Date object or null
   onChange={(date) =>
     setPFAeditData({
       ...PFAeditData,
       date_of_assessment: date, // Store as Date object
     })
   }
+  
 />
 
                   </div>
@@ -3251,7 +3252,7 @@ const parseDateString = (dateStr) => {
                 type="textarea"
                 rows="3"
                 name="dependentToData"
-                value={PFAeditData.dependent_to}
+                value={PFAeditData?.dependent_to}
                 onChange={(e) =>
                   setPFAeditData({
                     ...PFAeditData,
@@ -3270,7 +3271,7 @@ const parseDateString = (dateStr) => {
                 type="textarea"
                 rows="3"
                 name="substanceUsePatternData"
-                value={PFAeditData.substance_use_pattern}
+                value={PFAeditData?.substance_use_pattern}
                 onChange={(e) =>
                   setPFAeditData({
                     ...PFAeditData,
@@ -3289,7 +3290,7 @@ const parseDateString = (dateStr) => {
                 type="textarea"
                 rows="3"
                 name="last30DaysQuantityData"
-                value={PFAeditData.last_30_days_quantity}
+                value={PFAeditData?.last_30_days_quantity}
                 onChange={(e) =>
                   setPFAeditData({
                     ...PFAeditData,
@@ -3381,7 +3382,7 @@ const parseDateString = (dateStr) => {
                   type="textarea"
                   rows="3"
                   name="bloodTransfusionHistoryData"
-                  value={PFAeditData.medical_or_blood_history_details}
+                  value={PFAeditData?.medical_or_blood_history_details}
                   onChange={(e) =>
                     setPFAeditData({
                       ...PFAeditData,
@@ -3466,7 +3467,7 @@ const parseDateString = (dateStr) => {
         type="textarea"
         rows="3"
         name="complication_description"
-        value={PFAeditData.complication_description || ""}
+        value={PFAeditData?.complication_description || ""}
         onChange={(e) =>
           setPFAeditData({
             ...PFAeditData,
@@ -3540,7 +3541,7 @@ const parseDateString = (dateStr) => {
         type="textarea"
         rows="3"
         name="neuro_description"
-        value={PFAeditData.neuro_description || ""}
+        value={PFAeditData?.neuro_description || ""}
         onChange={(e) =>
           setPFAeditData({
             ...PFAeditData,
@@ -3561,7 +3562,7 @@ const parseDateString = (dateStr) => {
                 type="textarea"
                 rows="3"
                 name="other_findings"
-                value={PFAeditData.other_findings}
+                value={PFAeditData?.other_findings}
                 onChange={(e) =>
                   setPFAeditData({
                     ...PFAeditData,
@@ -3580,7 +3581,7 @@ const parseDateString = (dateStr) => {
                 type="textarea"
                 rows="3"
                 name="lymphadenopathy"
-                value={PFAeditData.lymphadenopathy}
+                value={PFAeditData?.lymphadenopathy}
                 onChange={(e) =>
                   setPFAeditData({
                     ...PFAeditData,
@@ -3602,7 +3603,7 @@ const parseDateString = (dateStr) => {
                     id={`nutritionalStatus-${Nstatus}`}
                     name="nutritional_status"
                     value={Nstatus}
-                    checked={PFAeditData.nutritional_status === Nstatus}
+                    checked={PFAeditData?.nutritional_status === Nstatus}
                     onChange={(e) =>
                       setPFAeditData({
                         ...PFAeditData,
@@ -3624,7 +3625,7 @@ const parseDateString = (dateStr) => {
             <Input
               id="checkbox1"
               type="checkbox"
-              checked={PFAeditData.consent === "Yes"}
+              checked={PFAeditData?.consent === "Yes"}
               onChange={(e) =>
                 setPFAeditData({
                   ...PFAeditData,
@@ -3645,7 +3646,7 @@ const parseDateString = (dateStr) => {
                     type="text"
                     name="consent_name"
                     placeholder="Name"
-                    value={PFAeditData.consent_name}
+                    value={PFAeditData?.consent_name}
                     onChange={(e) =>
                       setPFAeditData({
                         ...PFAeditData,
@@ -3662,7 +3663,7 @@ const parseDateString = (dateStr) => {
                     type="text"
                     name="consent_relationship"
                     placeholder="Relationship"
-                    value={PFAeditData.consent_relationship}
+                    value={PFAeditData?.consent_relationship}
                     onChange={(e) =>
                       setPFAeditData({
                         ...PFAeditData,
@@ -3679,7 +3680,7 @@ const parseDateString = (dateStr) => {
                     type="text"
                     name="consent_signature"
                     placeholder="Signature"
-                    value={PFAeditData.consent_signature}
+                    value={PFAeditData?.consent_signature}
                     onChange={(e) =>
                       setPFAeditData({
                         ...PFAeditData,
@@ -3700,7 +3701,7 @@ const parseDateString = (dateStr) => {
                 type="text"
                 name="prepared_by"
                 placeholder="Prepared By"
-                value={PFAeditData.prepared_by}
+                value={PFAeditData?.prepared_by}
                 onChange={(e) =>
                   setPFAeditData({
                     ...PFAeditData,
@@ -3716,7 +3717,7 @@ const parseDateString = (dateStr) => {
                   <Input
                     id="checkbox3"
                     type="checkbox"
-                    checked={PFAeditData.verification === "Yes"}
+                    checked={PFAeditData?.verification === "Yes"}
                     onChange={(e) =>
                       setPFAeditData((prev) => ({
                         ...prev,

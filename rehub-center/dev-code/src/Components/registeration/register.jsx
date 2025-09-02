@@ -423,9 +423,10 @@ function Register() {
     };
 
     try {
+      const branch_id = selectedBranch; // make sure `selectedBranch` 
       const token = localStorage.getItem("Authorization");
       const response = await fetch(
-        "https://gks-yjdc.onrender.com/api/ipd/create-entry",
+        `https://gks-yjdc.onrender.com/api/ipd/create-entry?branch_id=${branch_id}`,
         {
           method: "POST",
           headers: {

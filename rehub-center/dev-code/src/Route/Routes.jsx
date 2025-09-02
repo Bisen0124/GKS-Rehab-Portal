@@ -222,6 +222,9 @@ import BriefIntervation from "../Components/Brief_Intervantion/BriefIntervation"
 import DischargeFollowUp from "../Components/Discharge_followup/DischargeFollowUp";
 import SexualDesire from "../Components/CBT_Intake_Sex_D/SexualDesire";
 
+//Report menus
+import GetPFAReports from "../Components/Reports/PFA-Report";
+
 
 
 export const routes = [
@@ -461,6 +464,11 @@ export const routes = [
 
    //Discharge Follow Up
    { path: `${process.env.PUBLIC_URL}/Discharge_followup/DischargeFollowUp`, Component : <DischargeFollowUp/>},
+
+
+      //Reports 
+      // PFA
+      { path: `${process.env.PUBLIC_URL}/Reports/PFA-Report`, Component : <GetPFAReports/>},
 
    
 

@@ -105,7 +105,13 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import html2pdf from "html2pdf.js";
 
+import { useBranch } from "../../contexts/BranchContext";
+
 function CBT() {
+
+  //Branches selections
+  const {selectedBranch}=useBranch();
+
   const pdfRef = useRef();
    //spinner extract from other file
     const selectedSpinner = Data.find(
@@ -181,9 +187,10 @@ function CBT() {
   const [data, setData] = useState([]);
   const [stillLoading, setstillLoading] = useState(true);
   useEffect(() => {
+    if (!selectedBranch) return; // avoid empty branch fetch
     const token = localStorage.getItem("Authorization");
 
-    fetch("https://gks-yjdc.onrender.com/api/users", {
+    fetch(`https://gks-yjdc.onrender.com/api/users?branch_id=${selectedBranch}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -195,7 +202,7 @@ function CBT() {
         return response.json();
       })
       .then((res) => {
-        const users = res.users || [];
+        const users = res.data || [];
 
         const formatted = users.map((user) => {
           const admitDate = user.recent_admit_date
@@ -235,7 +242,7 @@ function CBT() {
         console.error("Error fetching PFA user data:", error);
         setstillLoading(true);
       });
-  }, []);
+  }, [selectedBranch]);
 
 
   //Getting registred patient data into table row 
@@ -347,7 +354,9 @@ function CBT() {
   useEffect(() => {
     const token = localStorage.getItem("Authorization");
 
-    fetch("https://gks-yjdc.onrender.com/api/cbt/all-cbt-entries", {
+    if (!selectedBranch) return; // avoid empty branch fetch
+
+    fetch(`https://gks-yjdc.onrender.com/api/cbt/all-cbt-entries?branch_id=${selectedBranch}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -400,7 +409,7 @@ function CBT() {
         console.error("Error fetching SDA entries:", error);
         setstillLoading(true);
       });
-  }, []);
+  }, [selectedBranch]);
 
 
   //Getting registred patient data into table row 
@@ -559,16 +568,23 @@ function CBT() {
     if (userId) {
       const token = localStorage.getItem("Authorization");
       try {
-        const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}`, {
+        const branch_id = selectedBranch; // make sure `selectedBranch` 
+        const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `${token}`,
           },
         });
-        const data = await response.json();
-        console.log(data)
+        const result = await response.json();
+        console.log("API Response:", result);
         if (!response.ok) throw new Error("User fetch failed");
-        setSelectedUser(data);
+        // ✅ Pick the first user object from response
+      if (result.success && result.data && result.data.length > 0) {
+        setSelectedUser(result.data[0]);
+      }
+      else {
+        console.error("No user found in response");
+      }
       } catch (error) {
         console.error("Fetch error:", error);
       }
@@ -685,8 +701,9 @@ function CBT() {
   const token = localStorage.getItem("Authorization");
   
           try {
+            const branch_id = selectedBranch; // make sure `selectedBranch` 
               const response = await fetch(
-                  `https://gks-yjdc.onrender.com/api/cbt/assessment/${recentCBTid}`,
+                  `https://gks-yjdc.onrender.com/api/cbt/assessment/${recentCBTid}?branch_id=${branch_id}`,
                   {
                       method: "GET",
                       headers: {
@@ -866,8 +883,9 @@ const ViewCBTindividualData = async (CBTID) =>{
   }
   const token = localStorage.getItem("Authorization");
   try {
+    const branch_id = selectedBranch; // make sure `selectedBranch` 
     const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/cbt/assessment/${CBTID}`,
+        `https://gks-yjdc.onrender.com/api/cbt/assessment/${CBTID}?branch_id=${branch_id}`,
         {
             method: "GET",
             headers: {
@@ -922,8 +940,9 @@ console.log("CBTID =>", CBTID);
 const token = localStorage.getItem("Authorization");
 
         try {
+          const branch_id = selectedBranch; // make sure `selectedBranch` 
             const response = await fetch(
-                `https://gks-yjdc.onrender.com/api/cbt/assessment/${CBTID}`,
+                `https://gks-yjdc.onrender.com/api/cbt/assessment/${CBTID}?branch_id=${branch_id}`,
                 {
                     method: "GET",
                     headers: {
@@ -1036,9 +1055,10 @@ const token = localStorage.getItem("Authorization");
   console.log("CBT Updated Assessment Payload =>", payload);
 //Readmission CBT API
   try {
+    const branch_id = selectedBranch; // make sure `selectedBranch` 
     const token = localStorage.getItem("Authorization");
     const response = await fetch(
-      `https://gks-yjdc.onrender.com/api/cbt/update-assessment/${viewCBTData.cbt_id}`,
+      `https://gks-yjdc.onrender.com/api/cbt/update-assessment/${viewCBTData.cbt_id}?branch_id=${branch_id}`,
       {
         method: "PUT",
         headers: {

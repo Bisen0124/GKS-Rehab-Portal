@@ -170,7 +170,20 @@ export const MENUITEMS = [
       }
     ]
   },
-
+  {
+    "menucontent": "Dashboards,Widgets",
+    "Items": [
+      {
+        "title": "Reports",
+        "icon": "icon-class",
+        "type": "sub",
+        "path": `${process.env.PUBLIC_URL}/Reports/CbtIntakeSexD`,
+        children: [
+          { path: `${process.env.PUBLIC_URL}/Reports/PFA-Report`, title: "PFA Report", type: "link" },
+        ],
+      }
+    ]
+  },
   
 
 
