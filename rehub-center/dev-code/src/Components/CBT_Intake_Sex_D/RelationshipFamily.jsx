@@ -157,14 +157,14 @@ function RelationshipFamily() {
           const admitDate = user.recent_admit_date
             ? new Date(user.recent_admit_date)
             : null;
-          const FDADate = user.recent_fda_date
-            ? new Date(user.recent_fda_date)
+          const IRFDate = user.recent_irf_date
+            ? new Date(user.recent_irf_date)
             : null;
 
           let userStatus = (
             <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
           );
-          if (admitDate && FDADate && admitDate > FDADate) {
+          if (admitDate && IRFDate && admitDate > IRFDate) {
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
 
@@ -173,6 +173,7 @@ function RelationshipFamily() {
           return {
             id: user.user_id,
             gks_id: user.gks_id || "N/A",
+            IRFrecentIds: user.recent_irf_id,
             name: user.name,
             status: userStatus,
             dischargeStatus: user.discharge_status,
@@ -260,16 +261,24 @@ function RelationshipFamily() {
           //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
             {/* Show Edit only if not discharged and readmission */}
-            {row.dischargeStatus === 0 && row.isReadmission === 1 && (
+            {/* {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
-                // onClick={() => handleFDAPreFill(row.recent_fda_id)}
+                onClick={() => handleIRFprefill(row.IRFrecentIds)}
                 style={{ cursor: "pointer" }}
                 title="Readmission FDA Form"
               >
                 ✏️
               </span>
-            )}
+            )} */}
 
+
+<span
+                onClick={() => handleIRFprefill(row.IRFrecentIds)}
+                style={{ cursor: "pointer" }}
+                title="Readmission FDA Form"
+              >
+                ✏️
+              </span>
             {/* Show Create PFA if not discharged and not readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 0 && (
               <span
@@ -1129,11 +1138,230 @@ const handleIRFUpdate = async () => {
 };
 
 
+
+// ✅ Prefill IRF form handler start
+const [IRFPrefillData, setIRFPrefillData] = useState({});
+const [IRFPrefillModal, setIRFPrefillModal] = useState(false);
+
+const handleIRFprefill = async (prefillIRFID = null) => {
+  // Normalize ID if object
+  if (typeof prefillIRFID === "object" && prefillIRFID !== null) {
+    prefillIRFID = prefillIRFID.irf_id || prefillIRFID.entry_id;
+  }
+
+  if (!prefillIRFID) {
+    Swal.fire({
+      icon: "warning",
+      title: "Missing IRF ID",
+      text: "No valid IRF ID was provided for prefill.",
+    });
+    return;
+  }
+
+  console.log("IRF ID For Prefill:", prefillIRFID);
+  const token = localStorage.getItem("Authorization");
+
+  try {
+    const branch_id = selectedBranch;
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/irf/assessment/${prefillIRFID}?branch_id=${branch_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log("Raw IRF API Response:", data);
+
+    if (!response.ok) {
+      Swal.fire({
+        icon: "error",
+        title: "Fetch Failed",
+        text: data.message || "Unable to fetch IRF data for prefill.",
+      });
+      return;
+    }
+
+    const latestAssessment = data.data || null;
+    if (!latestAssessment) {
+      Swal.fire({
+        icon: "info",
+        title: "No Data Found",
+        text: "No IRF data available for this ID.",
+      });
+      return;
+    }
+
+    // ✅ Open modal only when we have valid data
+    setIRFPrefillModal(true);
+
+    // ✅ Wrap in array so PatientCommonInfo works
+    setSelectedUser([latestAssessment]);
+
+    // ✅ Build mapped data for IRF
+    const mappedData = {
+      irf_id: latestAssessment.irf_id,
+      user_id: latestAssessment.user_id,
+      entry_id: latestAssessment.entry_id,
+      branch_id: latestAssessment.branch_id,
+      visit_no: latestAssessment.visit_no,
+
+      date_of_assessment: latestAssessment.date_of_assessment
+        ? new Date(latestAssessment.date_of_assessment)
+        : null,
+
+      relationship_status: latestAssessment.relationship_status || "",
+      marriage_arrangement: latestAssessment.marriage_arrangement || "",
+      after_marriage_status: latestAssessment.after_marriage_status || "",
+      family_members: latestAssessment.family_members || [],
+
+      disorder_desc: latestAssessment.disorder_desc || "",
+      family_history_details: latestAssessment.family_history_details || {},
+      any_other_father_side_mention:
+        latestAssessment.any_other_father_side_mention || "",
+      any_other_mother_side_mention:
+        latestAssessment.any_other_mother_side_mention || "",
+      psych_problem_desc: latestAssessment.psych_problem_desc || "",
+      current_status: latestAssessment.current_status || "",
+      bonding_relation_with_user:
+        latestAssessment.bonding_relation_with_user || "",
+      family_behavior_with_patient:
+        latestAssessment.family_behavior_with_patient || "",
+      head_of_family: latestAssessment.head_of_family || "",
+      family_relationships: latestAssessment.family_relationships || "",
+
+      status: latestAssessment.status || "Pending",
+
+      // ✅ Patient details
+      patient_name: latestAssessment.name || "",
+      dob: latestAssessment.dob || "",
+      gender: latestAssessment.gender || "",
+      phone: latestAssessment.phone || "",
+      email: latestAssessment.email || "",
+      admit_date: latestAssessment.admit_date || "",
+      ward_name: latestAssessment.ward_name || "",
+    };
+
+    setIRFPrefillData(mappedData);
+
+    console.log("Mapped IRF Prefill Data:", mappedData);
+  } catch (error) {
+    console.error("Prefill fetch error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Network Error",
+      text: "Unable to fetch IRF data due to a network issue.",
+    });
+  }
+};
+// ✅ Prefill IRF form handler end
+
+
+
+// IRF readmission submit start
+const SubmitIRFReadmissionFormHandler = async (e) => {
+  e.preventDefault();
+  setIsLoading(true); // Start loader
+
+  // 🛠️ Construct payload in correct format
+  const payload = {
+    user_id: IRFPrefillData?.user_id,
+    date_of_assessment: IRFPrefillData?.date_of_assessment
+      ? new Date(IRFPrefillData.date_of_assessment).toISOString().split("T")[0] // "YYYY-MM-DD"
+      : null,
+
+    relationship_status: IRFPrefillData.relationship_status || "",
+    marriage_arrangement: IRFPrefillData.marriage_arrangement || "",
+    after_marriage_status: IRFPrefillData.after_marriage_status || "",
+
+    // ✅ Array of family members
+    family_members:
+      IRFPrefillData.family_members?.map((member) => ({
+        name: member.name || "",
+        relation: member.relation || "",
+        age: member.age || "",
+        living_status: member.living_status || "",
+        physical_disorder: member.physical_disorder || "",
+      })) || [],
+
+    disorder_desc: IRFPrefillData.disorder_desc || "",
+
+    // ✅ Family History Details (structured)
+    family_history_details: IRFPrefillData.family_history_details || {
+      father_side: {},
+      mother_side: {},
+    },
+
+    any_other_father_side_mention:
+      IRFPrefillData.any_other_father_side_mention || "",
+    any_other_mother_side_mention:
+      IRFPrefillData.any_other_mother_side_mention || "",
+    psych_problem_desc: IRFPrefillData.psych_problem_desc || "",
+    current_status: IRFPrefillData.current_status || "",
+    bonding_relation_with_user:
+      IRFPrefillData.bonding_relation_with_user || "",
+    family_behavior_with_patient:
+      IRFPrefillData.family_behavior_with_patient || "",
+    head_of_family: IRFPrefillData.head_of_family || "",
+    family_relationships: IRFPrefillData.family_relationships || "",
+  };
+
+  console.log("📦 IRF Payload:", payload);
+
+  try {
+    const token = localStorage.getItem("Authorization");
+    const branch_id = selectedBranch;
+
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/irf/create-assessment?branch_id=${branch_id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) throw new Error("API call failed");
+
+    const data = await response.json();
+    setIsLoading(false);
+
+    Swal.fire({
+      icon: "success",
+      title: "IRF Created Successfully",
+      text: "The IRF assessment was submitted successfully.",
+    }).then(() => setIsIRFModalOpen(false));
+
+    console.log("✅ IRF Data:", data);
+  } catch (err) {
+    console.error("❌ IRF Submit Error:", err);
+    setIsLoading(false);
+
+    Swal.fire({
+      icon: "error",
+      title: "Unexpected Error",
+      text: "Failed to submit IRF. Check console for error.",
+    });
+  }
+};
+// IRF readmission submit handler end
+
+
+
+
   //Close all modal handler
   const closeAllmodal = () => {
     setIsIRFModalOpen(false);
     setviewIRFModal(false);
     setIRFEditModal(false);
+    setIRFPrefillModal(false);
   };
 
   //PDf view download pdf code handler
@@ -2941,6 +3169,428 @@ const handleIRFUpdate = async () => {
       </CommonModal>
 
       {/* IRF edit form end */}
+
+
+
+       {/* IRF Prefill form start */}
+<CommonModal
+  isOpen={IRFPrefillModal}
+  title={`Readmission ${relationshipFamilyStatus}`}
+  toggler={closeAllmodal}
+  maxWidth="1200px"
+>
+  <div className="row px-3 pt-4 pb-3">
+    <form
+      onSubmit={SubmitIRFReadmissionFormHandler}
+    >
+      <div className="row">
+        {/* Date of Assessment */}
+        <div className="col-md-12 mb-3">
+          <Label className="col-sm-12 col-form-label col-xl-6">
+            {dateOfAssessment}
+          </Label>
+          <Col xl="5" sm="12">
+            <div className="input-group">
+              <DatePicker
+                className="form-control digits"
+                selected={IRFPrefillData?.date_of_assessment || null}
+                onChange={(date) =>
+                  setIRFPrefillData((prev) => ({
+                    ...prev,
+                    date_of_assessment: date,
+                  }))
+                }
+              />
+            </div>
+          </Col>
+        </div>
+
+        {/* Relationship Status */}
+        <div className="col-md-6">
+          <Label>{relationshipStatus}</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            value={IRFPrefillData?.relationship_status || ""}
+            onChange={(e) =>
+              setIRFPrefillData((prev) => ({
+                ...prev,
+                relationship_status: e.target.value,
+              }))
+            }
+          />
+        </div>
+
+        {/* Marriage Arrangement */}
+        <div className="col-md-6">
+          <FormGroup className="mb-0">
+            <Label>{MarriageArrangement}</Label>
+            <Input
+              type="textarea"
+              rows="3"
+              value={IRFPrefillData?.marriage_arrangement || ""}
+              onChange={(e) =>
+                setIRFPrefillData((prev) => ({
+                  ...prev,
+                  marriage_arrangement: e.target.value,
+                }))
+              }
+            />
+          </FormGroup>
+        </div>
+
+        {/* After Marriage Life */}
+        <div className="col-md-12">
+          <FormGroup className="mb-0">
+            <Label>{afterMerriageLife}</Label>
+            <Input
+              type="textarea"
+              rows="3"
+              value={IRFPrefillData?.after_marriage_status || ""}
+              onChange={(e) =>
+                setIRFPrefillData((prev) => ({
+                  ...prev,
+                  after_marriage_status: e.target.value,
+                }))
+              }
+            />
+          </FormGroup>
+        </div>
+
+        {/* Members Table */}
+        <div className="col-md-12">
+          <div className="table-responsive">
+            <Table bordered>
+              <thead>
+                <tr>
+                  <th>{nameisThere}</th>
+                  <th>{relationisThere}</th>
+                  <th>{relationisAge}</th>
+                  <th>{livingStatus}</th>
+                  <th>{AnyPhysicalDisorder}</th>
+                  <th>{cheifAction}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {IRFPrefillData?.family_members?.map((inter, index) => (
+                  <tr key={index}>
+                    {[
+                      "name",
+                      "relation",
+                      "age",
+                      "living_status",
+                      "physical_disorder",
+                    ].map((field) => (
+                      <td key={field}>
+                        <Input
+                          type="text"
+                          value={inter[field] || ""}
+                          onChange={(e) => {
+                            const updated = [
+                              ...IRFPrefillData.family_members,
+                            ];
+                            updated[index][field] = e.target.value;
+                            setIRFPrefillData((prev) => ({
+                              ...prev,
+                              family_members: updated,
+                            }));
+                          }}
+                        />
+                      </td>
+                    ))}
+                    <td>
+                      {index > 0 && (
+                        <Button
+                          type="button"
+                          className="btn btn-danger"
+                          onClick={() => {
+                            const updated =
+                              IRFPrefillData.family_members.filter(
+                                (_, i) => i !== index
+                              );
+                            setIRFPrefillData((prev) => ({
+                              ...prev,
+                              family_members: updated,
+                            }));
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+            <Button
+              type="button"
+              className="btn btn-secondary mt-4 mb-3"
+              onClick={() =>
+                setIRFPrefillData((prev) => ({
+                  ...prev,
+                  family_members: [
+                    ...(prev.family_members || []),
+                    {
+                      name: "",
+                      relation: "",
+                      age: "",
+                      living_status: "",
+                      physical_disorder: "",
+                    },
+                  ],
+                }))
+              }
+            >
+              + Add More
+            </Button>
+          </div>
+        </div>
+
+        {/* ...apply same pattern for rest of fields... */}
+        <FormGroup className="mb-0">
+        <Label>{ifAnyDisorder}</Label>
+        <Input
+          type="textarea"
+          rows="3"
+          value={IRFPrefillData?.disorder_desc || ""}
+          onChange={(e) =>
+            setIRFPrefillData((prev) => ({ ...prev, disorder_desc: e.target.value }))
+          }
+        />
+      </FormGroup>
+
+
+      {/* Family History Substance Abuse */}
+    <div className="col-md-12 mb-4">
+      <div className="table-responsive">
+        <p className="mt-3 mb-3">{familyHistorySubstanceAbuse}</p>
+        <Table bordered>
+          <thead>
+            <tr>
+              <th>Mother Side</th>
+              <th>Alcohol</th>
+              <th>substance</th>
+              <th>Psych</th>
+              <th>Father Side</th>
+              <th>Alcohol</th>
+              <th>substance</th>
+              <th>Psych</th>
+            </tr>
+          </thead>
+          <tbody>
+  {["grandmother", "grandfather", "mother", "aunt", "uncle"].map((relative) => (
+    <tr key={`mother-${relative}`}>
+      {/* Mother side */}
+      <td>{relative}</td>
+      {["alcohol", "substance", "psych"].map((field) => (
+        <td key={`mother-${relative}-${field}`}>
+          <Input
+            type="checkbox"
+              className="checkbox_animated"
+            checked={IRFPrefillData?.family_history_details?.mother_side?.[relative]?.[field] === "Yes"}
+            onChange={(e) =>
+              setIRFPrefillData((prev) => ({
+                ...prev,
+                family_history_details: {
+                  ...prev.family_history_details,
+                  mother_side: {
+                    ...prev.family_history_details.mother_side,
+                    [relative]: {
+                      ...(prev.family_history_details?.mother_side?.[relative] || {}),
+                      [field]: e.target.checked ? "Yes" : "No",
+                    },
+                  },
+                },
+              }))
+            }
+          />
+        </td>
+      ))}
+
+      {/* Father side */}
+      <td>{relative === "mother" ? "father" : relative}</td>
+      {["alcohol", "substance", "psych"].map((field) => (
+        <td key={`father-${relative}-${field}`}>
+          <Input
+            type="checkbox"
+            className="checkbox_animated"
+            checked={IRFPrefillData?.family_history_details?.father_side?.[relative === "mother" ? "father" : relative]?.[field] === "Yes"}
+            onChange={(e) =>
+              setIRFPrefillData((prev) => ({
+                ...prev,
+                family_history_details: {
+                  ...prev.family_history_details,
+                  father_side: {
+                    ...prev.family_history_details.father_side,
+                    [relative === "mother" ? "father" : relative]: {
+                      ...(prev.family_history_details?.father_side?.[relative === "mother" ? "father" : relative] || {}),
+                      [field]: e.target.checked ? "Yes" : "No",
+                    },
+                  },
+                },
+              }))
+            }
+          />
+        </td>
+      ))}
+    </tr>
+  ))}
+  {/* Any Other */}
+  <tr>
+    {/* Mother side */}
+    <td>{anyOtherPlsMention}</td>
+    <td colSpan={3}>
+      <Input
+        type="text"
+        value={IRFPrefillData?.any_other_mother_side_mention || ""}
+        onChange={(e) =>
+          setIRFPrefillData((prev) => ({
+            ...prev,
+            any_other_mother_side_mention: e.target.value, // ✅ keep at root
+          }))
+        }
+      />
+    </td>
+
+    {/* Father side */}
+    <td>{anyOtherPlsMention}</td>
+    <td colSpan={3}>
+      <Input
+        type="text"
+        value={IRFEditData?.any_other_father_side_mention || ""}
+        onChange={(e) =>
+          setIRFEditData((prev) => ({
+            ...prev,
+            any_other_father_side_mention: e.target.value, // ✅ keep at root
+          }))
+        }
+      />
+    </td>
+  </tr>
+</tbody>
+
+
+
+        </Table>
+      </div>
+    </div>
+
+
+
+     {/* Psychological Problem */}
+     <div className="col-md-12 mt-3">
+      <Label>{anyOtherPlsMention1}</Label>
+      <Input
+        type="textarea"
+        rows="3"
+        value={IRFPrefillData?.psych_problem_desc || ""}
+        onChange={(e) =>
+          setIRFPrefillData((prev) => ({ ...prev, psych_problem_desc: e.target.value }))
+        }
+      />
+    </div>
+
+    {/* Current Status */}
+    <div className="col-md-12 mt-3 mb-3">
+      <Label>{currentStatus}</Label>
+      <Input
+        type="text"
+        value={IRFPrefillData?.current_status || ""}
+        onChange={(e) =>
+          setIRFPrefillData((prev) => ({ ...prev, current_status: e.target.value }))
+        }
+      />
+    </div>
+
+    {/* Relationship with User */}
+    <div className="col-md-12">
+      <FormGroup className="mb-0">
+        <Label>{howWasBonding}</Label>
+        <Input
+          type="textarea"
+          rows="3"
+          value={IRFPrefillData?.bonding_relation_with_user || ""}
+          onChange={(e) =>
+            setIRFPrefillData((prev) => ({
+              ...prev,
+              bonding_relation_with_user: e.target.value,
+            }))
+          }
+        />
+      </FormGroup>
+    </div>
+
+    {/* Family Behavior */}
+    <div className="col-md-12">
+      <FormGroup className="mb-0">
+        <Label>{familyBehaviorPatient}</Label>
+        <Input
+          type="textarea"
+          rows="3"
+          value={IRFPrefillData?.family_behavior_with_patient || ""}
+          onChange={(e) =>
+            setIRFPrefillData((prev) => ({
+              ...prev,
+              family_behavior_with_patient: e.target.value,
+            }))
+          }
+        />
+      </FormGroup>
+    </div>
+
+    {/* Head of Family */}
+    <div className="col-md-12">
+      <FormGroup className="mb-0">
+        <Label>{monitoringFamily}</Label>
+        <Input
+          type="textarea"
+          rows="3"
+          value={IRFPrefillData?.head_of_family || ""}
+          onChange={(e) =>
+            setIRFPrefillData((prev) => ({ ...prev, head_of_family: e.target.value }))
+          }
+        />
+      </FormGroup>
+    </div>
+
+    {/* Relationships with Family */}
+    <div className="col-md-12">
+      <FormGroup className="mb-0">
+        <Label>{ralationshipFamilyMember}</Label>
+        <Input
+          type="textarea"
+          rows="3"
+          value={IRFPrefillData?.family_relationships || ""}
+          onChange={(e) =>
+            setIRFPrefillData((prev) => ({
+              ...prev,
+              family_relationships: e.target.value,
+            }))
+          }
+        />
+      </FormGroup>
+    </div>
+
+        {/* Submit */}
+        <div className="d-flex gap-3">
+          <Button color="primary" type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <span
+                className="spinner-border spinner-border-sm"
+                role="status"
+                aria-hidden="true"
+              ></span>
+            ) : (
+              "Readmission Relationship & Family Status / रिश्ते और पारिवारिक स्थिति"
+            )}
+          </Button>
+        </div>
+      </div>
+    </form>
+  </div>
+</CommonModal>
+{/* IRF Prefill form end */}
+
     </Fragment>
   );
 }

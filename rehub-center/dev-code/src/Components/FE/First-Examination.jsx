@@ -97,14 +97,14 @@ useEffect(() => {
         const admitDate = user.recent_admit_date
           ? new Date(user.recent_admit_date)
           : null;
-        const FDADate = user.recent_fda_date
-          ? new Date(user.recent_fda_date)
+        const FEDate = user.recent_first_eval_date
+          ? new Date(user.recent_first_eval_date)
           : null;
 
         let userStatus = (
           <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
         );
-        if (admitDate && FDADate && admitDate > FDADate) {
+        if (admitDate && FEDate && admitDate > FEDate) {
           userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
         }
 
@@ -112,6 +112,7 @@ useEffect(() => {
 
         return {
           id: user.user_id,
+          recentFEId:user.recent_first_eval_id,
           gks_id: user.gks_id || "N/A",
           name: user.name,
           status: userStatus,
@@ -202,13 +203,23 @@ const tableColumns = [
           {/* Show Edit only if not discharged and readmission */}
           {row.dischargeStatus === 0 && row.isReadmission === 1 && (
             <span
-              // onClick={() => handleFDAPreFill(row.recent_fda_id)}
+              onClick={() => handleFEprefill(row.recent_first_eval_id)}
               style={{ cursor: "pointer" }}
               title="Readmission FDA Form"
             >
               ✏️
             </span>
           )}
+
+ 
+            {/* <span
+              onClick={() => handleFEprefill(row.recentFEId)}
+              style={{ cursor: "pointer" }}
+              title="Readmission FDA Form"
+            >
+              ✏️
+            </span> */}
+          
 
           {/* Show Create PFA if not discharged and not readmission */}
           {row.dischargeStatus === 0 && row.isReadmission === 0 && (
@@ -832,6 +843,184 @@ const handleFEUpdate = async () => {
 };
 // ✅ Update FE Assessment Handler end
 
+ 
+// ✅ Prefill FE form handler start
+// ✅ Init with empty object so inputs never break
+const [FEPrefillData, setFEPrefillData] = useState({});
+const [FEPrefillModal, setFEPrefillModal] = useState(false);
+
+const handleFEprefill = async (prefillFEID = null) => {
+  // Normalize ID if object
+  if (typeof prefillFEID === "object" && prefillFEID !== null) {
+    prefillFEID = prefillFEID.first_eval_id || prefillFEID.intake_fe_id;
+  }
+
+  if (!prefillFEID) {
+    Swal.fire({
+      icon: "warning",
+      title: "Missing Evaluation ID",
+      text: "No valid First Evaluation ID was provided for prefill.",
+    });
+    return;
+  }
+
+  console.log("FE ID For Prefill:", prefillFEID);
+  const token = localStorage.getItem("Authorization");
+
+  try {
+    const branch_id = selectedBranch;
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/first-evaluation/assessment/${prefillFEID}?branch_id=${branch_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log("Raw API Response:", data);
+
+    if (!response.ok) {
+      Swal.fire({
+        icon: "error",
+        title: "Fetch Failed",
+        text: data.message || "Unable to fetch evaluation data for prefill.",
+      });
+      return;
+    }
+
+    const latestAssessment = data.data || null;
+    if (!latestAssessment) {
+      Swal.fire({
+        icon: "info",
+        title: "No Data Found",
+        text: "No assessment data available for this evaluation ID.",
+      });
+      return;
+    }
+
+    // ✅ Open modal only when we have valid data
+    setFEPrefillModal(true);
+
+    // ✅ Wrap inside array so PatientCommonInfo works (uses [0])
+    setSelectedUser([latestAssessment]);
+
+    // ✅ Build mapped data
+    const mappedData = {
+      first_eval_id: latestAssessment.first_eval_id,
+      user_id: latestAssessment.user_id,
+      entry_id: latestAssessment.entry_id,
+      branch_id: latestAssessment.branch_id,
+      visit_no: latestAssessment.visit_no,
+
+      date_of_assessment: latestAssessment.date_of_assessment
+        ? new Date(latestAssessment.date_of_assessment)
+        : null,
+
+      weight: latestAssessment.weight || "",
+      pulse_rate: latestAssessment.pulse_rate || "",
+      blood_pressure: latestAssessment.blood_pressure || "",
+      spo2_percentage: latestAssessment.spo2_percentage || "",
+
+      location: latestAssessment.location || "",
+      addiction: latestAssessment.addiction || "",
+      intoxicated_at_admission: latestAssessment.intoxicated_at_admission || "No",
+
+      patient_name: latestAssessment.patient_name || "",
+      dob: latestAssessment.dob || "",
+      gender: latestAssessment.gender || "",
+      date_of_admission: latestAssessment.date_of_admission || "",
+    };
+
+    setFEPrefillData(mappedData);
+
+    console.log("Mapped FE Prefill Data:", mappedData);
+  } catch (error) {
+    console.error("Prefill fetch error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Network Error",
+      text: "Unable to fetch evaluation data due to a network issue.",
+    });
+  }
+};
+
+// ✅ Prefill FE form handler end
+
+
+//Readmission post form handler start
+const handleReadmissionSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+
+  // ✅ Build payload from prefill data
+  const payload = {
+    user_id: FEPrefillData?.user_id,
+    date_of_assessment: FEPrefillData?.date_of_assessment
+      ? new Date(FEPrefillData.date_of_assessment).toISOString().split("T")[0] // YYYY-MM-DD
+      : null,
+    patient_name: FEPrefillData?.patient_name?.trim() || null,
+    weight: parseFloat(FEPrefillData?.weight) || 0,
+    pulse_rate: Math.max(parseInt(FEPrefillData?.pulse_rate) || 0, 30), // >= 30
+    blood_pressure: FEPrefillData?.blood_pressure?.trim() || null,
+    spo2_percentage: Math.max(parseInt(FEPrefillData?.spo2_percentage) || 0, 70), // >= 70
+    location: FEPrefillData?.location?.trim() || null,
+    addiction: FEPrefillData?.addiction?.trim() || null,
+    intoxicated_at_admission:
+      FEPrefillData?.intoxicated_at_admission === "Yes"
+        ? "Yes"
+        : FEPrefillData?.intoxicated_at_admission === "No"
+        ? "No"
+        : null,
+  };
+
+  try {
+    const token = localStorage.getItem("Authorization");
+    const branch_id = selectedBranch;
+
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/first-evaluation/create-assessment?branch_id=${branch_id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) throw new Error("API call failed");
+
+    const data = await response.json();
+    setIsLoading(false);
+
+    Swal.fire({
+      icon: "success",
+      title: "Readmission FE Created",
+      text: "The first examination assessment was submitted successfully.",
+    }).then(() => setFEPrefillModal(false)); // close modal
+
+    console.log("✅ Submitted Data:", data);
+    console.log("✅ Final Payload:", payload);
+  } catch (err) {
+    console.error(err);
+    setIsLoading(false);
+    Swal.fire({
+      icon: "error",
+      title: "Unexpected Error",
+      text: "Failed to submit. Check console for error.",
+    });
+  }
+};
+
+//Readmission post form handler end
+
+ 
+
 
 
 
@@ -841,6 +1030,7 @@ const handleFEUpdate = async () => {
       setIsFEModalOpen(false);
       setViewFEModal(false);
       setFEEditModal(false);
+      setFEPrefillModal(false);
     };
 
 //🔧 Convert DD/MM/YYYY to Date Object:
@@ -1457,6 +1647,206 @@ const parseDateString = (dateStr) => {
         </div>
         </CommonModal>
          {/*FE Edit form end */}
+
+
+         {/*FE prefill form start */}
+         <CommonModal
+  isOpen={FEPrefillModal}
+  title="Readmission First Examination Form"
+  toggler={closeAllmodal}
+  maxWidth="1200px"
+>
+  <PatientCommonInfo
+    selectedUser={selectedUser}
+    labels={{
+      name: "Patient name/प्रयासक का नाम :",
+      sex: "Gender/प्रयासक का लिंग :",
+      age: "Age/प्रयासक का उम्र :",
+      date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+      ageValue: patientCalAge,
+    }}
+  />
+
+  <div className="row px-3 pt-4 pb-3">
+    <form
+      onSubmit={handleReadmissionSubmit}
+    >
+      {/* Date of Assessment */}
+      <div className="col-md-6 mb-3">
+        <label className="col-sm-12 col-form-label col-xl-6">
+          Date of Assessment
+        </label>
+        <div className="col-xl-5 col-sm-12">
+          <DatePicker
+            className="form-control digits"
+            selected={FEPrefillData?.date_of_assessment || null}
+            onChange={(date) =>
+              setFEPrefillData((prev) => ({
+                ...prev,
+                date_of_assessment: date,
+              }))
+            }
+          />
+        </div>
+      </div>
+
+      {/* Name + Weight */}
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <label htmlFor="name">Name</label>
+          <input
+            type="text"
+            id="name"
+            className="form-control"
+            value={FEPrefillData?.patient_name || ""}
+            onChange={(e) =>
+              setFEPrefillData((prev) => ({
+                ...prev,
+                patient_name: e.target.value,
+              }))
+            }
+          />
+        </div>
+        <div className="col-md-3">
+          <label htmlFor="weight">Weight (kg)</label>
+          <input
+            type="number"
+            id="weight"
+            className="form-control"
+            value={FEPrefillData?.weight || ""}
+            onChange={(e) =>
+              setFEPrefillData((prev) => ({
+                ...prev,
+                weight: e.target.value,
+              }))
+            }
+          />
+        </div>
+      </div>
+
+      {/* Pulse + BP + SpO2 */}
+      <div className="row mb-3">
+        <div className="col-md-2">
+          <label htmlFor="pulse">Pulse</label>
+          <input
+            type="number"
+            id="pulse"
+            className="form-control"
+            value={FEPrefillData?.pulse_rate || ""}
+            onChange={(e) =>
+              setFEPrefillData((prev) => ({
+                ...prev,
+                pulse_rate: e.target.value,
+              }))
+            }
+          />
+        </div>
+        <div className="col-md-3">
+          <label htmlFor="bp">Blood Pressure</label>
+          <input
+            type="text"
+            id="bp"
+            className="form-control"
+            value={FEPrefillData?.blood_pressure || ""}
+            onChange={(e) =>
+              setFEPrefillData((prev) => ({
+                ...prev,
+                blood_pressure: e.target.value,
+              }))
+            }
+            placeholder="e.g. 120/80"
+          />
+        </div>
+        <div className="col-md-3">
+          <label htmlFor="spo2">SpO2 (%)</label>
+          <input
+            type="number"
+            id="spo2"
+            className="form-control"
+            value={FEPrefillData?.spo2_percentage || ""}
+            onChange={(e) =>
+              setFEPrefillData((prev) => ({
+                ...prev,
+                spo2_percentage: e.target.value,
+              }))
+            }
+          />
+        </div>
+      </div>
+
+      {/* Location + Addiction */}
+      <div className="row mb-3">
+        <div className="col-md-6">
+          <label htmlFor="location">Location</label>
+          <input
+            type="text"
+            id="location"
+            className="form-control"
+            value={FEPrefillData?.location || ""}
+            onChange={(e) =>
+              setFEPrefillData((prev) => ({
+                ...prev,
+                location: e.target.value,
+              }))
+            }
+          />
+        </div>
+        <div className="col-md-6">
+          <label htmlFor="addiction">Addiction</label>
+          <input
+            type="text"
+            id="addiction"
+            className="form-control"
+            value={FEPrefillData?.addiction || ""}
+            onChange={(e) =>
+              setFEPrefillData((prev) => ({
+                ...prev,
+                addiction: e.target.value,
+              }))
+            }
+          />
+        </div>
+      </div>
+
+      {/* Intoxicated */}
+      <div className="form-check mb-3">
+        <input
+          type="checkbox"
+          id="intoxicated"
+          className="form-check-input checkbox_animated"
+          checked={FEPrefillData?.intoxicated_at_admission === "Yes"}
+          onChange={(e) =>
+            setFEPrefillData((prev) => ({
+              ...prev,
+              intoxicated_at_admission: e.target.checked ? "Yes" : "No",
+            }))
+          }
+        />
+        <label className="form-check-label" htmlFor="intoxicated">
+          Intoxicated at the time of admission
+        </label>
+      </div>
+
+      {/* Submit Button */}
+      <div className="d-flex gap-3">
+        <Button color="primary" type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <span
+              className="spinner-border spinner-border-sm"
+              role="status"
+              aria-hidden="true"
+            ></span>
+          ) : (
+            "Readmission FE Form"
+          )}
+        </Button>
+      </div>
+    </form>
+  </div>
+</CommonModal>
+
+{/*FE prefill form end */}
+
 
 </Fragment>
 

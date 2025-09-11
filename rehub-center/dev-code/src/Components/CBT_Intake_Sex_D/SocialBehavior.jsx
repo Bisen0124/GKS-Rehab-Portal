@@ -158,14 +158,14 @@ function SocialBehavior() {
           const admitDate = user.recent_admit_date
             ? new Date(user.recent_admit_date)
             : null;
-          const FDADate = user.recent_fda_date
-            ? new Date(user.recent_fda_date)
+          const SBDate = user.recent_intake_social_behavior_date
+            ? new Date(user.recent_intake_social_behavior_date)
             : null;
 
           let userStatus = (
             <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
           );
-          if (admitDate && FDADate && admitDate > FDADate) {
+          if (admitDate && SBDate && admitDate > SBDate) {
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
 
@@ -175,6 +175,7 @@ function SocialBehavior() {
             id: user.user_id,
             gks_id: user.gks_id || "N/A",
             name: user.name,
+            recentSbIds: user.recent_intake_social_behavior_id,
             status: userStatus,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: dischargeStatus,
@@ -263,13 +264,21 @@ function SocialBehavior() {
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
-                // onClick={() => handleFDAPreFill(row.recent_fda_id)}
+                onClick={() => handleSBPreFill(row.recentSbIds)}
                 style={{ cursor: "pointer" }}
                 title="Readmission FDA Form"
               >
                 ✏️
               </span>
             )}
+
+{/* <span
+                onClick={() => handleSBPreFill(row.recentSbIds)}
+                style={{ cursor: "pointer" }}
+                title="Readmission FDA Form"
+              >
+                ✏️
+              </span> */}
 
             {/* Show Create PFA if not discharged and not readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 0 && (
@@ -837,11 +846,190 @@ const handleSocialBehaviorUpdate = async () => {
 // ✅ Update Social Behavior Assessment Handler end
 
 
+// Prefill Social Behavior form handler start
+
+const [SBPrefillData, setSBPrefillData] = useState({});
+const [SBPrefillModal, setSBPrefillModal] = useState(false);
+
+const handleSBPreFill = async (prefillSBID = null) => {
+  // Normalize ID if object
+  if (typeof prefillSBID === "object" && prefillSBID !== null) {
+    prefillSBID = prefillSBID.isb_id || prefillSBID.entry_id;
+  }
+
+  if (!prefillSBID) {
+    Swal.fire({
+      icon: "warning",
+      title: "Missing Social Behavior ID",
+      text: "No valid Social Behavior ID was provided for prefill.",
+    });
+    return;
+  }
+
+  console.log("Social Behavior ID For Prefill:", prefillSBID);
+  const token = localStorage.getItem("Authorization");
+
+  try {
+    const branch_id = selectedBranch;
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/intake-social-behavior/assessment/${prefillSBID}?branch_id=${branch_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log("Raw Social Behavior API Response:", data);
+
+    if (!response.ok) {
+      Swal.fire({
+        icon: "error",
+        title: "Fetch Failed",
+        text: data.message || "Unable to fetch Social Behavior data for prefill.",
+      });
+      return;
+    }
+
+    const latestAssessment = data.data || null;
+    if (!latestAssessment) {
+      Swal.fire({
+        icon: "info",
+        title: "No Data Found",
+        text: "No Social Behavior data available for this ID.",
+      });
+      return;
+    }
+
+    // ✅ Open modal only when we have valid data
+    setSBPrefillModal(true);
+
+    // ✅ Wrap in array so PatientCommonInfo works
+    setSelectedUser([latestAssessment]);
+
+    // ✅ Build mapped data for Social Behavior Assessment
+    const mappedData = {
+      isb_id: latestAssessment.isb_id,
+      user_id: latestAssessment.user_id,
+      entry_id: latestAssessment.entry_id,
+      branch_id: latestAssessment.branch_id,
+      visit_no: latestAssessment.visit_no,
+
+      date_of_assessment: latestAssessment.date_of_assessment
+        ? new Date(latestAssessment.date_of_assessment)
+        : null,
+
+      social_behavior: latestAssessment.social_behavior || "",
+      with_whom_spend_time: latestAssessment.with_whom_spend_time || "",
+      how_many_friends: latestAssessment.how_many_friends || "",
+      their_social_status: latestAssessment.their_social_status || "",
+      substance_dependent_friends_count:
+        latestAssessment.substance_dependent_friends_count || "",
+      well_wisher_person: latestAssessment.well_wisher_person || "",
+      status: latestAssessment.status || "Pending",
+
+      // ✅ Patient details
+      patient_name: latestAssessment.name || "",
+      dob: latestAssessment.dob ? new Date(latestAssessment.dob) : null,
+      gender: latestAssessment.gender || "",
+      phone: latestAssessment.phone || "",
+      email: latestAssessment.email || "",
+      admit_date: latestAssessment.admit_date
+        ? new Date(latestAssessment.admit_date)
+        : null,
+      ward_name: latestAssessment.ward_name || "",
+      address: latestAssessment.address || "",
+      gks_id: latestAssessment.gks_id || "",
+    };
+
+    setSBPrefillData(mappedData);
+
+    console.log("Mapped Social Behavior Prefill Data:", mappedData);
+  } catch (error) {
+    console.error("Prefill fetch error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Network Error",
+      text: "Unable to fetch Social Behavior data due to a network issue.",
+    });
+  }
+};
+// Prefill Social Behavior form handler end
+
+
+
+// Social behaviour readmission form handler start
+const SubmitSocialReadmissionFormHandler = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+
+  const payload = {
+    user_id: SBPrefillData?.user_id,
+    date_of_assessment: SBPrefillData?.date_of_assessment
+      ? new Date(SBPrefillData.date_of_assessment).toISOString().split("T")[0]
+      : null,
+
+    // ✅ Use SBPrefillData instead of formData
+    social_behavior: SBPrefillData?.social_behavior || "",
+    with_whom_spend_time: SBPrefillData?.with_whom_spend_time || "",
+    how_many_friends: SBPrefillData?.how_many_friends || "",
+    their_social_status: SBPrefillData?.their_social_status || "",
+    substance_dependent_friends_count:
+      SBPrefillData?.substance_dependent_friends_count || "",
+    well_wisher_person: SBPrefillData?.well_wisher_person || "",
+  };
+
+  try {
+    const token = localStorage.getItem("Authorization");
+    const branch_id = selectedBranch;
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/intake-social-behavior/create-assessment?branch_id=${branch_id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) throw new Error("API call failed");
+
+    const data = await response.json();
+    setIsLoading(false);
+
+    Swal.fire({
+      icon: "success",
+      title: "Readmission Social Behavior Created Successfully",
+      text: "The Readmission Social Behavior assessment was submitted successfully.",
+    }).then(() => setIsSocialModalOpen(false));
+
+    console.log("✅ Social Behavior Response:", data);
+    console.log("📦 Payload Sent:", payload);
+  } catch (err) {
+    console.error("❌ Error:", err);
+    setIsLoading(false);
+    Swal.fire({
+      icon: "error",
+      title: "Unexpected Error",
+      text: "Failed to submit. Check console for error.",
+    });
+  }
+};
+// Social behaviour readmission form handler end
+
+
+
   //Close all modal handler
   const closeAllmodal = () => {
     setIsSocialModalOpen(false);
     setviewSocialModal(false);
     setSocialBehaviorEditModal(false);
+    setSBPrefillModal(false);
   };
 
   //Universal getting data handler
@@ -1453,6 +1641,189 @@ const handleSocialBehaviorUpdate = async () => {
   </div>
 </CommonModal>
 {/* Update Social Behavior Form end */}
+
+
+{/* Pre-fill Readmission Social Behavior Form start */}
+<CommonModal
+  isOpen={SBPrefillModal}
+  title={`Readmission ${socialBehavior}`}
+  toggler={closeAllmodal}
+  maxWidth="1200px"
+>
+  <PatientCommonInfo
+    selectedUser={selectedUser}
+    labels={{
+      name: "Patient name/प्रयासक का नाम :",
+      sex: "Gender/प्रयासक का लिंग :",
+      age: "Age/प्रयासक का उम्र :",
+      date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+      ageValue: patientCalAge,
+    }}
+  />
+
+  <div className="row px-3 pt-4 pb-3">
+    <form
+      className="theme-form"
+      onSubmit={SubmitSocialReadmissionFormHandler}
+    >
+      {/* Assessment Date */}
+      <div className="col-md-6 mb-3">
+        <Label className="col-sm-12 col-form-label col-xl-6">
+          {dateOfAssessment}
+        </Label>
+        <Col xl="5" sm="12">
+          <div className="input-group">
+            <DatePicker
+              className="form-control digits"
+              selected={
+                SBPrefillData?.date_of_assessment
+                  ? new Date(SBPrefillData.date_of_assessment)
+                  : null
+              }
+              onChange={(date) =>
+                setSBPrefillData((prev) => ({
+                  ...prev,
+                  date_of_assessment: date,
+                }))
+              }
+            />
+          </div>
+        </Col>
+      </div>
+
+      {/* Social Behavior */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{socialBehavior1}</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="social_behavior"
+            value={SBPrefillData?.social_behavior || ""}
+            onChange={(e) =>
+              setSBPrefillData((prev) => ({
+                ...prev,
+                social_behavior: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* With Whom Spend Time */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{withWhomSpendFreeTime}</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="with_whom_spend_time"
+            value={SBPrefillData?.with_whom_spend_time || ""}
+            onChange={(e) =>
+              setSBPrefillData((prev) => ({
+                ...prev,
+                with_whom_spend_time: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* How Many Friends */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{howManyFriends}</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="how_many_friends"
+            value={SBPrefillData?.how_many_friends || ""}
+            onChange={(e) =>
+              setSBPrefillData((prev) => ({
+                ...prev,
+                how_many_friends: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Friends’ Social Status */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{friendSocialStatus}</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="their_social_status"
+            value={SBPrefillData?.their_social_status || ""}
+            onChange={(e) =>
+              setSBPrefillData((prev) => ({
+                ...prev,
+                their_social_status: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Substance Dependent Friends Count */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{howMuchDependent}</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="substance_dependent_friends_count"
+            value={SBPrefillData?.substance_dependent_friends_count || ""}
+            onChange={(e) =>
+              setSBPrefillData((prev) => ({
+                ...prev,
+                substance_dependent_friends_count: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Well-Wisher Person */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{whoClosedWellWisher}</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="well_wisher_person"
+            value={SBPrefillData?.well_wisher_person || ""}
+            onChange={(e) =>
+              setSBPrefillData((prev) => ({
+                ...prev,
+                well_wisher_person: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Submit Button */}
+      <div className="d-flex gap-3 mt-3">
+        <Button color="primary" type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <span
+              className="spinner-border spinner-border-sm"
+              role="status"
+              aria-hidden="true"
+            ></span>
+          ) : (
+            "Readmission Social Behavior / सामाजिक व्यवहार"
+          )}
+        </Button>
+      </div>
+    </form>
+  </div>
+</CommonModal>
+{/* Pre-fill Readmission  Social Behavior Form end */}
+
 
 
 

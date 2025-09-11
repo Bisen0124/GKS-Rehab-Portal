@@ -151,14 +151,14 @@ function Legal() {
           const admitDate = user.recent_admit_date
             ? new Date(user.recent_admit_date)
             : null;
-          const FDADate = user.recent_fda_date
-            ? new Date(user.recent_fda_date)
+          const recentLegalData = user.recent_intake_legal_history_date
+            ? new Date(user.recent_intake_legal_history_date)
             : null;
 
           let userStatus = (
             <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
           );
-          if (admitDate && FDADate && admitDate > FDADate) {
+          if (admitDate && recentLegalData && admitDate > recentLegalData) {
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
 
@@ -168,6 +168,7 @@ function Legal() {
             id: user.user_id,
             gks_id: user.gks_id || "N/A",
             name: user.name,
+            legalRecentIds: user.recent_intake_legal_history_id,
             status: userStatus,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: dischargeStatus,
@@ -256,13 +257,21 @@ function Legal() {
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
-                // onClick={() => handleFDAPreFill(row.recent_fda_id)}
+                onClick={() => handleLegalPreFill(row.legalRecentIds)}
                 style={{ cursor: "pointer" }}
                 title="Readmission FDA Form"
               >
                 ✏️
               </span>
             )}
+
+{/* <span
+                onClick={() => handleLegalPreFill(row.legalRecentIds)}
+                style={{ cursor: "pointer" }}
+                title="Readmission FDA Form"
+              >
+                ✏️
+              </span> */}
 
             {/* Show Create PFA if not discharged and not readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 0 && (
@@ -840,12 +849,201 @@ const handleLegalUpdate = async () => {
 };
 
 
+// Prefill Legal History form handler start
+const [LegalPrefillData, setLegalPrefillData] = useState({});
+const [LegalPrefillModal, setLegalPrefillModal] = useState(false);
+
+const handleLegalPreFill = async (prefillLegalID = null) => {
+  // Normalize ID if object
+  if (typeof prefillLegalID === "object" && prefillLegalID !== null) {
+    prefillLegalID = prefillLegalID.ilh_id || prefillLegalID.entry_id;
+  }
+
+  if (!prefillLegalID) {
+    Swal.fire({
+      icon: "warning",
+      title: "Missing Legal ID",
+      text: "No valid Legal History ID was provided for prefill.",
+    });
+    return;
+  }
+
+  console.log("Legal ID For Prefill:", prefillLegalID);
+  const token = localStorage.getItem("Authorization");
+
+  try {
+    const branch_id = selectedBranch;
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/intake-legal-history/assessment/${prefillLegalID}?branch_id=${branch_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log("Raw Legal API Response:", data);
+
+    if (!response.ok) {
+      Swal.fire({
+        icon: "error",
+        title: "Fetch Failed",
+        text: data.message || "Unable to fetch Legal data for prefill.",
+      });
+      return;
+    }
+
+    const latestAssessment = data.data || null;
+    if (!latestAssessment) {
+      Swal.fire({
+        icon: "info",
+        title: "No Data Found",
+        text: "No Legal data available for this ID.",
+      });
+      return;
+    }
+
+    // ✅ Open modal only when we have valid data
+    setLegalPrefillModal(true);
+
+    // ✅ Wrap in array so PatientCommonInfo works
+    setSelectedUser([latestAssessment]);
+
+    // ✅ Build mapped data for Legal History
+    const mappedData = {
+      ilh_id: latestAssessment.ilh_id,
+      user_id: latestAssessment.user_id,
+      entry_id: latestAssessment.entry_id,
+      branch_id: latestAssessment.branch_id,
+      visit_no: latestAssessment.visit_no,
+
+      date_of_assessment: latestAssessment.date_of_assessment
+        ? new Date(latestAssessment.date_of_assessment)
+        : null,
+
+      domestic_violence_case: latestAssessment.domestic_violence_case || "",
+      reason_behind_domestic_violence:
+        latestAssessment.reason_behind_domestic_violence || "",
+      drug_status_quantity_at_time:
+        latestAssessment.drug_status_quantity_at_time || "",
+      any_criminal_case: latestAssessment.any_criminal_case || "",
+      case_details_specify: latestAssessment.case_details_specify || "",
+      current_case_status: latestAssessment.current_case_status || "",
+      drug_status_quantity_current:
+        latestAssessment.drug_status_quantity_current || "",
+      jail_period_duration: latestAssessment.jail_period_duration || "",
+
+      status: latestAssessment.status || "Pending",
+
+      // ✅ Patient details
+      patient_name: latestAssessment.name || "",
+      dob: latestAssessment.dob ? new Date(latestAssessment.dob) : null,
+      gender: latestAssessment.gender || "",
+      phone: latestAssessment.phone || "",
+      email: latestAssessment.email || "",
+      admit_date: latestAssessment.admit_date
+        ? new Date(latestAssessment.admit_date)
+        : null,
+      ward_name: latestAssessment.ward_name || "",
+      address: latestAssessment.address || "",
+      gks_id: latestAssessment.gks_id || "",
+    };
+
+    setLegalPrefillData(mappedData);
+
+    console.log("Mapped Legal Prefill Data:", mappedData);
+  } catch (error) {
+    console.error("Prefill fetch error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Network Error",
+      text: "Unable to fetch Legal data due to a network issue.",
+    });
+  }
+};
+// Prefill Legal History form handler end
+
+
+// Legal readmission form handler start
+const SubmitLegalReadmissionFormHandler = async (e) => {
+  e.preventDefault();
+  setIsLoading(true); // Start loader
+
+  const payload = {
+    user_id: LegalPrefillData?.user_id, // ✅ corrected
+    date_of_assessment: LegalPrefillData.date_of_assessment
+      ? new Date(LegalPrefillData.date_of_assessment)
+          .toISOString()
+          .split("T")[0] // YYYY-MM-DD
+      : null,
+
+    // ✅ Map LegalPrefillData fields to correct API keys
+    domestic_violence_case: LegalPrefillData.domestic_violence_case || "",
+    reason_behind_domestic_violence:
+      LegalPrefillData.reason_behind_domestic_violence || "",
+    drug_status_quantity_at_time:
+      LegalPrefillData.drug_status_quantity_at_time || "",
+    any_criminal_case: LegalPrefillData.any_criminal_case || "",
+    case_details_specify: LegalPrefillData.case_details_specify || "",
+    current_case_status: LegalPrefillData.current_case_status || "",
+    drug_status_quantity_current:
+      LegalPrefillData.drug_status_quantity_current || "",
+    jail_period_duration: LegalPrefillData.jail_period_duration || "",
+  };
+
+  try {
+    const token = localStorage.getItem("Authorization");
+    const branch_id = selectedBranch;
+
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/intake-legal-history/create-assessment?branch_id=${branch_id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) throw new Error("API call failed");
+
+    const data = await response.json();
+    setIsLoading(false);
+
+    Swal.fire({
+      icon: "success",
+      title: "Legal History Created Successfully",
+      text: "The Legal History readmission form was submitted successfully.",
+    }).then(() => setLegalPrefillModal(false)); // ✅ close prefill modal
+
+    console.log("✅ Legal History Data", data);
+    console.log("📦 Legal History Payload Sent", payload);
+  } catch (err) {
+    console.error("❌ Legal History Submit Error:", err);
+    setIsLoading(false);
+    Swal.fire({
+      icon: "error",
+      title: "Unexpected Error",
+      text: "Failed to submit Legal History. Check console for error.",
+    });
+  }
+};
+// Legal readmission form handler end
+
+
+
 
   //Close all modal handler
   const closeAllmodal = () => {
     setIsLegalModalOpen(false);
     setViewLegalModal(false);
     setLegalEditModal(false);
+    setLegalPrefillModal(false);
   };
 
   const handleAssessmentDateChange = (date) => {
@@ -1478,6 +1676,230 @@ const handleLegalUpdate = async () => {
   </div>
 </CommonModal>
 {/* Legal update form end */}
+
+
+
+{/* Legal prefill readmission form start */}
+<CommonModal
+  isOpen={LegalPrefillModal}
+  title={`Readmission ${legalHistory}`}
+  toggler={closeAllmodal}
+  maxWidth="1200px"
+>
+  <PatientCommonInfo
+    selectedUser={selectedUser}
+    labels={{
+      name: "Patient name/प्रयासक का नाम :",
+      sex: "Gender/प्रयासक का लिंग :",
+      age: "Age/प्रयासक का उम्र :",
+      date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+      ageValue: patientCalAge,
+    }}
+  />
+
+  <div className="row px-3 pt-4 pb-3">
+    <form
+      className="theme-form"
+      onSubmit={SubmitLegalReadmissionFormHandler}
+    >
+      {/* Date of Assessment */}
+      <div className="col-md-6 mb-3">
+        <Label className="col-sm-12 col-form-label col-xl-6">
+          {dateOfAssessment}
+        </Label>
+        <Col xl="5" sm="12">
+          <div className="input-group">
+            <DatePicker
+              className="form-control digits"
+              selected={
+                LegalPrefillData?.date_of_assessment
+                  ? new Date(LegalPrefillData.date_of_assessment)
+                  : null
+              }
+              onChange={(date) =>
+                setLegalPrefillData((prev) => ({
+                  ...prev,
+                  date_of_assessment: date,
+                }))
+              }
+            />
+          </div>
+        </Col>
+      </div>
+
+      {/* Legal History Start */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{domesticViolence}</Label>
+          <Input
+            type="textarea"
+            className="form-control"
+            rows="3"
+            name="domestic_violence_case"
+            value={LegalPrefillData?.domestic_violence_case || ""}
+            onChange={(e) =>
+              setLegalPrefillData((prev) => ({
+                ...prev,
+                domestic_violence_case: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{reasonBehindDomesticViolence}</Label>
+          <Input
+            type="textarea"
+            className="form-control"
+            rows="3"
+            name="reason_behind_domestic_violence"
+            value={LegalPrefillData?.reason_behind_domestic_violence || ""}
+            onChange={(e) =>
+              setLegalPrefillData((prev) => ({
+                ...prev,
+                reason_behind_domestic_violence: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{drugStatus}</Label>
+          <Input
+            type="textarea"
+            className="form-control"
+            rows="3"
+            name="drug_status_quantity_at_time"
+            value={LegalPrefillData?.drug_status_quantity_at_time || ""}
+            onChange={(e) =>
+              setLegalPrefillData((prev) => ({
+                ...prev,
+                drug_status_quantity_at_time: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{ifThereIsAnyCriminalCase}</Label>
+          <Input
+            type="textarea"
+            className="form-control"
+            rows="3"
+            name="any_criminal_case"
+            value={LegalPrefillData?.any_criminal_case || ""}
+            onChange={(e) =>
+              setLegalPrefillData((prev) => ({
+                ...prev,
+                any_criminal_case: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{specificCaseDetails}</Label>
+          <Input
+            type="textarea"
+            className="form-control"
+            rows="3"
+            name="case_details_specify"
+            value={LegalPrefillData?.case_details_specify || ""}
+            onChange={(e) =>
+              setLegalPrefillData((prev) => ({
+                ...prev,
+                case_details_specify: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{currentCaseStatus}</Label>
+          <Input
+            type="textarea"
+            className="form-control"
+            rows="3"
+            name="current_case_status"
+            value={LegalPrefillData?.current_case_status || ""}
+            onChange={(e) =>
+              setLegalPrefillData((prev) => ({
+                ...prev,
+                current_case_status: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{drugStatus}</Label>
+          <Input
+            type="textarea"
+            className="form-control"
+            rows="3"
+            name="drug_status_quantity_current"
+            value={LegalPrefillData?.drug_status_quantity_current || ""}
+            onChange={(e) =>
+              setLegalPrefillData((prev) => ({
+                ...prev,
+                drug_status_quantity_current: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>{ifWentToJail}</Label>
+          <Input
+            type="textarea"
+            className="form-control"
+            rows="3"
+            name="jail_period_duration"
+            value={LegalPrefillData?.jail_period_duration || ""}
+            onChange={(e) =>
+              setLegalPrefillData((prev) => ({
+                ...prev,
+                jail_period_duration: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+      {/* Legal History End */}
+
+      {/* Submit Button */}
+      <div className="d-flex gap-3 mt-3">
+        <Button color="primary" type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <span
+              className="spinner-border spinner-border-sm"
+              role="status"
+              aria-hidden="true"
+            ></span>
+          ) : (
+            "Readmission Legal History / लीगल इतिहास अपडेट करें"
+          )}
+        </Button>
+      </div>
+    </form>
+  </div>
+</CommonModal>
+{/* Legal prefill readmission form end */}
+
 
 
 

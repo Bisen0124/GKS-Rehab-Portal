@@ -157,14 +157,14 @@ function Childhood() {
           const admitDate = user.recent_admit_date
             ? new Date(user.recent_admit_date)
             : null;
-          const FDADate = user.recent_fda_date
-            ? new Date(user.recent_fda_date)
+          const RecentChildhoodDate = user.recent_intake_childhood_date
+            ? new Date(user.recent_intake_childhood_date)
             : null;
 
           let userStatus = (
             <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
           );
-          if (admitDate && FDADate && admitDate > FDADate) {
+          if (admitDate && RecentChildhoodDate && RecentChildhoodDate > RecentChildhoodDate) {
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
 
@@ -174,6 +174,7 @@ function Childhood() {
             id: user.user_id,
             gks_id: user.gks_id || "N/A",
             name: user.name,
+            recentChildhoodIDs: user.recent_intake_childhood_id,
             status: userStatus,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: dischargeStatus,
@@ -262,13 +263,21 @@ function Childhood() {
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
-                // onClick={() => handleFDAPreFill(row.recent_fda_id)}
+                onClick={() => handleChildhoodPreFill(row.recentChildhoodIDs)}
                 style={{ cursor: "pointer" }}
                 title="Readmission FDA Form"
               >
                 ✏️
               </span>
             )}
+
+{/* <span
+                onClick={() => handleChildhoodPreFill(row.recentChildhoodIDs)}
+                style={{ cursor: "pointer" }}
+                title="Readmission FDA Form"
+              >
+                ✏️
+              </span> */}
 
             {/* Show Create PFA if not discharged and not readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 0 && (
@@ -877,11 +886,218 @@ function Childhood() {
   };
   // ✅ Update Childhood Assessment Handler end
 
+
+
+// ✅ Prefill Childhood form handler start
+const [ChildhoodPrefillData, setChildhoodPrefillData] = useState({});
+const [ChildhoodPrefillModal, setChildhoodPrefillModal] = useState(false);
+
+const handleChildhoodPreFill = async (prefillChildhoodID = null) => {
+  // Normalize ID if object
+  if (typeof prefillChildhoodID === "object" && prefillChildhoodID !== null) {
+    prefillChildhoodID =
+      prefillChildhoodID.intake_childhood_id || prefillChildhoodID.entry_id;
+  }
+
+  if (!prefillChildhoodID) {
+    Swal.fire({
+      icon: "warning",
+      title: "Missing Childhood ID",
+      text: "No valid Childhood ID was provided for prefill.",
+    });
+    return;
+  }
+
+  console.log("Childhood ID For Prefill:", prefillChildhoodID);
+  const token = localStorage.getItem("Authorization");
+
+  try {
+    const branch_id = selectedBranch;
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/intake-childhood/assessment/${prefillChildhoodID}?branch_id=${branch_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log("Raw Childhood API Response:", data);
+
+    if (!response.ok) {
+      Swal.fire({
+        icon: "error",
+        title: "Fetch Failed",
+        text: data.message || "Unable to fetch Childhood data for prefill.",
+      });
+      return;
+    }
+
+    const latestAssessment = data.data || null;
+    if (!latestAssessment) {
+      Swal.fire({
+        icon: "info",
+        title: "No Data Found",
+        text: "No Childhood data available for this ID.",
+      });
+      return;
+    }
+
+    // ✅ Open modal only when we have valid data
+    setChildhoodPrefillModal(true);
+
+    // ✅ Wrap in array so PatientCommonInfo works
+    setSelectedUser([latestAssessment]);
+
+    // ✅ Build mapped data for Childhood Assessment
+    const mappedData = {
+      intake_childhood_id: latestAssessment.intake_childhood_id,
+      user_id: latestAssessment.user_id,
+      entry_id: latestAssessment.entry_id,
+      branch_id: latestAssessment.branch_id,
+      visit_no: latestAssessment.visit_no,
+
+      date_of_assessment: latestAssessment.date_of_assessment
+        ? new Date(latestAssessment.date_of_assessment)
+        : null,
+
+      parenting_history: latestAssessment.parenting_history || "",
+      family_dispute_childhood: latestAssessment.family_dispute_childhood || "",
+      sociality_born_living: latestAssessment.sociality_born_living || "",
+      high_risk_behavior: latestAssessment.high_risk_behavior || "",
+      impact_substance_movies: latestAssessment.impact_substance_movies || "",
+      abuse_history_types: latestAssessment.abuse_history_types || [],
+      abuse_history_description:
+        latestAssessment.abuse_history_description || "",
+      education_status: latestAssessment.education_status || "",
+      occupational_status: latestAssessment.occupational_status || "",
+      dropout_reason: latestAssessment.dropout_reason || "",
+      study_work_details: latestAssessment.study_work_details || "",
+      hobbies: latestAssessment.hobbies || "",
+      extra_skills: latestAssessment.extra_skills || "",
+      achievement_life: latestAssessment.achievement_life || "",
+      why_here: latestAssessment.why_here || "",
+      why_family_sent: latestAssessment.why_family_sent || "",
+      status: latestAssessment.status || "Pending",
+
+      // ✅ Patient details
+      patient_name: latestAssessment.name || "",
+      dob: latestAssessment.dob ? new Date(latestAssessment.dob) : null,
+      gender: latestAssessment.gender || "",
+      phone: latestAssessment.phone || "",
+      email: latestAssessment.email || "",
+      admit_date: latestAssessment.admit_date
+        ? new Date(latestAssessment.admit_date)
+        : null,
+      ward_name: latestAssessment.ward_name || "",
+      address: latestAssessment.address || "",
+      gks_id: latestAssessment.gks_id || "",
+    };
+
+    setChildhoodPrefillData(mappedData);
+
+    console.log("Mapped Childhood Prefill Data:", mappedData);
+  } catch (error) {
+    console.error("Prefill fetch error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Network Error",
+      text: "Unable to fetch Childhood data due to a network issue.",
+    });
+  }
+};
+// ✅ Prefill Childhood form handler end
+
+
+// Readmission childhood form handler start
+const SubmitChildhoodReadmissonFormHandler = async (e) => {
+  e.preventDefault();
+  setIsLoading(true);
+
+  const payload = {
+    user_id: ChildhoodPrefillData?.user_id,
+
+    date_of_assessment: ChildhoodPrefillData?.date_of_assessment
+      ? new Date(ChildhoodPrefillData.date_of_assessment)
+          .toISOString()
+          .split("T")[0]
+      : null,
+
+    parenting_history: ChildhoodPrefillData?.parenting_history || "",
+    family_dispute_childhood:
+      ChildhoodPrefillData?.family_dispute_childhood || "",
+    sociality_born_living: ChildhoodPrefillData?.sociality_born_living || "",
+    high_risk_behavior: ChildhoodPrefillData?.high_risk_behavior || "",
+    impact_substance_movies:
+      ChildhoodPrefillData?.impact_substance_movies || "",
+    abuse_history_types: ChildhoodPrefillData?.abuse_history_types || [], // if checkboxes
+    abuse_history_description:
+      ChildhoodPrefillData?.abuse_history_description || "",
+
+    education_status: ChildhoodPrefillData?.education_status || "",
+    occupational_status: ChildhoodPrefillData?.occupational_status || "",
+    dropout_reason: ChildhoodPrefillData?.dropout_reason || "",
+    study_work_details: ChildhoodPrefillData?.study_work_details || "",
+    hobbies: ChildhoodPrefillData?.hobbies || "",
+    extra_skills: ChildhoodPrefillData?.extra_skills || "",
+    achievement_life: ChildhoodPrefillData?.achievement_life || "",
+    why_here: ChildhoodPrefillData?.why_here || "",
+    why_family_sent: ChildhoodPrefillData?.why_family_sent || "",
+  };
+
+  try {
+    const token = localStorage.getItem("Authorization");
+    const branch_id = selectedBranch;
+
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/intake-childhood/create-assessment?branch_id=${branch_id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) throw new Error("API call failed");
+
+    const data = await response.json();
+    setIsLoading(false);
+
+    Swal.fire({
+      icon: "success",
+      title: "Childhood Re-Assessment Created Successfully",
+      text: "The childhood re-Assessment was submitted successfully.",
+    }).then(() => setIsChildhoodModalOpen(false));
+
+    console.log("Childhood API Data", data);
+    console.log("Childhood Payload Sent", payload);
+  } catch (err) {
+    console.error("Childhood API Error:", err);
+    setIsLoading(false);
+    Swal.fire({
+      icon: "error",
+      title: "Unexpected Error",
+      text: "Failed to submit. Check console for error.",
+    });
+  }
+};
+// Readmission childhood form handler end
+
+  
+
+
   //Close all modal handler
   const closeAllmodal = () => {
     setIsChildhoodModalOpen(false);
     setViewChildhoodModal(false);
     setChildhoodeditModal(false);
+    setChildhoodPrefillModal(false);
   };
 
   //Universal data handler
@@ -1875,6 +2091,344 @@ function Childhood() {
           </form>
         </div>
       </CommonModal>
+     {/* Edit Childhood individual form data end */}
+
+     {/* Prefill readmission Childhood individual form data start */}
+<CommonModal
+  isOpen={ChildhoodPrefillModal}
+  title="Readmission Childhood / बचपन"
+  toggler={closeAllmodal}
+  maxWidth="1200px"
+>
+  <div className="row px-3 pt-4 pb-3">
+    <form
+      className="theme-form"
+      onSubmit={SubmitChildhoodReadmissonFormHandler}
+    >
+      {/* Date of Assessment */}
+      <div className="col-md-6 mb-3">
+        <Label className="col-sm-12 col-form-label col-xl-6">
+          Date of Assessment / मूल्यांकन की तिथि
+        </Label>
+        <Col xl="5" sm="12">
+          <div className="input-group">
+            <DatePicker
+              className="form-control digits"
+              selected={ChildhoodPrefillData?.date_of_assessment || null}
+              onChange={(date) =>
+                setChildhoodPrefillData((prev) => ({
+                  ...prev,
+                  date_of_assessment: date,
+                }))
+              }
+            />
+          </div>
+        </Col>
+      </div>
+
+      {/* Parenting History */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>Parenting History / पालन-पोषण का इतिहास</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="parenting_history"
+            value={ChildhoodPrefillData?.parenting_history || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                parenting_history: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Family Dispute */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>
+            If there was a dispute in the family in childhood describe? / बचपन
+            में परिवार में कोई विवाद हुआ हो तो उसका वर्णन करें?
+          </Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="family_dispute_childhood"
+            value={ChildhoodPrefillData?.family_dispute_childhood || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                family_dispute_childhood: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Sociality */}
+      <div className="col-md-12">
+        <Label>
+          Sociality (where born & living?) / सामाजिकता (जहां पैदा हुआ और रहा?)
+        </Label>
+        <Input
+          type="textarea"
+          name="sociality_born_living"
+          value={ChildhoodPrefillData?.sociality_born_living || ""}
+          onChange={(e) =>
+            setChildhoodPrefillData((prev) => ({
+              ...prev,
+              sociality_born_living: e.target.value,
+            }))
+          }
+        />
+
+        <br />
+        <Label>High Risk Behavior / उच्च जोखिम व्यवहार</Label>
+        <Input
+          type="textarea"
+          name="high_risk_behavior"
+          value={ChildhoodPrefillData?.high_risk_behavior || ""}
+          onChange={(e) =>
+            setChildhoodPrefillData((prev) => ({
+              ...prev,
+              high_risk_behavior: e.target.value,
+            }))
+          }
+        />
+      </div>
+
+      {/* Impact of Movies */}
+      <div className="col-md-12 mt-3 mb-3">
+        <FormGroup className="mb-0">
+          <Label>What was impact of movies? / फिल्मों का क्या प्रभाव पड़ा?</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="impact_substance_movies"
+            value={ChildhoodPrefillData?.impact_substance_movies || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                impact_substance_movies: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Abuse History */}
+      <div className="col-md-12 mt-3 mb-3">
+        <FormGroup className="mb-0">
+          <Label>
+            Has anyone ever abused you? 1.Emotionally? 2.Physically? 3.Sexually?
+            / क्या कभी किसी ने आपके साथ दुर्व्यवहार किया है?
+          </Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="abuse_history_description"
+            value={ChildhoodPrefillData?.abuse_history_description || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                abuse_history_description: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Academics & Occupation */}
+      <div className="row">
+        <H5 className="mt-3 mb-3">
+          Academics & Occupational Details / शैक्षणिक एवं व्यावसायिक विवरण
+        </H5>
+
+        <div className="col-md-6">
+          <Label>Education Status / शैक्षणिक स्थिति</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="education_status"
+            value={ChildhoodPrefillData?.education_status || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                education_status: e.target.value,
+              }))
+            }
+          />
+        </div>
+
+        <div className="col-md-6">
+          <Label>Occupational Status / कार्य की स्थिति</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="occupational_status"
+            value={ChildhoodPrefillData?.occupational_status || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                occupational_status: e.target.value,
+              }))
+            }
+          />
+        </div>
+      </div>
+
+      {/* Dropout Reason */}
+      <div className="col-md-12 mt-3">
+        <FormGroup className="mb-0">
+          <Label>
+            If dropout what is the reason? / यदि ड्रॉपआउट हुआ तो क्या कारण है?
+          </Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="dropout_reason"
+            value={ChildhoodPrefillData?.dropout_reason || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                dropout_reason: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Study/Work Details */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>Study/Work Details / अध्ययन / कार्य विवरण</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="study_work_details"
+            value={ChildhoodPrefillData?.study_work_details || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                study_work_details: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Hobbies */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>Hobbies / शौक</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="hobbies"
+            value={ChildhoodPrefillData?.hobbies || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                hobbies: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Extra Skills */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>Extra Skills / अतिरिक्त कौशल</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="extra_skills"
+            value={ChildhoodPrefillData?.extra_skills || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                extra_skills: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Achievement in Life */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>Achievement in life / जीवन में उपलब्धियां</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="achievement_life"
+            value={ChildhoodPrefillData?.achievement_life || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                achievement_life: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Why Here */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>Why are you here? / आप यहाँ क्यों हैं?</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="why_here"
+            value={ChildhoodPrefillData?.why_here || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                why_here: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Why Family Sent */}
+      <div className="col-md-12">
+        <FormGroup className="mb-0">
+          <Label>Why family sent? / परिवार ने क्यों भेजा?</Label>
+          <Input
+            type="textarea"
+            rows="3"
+            name="why_family_sent"
+            value={ChildhoodPrefillData?.why_family_sent || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                why_family_sent: e.target.value,
+              }))
+            }
+          />
+        </FormGroup>
+      </div>
+
+      {/* Submit */}
+      <div className="d-flex gap-3 mt-3">
+        <Button color="primary" type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <span className="spinner-border spinner-border-sm"></span>
+          ) : (
+            "Readmission Childhood Form Data"
+          )}
+        </Button>
+      </div>
+    </form>
+  </div>
+</CommonModal>
+{/* Prefill readmission Childhood individual form data end */}
+
     </Fragment>
   );
 }

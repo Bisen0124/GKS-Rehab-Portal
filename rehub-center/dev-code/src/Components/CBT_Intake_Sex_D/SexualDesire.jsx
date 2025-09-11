@@ -564,8 +564,9 @@ function SexualDesire() {
     setModal(true);
     if (userId) {
       const token = localStorage.getItem("Authorization");
+      const branch_id = selectedBranch;
       try {
-        const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}`, {
+        const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `${token}`,
@@ -631,7 +632,10 @@ function SexualDesire() {
 
     try {
       const token = localStorage.getItem("Authorization");
-      const response = await fetch("https://gks-yjdc.onrender.com/api/sha/create-assessment", {
+
+      const branch_id = selectedBranch;
+
+      const response = await fetch(`https://gks-yjdc.onrender.com/api/sha/create-assessment?branch_id=${branch_id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -797,7 +801,8 @@ function SexualDesire() {
 
     try {
       const token = localStorage.getItem("Authorization");
-      const response = await fetch("https://gks-yjdc.onrender.com/api/sha/create-assessment", {
+      const branch_id = selectedBranch;
+      const response = await fetch(`https://gks-yjdc.onrender.com/api/sha/create-assessment?branch_id=${branch_id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1028,8 +1033,9 @@ function SexualDesire() {
   
     try {
       const token = localStorage.getItem("Authorization");
+      const branch_id = selectedBranch;
       const response = await fetch(
-        `https://gks-yjdc.onrender.com/api/sha/update-assessment/${viewSexualData?.sha_id}`,
+        `https://gks-yjdc.onrender.com/api/sha/update-assessment/${viewSexualData?.sha_id}?branch_id=${branch_id}`,
         {
           method: "PUT",
           headers: {

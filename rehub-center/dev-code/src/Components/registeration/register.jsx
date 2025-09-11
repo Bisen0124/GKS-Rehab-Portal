@@ -1495,9 +1495,9 @@ function Register() {
                       }
                     >
                       <option value="">Select a role</option>
-                      <option value="1">SuperAdmin</option>
+                      {/* <option value="1">SuperAdmin</option>
                       <option value="2">BranchAdmin</option>
-                      <option value="3">BranchOperator</option>
+                      <option value="3">BranchOperator</option> */}
                       <option value="4">Patient</option>
                     </select>
                     </div>

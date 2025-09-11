@@ -170,14 +170,14 @@ function PatientBehavior() {
           const admitDate = user.recent_admit_date
             ? new Date(user.recent_admit_date)
             : null;
-          const FDADate = user.recent_fda_date
-            ? new Date(user.recent_fda_date)
+          const recentPBDate = user.recent_intake_patient_behavior_date
+            ? new Date(user.recent_intake_patient_behavior_date)
             : null;
 
           let userStatus = (
             <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
           );
-          if (admitDate && FDADate && admitDate > FDADate) {
+          if (admitDate && recentPBDate && admitDate > recentPBDate) {
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
 
@@ -187,6 +187,7 @@ function PatientBehavior() {
             id: user.user_id,
             gks_id: user.gks_id || "N/A",
             name: user.name,
+            recentPBIds: user.recent_intake_patient_behavior_id,
             status: userStatus,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: dischargeStatus,
@@ -275,13 +276,21 @@ function PatientBehavior() {
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
-                // onClick={() => handleFDAPreFill(row.recent_fda_id)}
+                onClick={() => handlePatientBehaviourPreFill(row.recent_intake_patient_behavior_id)}
                 style={{ cursor: "pointer" }}
                 title="Readmission FDA Form"
               >
                 ✏️
               </span>
             )}
+
+{/* <span
+                onClick={() => handlePatientBehaviourPreFill(row.recentPBIds)}
+                style={{ cursor: "pointer" }}
+                title="Readmission FDA Form"
+              >
+                ✏️
+              </span> */}
 
             {/* Show Create PFA if not discharged and not readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 0 && (
@@ -1053,12 +1062,306 @@ const handlePBUpdate = async () => {
 // ✅ Update PB Assessment Handler end
 
 
+// Prefill patient behaviour form handler start
+const [PBPrefillData, setPBPrefillData] = useState({});
+const [PBPrefillModal, setPBPrefillModal] = useState(false);
+
+const handlePatientBehaviourPreFill = async (prefillPBID = null) => {
+  // Normalize ID if object
+  if (typeof prefillPBID === "object" && prefillPBID !== null) {
+    prefillPBID = prefillPBID.ipb_id || prefillPBID.entry_id;
+  }
+
+  if (!prefillPBID) {
+    Swal.fire({
+      icon: "warning",
+      title: "Missing Patient Behavior ID",
+      text: "No valid Patient Behavior ID was provided for prefill.",
+    });
+    return;
+  }
+
+  console.log("Patient Behavior ID For Prefill:", prefillPBID);
+  const token = localStorage.getItem("Authorization");
+
+  try {
+    const branch_id = selectedBranch;
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/intake-patient-behavior/assessment/${prefillPBID}?branch_id=${branch_id}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+      }
+    );
+
+    const data = await response.json();
+    console.log("Raw Patient Behavior API Response:", data);
+
+    if (!response.ok) {
+      Swal.fire({
+        icon: "error",
+        title: "Fetch Failed",
+        text:
+          data.message ||
+          "Unable to fetch Patient Behavior data for prefill.",
+      });
+      return;
+    }
+
+    const latestAssessment = data.data || null;
+    if (!latestAssessment) {
+      Swal.fire({
+        icon: "info",
+        title: "No Data Found",
+        text: "No Patient Behavior data available for this ID.",
+      });
+      return;
+    }
+
+    // ✅ Open modal only when we have valid data
+    setPBPrefillModal(true);
+
+    // ✅ Wrap in array so PatientCommonInfo works
+    setSelectedUser([latestAssessment]);
+
+    // ✅ Build mapped data for Patient Behavior
+    const mappedData = {
+      ipb_id: latestAssessment.ipb_id,
+      user_id: latestAssessment.user_id,
+      entry_id: latestAssessment.entry_id,
+      branch_id: latestAssessment.branch_id,
+      visit_no: latestAssessment.visit_no,
+
+      date_of_assessment: latestAssessment.date_of_assessment
+        ? new Date(latestAssessment.date_of_assessment)
+        : null,
+
+      most_important_thing_life:
+        latestAssessment.most_important_thing_life || "",
+      life_aim: latestAssessment.life_aim || "",
+      current_mental_status_center:
+        latestAssessment.current_mental_status_center || "",
+      planned_after_discharge:
+        latestAssessment.planned_after_discharge || "",
+      family_expectations_after_discharge:
+        latestAssessment.family_expectations_after_discharge || "",
+
+      // Arrays
+      attitude_during_interview:
+        latestAssessment.attitude_during_interview || [],
+      silent_behavior_observations:
+        latestAssessment.silent_behavior_observations || [],
+      patient_mental_stage: latestAssessment.patient_mental_stage || [],
+
+      // Yes/No values
+      uses_alone: latestAssessment.uses_alone || "No",
+      moody: latestAssessment.moody || "No",
+      always_worried: latestAssessment.always_worried || "No",
+      always_sad: latestAssessment.always_sad || "No",
+      lack_of_confidence: latestAssessment.lack_of_confidence || "No",
+      stubborn_nature: latestAssessment.stubborn_nature || "No",
+      instant_aggressive: latestAssessment.instant_aggressive || "No",
+      uses_slang_language: latestAssessment.uses_slang_language || "No",
+      disrespects_parents: latestAssessment.disrespects_parents || "No",
+      vandalizes_house: latestAssessment.vandalizes_house || "No",
+      fights_at_home: latestAssessment.fights_at_home || "No",
+      tells_lies: latestAssessment.tells_lies || "No",
+      too_expensive: latestAssessment.too_expensive || "No",
+      steals_theft: latestAssessment.steals_theft || "No",
+      borrows_money: latestAssessment.borrows_money || "No",
+      gambles_speculates: latestAssessment.gambles_speculates || "No",
+      bluffs_people: latestAssessment.bluffs_people || "No",
+      admits_mistakes: latestAssessment.admits_mistakes || "No",
+      sense_of_responsibility: latestAssessment.sense_of_responsibility || "No",
+      compassion_sympathy: latestAssessment.compassion_sympathy || "No",
+      lazy_careless: latestAssessment.lazy_careless || "No",
+      negative_thoughts_others: latestAssessment.negative_thoughts_others || "No",
+      criminal_nature: latestAssessment.criminal_nature || "No",
+      substance_affected_sexual_relation:
+        latestAssessment.substance_affected_sexual_relation || "No",
+      nervous_anxiety_without_substance:
+        latestAssessment.nervous_anxiety_without_substance || "No",
+      concentrate_work_after_substance:
+        latestAssessment.concentrate_work_after_substance || "No",
+      better_feelings_after_substance:
+        latestAssessment.better_feelings_after_substance || "No",
+      financial_responsibility_ahead:
+        latestAssessment.financial_responsibility_ahead || "No",
+      guilty_ashamed_substance_abuse:
+        latestAssessment.guilty_ashamed_substance_abuse || "No",
+      avoid_people_places: latestAssessment.avoid_people_places || "No",
+      substance_making_life_sad:
+        latestAssessment.substance_making_life_sad || "No",
+      sleeping_eating_problems:
+        latestAssessment.sleeping_eating_problems || "No",
+      stop_control_substance_abuse:
+        latestAssessment.stop_control_substance_abuse || "No",
+      bad_result_abuse_substance:
+        latestAssessment.bad_result_abuse_substance || "No",
+      talked_tried_suicide: latestAssessment.talked_tried_suicide || "No",
+      substance_dependent_think:
+        latestAssessment.substance_dependent_think || "No",
+
+      consent: latestAssessment.consent || "No",
+      prepared_by: latestAssessment.prepared_by || "",
+      signature: latestAssessment.signature || "",
+
+      status: latestAssessment.status || "Pending",
+
+      // ✅ Patient details
+      patient_name: latestAssessment.name || "",
+      dob: latestAssessment.dob ? new Date(latestAssessment.dob) : null,
+      gender: latestAssessment.gender || "",
+      phone: latestAssessment.phone || "",
+      email: latestAssessment.email || "",
+      admit_date: latestAssessment.admit_date
+        ? new Date(latestAssessment.admit_date)
+        : null,
+      ward_name: latestAssessment.ward_name || "",
+      address: latestAssessment.address || "",
+      gks_id: latestAssessment.gks_id || "",
+    };
+
+    setPBPrefillData(mappedData);
+
+    console.log("Mapped Patient Behavior Prefill Data:", mappedData);
+  } catch (error) {
+    console.error("Prefill fetch error:", error);
+    Swal.fire({
+      icon: "error",
+      title: "Network Error",
+      text: "Unable to fetch Patient Behavior data due to a network issue.",
+    });
+  }
+};
+// Prefill patient behaviour form handler end
+
+
+
+// Patient behaviour readmission form handler start
+
+const handlePBReadmissionFormSubmit = async (e) => {
+  e.preventDefault();
+  setIsLoading(true); // Start loader
+  console.log("Form Data:", PBPrefillData);
+
+  // 🛠️ Construct payload in correct format (matching API structure)
+  const payload = {
+    user_id: PBPrefillData?.user_id,
+    date_of_assessment: PBPrefillData?.date_of_assessment
+      ? new Date(PBPrefillData.date_of_assessment).toISOString().split("T")[0]
+      : "", // "YYYY-MM-DD"
+
+    // ✅ Map fields from PBPrefillData
+    most_important_thing_life: PBPrefillData?.most_important_thing_life || "",
+    life_aim: PBPrefillData?.life_aim || "",
+    current_mental_status_center: PBPrefillData?.current_mental_status_center || "",
+    planned_after_discharge: PBPrefillData?.planned_after_discharge || "",
+    family_expectations_after_discharge: PBPrefillData?.family_expectations_after_discharge || "",
+
+    attitude_during_interview: (PBPrefillData?.attitude_during_interview || []).map(normalizeValue),
+    silent_behavior_observations: (PBPrefillData?.silent_behavior_observations || []).map(normalizeValue),
+    patient_mental_stage: (PBPrefillData?.patient_mental_stage || []).map(normalizeValue),
+
+    // ✅ Questions → Yes/No mapping
+    uses_alone: PBPrefillData?.uses_alone || "No",
+    moody: PBPrefillData?.moody || "No",
+    always_worried: PBPrefillData?.always_worried || "No",
+    always_sad: PBPrefillData?.always_sad || "No",
+    lack_of_confidence: PBPrefillData?.lack_of_confidence || "No",
+    stubborn_nature: PBPrefillData?.stubborn_nature || "No",
+    instant_aggressive: PBPrefillData?.instant_aggressive || "No",
+    uses_slang_language: PBPrefillData?.uses_slang_language || "No",
+    disrespects_parents: PBPrefillData?.disrespects_parents || "No",
+    vandalizes_house: PBPrefillData?.vandalizes_house || "No",
+    fights_at_home: PBPrefillData?.fights_at_home || "No",
+    tells_lies: PBPrefillData?.tells_lies || "No",
+    too_expensive: PBPrefillData?.too_expensive || "No",
+    steals_theft: PBPrefillData?.steals_theft || "No",
+    borrows_money: PBPrefillData?.borrows_money || "No",
+    gambles_speculates: PBPrefillData?.gambles_speculates || "No",
+    bluffs_people: PBPrefillData?.bluffs_people || "No",
+    admits_mistakes: PBPrefillData?.admits_mistakes || "No",
+    sense_of_responsibility: PBPrefillData?.sense_of_responsibility || "No",
+    compassion_sympathy: PBPrefillData?.compassion_sympathy || "No",
+    lazy_careless: PBPrefillData?.lazy_careless || "No",
+    negative_thoughts_others: PBPrefillData?.negative_thoughts_others || "No",
+    criminal_nature: PBPrefillData?.criminal_nature || "No",
+    substance_affected_sexual_relation: PBPrefillData?.substance_affected_sexual_relation || "No",
+    nervous_anxiety_without_substance: PBPrefillData?.nervous_anxiety_without_substance || "No",
+    concentrate_work_after_substance: PBPrefillData?.concentrate_work_after_substance || "No",
+    better_feelings_after_substance: PBPrefillData?.better_feelings_after_substance || "No",
+    financial_responsibility_ahead: PBPrefillData?.financial_responsibility_ahead || "No",
+    guilty_ashamed_substance_abuse: PBPrefillData?.guilty_ashamed_substance_abuse || "No",
+    avoid_people_places: PBPrefillData?.avoid_people_places || "No",
+    substance_making_life_sad: PBPrefillData?.substance_making_life_sad || "No",
+    sleeping_eating_problems: PBPrefillData?.sleeping_eating_problems || "No",
+    stop_control_substance_abuse: PBPrefillData?.stop_control_substance_abuse || "No",
+    bad_result_abuse_substance: PBPrefillData?.bad_result_abuse_substance || "No",
+    talked_tried_suicide: PBPrefillData?.talked_tried_suicide || "No",
+    substance_dependent_think: PBPrefillData?.substance_dependent_think || "No",
+
+    // ✅ Footer fields
+    consent: PBPrefillData?.consent || "No",
+    prepared_by: PBPrefillData?.prepared_by || "",
+    signature: PBPrefillData?.signature || "",
+  };
+
+  console.log("📦 Final Payload:", payload);
+
+  try {
+    const token = localStorage.getItem("Authorization");
+    const branch_id = selectedBranch;
+
+    const response = await fetch(
+      `https://gks-yjdc.onrender.com/api/intake-patient-behavior/create-assessment?branch_id=${branch_id}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!response.ok) throw new Error("API call failed");
+
+    const data = await response.json();
+    setIsLoading(false);
+
+    Swal.fire({
+      icon: "success",
+      title: "Readmission Form Created Successfully",
+      text: "The patient readmission behavior assessment was submitted successfully.",
+    }).then(() => setIsPatientBehaviourModalOpen(false));
+
+    console.log("✅ Readmission Data:", data);
+  } catch (err) {
+    console.error("❌ Readmission Submit Error:", err);
+    setIsLoading(false);
+
+    Swal.fire({
+      icon: "error",
+      title: "Unexpected Error",
+      text: "Failed to submit Readmission Form. Check console for error.",
+    });
+  }
+};
+
+// Patient behaviour readmission form handler end
+
+
 
   //Close all modal handler
   const closeAllmodal = () => {
     setIsPatientBehaviourModalOpen(false);
     setViewPBModal(false);
     setPBEditModal(false);
+    setPBPrefillModal(false);
   };
   //PDf view download pdf code handler
     const [pfaDownload, setpfaDownload] = useState(false);
@@ -2189,6 +2492,423 @@ const handlePBUpdate = async () => {
   </div>
 </CommonModal>
 {/* Patient edit behaviour form end */}
+
+
+
+{/* Patient readmission behaviour form start */}
+<CommonModal
+  isOpen={PBPrefillModal}
+  title="Readmission Patient behavior / रोगी का व्यवहार / Create Patient behavior / रोगी का व्यवहार"
+  toggler={closeAllmodal}
+  maxWidth="1200px"
+>
+  <PatientCommonInfo
+    selectedUser={selectedUser}
+    labels={{
+      name: "Patient name/प्रयासक का नाम :",
+      sex: "Gender/प्रयासक का लिंग :",
+      age: "Age/प्रयासक का उम्र :",
+      date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+      ageValue: patientCalAge,
+    }}
+  />
+
+  <div className="row px-3 pt-4 pb-3">
+    <form
+      className="container mt-4 mb-5"
+     onSubmit={handlePBReadmissionFormSubmit}
+    >
+      {/* Assessment Date */}
+      <div className="col-md-6 mb-3">
+        <Label className="col-sm-12 col-form-label col-xl-6">
+          {dateOfAssessment}
+        </Label>
+        <Col xl="5" sm="12">
+          <div className="input-group">
+            <DatePicker
+              className="form-control digits"
+              selected={
+                PBPrefillData?.date_of_assessment
+                  ? new Date(PBPrefillData.date_of_assessment)
+                  : null
+              }
+              onChange={(date) =>
+                setPBPrefillData((prev) => ({
+                  ...prev,
+                  date_of_assessment: date,
+                }))
+              }
+            />
+          </div>
+        </Col>
+      </div>
+
+      {/* Example fields */}
+      <div className="row align-items-baseline">
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label htmlFor="mostImportantThingLife" className="form-label">
+              What is the most important thing in life? / जीवन में सबसे महत्वपूर्ण चीज़ क्या है?
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="mostImportantThingLife"
+              value={PBPrefillData?.most_important_thing_life || ""}
+              onChange={(e) =>
+                setPBPrefillData((prev) => ({
+                  ...prev,
+                  most_important_thing_life: e.target.value,
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label htmlFor="lifeAim" className="form-label">
+              Life's Aim / जिंदगी का लक्ष्य
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="lifeAim"
+              value={PBPrefillData?.life_aim || ""}
+              onChange={(e) =>
+                setPBPrefillData((prev) => ({
+                  ...prev,
+                  life_aim: e.target.value,
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label htmlFor="mentalStatus" className="form-label">
+              Current Mental Status here in center (वर्तमान मानसिक स्थिति यहाँ केंद्र में)
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="current_mental_status_center"
+              value={PBPrefillData?.current_mental_status_center || ""}
+              onChange={(e) =>
+                setPBPrefillData((prev) => ({
+                  ...prev,
+                  current_mental_status_center: e.target.value,
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-3">
+            <label htmlFor="planned_after_discharge" className="form-label">
+              What is planned after discharge from center (डिस्चार्ज के बाद क्या सोचता है?)
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="planned_after_discharge"
+              value={PBPrefillData?.planned_after_discharge || ""}
+              onChange={(e) =>
+                setPBPrefillData((prev) => ({
+                  ...prev,
+                  planned_after_discharge: e.target.value,
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        <div className="col-md-6">
+          <div className="mb-4">
+            <label htmlFor="family_expectations_after_discharge" className="form-label">
+              What Expectations do you have for family after discharge? (छुट्टी के बाद परिवार से आपकी क्या उम्मीदें हैं?)
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="family_expectations_after_discharge"
+              value={PBPrefillData?.family_expectations_after_discharge || ""}
+              onChange={(e) =>
+                setPBPrefillData((prev) => ({
+                  ...prev,
+                  family_expectations_after_discharge: e.target.value,
+                }))
+              }
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ✅ Attitude Checkboxes Prefill */}
+      <fieldset className="mb-4 border rounded p-3">
+        <legend className="fs-5 fw-bold">ATTITUDE DURING INTERVIEW / साक्षात्कार के दौरान रवैया</legend>
+        <div className="row">
+          {attitudeOptions.map((option, idx) => {
+            const slug = option
+              .split("/")[0]
+              .trim()
+              .toLowerCase()
+              .replace(/\s+/g, "_");
+            return (
+              <div className="col-md-3 col-sm-6 mb-2" key={idx}>
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input checkbox_animated"
+                    id={`attitude-${idx}`}
+                    checked={PBPrefillData?.attitude_during_interview?.includes(slug) || false}
+                    onChange={() =>
+                      setPBPrefillData((prev) => {
+                        const current = prev.attitude_during_interview || [];
+                        return {
+                          ...prev,
+                          attitude_during_interview: current.includes(slug)
+                            ? current.filter((o) => o !== slug)
+                            : [...current, slug],
+                        };
+                      })
+                    }
+                  />
+                  <label className="form-check-label" htmlFor={`attitude-${idx}`}>
+                    {option}
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      {/* ✅ Silent Behaviour Prefill */}
+      <fieldset className="mb-4 border rounded p-3">
+        <legend className="fs-5 fw-bold">
+          Silent Behavior Observations / रोगी मौन का व्यवहार अवलोकन
+        </legend>
+        <div className="row">
+          {silentBehaviorOptions.map((option, idx) => {
+            const slug = option.split("/")[0].trim().toLowerCase().replace(/\s+/g, "_");
+            return (
+              <div className="col-md-3 col-sm-6 mb-2" key={idx}>
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input checkbox_animated"
+                    id={`silent-${idx}`}
+                    checked={PBPrefillData?.silent_behavior_observations?.includes(slug) || false}
+                    onChange={() =>
+                      setPBPrefillData((prev) => {
+                        const current = prev.silent_behavior_observations || [];
+                        return {
+                          ...prev,
+                          silent_behavior_observations: current.includes(slug)
+                            ? current.filter((o) => o !== slug)
+                            : [...current, slug],
+                        };
+                      })
+                    }
+                  />
+                  <label className="form-check-label" htmlFor={`silent-${idx}`}>
+                    {option}
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      {/* ✅ Mental Stage Prefill */}
+      <div className="container mt-4">
+        <h5 className="mt-4 mb-3">
+          Patient's Mental Stage of Patient as per Interviewer (Tick on Correct)
+          <br />
+          साक्षात्कारकर्ता के अनुसार रोगी की मानसिक अवस्था (सही पर टिक करें)
+        </h5>
+        <table className="table table-bordered text-center">
+          <thead className="table-light">
+            <tr>
+              {["Pre Contemplation", "Contemplation", "Preparation", "Action", "Maintenance"].map((stage) => (
+                <th key={stage}>{stage}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              {["pre_contemplation", "contemplation", "preparation", "action", "maintenance"].map((stageKey) => (
+                <td key={stageKey}>
+                  <input
+                    type="checkbox"
+                    className="form-check-input checkbox_animated"
+                    checked={PBPrefillData?.patient_mental_stage?.includes(stageKey) || false}
+                    onChange={() =>
+                      setPBPrefillData((prev) => {
+                        const current = prev.patient_mental_stage || [];
+                        return {
+                          ...prev,
+                          patient_mental_stage: current.includes(stageKey)
+                            ? current.filter((s) => s !== stageKey)
+                            : [...current, stageKey],
+                        };
+                      })
+                    }
+                  />
+                </td>
+              ))}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* ✅ Patient Behavior Questions Prefill */}
+      <div className="table-responsive mb-4">
+        <table className="table table-bordered align-middle">
+          <thead className="table-light">
+            <tr>
+              <th style={{ width: "70%" }}>
+                Patient behavior (According to him) <br />
+                रोगी का व्यवहार (उनके अनुसार)
+              </th>
+              <th className="text-center" style={{ width: "30%" }}>
+                Yes / No <br /> हां / नहीं
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {questions.map((q, index) => (
+              <tr key={index}>
+                <td>
+                  <strong>{q.en}</strong>
+                  <br />
+                  <span className="text-muted">{q.hi}</span>
+                </td>
+                <td className="text-center d-flex gap-4 justify-content-center">
+                  {/* ✅ Yes Option */}
+                  <div className="form-check form-check-inline">
+                    <input
+                      className="form-check-input radio_animated"
+                      type="radio"
+                      name={q.key}
+                      id={`${q.key}Yes`}
+                      value="Yes"
+                      checked={PBPrefillData?.[q.key] === "Yes"}
+                      onChange={() =>
+                        setPBPrefillData((prev) => ({
+                          ...prev,
+                          [q.key]: "Yes",
+                        }))
+                      }
+                    />
+                    <label className="form-check-label" htmlFor={`${q.key}Yes`}>
+                      Yes / हां
+                    </label>
+                  </div>
+
+                  {/* ✅ No Option */}
+                  <div className="form-check form-check-inline">
+                    <input
+                      className="form-check-input radio_animated"
+                      type="radio"
+                      name={q.key}
+                      id={`${q.key}No`}
+                      value="No"
+                      checked={PBPrefillData?.[q.key] === "No"}
+                      onChange={() =>
+                        setPBPrefillData((prev) => ({
+                          ...prev,
+                          [q.key]: "No",
+                        }))
+                      }
+                    />
+                    <label className="form-check-label" htmlFor={`${q.key}No`}>
+                      No / नहीं
+                    </label>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* ✅ Consent, Signature, Prepared By */}
+      <div className="col-md-12 mt-3 mb-3">
+        <div className="checkbox ms-3">
+          <Input
+            id="checkbox1"
+            type="checkbox"
+            checked={PBPrefillData?.consent === "Yes"}
+            onChange={(e) =>
+              setPBPrefillData((prev) => ({
+                ...prev,
+                consent: e.target.checked ? "Yes" : "No",
+              }))
+            }
+          />
+          <Label className="text-muted" for="checkbox1">
+            {consent}
+          </Label>
+        </div>
+      </div>
+
+      <div className="row mt-3 mb-3">
+        <div className="col-md-4">
+          <Label>{signature}</Label>
+          <Input
+            type="text"
+            placeholder="Signature"
+            value={PBPrefillData?.signature || ""}
+            onChange={(e) =>
+              setPBPrefillData((prev) => ({
+                ...prev,
+                signature: e.target.value,
+              }))
+            }
+          />
+        </div>
+
+        <div className="col-md-12 mt-3 mb-3">
+          <Label>{prepared}</Label>
+          <Input
+            type="text"
+            placeholder="Prepared By"
+            value={PBPrefillData?.prepared_by || ""}
+            onChange={(e) =>
+              setPBPrefillData((prev) => ({
+                ...prev,
+                prepared_by: e.target.value,
+              }))
+            }
+          />
+        </div>
+      </div>
+
+      {/* Submit Button */}
+      <div className="d-flex gap-3">
+        <Button color="primary" type="submit" disabled={isLoading}>
+          {isLoading ? (
+            <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+          ) : PBPrefillData ? "Readmission Patient Behaviour Form" : "Create Patient Behaviour Form"}
+        </Button>
+      </div>
+    </form>
+  </div>
+</CommonModal>
+{/* Patient readmission behaviour form end */}
+
+
+
+
+
+
+
+
 
 
 
