@@ -23,7 +23,7 @@ const Leftbar = () => {
             <div className="main-header-left">
                 {mixLayout ?
                     <div className="logo-wrapper">
-                        <Link to={`${process.env.PUBLIC_URL}/dashboard/default`}>
+                        <Link to={`${process.env.PUBLIC_URL}/dashboard/Home`}>
                             {/* <Image attrImage={{ className: 'img-fluid d-inline', src: `${require('../../assets/images/logo/logo.png')}`, alt: '' }} /> */}
                             {/* <p>Drug de-addiction center</p> */}
                             <img src={logo} alt="Logo" className='dashboard__logo mx-auto d-flex'/>
@@ -31,7 +31,7 @@ const Leftbar = () => {
                     </div>
                     :
                     <div className="dark-logo-wrapper">
-                        <Link to={`${process.env.PUBLIC_URL}/dashboard/default`}>
+                        <Link to={`${process.env.PUBLIC_URL}/dashboard/Home`}>
                             {/* <Image attrImage={{ className: 'img-fluid d-inline', src: `${require('../../assets/images/logo/dark-logo.png')}`, alt: '' }} /> */}
                             <p>Drug de-addiction center</p>
                         </Link>

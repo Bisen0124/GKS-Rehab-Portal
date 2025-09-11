@@ -31,7 +31,7 @@ const Login = ({ selected }) => {
     setPassword("test123");
     if (email !== "" && password !== "") {
       localStorage.setItem("login", true);
-      window.location.href = `${process.env.PUBLIC_URL}/dashboard/default`;
+      window.location.href = `${process.env.PUBLIC_URL}/dashboard/Home`;
     }
   };
 

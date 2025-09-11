@@ -16,7 +16,7 @@ const GoogleCus = () => {
   }, [value, name]);
 
   const googleAuth = async () => {
-    history(`${process.env.PUBLIC_URL}/dashboard/default`);
+    history(`${process.env.PUBLIC_URL}/dashboard/Home`);
   };
 
   return (

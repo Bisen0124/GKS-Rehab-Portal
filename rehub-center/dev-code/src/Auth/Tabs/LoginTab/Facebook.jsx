@@ -17,7 +17,7 @@ const FacebookCus = () => {
   }, [value, name]);
 
   const facebookAuth = async () => {
-    history(`${process.env.PUBLIC_URL}/dashboard/default`);
+    history(`${process.env.PUBLIC_URL}/dashboard/Home`);
   };
   return (
     <Fragment>

@@ -1,5 +1,5 @@
 // dashbaord
-import Default from "../Components/Dashboard/Default";
+import Home from "../Components/Dashboard/Home";
 import Ecommerce from "../Components/Dashboard/Ecommerce";
 
 //widgets
@@ -229,7 +229,7 @@ import GetPFAReports from "../Components/Reports/PFA-Report";
 
 export const routes = [
   //dashboard
-  { path: `${process.env.PUBLIC_URL}/dashboard/default`, Component: <Default /> },
+  { path: `${process.env.PUBLIC_URL}/dashboard/Home`, Component: <Home /> },
   { path: `${process.env.PUBLIC_URL}/dashboard/ecommerce`, Component: <Ecommerce /> },
 
   // //widgets
@@ -407,7 +407,7 @@ export const routes = [
 
 
     //Dashboard Form
-   { path: `${process.env.PUBLIC_URL}/Dashboard/Default`, Component : <Default/>},
+   { path: `${process.env.PUBLIC_URL}/Dashboard/Home`, Component : <Home/>},
 
 
    //Registration Form

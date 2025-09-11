@@ -9,7 +9,7 @@ export const MENUITEMS = [
         "title": "Dashboard",
         "icon": "icon-class",
         "type": "link",
-        "path": `${process.env.PUBLIC_URL}/Dashboard/Default`
+        "path": `${process.env.PUBLIC_URL}/Dashboard/Home`
       }
     ]
   },
@@ -199,7 +199,7 @@ export const MENUITEMS = [
   //     //   type: "sub",
   //     //   active: false,
   //     //   children: [
-  //     //     { path: `${process.env.PUBLIC_URL}/dashboard/default`, title: "Default", type: "link" },
+  //     //     { path: `${process.env.PUBLIC_URL}/dashboard/Home`, title: "Default", type: "link" },
   //     //     // { path: `${process.env.PUBLIC_URL}/dashboard/ecommerce`, title: "Ecommerce", type: "link" },
   //     //   ],
   //     // },

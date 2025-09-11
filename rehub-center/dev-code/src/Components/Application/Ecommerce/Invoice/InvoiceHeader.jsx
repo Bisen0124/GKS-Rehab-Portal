@@ -10,7 +10,7 @@ const InvoiceHeader = () => {
                 <Col sm="6">
                     <Media>
                         <div className="media-left">
-                            {/* <Link to={`${process.env.PUBLIC_URL}/dashboard/default`}>
+                            {/* <Link to={`${process.env.PUBLIC_URL}/dashboard/Home`}>
                                 <Image attrImage={{ className: 'media-object img-60', src: `${login}`, alt: '' }}
                                 />
                             </Link> */}

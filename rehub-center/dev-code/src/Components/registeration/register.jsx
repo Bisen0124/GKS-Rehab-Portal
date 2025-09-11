@@ -1,4 +1,4 @@
-import React, { Fragment, useState, useEffect } from "react";
+import React, { Fragment, useState, useEffect, useRef } from "react";
 import {
   patientRegisterTitle,
   dateOfAdmission,
@@ -30,7 +30,7 @@ import {
   Table,
   Spinner,
 } from "reactstrap";
-import { Btn, H5, Breadcrumbs, H4 } from "../../AbstractElements";
+import { Btn} from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import DataTable from "react-data-table-component";
@@ -39,11 +39,17 @@ import HeaderCard from "../Common/Component/HeaderCard";
 import { Data } from "../UiKits/Spinners/SpinnerData";
 
 import Swal from "sweetalert2"; // ✅ Make sure this is imported at the top
-import SweetAlert from "sweetalert2";
 
 import { useBranch } from "../../contexts/BranchContext";
 
+//Download view data in PDF 
+import html2pdf from "html2pdf.js";
+
 function Register() {
+ 
+  //Download view data in PDF 
+    const pdfRef = useRef();
+
   //Branches selection
   const { selectedBranch } = useBranch();
 
@@ -895,9 +901,19 @@ function Register() {
           email: entry.email,
           phone: entry.phone,
           wardName: entry.ward_name,
-          dischargeDate: entry.discharge_date
-            ? new Date(entry.discharge_date).toLocaleDateString()
-            : "Not Discharge yet",
+          // dischargeDate: entry.discharge_date
+          //   ? new Date(entry.discharge_date).toLocaleDateString()
+          //   : "Not Discharge yet",
+          dischargeDate: entry.discharge_date ? (
+            <span style={{ color: "#28a745", fontWeight: "500" }}>
+              {new Date(entry.discharge_date).toLocaleDateString()}
+            </span>
+          ) : (
+            <span style={{ color: "#dc3545", fontWeight: "500" }}>
+              Not Discharge yet
+            </span>
+          ),
+          
         }));
 
         setAllIPDData(mappedData); // keep the full data
@@ -953,6 +969,7 @@ function Register() {
       selector: (row) => row.dischargeDate,
       sortable: true,
       center: true,
+      classNames:"Discharge"
     },
     {
       name: "Action",
@@ -1043,6 +1060,42 @@ function Register() {
     }
     return password;
   };
+
+  //PDf view download pdf code handler
+    const [pfaDownload, setpfaDownload] = useState(false);
+    const handleDownloadPDF = () => {
+      const element = pdfRef.current;
+      setpfaDownload(true);
+  
+      // Add a temporary class to scale fonts if needed
+      element.classList.add("pdf-scale");
+  
+      const opt = {
+        margin: [10, 10, 10, 10], // top, left, bottom, right
+        filename: `user_data_${selectedUser.name}_${selectedUser.user_id}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          scrollY: 0,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+  
+      html2pdf()
+        .set(opt)
+        .from(element)
+        .save()
+        .then(() => {
+          toast.success("Download complete!");
+          element.classList.remove("pdf-scale");
+  
+          setTimeout(() => {
+            setpfaDownload(false);
+          }, 2000);
+        });
+    };
+
 
   return (
     <Fragment>
@@ -1580,104 +1633,124 @@ function Register() {
         isOpen={viewModal}
         title={"User view data"}
         toggler={closeUserViewModal}
-        maxWidth="800px"
+        maxWidth="1200px"
       >
-        <Col sm="12">
-          <Card>
-            <div className="table-responsive">
-              <Table size="sm" className="table-bordered">
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan="2" className="text-center">
-                        <div className="loader-box">
-                          <Spinner
-                            className={
-                              selectedSpinner?.spinnerClass || "spinner-border"
-                            }
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ) : selectedUser && typeof selectedUser === "object" ? (
-                    <>
-                      <tr>
-                        <th>Name</th>
-                        <td>{selectedUser.name}</td>
-                      </tr>
-                      <tr>
-                        <th>Email</th>
-                        <td>{selectedUser.email}</td>
-                      </tr>
-                      <tr>
-                        <th>Phone</th>
-                        <td>{selectedUser.phone}</td>
-                      </tr>
-                      <tr>
-                        <th>WhatsApp No</th>
-                        <td>{selectedUser.whatsapp_no}</td>
-                      </tr>
-                      <tr>
-                        <th>Date of Birth</th>
-                        <td>
-                          {new Date(selectedUser.dob).toLocaleDateString()}
-                        </td>
-                      </tr>
-                      <tr>
-                        <th>Gender</th>
-                        <td>{selectedUser.gender}</td>
-                      </tr>
-                      <tr>
-                        <th>Address</th>
-                        <td>{selectedUser.address}</td>
-                      </tr>
-                      <tr>
-                        <th>Relative Name</th>
-                        <td>{selectedUser.relative_name}</td>
-                      </tr>
-                      <tr>
-                        <th>Date of Admission</th>
-                        <td>
-                          {new Date(
-                            selectedUser.date_of_admission
-                          ).toLocaleDateString()}
-                        </td>
-                      </tr>
-                      <tr>
-                        <th>Ward Name</th>
-                        <td>{selectedUser.ward_name || "N/A"}</td>
-                      </tr>
-                      <tr>
-  <th>User Role</th>
-  <td>
-    {{
-      1: "SuperAdmin",
-      2: "BranchAdmin",
-      3: "BranchOperator",
-      4: "Patient"
-    }[selectedUser.isRole] || "N/A"}
-  </td>
-</tr>
-                    </>
-                  ) : (
-                    <tr>
-                      <td colSpan="2" className="text-center">
-                        No data available
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </Table>
-            </div>
-          </Card>
-        </Col>
+    <div className="table-responsive p-4" ref={pdfRef}>
+      <h4
+        style={{
+          textAlign: "center",
+          textDecoration: "underline",
+          padding: "20px 0",
+        }}
+      >
+        User Details / उपयोगकर्ता विवरण
+      </h4>
+
+      <Table size="sm" className="table-auto table-bordered">
+        <tbody style={{ fontSize: "14px" }}>
+          {isLoading ? (
+            <tr>
+              <td colSpan="2" className="text-center">
+                <div className="loader-box">
+                  <Spinner
+                    className={selectedSpinner?.spinnerClass || "spinner-border"}
+                  />
+                </div>
+              </td>
+            </tr>
+          ) : selectedUser && typeof selectedUser === "object" ? (
+            <>
+              <tr>
+                <th className="text-start p-3">Name</th>
+                <td className="border p-3">{selectedUser.name}</td>
+              </tr>
+              <tr>
+                <th className="text-start p-3">Email</th>
+                <td className="border p-3">{selectedUser.email}</td>
+              </tr>
+              <tr>
+                <th className="text-start p-3">Phone</th>
+                <td className="border p-3">{selectedUser.phone}</td>
+              </tr>
+              <tr>
+                <th className="text-start p-3">WhatsApp No</th>
+                <td className="border p-3">{selectedUser.whatsapp_no}</td>
+              </tr>
+              <tr>
+                <th className="text-start p-3">Date of Birth</th>
+                <td className="border p-3">
+                  {selectedUser.dob
+                    ? new Date(selectedUser.dob).toLocaleDateString()
+                    : ""}
+                </td>
+              </tr>
+              <tr>
+                <th className="text-start p-3">Gender</th>
+                <td className="border p-3">{selectedUser.gender}</td>
+              </tr>
+              <tr>
+                <th className="text-start p-3">Address</th>
+                <td className="border p-3">{selectedUser.address}</td>
+              </tr>
+              <tr>
+                <th className="text-start p-3">Relative Name</th>
+                <td className="border p-3">{selectedUser.relative_name}</td>
+              </tr>
+              <tr>
+                <th className="text-start p-3">Date of Admission</th>
+                <td className="border p-3">
+                  {selectedUser.date_of_admission
+                    ? new Date(selectedUser.date_of_admission).toLocaleDateString()
+                    : ""}
+                </td>
+              </tr>
+              <tr>
+                <th className="text-start p-3">Ward Name</th>
+                <td className="border p-3">{selectedUser.ward_name || "N/A"}</td>
+              </tr>
+              <tr>
+                <th className="text-start p-3">User Role</th>
+                <td className="border p-3">
+                  {{
+                    1: "SuperAdmin",
+                    2: "BranchAdmin",
+                    3: "BranchOperator",
+                    4: "Patient",
+                  }[selectedUser.isRole] || "N/A"}
+                </td>
+              </tr>
+            </>
+          ) : (
+            <tr>
+              <td colSpan="2" className="text-center">
+                No data available
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </Table>
+    </div>
+
+    <div style={{ margin: "0 20px 20px 20px" }}>
+    <button
+      disabled={pfaDownload}
+      id="download-btn"
+      className="btn btn-primary"
+      onClick={handleDownloadPDF}
+    >
+      {pfaDownload
+        ? "Your patient report is being downloaded... / आपका patient रिपोर्ट डाउनलोड हो रहा है..."
+        : "Download patient registered report"}
+    </button>
+  </div>
+
       </CommonModal>
 
       <CommonModal
         isOpen={showEditModal}
-        title={"Update Your Data"}
+        title={"Update Patient Registration Data"}
         toggler={closeUserViewModal}
-        maxWidth="800px"
+        maxWidth="1200px"
       >
         {showEditModal && (
           <div className="modal-overlay">

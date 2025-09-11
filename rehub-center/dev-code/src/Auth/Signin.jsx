@@ -80,7 +80,7 @@ const Login = ({ selected }) => {
   
         // ✅ Redirect to dashboard after short delay
         setTimeout(() => {
-          window.location.href = `${process.env.PUBLIC_URL}/dashboard/default`;
+          window.location.href = `${process.env.PUBLIC_URL}/dashboard/Home`;
         }, 1000);
       } else {
         // ✅ Handle invalid login attempts
