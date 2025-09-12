@@ -905,12 +905,12 @@ function Register() {
           //   ? new Date(entry.discharge_date).toLocaleDateString()
           //   : "Not Discharge yet",
           dischargeDate: entry.discharge_date ? (
-            <span style={{ color: "#28a745", fontWeight: "500" }}>
+            <span class="Discharge" style={{ color: "#28a745", fontWeight: "500" }}>
               {new Date(entry.discharge_date).toLocaleDateString()}
             </span>
           ) : (
-            <span style={{ color: "#dc3545", fontWeight: "500" }}>
-              Not Discharge yet
+            <span class="ntDischarge" style={{ color: "#dc3545", fontWeight: "500" }}>
+              Not Discharge
             </span>
           ),
           
@@ -969,7 +969,6 @@ function Register() {
       selector: (row) => row.dischargeDate,
       sortable: true,
       center: true,
-      classNames:"Discharge"
     },
     {
       name: "Action",

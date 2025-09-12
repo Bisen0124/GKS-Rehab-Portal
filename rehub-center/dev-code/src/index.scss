@@ -70,3 +70,14 @@ background-color: #24695c0d !important;
   .register__wrapper .react-datepicker-wrapper{
     width: 100% !important;
   }
+  span.ntDischarge, span.Discharge {
+    border: 1px solid red;
+    display: flex;
+    padding: 5px;
+    border-radius: 5px;
+    justify-content: center;
+}
+span.Discharge {
+  color: green !important;
+  border: 1px solid green !important;
+}

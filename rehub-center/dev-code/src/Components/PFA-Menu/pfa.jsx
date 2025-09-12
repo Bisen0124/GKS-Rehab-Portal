@@ -201,27 +201,32 @@ function PFA() {
           const pfaDate = user.recent_pfa_date
             ? new Date(user.recent_pfa_date)
             : null;
-  
+        
+          let isPFACompleted = false;
           let userStatus = (
             <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
           );
+        
           if (admitDate && pfaDate && admitDate > pfaDate) {
+            isPFACompleted = true;
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
-  
+        
           const dischargeStatus = user.discharge_status_text || "Unknown";
-  
+        
           return {
             id: user.user_id,
             gks_id: user.gks_id || "N/A",
             name: user.name,
             status: userStatus,
+            isPFACompleted,   // ✅ new flag
             dischargeStatus: user.discharge_status,
             dischargeStatusText: dischargeStatus,
             isReadmission: user.is_readmission,
             recent_pfa_id: user.recent_pfa_id,
           };
         });
+        
   
         setTimeout(() => {
           setData(formatted);
@@ -417,7 +422,7 @@ function PFA() {
      
 
         {/* Show Create PFA if not discharged and not readmission */}
-        {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+        {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
           <span
             onClick={() => toggle(row.id)}
             style={{ cursor: "pointer" }}
@@ -439,7 +444,35 @@ function PFA() {
               <line x1="8" y1="12" x2="16" y2="12"></line>
             </svg>
           </span>
-        )}
+        )} */}
+
+{row.dischargeStatus === 0 && row.isReadmission === 0 && (
+  <span
+    onClick={() => (row.isPFACompleted ? null : toggle(row.id))}
+    style={{
+      cursor: row.isPFACompleted ? "not-allowed" : "pointer",
+      opacity: row.isPFACompleted ? 0.5 : 1,
+    }}
+    title={row.isPFACompleted ? "PFA Completed" : "Create PFA"}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+    </svg>
+  </span>
+)}
+
       </div>
     );
   },
@@ -961,7 +994,7 @@ const tablePFAPatientListColumns = [
   // };
 
   //PFA edit handler
-  const [PFAeditData, setPFAeditData] = useState(null);
+  const [PFAeditData, setPFAeditData] = useState({});
   const [PFAEditModal, setPFAEditModal] = useState(false);
 
   const [PFAEditIndividualDataModal, setPFAEditIndividualDataModal] = useState(false);
@@ -1628,7 +1661,7 @@ const parseDateString = (dateStr) => {
 
   return (
     <Fragment>
-      <div className="pfa__wrapper p-20">
+      <div className="pfa__wrapper">
         {/* <H5>{patientFirstAssessment}</H5> */}
 
 {/* register user data into data table format start */}
@@ -3213,7 +3246,7 @@ const parseDateString = (dateStr) => {
 
  
   {PFAEditIndividualDataModal && (
-      <div className="row">
+      <div className="row p-3">
         <Form
           onSubmit={(e) => {
             e.preventDefault();
@@ -3734,7 +3767,7 @@ const parseDateString = (dateStr) => {
               </div>
 
           {/* Submit Button */}
-          <div className="d-flex gap-3">
+          <div className="d-flex gap-3 pt-4">
             <Button color="primary" type="submit" disabled={isLoading}>
               {isLoading ? (
                 <span
@@ -3743,7 +3776,7 @@ const parseDateString = (dateStr) => {
                   aria-hidden="true"
                 ></span>
               ) : (
-                "Update PFA"
+                "Update Patient First Assessment (PFA)"
               )}
             </Button>
           </div>
