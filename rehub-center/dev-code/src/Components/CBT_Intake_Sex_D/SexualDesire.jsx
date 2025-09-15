@@ -186,7 +186,7 @@ function SexualDesire() {
 
   //This React hook calculates a user's age based on their date of birth (dob) and returns the age on PFA form by create.
   const [selectedUser, setSelectedUser] = useState(null); // User data
-  const dob = selectedUser?.[0]?.dob;
+  const dob = selectedUser?.dob;
   const patientCalAge = useCalculateAge(dob);
   console.log("DOB", patientCalAge);
 
@@ -237,8 +237,11 @@ function SexualDesire() {
             ? new Date(user.recent_cbt_date)
             : null;
 
+            let isSHCompleted = false;
+
           let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
           if (admitDate && CBTDate && admitDate > CBTDate) {
+            isSHCompleted = false;
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
 
@@ -249,6 +252,7 @@ function SexualDesire() {
             gks_id: user.gks_id || "N/A",
             name: user.name,
             status: userStatus,
+            isSHCompleted,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: user.discharge_status_text,
             isReadmission: user.is_readmission,
@@ -324,7 +328,7 @@ function SexualDesire() {
             )}
 
             {/* Show Create PFA if not discharged and not readmission */}
-            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
               <span
                 onClick={() => createSDHandler(row.id)}
                 style={{ cursor: "pointer" }}
@@ -346,7 +350,34 @@ function SexualDesire() {
                   <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
               </span>
-            )}
+            )} */}
+
+{row.dischargeStatus === 0 && row.isReadmission === 0 && (
+  <span
+    onClick={() => (row.isSHCompleted ? null : createSDHandler(row.id))}
+    style={{
+      cursor: row.isSHCompleted ? "not-allowed" : "pointer",
+      opacity: row.isSHCompleted ? 0.5 : 1,
+    }}
+    title={row.isSHCompleted ? "Sexsual Desire Completed" : "Create Sexsual Desire From"}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+    </svg>
+  </span>
+)}
           </div>
         );
       },
@@ -575,7 +606,7 @@ function SexualDesire() {
         const data = await response.json();
         console.log(data)
         if (!response.ok) throw new Error("User fetch failed");
-        setSelectedUser(data);
+        setSelectedUser(data.data[0]);
       } catch (error) {
         console.error("Fetch error:", error);
       }
@@ -1159,7 +1190,7 @@ function SexualDesire() {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Cognitive Behavioral Test/ संज्ञानात्मक व्यवहार परीक्षण Patient List"
+                      title="All Sexual History / यौन इतिहास Patient Data List"
                       className="p-0"
                     />
                   </div>
@@ -1220,7 +1251,7 @@ function SexualDesire() {
       {/* Create and submit Sexual desire from start  */}
       <CommonModal
         isOpen={modal}
-        title={SexualHistory}
+        title="Create Sexual History / यौन इतिहास Form"
         toggler={closeAllModal}
         maxWidth="1200px"
       >
@@ -1361,7 +1392,7 @@ function SexualDesire() {
         <div className="sd__wrapper">
           <Form className="theme-form" onSubmit={readmissionSDhandler} >
             {/* Patient name and date of assessment */}
-            <PatientCommonInfo
+            {/* <PatientCommonInfo
               selectedUser={selectedUser}
               labels={{
                 name: "Patient name/प्रयासक का नाम :",
@@ -1370,7 +1401,7 @@ function SexualDesire() {
                 date_of_admission: "Date of Admission/प्रवेश की तिथि :",
                 ageValue: patientCalAge,
               }}
-            />
+            /> */}
             <div className="sd__createWrapper p-3">
               <div className="row">
                 {/*Date of Assessment section/परीक्षण की तारीख :*/}
@@ -1620,7 +1651,7 @@ function SexualDesire() {
           onSubmit={updateSexualDesireHandler}
            >
             {/* Patient name and date of assessment */}
-            <PatientCommonInfo
+            {/* <PatientCommonInfo
               selectedUser={selectedUser}
               labels={{
                 name: "Patient name/प्रयासक का नाम :",
@@ -1629,7 +1660,7 @@ function SexualDesire() {
                 date_of_admission: "Date of Admission/प्रवेश की तिथि :",
                 ageValue: patientCalAge,
               }}
-            />
+            /> */}
             <div className="sd__createWrapper p-3">
               <div className="row">
                 {/*Date of Assessment section/परीक्षण की तारीख :*/}

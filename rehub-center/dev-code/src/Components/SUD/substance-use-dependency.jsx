@@ -79,7 +79,7 @@ function SUD() {
 
     //This React hook calculates a user's age based on their date of birth (dob) and returns the age on PFA form by create.
     const [selectedUser, setSelectedUser] = useState(null); // User data
-    const dob = selectedUser?.[0]?.dob;
+    const dob = selectedUser?.dob;
     const patientCalAge = useCalculateAge(dob);
     console.log("DOB", patientCalAge);
 
@@ -273,7 +273,9 @@ function SUD() {
     useEffect(() => {
         const token = localStorage.getItem("Authorization");
 
-        fetch("https://gks-yjdc.onrender.com/api/sda/all-sda-entries", {
+        if (!selectedBranch) return; // avoid empty branch fetch
+
+        fetch(`https://gks-yjdc.onrender.com/api/sda/all-sda-entries?branch_id=${selectedBranch}`, {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -501,8 +503,9 @@ function SUD() {
 
         try {
             const token = localStorage.getItem("Authorization");
+            const branch_id = selectedBranch;
 
-            const response = await fetch("https://gks-yjdc.onrender.com/api/sda/create-assessment", {
+            const response = await fetch(`https://gks-yjdc.onrender.com/api/sda/create-assessment?branch_id=${branch_id}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -559,10 +562,11 @@ function SUD() {
         console.log("recentSUDID =>", recentSUDID);
 
         const token = localStorage.getItem("Authorization");
+        const branch_id = selectedBranch;
 
         try {
             const response = await fetch(
-                `https://gks-yjdc.onrender.com/api/sda/assessment/${recentSUDID}`,
+                `https://gks-yjdc.onrender.com/api/sda/assessment/${recentSUDID}?branch_id=${branch_id}`,
                 {
                     method: "GET",
                     headers: {
@@ -674,8 +678,9 @@ function SUD() {
         // Now you can send the payload
         try {
             const token = localStorage.getItem("Authorization");
+            const branch_id = selectedBranch;
 
-            const response = await fetch("https://gks-yjdc.onrender.com/api/sda/create-assessment", {
+            const response = await fetch(`https://gks-yjdc.onrender.com/api/sda/create-assessment?branch_id=${branch_id}`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -735,10 +740,11 @@ function SUD() {
         }
         setIsLoading(true);
         const token = localStorage.getItem("Authorization");
+        const branch_id = selectedBranch;
 
         try {
             const response = await fetch(
-                `https://gks-yjdc.onrender.com/api/sda/assessment/${SUDId}`,
+                `https://gks-yjdc.onrender.com/api/sda/assessment/${SUDId}?branch_id=${branch_id}`,
                 {
                     method: "GET",
                     headers: {
@@ -789,10 +795,11 @@ function SUD() {
         console.log("editSUDID =>", editSUDID);
 
         const token = localStorage.getItem("Authorization");
+        const branch_id = selectedBranch;
 
         try {
             const response = await fetch(
-                `https://gks-yjdc.onrender.com/api/sda/assessment/${editSUDID}`,
+                `https://gks-yjdc.onrender.com/api/sda/assessment/${editSUDID}?branch_id=${branch_id}`,
                 {
                     method: "GET",
                     headers: {
@@ -876,8 +883,9 @@ function SUD() {
         // Now you can send the payload
         try {
             const token = localStorage.getItem("Authorization");
+            const branch_id = selectedBranch;
 
-            const response = await fetch(`https://gks-yjdc.onrender.com/api/sda/update-assessment/${viewSUDData.sda_id}`, {
+            const response = await fetch(`https://gks-yjdc.onrender.com/api/sda/update-assessment/${viewSUDData.sda_id}?branch_id=${branch_id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -1035,7 +1043,7 @@ function SUD() {
                                 <CardBody>
                                     <div class="d-flex pb-2 justify-content-between">
                                         <HeaderCard
-                                            title="Substance Use Dependecny (SUD) Patient List"
+                                            title="All Substance Use Dependecny (SUD) Patient Data List"
                                             className="p-0"
                                         />
                                     </div>
@@ -1135,7 +1143,7 @@ function SUD() {
                                 </FormGroup>
                             </div>
                         </div>
-                        <Table className="table table-bordered">
+                        <Table className="table table-bordered m-3">
                             <thead>
                                 <tr>
                                     <th>S.No</th>
@@ -1237,7 +1245,7 @@ function SUD() {
                                 {consent}
                             </Label>
                         </div>
-                        <div className="col-md-12">
+                        <div className="col-md-12 px-3">
                             <Col md="4">
                                 <FormGroup>
                                     <Label>{signature}</Label>
@@ -1258,7 +1266,7 @@ function SUD() {
                         </div>
 
                         {/* Submit Button */}
-                        <div className="d-flex gap-3">
+                        <div className="d-flex gap-3 px-3 mb-3 mt-4">
                             <Button color="primary" type="submit" disabled={isLoading}>
                                 {isLoading ? (
                                     <span

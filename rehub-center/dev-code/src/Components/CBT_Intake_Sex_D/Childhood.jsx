@@ -122,7 +122,7 @@ function Childhood() {
 
   //This React hook calculates a user's age based on their date of birth (dob) and returns the age on PFA form by create.
   const [selectedUser, setSelectedUser] = useState(null); // User data
-  const dob = selectedUser?.[0]?.dob;
+  const dob = selectedUser?.dob;
   const patientCalAge = useCalculateAge(dob);
   console.log("DOB", patientCalAge);
 
@@ -161,10 +161,13 @@ function Childhood() {
             ? new Date(user.recent_intake_childhood_date)
             : null;
 
+            let isChildhoodCompleted = false;
+
           let userStatus = (
             <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
           );
           if (admitDate && RecentChildhoodDate && RecentChildhoodDate > RecentChildhoodDate) {
+             isChildhoodCompleted = true;
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
 
@@ -176,6 +179,7 @@ function Childhood() {
             name: user.name,
             recentChildhoodIDs: user.recent_intake_childhood_id,
             status: userStatus,
+            isChildhoodCompleted,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: dischargeStatus,
             isReadmission: user.is_readmission,
@@ -280,7 +284,7 @@ function Childhood() {
               </span> */}
 
             {/* Show Create PFA if not discharged and not readmission */}
-            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
               <span
                 onClick={() => CreateChildHoodHandler(row.id)}
                 style={{ cursor: "pointer" }}
@@ -302,7 +306,34 @@ function Childhood() {
                   <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
               </span>
-            )}
+            )} */}
+
+{row.dischargeStatus === 0 && row.isReadmission === 0 && (
+  <span
+    onClick={() => (row.isChildhoodCompleted ? null : CreateChildHoodHandler(row.id))}
+    style={{
+      cursor: row.isChildhoodCompleted ? "not-allowed" : "pointer",
+      opacity: row.isChildhoodCompleted ? 0.5 : 1,
+    }}
+    title={row.isChildhoodCompleted ? "Childhood Completed" : "Create Childhood Form"}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+    </svg>
+  </span>
+)}
           </div>
         );
       },
@@ -442,7 +473,7 @@ function Childhood() {
       sortable: true,
       cell: (row) => (
         <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          <p className="badge bg-success p-2">SUD Brief {row.status}</p>
+          <p className="badge bg-success p-2">Childhood {row.status}</p>
         </span>
       ),
     },
@@ -1229,7 +1260,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All Patient Data List" className="p-0" />
+                    <HeaderCard title="All Childhood /बचपन Patient Data List" className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -1285,7 +1316,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Childhood create form start */}
       <CommonModal
         isOpen={isChildhoodModalOpen}
-        title={childhood}
+        title="Create Childhood /बचपन Form"
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
@@ -1570,7 +1601,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* View Childhood data into modal start */}
       <CommonModal
         isOpen={viewChildhoodModal}
-        title="Childhood / बचपन View Form Data"
+        title="View Childhood / बचपन Form"
         toggler={closeAllmodal}
         maxWidth="1200px"
       >

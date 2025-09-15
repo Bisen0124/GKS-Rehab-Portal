@@ -81,3 +81,27 @@ span.Discharge {
   color: green !important;
   border: 1px solid green !important;
 }
+
+//data table header css
+.dIWBoj{
+  vertical-align: middle;
+    border-top: none;
+    background-color: rgba(36, 105, 92, 0.05);
+    border: 1px solid var(--theme-default);
+    padding: 15px;
+    font-size: 16px;
+    color: var(--theme-default);
+    font-weight: 600;
+    justify-self: center;
+}
+//data table td css
+.jzOJPm{
+  border-width: 0 var(--bs-border-width);
+  border-color: #e6edef !important;
+  padding: 0.75rem;
+  border-style: solid;
+  justify-content: center;
+}
+.bfgYDb{
+  justify-content: center !important;
+}

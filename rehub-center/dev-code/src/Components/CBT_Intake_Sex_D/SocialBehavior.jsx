@@ -123,7 +123,7 @@ function SocialBehavior() {
 
   //This React hook calculates a user's age based on their date of birth (dob) and returns the age on PFA form by create.
   const [selectedUser, setSelectedUser] = useState(null); // User data
-  const dob = selectedUser?.[0]?.dob;
+  const dob = selectedUser?.dob;
   const patientCalAge = useCalculateAge(dob);
   console.log("DOB", patientCalAge);
 
@@ -162,10 +162,12 @@ function SocialBehavior() {
             ? new Date(user.recent_intake_social_behavior_date)
             : null;
 
+          let isSBCompleted = false;
           let userStatus = (
             <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
           );
           if (admitDate && SBDate && admitDate > SBDate) {
+            isSBCompleted = true;
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
 
@@ -177,6 +179,7 @@ function SocialBehavior() {
             name: user.name,
             recentSbIds: user.recent_intake_social_behavior_id,
             status: userStatus,
+            isSBCompleted,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: dischargeStatus,
             isReadmission: user.is_readmission,
@@ -280,8 +283,35 @@ function SocialBehavior() {
                 ✏️
               </span> */}
 
+{row.dischargeStatus === 0 && row.isReadmission === 0 && (
+  <span
+    onClick={() => (row.isSBCompleted ? null : createSUDBrief(row.id))}
+    style={{
+      cursor: row.isSBCompleted ? "not-allowed" : "pointer",
+      opacity: row.isSBCompleted ? 0.5 : 1,
+    }}
+    title={row.isSBCompleted ? "Social behaviour completed" : "Create Social behaviour Form"}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+    </svg>
+  </span>
+)}
+
             {/* Show Create PFA if not discharged and not readmission */}
-            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
               <span
                 onClick={() => createSUDBrief(row.id)}
                 style={{ cursor: "pointer" }}
@@ -303,7 +333,7 @@ function SocialBehavior() {
                   <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
               </span>
-            )}
+            )} */}
           </div>
         );
       },
@@ -440,7 +470,7 @@ function SocialBehavior() {
       sortable: true,
       cell: (row) => (
         <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          <p className="badge bg-success p-2">SUD Brief {row.status}</p>
+          <p className="badge bg-success p-2">SB {row.status}</p>
         </span>
       ),
     },
@@ -1153,7 +1183,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All Patient Data List" className="p-0" />
+                    <HeaderCard title="All Social Behavior Patient Data List" className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -1468,7 +1498,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
-  <PatientCommonInfo
+  {/* <PatientCommonInfo
     selectedUser={selectedUser}
     labels={{
       name: "Patient name/प्रयासक का नाम :",
@@ -1477,7 +1507,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       date_of_admission: "Date of Admission/प्रवेश की तिथि :",
       ageValue: patientCalAge,
     }}
-  />
+  /> */}
 
   <div className="row px-3 pt-4 pb-3">
     <form className="theme-form" onSubmit={(e)=>{
@@ -1650,7 +1680,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
-  <PatientCommonInfo
+  {/* <PatientCommonInfo
     selectedUser={selectedUser}
     labels={{
       name: "Patient name/प्रयासक का नाम :",
@@ -1659,7 +1689,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       date_of_admission: "Date of Admission/प्रवेश की तिथि :",
       ageValue: patientCalAge,
     }}
-  />
+  /> */}
 
   <div className="row px-3 pt-4 pb-3">
     <form

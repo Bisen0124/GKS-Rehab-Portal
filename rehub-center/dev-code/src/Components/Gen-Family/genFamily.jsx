@@ -640,11 +640,11 @@ function GenFamily() {
             )}
 
             {/* Show Create PFA if not discharged and not readmission */}
-            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
               <span
                 onClick={() => createGenFamilyToggle(row.id)}
                 style={{ cursor: "pointer" }}
-                title="Create PFA"
+                title="Create Gen Family Form"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -662,7 +662,34 @@ function GenFamily() {
                   <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
               </span>
-            )}
+            )} */}
+
+{row.dischargeStatus === 0 && row.isReadmission === 0 && (
+  <span
+    onClick={() => (row.isGenFamCompleted ? null : createGenFamilyToggle(row.id))}
+    style={{
+      cursor: row.isGenFamCompleted ? "not-allowed" : "pointer",
+      opacity: row.isGenFamCompleted ? 0.5 : 1,
+    }}
+    title={row.isGenFamCompleted ? "Create Gen Family Form" : "Create Gen Family Form"}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+    </svg>
+  </span>
+)}
           </div>
         );
       },
@@ -817,8 +844,11 @@ function GenFamily() {
             ? new Date(user.recent_gen_fam_date)
             : null;
 
+            let isGenFamCompleted = false;
+
           let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
           if (admitDate && genfamilyDate && admitDate > genfamilyDate) {
+            isGenFamCompleted = true;
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
 
@@ -832,6 +862,7 @@ function GenFamily() {
             email: user.email,
             phone: user.phone,
             status: userStatus,
+            isGenFamCompleted,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: dischargeStatus,
             isReadmission: user.is_readmission,
@@ -5076,7 +5107,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="Showing All Gen Family Data" className="p-0" />
+                    <HeaderCard title="All Gen Family Data List" className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">

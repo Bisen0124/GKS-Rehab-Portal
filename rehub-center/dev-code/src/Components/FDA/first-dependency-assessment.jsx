@@ -74,7 +74,7 @@ function FDA() {
 
   //This React hook calculates a user's age based on their date of birth (dob) and returns the age on PFA form by create.
   const [selectedUser, setSelectedUser] = useState(null); // User data
-  const dob = selectedUser?.[0]?.dob;
+  const dob = selectedUser?.dob;
   const patientCalAge = useCalculateAge(dob);
   console.log("DOB", patientCalAge);
 
@@ -314,11 +314,14 @@ function FDA() {
           const FDADate = user.recent_fda_date
             ? new Date(user.recent_fda_date)
             : null;
-  
+
+
+            let isFDACompleted = false;
           let userStatus = (
             <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
           );
           if (admitDate && FDADate && admitDate > FDADate) {
+           isFDACompleted = true;
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
   
@@ -329,6 +332,7 @@ function FDA() {
             gks_id: user.gks_id || "N/A",
             name: user.name,
             status: userStatus,
+            isFDACompleted,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: dischargeStatus,
             isReadmission: user.is_readmission,
@@ -439,7 +443,7 @@ function FDA() {
             )}
 
             {/* Show Create PFA if not discharged and not readmission */}
-            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
               <span
                 onClick={() => createFDA(row.id)}
                 style={{ cursor: "pointer" }}
@@ -461,7 +465,34 @@ function FDA() {
                   <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
               </span>
-            )}
+            )} */}
+
+{row.dischargeStatus === 0 && row.isReadmission === 0 && (
+  <span
+    onClick={() => (row.isFDACompleted ? null : createFDA(row.id))}
+    style={{
+      cursor: row.isFDACompleted ? "not-allowed" : "pointer",
+      opacity: row.isFDACompleted ? 0.5 : 1,
+    }}
+    title={row.isFDACompleted ? "FDA Completed" : "Create FDA"}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+    </svg>
+  </span>
+)}
           </div>
         );
       },
@@ -564,8 +595,12 @@ function FDA() {
   const [FDAEditData, setFDAEditData] = useState(null);
   const [FDAeditModal, setFDAeditModal] = useState(false);
 
+
+
+//prefill readmission FDA 
+const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
   const handleFDAPreFill = async (recentFDAiD = null) => {
-    setFDAeditModal(true)
+    setFDAReadmissionModal(true)
     if (typeof recentFDAiD === "object" && recentFDAiD !== null) {
       recentFDAiD = recentFDAiD.recent_fda_id;
     }
@@ -701,7 +736,8 @@ function FDA() {
 
   //close view data modal
   const closeUserViewModal = () => {
-    setFDAeditModal(false)
+    setFDAeditModal(false);
+    setFDAReadmissionModal(false);
   };
 
   const [viewFDAData, setviewFDAData] = useState(null)
@@ -1024,7 +1060,7 @@ function FDA() {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="All Patient Data List"
+                      title="All First Dependency Assessment Data List"
                       className="p-0"
                     />
                   </div>
@@ -1126,7 +1162,7 @@ function FDA() {
 
           </div>
 
-          <div className="col-md-12 pt-5 table-responsive">
+          <div className="col-md-12 p-3 table-responsive">
             <Table bordered>
               <thead>
                 <tr>
@@ -1152,7 +1188,7 @@ function FDA() {
 
 
 
-          <div className="col-md-12 table-responsive">
+          <div className="col-md-12 p-3 table-responsive">
             <Table bordered>
               <thead>
                 <tr>
@@ -1189,7 +1225,7 @@ function FDA() {
               </tbody>
             </Table>
           </div>
-          <div className="col-md-12">
+          <div className="col-md-12 px-2">
             <FormGroup className="mb-4 mt-4">
               <Label>{Remarks}</Label>
               <Input
@@ -1204,7 +1240,7 @@ function FDA() {
               />
             </FormGroup>
           </div>
-          <div className="col-md-12">
+          <div className="col-md-12 px-2">
             <FormGroup className="mb-4 mt-4">
               <Label>{prepared}</Label>
               <Input
@@ -1221,7 +1257,7 @@ function FDA() {
           </div>
 
           {/* Submit Button */}
-          <div className="d-flex gap-3">
+          <div className="d-flex gap-3 px-2 pb-3">
             <Button color="primary" type="submit" disabled={isLoading}>
               {isLoading ? (
                 <span
@@ -1239,7 +1275,7 @@ function FDA() {
 
       {/* Readmission FDA Edit Modal */}
       <CommonModal
-        isOpen={FDAeditModal}
+        isOpen={FDAReadmissionModal}
         title="Readmission PFA"
         toggler={closeUserViewModal}
         maxWidth="1200px"
@@ -1273,7 +1309,7 @@ function FDA() {
             </div>
           </div>
 
-          <div className="col-md-12 table-responsive">
+          <div className="col-md-12 p-3 table-responsive">
             <Table bordered>
               <thead>
                 <tr>
@@ -1499,7 +1535,7 @@ function FDA() {
             </div>
           </div>
 
-          <div className="col-md-12 table-responsive">
+          <div className="col-md-12 p-3 table-responsive">
             <Table bordered>
               <thead>
                 <tr>
@@ -1546,7 +1582,7 @@ function FDA() {
             </Table>
           </div>
 
-          <div className="col-md-12">
+          <div className="col-md-12 px-3">
             <FormGroup className="mb-4 mt-4">
               <Label>Remarks</Label>
               <Input
@@ -1560,7 +1596,7 @@ function FDA() {
             </FormGroup>
           </div>
 
-          <div className="col-md-12">
+          <div className="col-md-12 px-3">
             <FormGroup className="mb-4 mt-4">
               <Label>Prepared By</Label>
               <Input
@@ -1578,7 +1614,7 @@ function FDA() {
           </div>
 
           {/* Submit Button */}
-          <div className="d-flex gap-3">
+          <div className="d-flex gap-3 px-3 pt-3 pb-3">
             <Button color="primary" type="submit" disabled={isLoading}>
               {isLoading ? (
                 <span

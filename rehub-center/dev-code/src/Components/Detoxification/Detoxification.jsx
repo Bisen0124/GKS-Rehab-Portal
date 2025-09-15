@@ -208,10 +208,12 @@ const Detoxification = () => {
             ? new Date(user.recent_detox_end_date)
             : null;
 
+            let isDetoxCompleted = false;
           let userStatus = (
             <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
           );
           if (admitDate && DetoxRecentDate && admitDate > DetoxRecentDate) {
+             isDetoxCompleted = true;
             userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
           }
 
@@ -223,6 +225,7 @@ const Detoxification = () => {
             recentDetoxId: user.recent_detox_id,
             name: user.name,
             status: userStatus,
+            isDetoxCompleted,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: user.discharge_status_text,
             isReadmission: user.is_readmission,
@@ -296,7 +299,7 @@ const Detoxification = () => {
           //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
             {/* Show Edit only if not discharged and readmission */}
-            {/* {row.dischargeStatus === 0 && row.isReadmission === 1 && (
+            {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
                 onClick={() => handleDetoxPrefill(row.recentDetoxId)}
                 style={{ cursor: "pointer" }}
@@ -304,18 +307,18 @@ const Detoxification = () => {
               >
                 ✏️
               </span>
-            )} */}
+            )}
 
-<span
+{/* <span
                 onClick={() => handleDetoxPrefill(row.recentDetoxId)}
                 style={{ cursor: "pointer" }}
                 title="Readmission Sexsual Desire Form"
               >
                 ✏️
-              </span>
+              </span> */}
 
             {/* Show Create PFA if not discharged and not readmission */}
-            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
               <span
                 onClick={() => createDetoxificationHandler(row.id)}
                 style={{ cursor: "pointer" }}
@@ -337,7 +340,35 @@ const Detoxification = () => {
                   <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
               </span>
-            )}
+            )} */}
+
+
+{row.dischargeStatus === 0 && row.isReadmission === 0 && (
+  <span
+    onClick={() => (row.isDetoxCompleted ? null : createDetoxificationHandler(row.id))}
+    style={{
+      cursor: row.isDetoxCompleted ? "not-allowed" : "pointer",
+      opacity: row.isDetoxCompleted ? 0.5 : 1,
+    }}
+    title={row.isDetoxCompleted ? "Detox Completed" : "Create Detoxification Form"}
+  >
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+      <line x1="12" y1="8" x2="12" y2="16"></line>
+      <line x1="8" y1="12" x2="16" y2="12"></line>
+    </svg>
+  </span>
+)}
           </div>
         );
       },
@@ -1226,7 +1257,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Detoxification Patient Lists"
+                      title="All Detoxification Patient Lists"
                       className="p-0"
                     />
                   </div>
@@ -1284,7 +1315,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
       {/* Create and submit Detoxification from start  */}
       <CommonModal
         isOpen={isopenDetoxCreateForm}
-        title="Detoxification Form"
+        title="Create Detoxification Form"
         toggler={closeAllModal}
         maxWidth="1200px"
       >
@@ -1513,7 +1544,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
       onSubmit={updateDetoxHandler}
     >
       {/* Patient Info */}
-      <PatientCommonInfo
+      {/* <PatientCommonInfo
         selectedUser={selectedUser}
         labels={{
           name: "Patient name/प्रयासक का नाम :",
@@ -1522,7 +1553,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
           date_of_admission: "Date of Admission/प्रवेश की तिथि :",
           ageValue: patientCalAge,
         }}
-      />
+      /> */}
 
       <div className="container mt-4">
         {/* Date of Assessment */}
@@ -1685,7 +1716,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
         </div>
 
         {/* Submit */}
-        <div className="d-flex gap-3 mt-3">
+        <div className="d-flex gap-3 mt-4 pb-3">
           <Button color="primary" type="submit" disabled={isLoading}>
             {isLoading ? (
               <span className="spinner-border spinner-border-sm"></span>
@@ -1711,7 +1742,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
   <div className="sd__wrapper">
     <Form className="theme-form" onSubmit={handleDetoxReadmissionSubmit}>
       {/* Patient Info */}
-      <PatientCommonInfo
+      {/* <PatientCommonInfo
         selectedUser={selectedUser}
         labels={{
           name: "Patient name/प्रयासक का नाम :",
@@ -1720,7 +1751,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
           date_of_admission: "Date of Admission/प्रवेश की तिथि :",
           ageValue: patientCalAge,
         }}
-      />
+      /> */}
 
       <div className="container mt-4">
         {/* Detoxified Yes/No */}
