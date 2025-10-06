@@ -312,7 +312,7 @@ export const Like = "Like";
 export const MyProfile = "My Profile";
 export const Bio = "Bio";
 export const City = "City";
-export const Password = "Password";
+export const Password = "Password/पासवर्ड";
 export const EmailPhone = "Email or Phone"
 export const Website = "Website";
 export const Save = "Save";
@@ -1419,7 +1419,7 @@ export const dateOfAdmission = "Date of Admission/प्रवेश की त�
 export const dateOfAssessment = " Date of Assessment/परीक्षण की तारीख :";
 export const patientName = "Name of Patient/मरीज का नाम : ";
 export const patientRelativeName = " Name of Patient Relative/ मरीज संबंधी का नाम : ";
-export const patientSex = "Sex/लिंग :";
+export const patientSex = "Patient Sex/रोगी का लिंग :";
 export const wardDetails = "Wards details / वार्डों का विवरण";
 export const male="Male/पुरुष";
 export const female="Female/महिला";
@@ -1854,12 +1854,15 @@ export const occupationOptions = [
 
 //Patient Registration Form
 
-export const patientRegisterTitle = "Patient Registration Form";
-export const patientRelativePhoneNumber = 'Patient Phone Number';
-export const patientRelativeEmailAddr = 'Patient Relative Email Address';
-export const patientDateOfBirth = 'Patient Date of Birth';
-export const pateintAddress = 'Patient / Relative Address';
-export const registerYourDetail ='New Patient Registration';
+export const patientRegisterTitle = "Patient Registration Form/रोगी पंजीकरण फॉर्म";
+export const patientRelativePhoneNumber = "Patient Phone Number/रोगी फोन नंबर";
+export const patientRelativeEmailAddr = "Patient Relative Email Address/रोगी के संबंधी का ईमेल पता";
+export const patientDateOfBirth = "Patient Date of Birth/रोगी की जन्म तिथि";
+export const pateintAddress = "Patient / Relative Address/रोगी / संबंधी का पता";
+export const registerYourDetail = "New Patient Registration/नया रोगी पंजीकरण";
+export const IspatientWhatsappNo = "Is Patient Phone Number/क्या मरीज़ का फ़ोन नंबर";
+export const whatsAppNo = "WhatsApp Number/व्हाट्सएप नंबर";
+
 
 
 //FPA Data
@@ -2105,3 +2108,14 @@ export const substanceList = [
   "Sedative/Hypnotics / शान्तक/कृत्रिम निद्रावस्था वाली दवाएँ",
   "Amphetamine and Other ATS / एम्फेटामाइन और अन्य ATS"
 ];
+
+export const h4Text =" User Details / उपयोगकर्ता विवरण";
+
+
+export const tableUser = "User ID/उपयोगकर्ता आईडी";
+export const tableGKS = "GKS ID/GKS आईडी";
+export const tablePhone = "Phone/फोन";
+export const tableEmail = "Email/ईमेल";
+export const tableWardName = "Ward Name/वार्ड का नाम";
+export const tableDischarge = "Discharge Date/डिस्चार्ज की तिथि";
+export const tableAction = "Action/क्रिया";

@@ -14,6 +14,9 @@ import {
   name,
   wardDetails,
   wardOptions,
+  IspatientWhatsappNo,
+  whatsAppNo,
+  h4Text,
 } from "../../Constant";
 import {
   Form,
@@ -45,7 +48,13 @@ import { useBranch } from "../../contexts/BranchContext";
 //Download view data in PDF 
 import html2pdf from "html2pdf.js";
 
+import Translated from "../Translated";
+import { useLang } from "../../contexts/LangContext";
+import { getTranslation } from "../../utils/translator";
+
 function Register() {
+
+  const { lang } = useLang(); // get current language from context
  
   //Download view data in PDF 
     const pdfRef = useRef();
@@ -712,32 +721,36 @@ function Register() {
   // ✅ Define table columns
   const tableColumns = [
     {
-      name: "User ID",
+      // name: "User ID",
+      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
       selector: (row) => row.id,
       sortable: true,
       center: true,
     },
     {
-      name: "GKS ID",
+      // name: "GKS ID",
+      name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
-    { name: "Name", selector: (row) => row.name, sortable: true, center: true },
+    { 
+      name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
+      selector: (row) => row.name, sortable: true, center: true },
     {
-      name: "Phone",
+      name: `${getTranslation('Phone/फोन' , lang)}`,
       selector: (row) => row.phone,
       sortable: true,
       center: true,
     },
     {
-      name: "Email",
+      name: `${getTranslation('Email/ईमेल' , lang)}`,
       selector: (row) => row.email,
       sortable: true,
       center: true,
     },
     {
-      name: "Action",
+      name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => (
         <div className="d-flex gap-2">
@@ -934,44 +947,47 @@ function Register() {
   // ✅ Define table columns
   const tableIPDColumns = [
     {
-      name: "User ID",
+      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
+      
       selector: (row) => row.id,
       sortable: true,
       center: true,
     },
     {
-      name: "GKS ID",
+      name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
-    { name: "Name", selector: (row) => row.name, sortable: true, center: true },
+    { 
+      name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
+      selector: (row) => row.name, sortable: true, center: true },
     {
-      name: "Phone",
+      name: `${getTranslation('Phone/फोन' , lang)}`,
       selector: (row) => row.phone,
       sortable: true,
       center: true,
     },
     {
-      name: "Email",
+      name: `${getTranslation('Email/ईमेल' , lang)}`,
       selector: (row) => row.email,
       sortable: true,
       center: true,
     },
     {
-      name: "Ward Name",
+      name: `${getTranslation('Ward Name/वार्ड का नाम' , lang)}`,
       selector: (row) => row.wardName,
       sortable: true,
       center: true,
     },
     {
-      name: "Discharge Date",
+      name: `${getTranslation('Discharge Date/डिस्चार्ज की तिथि' , lang)}`,
       selector: (row) => row.dischargeDate,
       sortable: true,
       center: true,
     },
     {
-      name: "Action",
+      name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => (
         <div className="d-flex gap-2">
@@ -1009,13 +1025,27 @@ function Register() {
     const value = e.target.value.toLowerCase();
     setSIPDearchText(value);
 
+    const normalize = (field) => {
+      if (typeof field === "string") {
+        return field.toLowerCase(); // English case-insensitive
+      }
+      return field?.toString() || ""; // Hindi, numbers, dates, etc.
+    };
+
     const filtered = data.filter((item) => {
       return (
-        item.name?.toLowerCase().includes(value) ||
-        item.email?.toLowerCase().includes(value) ||
-        item.phone?.toString().includes(value) ||
-        item.id?.toString().includes(value) ||
-        item.gks_id?.toLowerCase().includes(value) // Only if gks_id is a string
+        // item.name?.toLowerCase().includes(value) ||
+        // item.email?.toLowerCase().includes(value) ||
+        // item.phone?.toString().includes(value) ||
+        // item.id?.toString().includes(value) ||
+        // item.gks_id?.toLowerCase().includes(value) // Only if gks_id is a string
+        item.name && normalize(item.name).includes(value.toLowerCase()) ||
+item.email && normalize(item.email).includes(value.toLowerCase()) ||
+item.phone && normalize(item.phone).includes(value) ||
+item.id && normalize(item.id).includes(value) ||
+item.gks_id && normalize(item.gks_id).includes(value.toLowerCase()) ||
+item.wardName && normalize(item.wardName).includes(value.toLowerCase()) ||
+item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase())
       );
     });
 
@@ -1032,16 +1062,31 @@ function Register() {
       setFilteredIPDData(allIPDData);
       return;
     }
+    const normalize = (field) => {
+      if (typeof field === "string") {
+        return field.toLowerCase(); // English case-insensitive
+      }
+      return field?.toString() || ""; // Hindi, numbers, dates, etc.
+    };
 
     const IPDfiltered = allIPDData.filter((item) => {
       return (
-        item.name?.toLowerCase().includes(value) ||
-        item.email?.toLowerCase().includes(value) ||
-        item.phone?.toString().includes(value) ||
-        item.id?.toString().includes(value) ||
-        item.gks_id?.toLowerCase().includes(value) ||
-        item.wardName?.toLowerCase().includes(value) ||
-        item.dischargeDate?.toLowerCase().includes(value)
+        // item.name?.toLowerCase().includes(value) ||
+        // item.email?.toLowerCase().includes(value) ||
+        // item.phone?.toString().includes(value) ||
+        // item.id?.toString().includes(value) ||
+        // item.gks_id?.toLowerCase().includes(value) ||
+        // item.wardName?.toLowerCase().includes(value) ||
+        // item.dischargeDate?.toLowerCase().includes(value)
+
+
+        item.name && normalize(item.name).includes(value.toLowerCase()) ||
+item.email && normalize(item.email).includes(value.toLowerCase()) ||
+item.phone && normalize(item.phone).includes(value) ||
+item.id && normalize(item.id).includes(value) ||
+item.gks_id && normalize(item.gks_id).includes(value.toLowerCase()) ||
+item.wardName && normalize(item.wardName).includes(value.toLowerCase()) ||
+item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase())
       );
     });
 
@@ -1109,12 +1154,13 @@ function Register() {
               <CardBody>
                 <div class="d-flex pb-2 justify-content-between">
                   <HeaderCard
-                    title="Registered Patient List"
+                   title={getTranslation("Registered Patient List/ पंजीकृत रोगी सूची" , lang)}
                     className="p-0"
                     qweq
                   />
                   <Btn attrBtn={{ color: "primary", onClick: toggle }}>
-                    {registerYourDetail}
+                    {/* {registerYourDetail} */}
+                    <Translated text={registerYourDetail} />
                   </Btn>
                 </div>
                 <div className="row pb-2">
@@ -1162,7 +1208,8 @@ function Register() {
               <CardBody>
                 <div class="d-flex pb-2 justify-content-between">
                   <HeaderCard
-                    title="All Registered Patient List"
+                    // title="All Registered Patient List"
+                    title={getTranslation("All Registered Patient List/ सभी पंजीकृत रोगियों की सूची" , lang)}
                     className="p-0"
                     qweq
                   />
@@ -1217,7 +1264,8 @@ function Register() {
                 <div className="col-md-6">
                   <FormGroup className="form-group row">
                     <Label className="col-sm-12 col-form-label col-xl-6">
-                      {dateOfAdmission}
+                      {/* {dateOfAdmission} */}
+                      <Translated text={dateOfAdmission} />
                     </Label>
                     <Col xl="5" sm="12">
                       {/* <DatePicker
@@ -1256,7 +1304,8 @@ function Register() {
                 <div className="col-md-6">
                   <FormGroup className="form-group row">
                     <Label className="col-sm-12 col-form-label col-xl-6">
-                      {patientName}
+                      {/* {patientName} */}
+                      <Translated text={patientName} />
                     </Label>
                     <Col xl="5" sm="12">
                       <Input
@@ -1276,7 +1325,8 @@ function Register() {
                 <div className="col-md-6">
                   <FormGroup className="form-group row">
                     <Label className="col-sm-12 col-form-label col-xl-6">
-                      {patientRelativeName}
+                      {/* {patientRelativeName} */}
+                      <Translated text={patientRelativeName} />
                     </Label>
                     <Col xl="5" sm="12">
                       <Input
@@ -1292,7 +1342,8 @@ function Register() {
 
                 {/* Gender */}
                 <div className="col-md-6">
-                  <Label>{patientSex}</Label>
+                <Translated text={patientSex} />
+                  {/* <Label>{patientSex}</Label> */}
                   <div className="radio radio-primary d-flex gap-3">
                     {["Male", "Female", "Other"].map((g) => (
                       <div key={g}>
@@ -1317,7 +1368,8 @@ function Register() {
                   <div className="col-md-12">
                     <FormGroup className="form-group row">
                       <Label className="col-sm-12 col-form-label col-xl-6">
-                        {patientDateOfBirth}
+                      <Translated text={patientDateOfBirth} />
+                        {/* {patientDateOfBirth} */}
                       </Label>
                       <Col xl="5" sm="12">
                         {/* <DatePicker
@@ -1341,7 +1393,8 @@ function Register() {
                   <div className="col-md-12">
                     <FormGroup className="form-group row">
                       <Label className="col-sm-12 col-form-label col-xl-6">
-                        {patientRelativePhoneNumber}
+                        {/* {patientRelativePhoneNumber} */}
+                        <Translated text={patientRelativePhoneNumber} />
                       </Label>
                       <Col xl="5" sm="12">
                         <Input
@@ -1370,7 +1423,8 @@ function Register() {
 
                   {/* WhatsApp Option */}
                   <div className="col-md-12">
-                    <Label>Is it WhatsApp?</Label>
+                  <Translated text={IspatientWhatsappNo} />
+                    {/* <Label>Is it WhatsApp?</Label> */}
                     <div className="radio radio-primary d-flex gap-3">
                       <Input
                         type="radio"
@@ -1399,7 +1453,8 @@ function Register() {
                     <div className="col-md-12">
                       <FormGroup className="form-group row">
                         <Label className="col-sm-12 col-form-label col-xl-6">
-                          WhatsApp Number
+                           <Translated text={whatsAppNo} />
+                          {/* WhatsApp Number */}
                         </Label>
                         <Col xl="5" sm="12">
                           <Input
@@ -1420,7 +1475,8 @@ function Register() {
                   <div className="col-md-12">
                     <FormGroup className="form-group row">
                       <Label className="col-sm-12 col-form-label col-xl-6">
-                        {patientRelativeEmailAddr}
+                      <Translated text={patientRelativeEmailAddr} />
+                        {/* {patientRelativeEmailAddr} */}
                       </Label>
                       <Col xl="5" sm="12">
                         <Input
@@ -1450,7 +1506,8 @@ function Register() {
                   <div className="col-md-12">
                     <FormGroup className="form-group row">
                       <Label className="col-sm-12 col-form-label col-xl-6">
-                        {Password}
+                      <Translated text={Password} />
+                        {/* {Password} */}
                       </Label>
                       <Col xl="5" sm="12">
                         <div className="d-flex justify-content-between align-items-center mb-2">
@@ -1567,7 +1624,8 @@ function Register() {
 
               {/* Wards details */}
               <div className="col-md-6">
-                <Label>{wardDetails}</Label>
+                {/* <Label>{wardDetails}</Label> */}
+                <Translated text={wardDetails} />
                 <div className="radio radio-primary d-flex gap-3">
                   {wardOptions.map((option) => (
                     <div key={option.ward_type_id}>
@@ -1596,7 +1654,8 @@ function Register() {
               {/* Address */}
               <div className="col-md-12">
                 <FormGroup>
-                  <Label>{pateintAddress}</Label>
+                <Translated text={pateintAddress} />
+                  {/* <Label>{pateintAddress}</Label> */}
                   <Input
                     type="textarea"
                     rows="3"
@@ -1642,7 +1701,7 @@ function Register() {
           padding: "20px 0",
         }}
       >
-        User Details / उपयोगकर्ता विवरण
+       {h4Text}
       </h4>
 
       <Table size="sm" className="table-auto table-bordered">

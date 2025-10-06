@@ -53,7 +53,15 @@ import { useBranch } from "../../contexts/BranchContext";
 
 import { Btn, H5, Breadcrumbs, H4 } from "../../AbstractElements";
 
+
+import Translated from "../Translated";
+import { useLang } from "../../contexts/LangContext";
+import { getTranslation } from "../../utils/translator";
+
 const FirstExamination = () => {
+
+   const { lang } = useLang(); // get current language from context
+
 //Branches selection
 const { selectedBranch } = useBranch();
 
@@ -155,19 +163,19 @@ const handleSearchChange = (e) => {
 //Getting registred patient data into table row
 const tableColumns = [
   {
-    name: "User ID",
+   name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
     selector: (row) => row.id,
     sortable: true,
     center: true,
   },
   {
-    name: "GKS ID",
+    name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
     selector: (row) => row.gks_id,
     sortable: true,
     center: true,
   },
   {
-    name: "Name",
+    name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
     selector: (row) => row.name,
     sortable: true,
     cell: (row) => (
@@ -182,7 +190,7 @@ const tableColumns = [
     ),
   },
   {
-    name: "Status",
+    name: `${getTranslation('Status/स्थिति' , lang)}`,
     selector: (row) => row.status,
     sortable: true,
     cell: (row) => (
@@ -193,7 +201,7 @@ const tableColumns = [
   },
 
   {
-    name: "Action",
+    name: `${getTranslation('Action/क्रिया' , lang)}`,
     center: true,
     cell: (row) => {
       // Hide all actions if discharged
@@ -376,14 +384,14 @@ useEffect(() => {
 
 const tableColumnsFDAList = [
   {
-    name: "FE ID",
+    name: "First Examination ID/प्रथम परीक्षा आईडी",
     selector: (row) => row.first_eval_id,
     sortable: true,
     center: true,
   },
   // { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
   {
-    name: "Name",
+    name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
     selector: (row) => row.name,
     sortable: true,
     cell: (row) => (
@@ -398,19 +406,19 @@ const tableColumnsFDAList = [
     ),
   },
   {
-    name: "Email",
+    name: `${getTranslation('Email/ईमेल' , lang)}`,
     selector: (row) => row.email,
     sortable: true,
     center: true,
   },
   {
-    name: "Phone",
+   name: `${getTranslation('Patient Phone/मरीज़ का फ़ोन' , lang)}`,
     selector: (row) => row.phone,
     sortable: true,
     center: true,
   },
   {
-    name: "Status",
+   name: `${getTranslation('Status/स्थिति' , lang)}`,
     selector: (row) => row.status,
     sortable: true,
     cell: (row) => (
@@ -420,7 +428,7 @@ const tableColumnsFDAList = [
     ),
   },
   {
-    name: "Action",
+     name: `${getTranslation('Action/क्रिया' , lang)}`,
     center: true,
     cell: (row) => (
       <div className="d-flex gap-2">

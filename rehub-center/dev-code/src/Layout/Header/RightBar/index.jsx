@@ -5,6 +5,8 @@ import CustomizerContext from '../../../_helper/Customizer';
 import LogoutClass from './Logout';
 import { useBranch } from '../../../contexts/BranchContext';
 
+import LanguageSwitcher from '../../../Components/LanguageSwitcher';
+
 const Rightbar = () => {
   const { sidebarResponsive } = useContext(CustomizerContext);
 
@@ -39,8 +41,12 @@ const Rightbar = () => {
 
   return (
     <Fragment>
+     
       <div className="nav-right col pull-right right-menu p-0">
         <UL attrUL={{ className: `simple-list d-flex flex-row nav-menus gap-5 align-center ${sidebarResponsive ? 'open' : ''}` }}>
+         
+         <LanguageSwitcher/>
+
           <h6 style={{ marginBottom: '0px' }}>{userName}</h6>
 
           <div

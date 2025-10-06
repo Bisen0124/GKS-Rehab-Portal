@@ -61,7 +61,15 @@ import { substanceList } from '../../Constant/index';
 
 import { useBranch } from "../../contexts/BranchContext";
 
+
+import Translated from "../Translated";
+import { useLang } from "../../contexts/LangContext";
+import { getTranslation } from "../../utils/translator";
+
 function SUD() {
+
+      const { lang } = useLang(); // get current language from context
+
      //Branches selection
         const { selectedBranch } = useBranch();
     
@@ -164,10 +172,10 @@ function SUD() {
 
     //Getting registred patient data into table row 
     const tableColumns = [
-        { name: "User ID", selector: (row) => row.id, sortable: true, center: true },
-        { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
+        { name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.id, sortable: true, center: true },
+        { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
         {
-            name: "Name",
+           name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
             selector: (row) => row.name,
             sortable: true,
             cell: (row) => (
@@ -182,7 +190,7 @@ function SUD() {
             ),
         },
         {
-            name: "Status",
+            name: `${getTranslation('Status/स्थिति' , lang)}`,
             selector: (row) => row.status,
             sortable: true,
             cell: (row) => (
@@ -193,7 +201,7 @@ function SUD() {
         },
 
         {
-            name: "Action",
+            name: `${getTranslation('Action/क्रिया' , lang)}`,
             center: true,
             cell: (row) => {
                 // Hide all actions if discharged
@@ -333,10 +341,10 @@ function SUD() {
 
     //Getting registred patient data into table row 
     const tableColumnsSecoundTbl = [
-        { name: "User ID", selector: (row) => row.id, sortable: true, center: true },
-        { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
+        { name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,selector: (row) => row.id, sortable: true, center: true },
+        { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
         {
-            name: "Name",
+           name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
             selector: (row) => row.name,
             sortable: true,
             cell: (row) => (
@@ -351,7 +359,7 @@ function SUD() {
             ),
         },
         {
-            name: "Status",
+            name: `${getTranslation('Status/स्थिति' , lang)}`,
             selector: (row) => row.status,
             sortable: true,
             cell: (row) => (
@@ -361,7 +369,7 @@ function SUD() {
             ),
         },
         {
-            name: "Action",
+            name: `${getTranslation('Action/क्रिया' , lang)}`,
             center: true,
             cell: (row) => (
                 <div className="d-flex gap-2">

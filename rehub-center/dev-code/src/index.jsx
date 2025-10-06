@@ -5,6 +5,7 @@ import "./i18n";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { unstable_batchedUpdates } from "react-dom";
+import {LangProvider} from './contexts/LangContext';
 unstable_batchedUpdates(() => {
   console.error = () => {};
 });
@@ -26,7 +27,9 @@ class ErrorBoundary extends React.Component {
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <ErrorBoundary>
+    <LangProvider>
     <App />
+    </LangProvider>
   </ErrorBoundary>
 );
 

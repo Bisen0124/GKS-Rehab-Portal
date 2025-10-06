@@ -91,7 +91,14 @@ import html2pdf from "html2pdf.js";
 
 import { useBranch } from "../../contexts/BranchContext";
 
+import Translated from "../Translated";
+import { useLang } from "../../contexts/LangContext";
+import { getTranslation } from "../../utils/translator";
+
 function PFA() {
+  const { lang } = useLang(); // get current language from context
+
+
  //Branches selection
   const { selectedBranch } = useBranch();
 
@@ -258,10 +265,10 @@ function PFA() {
 
 //Getting registred patient data into table row 
   const tableColumns = [
-  { name: "User ID", selector: (row) => row.id, sortable: true, center: true },
-  { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
+  {  name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.id, sortable: true, center: true },
+  { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
   {
-    name: "Name",
+    name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
     selector: (row) => row.name,
     sortable: true,
     cell: (row) => (
@@ -276,7 +283,7 @@ function PFA() {
     ),
   },
   {
-    name: "Status",
+    name: `${getTranslation('Status/स्थिति' , lang)}`,
     selector: (row) => row.status,
     sortable: true,
     cell: (row) => (
@@ -390,7 +397,7 @@ function PFA() {
 
 //Updated code
 {
-  name: "Action",
+  name: `${getTranslation('Action/क्रिया' , lang)}`,
   center: true,
   cell: (row) => {
     // Hide all actions if discharged
@@ -483,13 +490,13 @@ function PFA() {
 ];
 
 const tablePFAPatientListColumns = [
-  { name: "User ID", selector: (row) => row.user_id, sortable: true, center: true },
-  { name: "PFA ID", selector: (row) => row.pfa_id, sortable: true, center: true },
-  { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
-  { name: "Phone", selector: (row) => row.phone, sortable: true, center: true },
-  { name: "Email", selector: (row) => row.email, sortable: true, center: true },
+  { name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.user_id, sortable: true, center: true },
+  { name: "PFA ID/रोगी का प्रथम मूल्यांकन आईडी", selector: (row) => row.pfa_id, sortable: true, center: true },
+  { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
+  { name: `${getTranslation('Patient Phone/मरीज़ का फ़ोन' , lang)}`, selector: (row) => row.phone, sortable: true, center: true },
+  { name: `${getTranslation('Email/ईमेल' , lang)}`, selector: (row) => row.email, sortable: true, center: true },
   {
-    name: "Name",
+    name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
     selector: (row) => row.name,
     sortable: true,
     cell: (row) => (
@@ -504,7 +511,7 @@ const tablePFAPatientListColumns = [
     ),
   },
   {
-    name: "Status",
+    name: `${getTranslation('Status/स्थिति' , lang)}`,
     selector: (row) => row.status,
     sortable: true,
     cell: (row) => (
@@ -514,7 +521,7 @@ const tablePFAPatientListColumns = [
     ),
   },
   {
-    name: "Action",
+    name: `${getTranslation('Action/क्रिया' , lang)}`,
     center: true,
     cell: (row) => (
       <div className="d-flex gap-2">
@@ -1675,7 +1682,8 @@ const parseDateString = (dateStr) => {
                   <CardBody>
                     <div class="d-flex pb-2 justify-content-between">
                       <HeaderCard
-                        title="Patient First Assessment (PFA)"
+                        
+                         title={getTranslation("Patient First Assessment (PFA)/ रोगी प्रथम मूल्यांकन (पीएफए)" , lang)}
                         className="p-0"
                       />
                     </div>
@@ -1732,7 +1740,8 @@ const parseDateString = (dateStr) => {
                   <CardBody>
                     <div class="d-flex pb-2 justify-content-between">
                       <HeaderCard
-                        title="All Patient First Assessment (PFA) List"
+                        // title="All Patient First Assessment (PFA) List"
+                        title={getTranslation("All Patient First Assessment (PFA) List/ सभी रोगी प्रथम मूल्यांकन (पीएफए) सूची" , lang)}
                         className="p-0"
                       />
                     </div>

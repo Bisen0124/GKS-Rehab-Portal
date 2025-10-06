@@ -172,7 +172,14 @@ import html2pdf from "html2pdf.js";
 
 import { useBranch } from "../../contexts/BranchContext";
 
+
+import Translated from "../Translated";
+import { useLang } from "../../contexts/LangContext";
+import { getTranslation } from "../../utils/translator";
+
 function GenFamily() {
+
+    const { lang } = useLang(); // get current language from context
 
    //Branches selection
     const { selectedBranch } = useBranch();
@@ -482,9 +489,9 @@ function GenFamily() {
 
   //Datatable column data start
   const tableColumns = [
-    { name: "ID", selector: (row) => row.id, sortable: true, center: true },
+    {  name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.id, sortable: true, center: true },
     {
-      name: "Name",
+     name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
       cell: (row) => (
         <span
@@ -497,10 +504,10 @@ function GenFamily() {
         </span>
       ),
     },
-    { name: "Email", selector: (row) => row.email, sortable: true, center: true },
-    { name: "Phone", selector: (row) => row.phone, sortable: true, center: true },
+    { name: `${getTranslation('Email/ईमेल' , lang)}`, selector: (row) => row.email, sortable: true, center: true },
+    { name: `${getTranslation('Patient Phone/मरीज़ का फ़ोन' , lang)}`, selector: (row) => row.phone, sortable: true, center: true },
     {
-      name: "Status",
+     name: `${getTranslation('Status/स्थिति' , lang)}`,
       selector: (row) => row.status,
       cell: (row) => (
         <span style={{ color: row.disabled ? "#999" : "#000" }}>
@@ -618,7 +625,7 @@ function GenFamily() {
 
     //Updated code
     {
-      name: "Action",
+      name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => {
         // Hide all actions if discharged
@@ -698,10 +705,10 @@ function GenFamily() {
 
   //All gen family data into datatabble column 
   const tableGenFamilyListColumns = [
-    { name: "User ID's", selector: (row) => row.user_id, sortable: true, center: true },
-    { name: "GKS ID's", selector: (row) => row.gks_id, sortable: true, center: true },
+    { name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.user_id, sortable: true, center: true },
+    { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
     {
-      name: "Name",
+      name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.genFamilyPateintname,
       sortable: true,
       cell: (row) => (
@@ -715,10 +722,10 @@ function GenFamily() {
         </span>
       ),
     },
-    { name: "Email", selector: (row) => row.genfamiltEmail, sortable: true, center: true },
-    { name: "Number", selector: (row) => row.genfamiltNumber, sortable: true, center: true },
+    { name: `${getTranslation('Email/ईमेल' , lang)}`,  selector: (row) => row.genfamiltEmail, sortable: true, center: true },
+    { name: `${getTranslation('Patient Phone/मरीज़ का फ़ोन' , lang)}`, selector: (row) => row.genfamiltNumber, sortable: true, center: true },
     {
-      name: "Status",
+     name: `${getTranslation('Status/स्थिति' , lang)}`,
       selector: (row) => row.genFammiltStatus,
       cell: (row) => (
         <span className="badge bg-success p-2 text-white" style={{ color: row.disabled ? "#999" : "#000" }}>
@@ -727,7 +734,7 @@ function GenFamily() {
       ),
     },
     {
-      name: "Action",
+     name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => (
         <div className="d-flex gap-2">

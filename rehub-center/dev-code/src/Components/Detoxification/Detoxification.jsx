@@ -103,7 +103,15 @@ import PatientCommonInfo from "../../CustomHook/PatientCommonInfo";
 
 import { useBranch } from "../../contexts/BranchContext";
 
+
+import Translated from "../Translated";
+import { useLang } from "../../contexts/LangContext";
+import { getTranslation } from "../../utils/translator";
+
 const Detoxification = () => {
+
+    const { lang } = useLang(); // get current language from context
+
   //Branches selection
   const { selectedBranch } = useBranch();
 
@@ -250,19 +258,19 @@ const Detoxification = () => {
   //Getting registred patient data into table row
   const tableColumns = [
     {
-      name: "User ID",
+      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
       selector: (row) => row.id,
       sortable: true,
       center: true,
     },
     {
-      name: "GKS ID",
+      name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
     {
-      name: "Name",
+      name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -277,7 +285,7 @@ const Detoxification = () => {
       ),
     },
     {
-      name: "Status",
+     name: `${getTranslation('Status/स्थिति' , lang)}`,
       selector: (row) => row.status,
       sortable: true,
       cell: (row) => (
@@ -288,7 +296,7 @@ const Detoxification = () => {
     },
 
     {
-      name: "Action",
+      name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => {
         // Hide all actions if discharged
@@ -495,25 +503,25 @@ const Detoxification = () => {
   //Getting registred patient data into table row
   const tableColumnsSecoundTbl = [
     {
-      name: "User ID",
+     name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
       selector: (row) => row.id,
       sortable: true,
       center: true,
     },
     {
-      name: "Detox ID",
+      name: "Detox ID/डिटॉक्स आईडी",
       selector: (row) => row.detox_id,
       sortable: true,
       center: true,
     },
     {
-      name: "GKS ID",
+     name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
     {
-      name: "Name",
+     name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -529,20 +537,20 @@ const Detoxification = () => {
     },
 
     {
-      name: "Email",
+      name: `${getTranslation('Email/ईमेल' , lang)}`,
       selector: (row) => row.email,
       sortable: true,
       center: true,
     },
     {
-      name: "Phone",
+     name: `${getTranslation('Patient Phone/मरीज़ का फ़ोन' , lang)}`,
       selector: (row) => row.phone,
       sortable: true,
       center: true,
     },
 
     {
-      name: "Status",
+     name: `${getTranslation('Status/स्थिति' , lang)}`,
       selector: (row) => row.status,
       sortable: true,
       cell: (row) => (
@@ -552,7 +560,7 @@ const Detoxification = () => {
       ),
     },
     {
-      name: "Action",
+      name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => (
         <div className="d-flex gap-2">

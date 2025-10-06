@@ -91,7 +91,15 @@ import {
 import { H5 } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 
+
+import Translated from "../Translated";
+import { useLang } from "../../contexts/LangContext";
+import { getTranslation } from "../../utils/translator";
+
 function FPA() {
+
+   const { lang } = useLang(); // get current language from context
+
   //Date of Admission State/प्रवेश की तिथि
   const [startDateOfAdmission, setstartDateOfAdmission] = useState(new Date());
   const handleChangeAdmission = (date) => {

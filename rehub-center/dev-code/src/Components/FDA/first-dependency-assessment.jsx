@@ -55,7 +55,14 @@ import html2pdf from "html2pdf.js";
 
 import { useBranch } from "../../contexts/BranchContext";
 
+
+import Translated from "../Translated";
+import { useLang } from "../../contexts/LangContext";
+import { getTranslation } from "../../utils/translator";
+
 function FDA() {
+
+   const { lang } = useLang(); // get current language from context
 
     //Branches selection
     const { selectedBranch } = useBranch();
@@ -196,10 +203,10 @@ function FDA() {
 
 
   const tableColumnsFDAList = [
-    { name: "FDA ID", selector: (row) => row.fda_id, sortable: true, center: true },
-    { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
+    { name: `${getTranslation('First Dependency Assessment / प्रथम निर्भरता मूल्यांकन' , lang)}`, selector: (row) => row.fda_id, sortable: true, center: true },
+    { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
     {
-      name: "Name",
+     name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -213,10 +220,10 @@ function FDA() {
         </span>
       ),
     },
-    { name: "Email", selector: (row) => row.email, sortable: true, center: true },
-    { name: "Phone", selector: (row) => row.phone, sortable: true, center: true },
+    {  name: `${getTranslation('Email/ईमेल' , lang)}`, selector: (row) => row.email, sortable: true, center: true },
+    {  name: `${getTranslation('Patient Phone/मरीज़ का फ़ोन' , lang)}`, selector: (row) => row.phone, sortable: true, center: true },
     {
-      name: "Status",
+       name: `${getTranslation('Status/स्थिति' , lang)}`,
       selector: (row) => row.status,
       sortable: true,
       cell: (row) => (
@@ -226,7 +233,7 @@ function FDA() {
       ),
     },
     {
-      name: "Action",
+     name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => (
         <div className="d-flex gap-2">
@@ -392,10 +399,10 @@ function FDA() {
 
   //Getting registred patient data into table row 
   const tableColumns = [
-    { name: "User ID", selector: (row) => row.id, sortable: true, center: true },
-    { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
+    {  name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.id, sortable: true, center: true },
+    {  name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
     {
-      name: "Name",
+       name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -410,7 +417,7 @@ function FDA() {
       ),
     },
     {
-      name: "Status",
+     name: `${getTranslation('Status/स्थिति' , lang)}`,
       selector: (row) => row.status,
       sortable: true,
       cell: (row) => (
@@ -421,7 +428,7 @@ function FDA() {
     },
 
     {
-      name: "Action",
+     name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => {
         // Hide all actions if discharged
