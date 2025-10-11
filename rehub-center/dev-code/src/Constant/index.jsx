@@ -2109,7 +2109,7 @@ export const substanceList = [
   "Amphetamine and Other ATS / एम्फेटामाइन और अन्य ATS"
 ];
 
-export const h4Text =" User Details / उपयोगकर्ता विवरण";
+export const h4Text ="User Details / उपयोगकर्ता विवरण";
 
 
 export const tableUser = "User ID/उपयोगकर्ता आईडी";

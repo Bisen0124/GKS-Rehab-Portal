@@ -107,7 +107,14 @@ import { useBranch } from "../../contexts/BranchContext";
 
 import { Btn, Breadcrumbs, H4 } from "../../AbstractElements";
 
+import Translated from "../Translated";
+import { useLang } from "../../contexts/LangContext";
+import { getTranslation } from "../../utils/translator";
+
 function Legal() {
+
+    const { lang } = useLang(); // get current language from context
+
   //Branches selection
   const { selectedBranch } = useBranch();
 
@@ -210,19 +217,19 @@ function Legal() {
   //Getting registred patient data into table row
   const tableColumns = [
     {
-      name: "User ID",
+      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
       selector: (row) => row.id,
       sortable: true,
       center: true,
     },
     {
-      name: "GKS ID",
+     name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
     {
-      name: "Name",
+       name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -237,7 +244,7 @@ function Legal() {
       ),
     },
     {
-      name: "Status",
+     name: `${getTranslation('Status/स्थिति' , lang)}`,
       selector: (row) => row.status,
       sortable: true,
       cell: (row) => (
@@ -248,7 +255,7 @@ function Legal() {
     },
 
     {
-      name: "Action",
+     name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => {
         // Hide all actions if discharged
@@ -429,14 +436,14 @@ function Legal() {
 
   const tableColumnsFDAList = [
     {
-      name: "SUD ID",
+      name: `${getTranslation('Legal ID/कानूनी आईडी' , lang)}`,
       selector: (row) => row.ilh_id,
       sortable: true,
       center: true,
     },
     // { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
     {
-      name: "Name",
+       name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -451,19 +458,19 @@ function Legal() {
       ),
     },
     {
-      name: "Email",
+      name: `${getTranslation('Email/ईमेल' , lang)}`,
       selector: (row) => row.email,
       sortable: true,
       center: true,
     },
     {
-      name: "Phone",
+      name: `${getTranslation('Patient Phone/मरीज़ का फ़ोन' , lang)}`,
       selector: (row) => row.phone,
       sortable: true,
       center: true,
     },
     {
-      name: "Status",
+      name: `${getTranslation('Status/स्थिति' , lang)}`,
       selector: (row) => row.status,
       sortable: true,
       cell: (row) => (
@@ -473,7 +480,7 @@ function Legal() {
       ),
     },
     {
-      name: "Action",
+      name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => (
         <div className="d-flex gap-2">

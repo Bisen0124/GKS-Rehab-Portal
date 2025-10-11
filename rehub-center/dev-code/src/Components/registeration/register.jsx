@@ -614,10 +614,10 @@ function Register() {
       if (response.ok) {
         // Show success SweetAlert
         Swal.fire({
-          title: "Good job!",
-          text: "User updated successfully!",
+          title: getTranslation("Good job!/अच्छा काम!",lang),
+          text: getTranslation("Patient Data Has Been Updated Successfully!/रोगी डेटा सफलतापूर्वक अद्यतन किया गया है!",lang),
           icon: "success",
-          confirmButtonText: "OK",
+          confirmButtonText: getTranslation("OK/ठीक है",lang),
         }).then(() => {
           // Close the modal and refresh user list if needed
           setShowEditModal(false);
@@ -1689,7 +1689,8 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
       {/* View user details by id modal */}
       <CommonModal
         isOpen={viewModal}
-        title={"User view data"}
+        title={getTranslation("Patient Register View Data / रोगी रजिस्टर डेटा देखें" , lang)}
+        
         toggler={closeUserViewModal}
         maxWidth="1200px"
       >
@@ -1701,7 +1702,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
           padding: "20px 0",
         }}
       >
-       {h4Text}
+       {getTranslation(h4Text, lang)}
       </h4>
 
       <Table size="sm" className="table-auto table-bordered">
@@ -1719,23 +1720,23 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
           ) : selectedUser && typeof selectedUser === "object" ? (
             <>
               <tr>
-                <th className="text-start p-3">Name</th>
+                <th className="text-start p-3">{getTranslation("Patient Name/रोगी का नाम",lang)}</th>
                 <td className="border p-3">{selectedUser.name}</td>
               </tr>
               <tr>
-                <th className="text-start p-3">Email</th>
+              <th className="text-start p-3">{getTranslation("Patient Email/रोगी का ईमेल", lang)}</th>
                 <td className="border p-3">{selectedUser.email}</td>
               </tr>
               <tr>
-                <th className="text-start p-3">Phone</th>
+              <th className="text-start p-3">{getTranslation("Patient Phone/रोगी का फोन", lang)}</th>
                 <td className="border p-3">{selectedUser.phone}</td>
               </tr>
               <tr>
-                <th className="text-start p-3">WhatsApp No</th>
+              <th className="text-start p-3">{getTranslation("Patient WhatsApp No/रोगी का व्हाट्सएप नंबर", lang)}</th>
                 <td className="border p-3">{selectedUser.whatsapp_no}</td>
               </tr>
               <tr>
-                <th className="text-start p-3">Date of Birth</th>
+              <th className="text-start p-3">{getTranslation("Patient Date of Birth/रोगी का जन्म तिथि", lang)}</th>
                 <td className="border p-3">
                   {selectedUser.dob
                     ? new Date(selectedUser.dob).toLocaleDateString()
@@ -1743,19 +1744,19 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </td>
               </tr>
               <tr>
-                <th className="text-start p-3">Gender</th>
+              <th className="text-start p-3">{getTranslation("Patient Gender/रोगी का लिंग", lang)}</th>
                 <td className="border p-3">{selectedUser.gender}</td>
               </tr>
               <tr>
-                <th className="text-start p-3">Address</th>
+              <th className="text-start p-3">{getTranslation("Patient Address/रोगी का पता", lang)}</th>
                 <td className="border p-3">{selectedUser.address}</td>
               </tr>
               <tr>
-                <th className="text-start p-3">Relative Name</th>
+              <th className="text-start p-3">{getTranslation("Patient Relative Name/रोगी का संबंधी का नाम", lang)}</th>
                 <td className="border p-3">{selectedUser.relative_name}</td>
               </tr>
               <tr>
-                <th className="text-start p-3">Date of Admission</th>
+              <th className="text-start p-3">{getTranslation("Patient Date of Admission/रोगी का प्रवेश की तिथि", lang)}</th>
                 <td className="border p-3">
                   {selectedUser.date_of_admission
                     ? new Date(selectedUser.date_of_admission).toLocaleDateString()
@@ -1763,11 +1764,11 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </td>
               </tr>
               <tr>
-                <th className="text-start p-3">Ward Name</th>
+              <th className="text-start p-3">{getTranslation("Patient Ward Name/रोगी का वार्ड का नाम", lang)}</th>
                 <td className="border p-3">{selectedUser.ward_name || "N/A"}</td>
               </tr>
               <tr>
-                <th className="text-start p-3">User Role</th>
+              <th className="text-start p-3">{getTranslation("Patient role/रोगी की भूमिका", lang)}</th>
                 <td className="border p-3">
                   {{
                     1: "SuperAdmin",
@@ -1806,7 +1807,8 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
 
       <CommonModal
         isOpen={showEditModal}
-        title={"Update Patient Registration Data"}
+        // title={"Update Patient Registration Data/रोगी पंजीकरण डेटा अपडेट करें"}
+        title={getTranslation("Update Patient Registration Data/रोगी पंजीकरण डेटा अपडेट करें",lang)}
         toggler={closeUserViewModal}
         maxWidth="1200px"
       >
@@ -1822,7 +1824,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 >
                   <div className="row pt-4">
                     <div className="col-md-6">
-                      <Label>Name</Label>
+                      <Label>{getTranslation("Patient Name/रोगी का नाम",lang)}</Label>
                       <Input
                         type="text"
                         placeholder="Name"
@@ -1833,7 +1835,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       />
                     </div>
                     <div className="col-md-6">
-                      <Label>Relative Name</Label>
+                      <Label>{getTranslation("Patient Relative Name/",lang)}</Label>
                       <Input
                         type="text"
                         placeholder="Relative Name"
@@ -1850,7 +1852,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   <br />
 
                   <div className="form-group col-md-6">
-                    <Label>Gender</Label>
+                    <Label>{getTranslation("Patient Gender/रोगी का लिंग",lang)}</Label>
                     <div className="radio radio-primary d-flex gap-3">
                       {["Male", "Female", "Other"].map((g) => (
                         <div key={g}>
@@ -1876,7 +1878,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
 
                   <div className="row align-items-baseline">
                     <div className="col-md-4">
-                      <Label>Phone</Label>
+                      <Label>{getTranslation("Patient Phone/मरीज़ का फ़ोन",lang)}</Label>
                       <Input
                         type="text"
                         placeholder="Phone"
@@ -1908,11 +1910,11 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                             }));
                           }}
                         />
-                        Is WhatsApp?
+                        {getTranslation("Patient Is WhatsApp?/क्या मरीज़ व्हाट्सएप्प है?",lang)}
                       </Label>
                     </div>
                     <div className="col-md-5">
-                      <Label>WhatsApp No.</Label>
+                      <Label>{getTranslation("Patient WhatsApp No./मरीज़ का व्हाट्सएप नंबर",lang)}</Label>
                       <Input
                         type="text"
                         placeholder="WhatsApp No."
@@ -1931,7 +1933,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
 
                   <div className="row">
                     <div className="col-md-6">
-                      <Label>Email</Label>
+                      <Label>{getTranslation("Patient Email/रोगी का ईमेल",lang)}</Label>
                       <Input
                         type="email"
                         placeholder="Email"
@@ -1942,7 +1944,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       />
                     </div>
                     <div className="col-md-6 d-flex align-items-end gap-4">
-                      <Label>Date of Birth</Label>
+                      <Label>{getTranslation("Patient Date of Birth/रोगी की जन्मतिथि",lang)}</Label>
                       <DatePicker
                         className="form-control"
                         selected={
@@ -1957,7 +1959,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     </div>
                   </div>
                   <br />
-                  <Label>Address</Label>
+                  <Label>{getTranslation("Patient Address/रोगी का पता",lang)}</Label>
                   <Input
                     type="textarea"
                     rows="3"
@@ -1999,7 +2001,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                           aria-hidden="true"
                         ></span>
                       ) : (
-                        "Update"
+                        getTranslation('Update Patient Register Data/रोगी रजिस्टर डेटा अपडेट करें',lang)
                       )}
                     </Button>
                     <Button
@@ -2007,7 +2009,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       type="button"
                       onClick={() => setShowEditModal(false)}
                     >
-                      Cancel
+                      {getTranslation('Cancel Patient Register Data/रोगी रजिस्टर डेटा रद्द करें',lang)}
                     </Button>
                   </div>
                 </Form>
