@@ -55,7 +55,7 @@ import { Btn, H5, Breadcrumbs, H4 } from "../../AbstractElements";
 
 
 import Translated from "../Translated";
-import { useLang } from "../../contexts/LangContext";
+import { LangProvider, useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
 const FirstExamination = () => {
@@ -384,7 +384,7 @@ useEffect(() => {
 
 const tableColumnsFDAList = [
   {
-    name: "First Examination ID/प्रथम परीक्षा आईडी",
+    name: getTranslation("First Examination ID/प्रथम परीक्षा आईडी",lang),
     selector: (row) => row.first_eval_id,
     sortable: true,
     center: true,
@@ -601,8 +601,8 @@ const tableColumnsFDAList = [
       
           Swal.fire({
             icon: "success",
-            title: "Patient Behaviour Created",
-            text: "The assessment was submitted successfully.",
+            title: getTranslation("Patient First Examination Created/रोगी की पहली जांच बनाई गई",lang),
+            text: getTranslation("The assessment was submitted successfully./मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
           }).then(() => setIsFEModalOpen(false));
       
           console.log("✅ Submitted Data:", data);
@@ -613,7 +613,7 @@ const tableColumnsFDAList = [
           Swal.fire({
             icon: "error",
             title: "Unexpected Error",
-            text: "Failed to submit. Check console for error.",
+            text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें",lang),
           });
         }
       };
@@ -863,8 +863,8 @@ const handleFEUpdate = async () => {
 
     Swal.fire({
       icon: "success",
-      title: "FE Updated Successfully!",
-      text: "First Evaluation assessment has been updated successfully!",
+      title: getTranslation("FE Updated Successfully!/FE सफलतापूर्वक अपडेट किया गया!",lang),
+      text: getTranslation("First Evaluation assessment has been updated successfully!/प्रथम मूल्यांकन आकलन सफलतापूर्वक अद्यतन कर दिया गया है!",lang),
     }).then(() => {
       setFEEditModal(false); // ✅ Close modal after success
     });
@@ -875,7 +875,7 @@ const handleFEUpdate = async () => {
     Swal.fire({
       icon: "error",
       title: "Unexpected Error",
-      text: "Failed to update First Evaluation assessment. Check console for details.",
+      text: getTranslation("Failed to update First Evaluation assessment. Check console for details./प्रथम मूल्यांकन मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
     });
   }
 };
@@ -896,8 +896,8 @@ const handleFEprefill = async (prefillFEID = null) => {
   if (!prefillFEID) {
     Swal.fire({
       icon: "warning",
-      title: "Missing Evaluation ID",
-      text: "No valid First Evaluation ID was provided for prefill.",
+      title: getTranslation("Missing Evaluation ID",lang),
+      text: getTranslation("No valid First Evaluation ID was provided for prefill.",lang),
     });
     return;
   }
@@ -925,7 +925,7 @@ const handleFEprefill = async (prefillFEID = null) => {
       Swal.fire({
         icon: "error",
         title: "Fetch Failed",
-        text: data.message || "Unable to fetch evaluation data for prefill.",
+        text: data.message || getTranslation("Unable to fetch evaluation data for prefill.",lang),
       });
       return;
     }
@@ -935,7 +935,7 @@ const handleFEprefill = async (prefillFEID = null) => {
       Swal.fire({
         icon: "info",
         title: "No Data Found",
-        text: "No assessment data available for this evaluation ID.",
+        text: getTranslation("No assessment data available for this evaluation ID.",lang),
       });
       return;
     }
@@ -981,7 +981,7 @@ const handleFEprefill = async (prefillFEID = null) => {
     Swal.fire({
       icon: "error",
       title: "Network Error",
-      text: "Unable to fetch evaluation data due to a network issue.",
+      text: getTranslation("Unable to fetch evaluation data due to a network issue.",lang),
     });
   }
 };
@@ -1038,8 +1038,8 @@ const handleReadmissionSubmit = async (e) => {
 
     Swal.fire({
       icon: "success",
-      title: "Readmission FE Created",
-      text: "The first examination assessment was submitted successfully.",
+      title: getTranslation("Readmission FE Created",lang),
+      text: getTranslation("The first examination assessment was submitted successfully.",LangProvider),
     }).then(() => setFEPrefillModal(false)); // close modal
 
     console.log("✅ Submitted Data:", data);
@@ -1050,7 +1050,7 @@ const handleReadmissionSubmit = async (e) => {
     Swal.fire({
       icon: "error",
       title: "Unexpected Error",
-      text: "Failed to submit. Check console for error.",
+      text: getTranslation("Failed to submit. Check console for error.",lang),
     });
   }
 };
@@ -1094,7 +1094,7 @@ const parseDateString = (dateStr) => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1116,7 +1116,7 @@ const parseDateString = (dateStr) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                     {getTranslation(" Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1159,7 +1159,7 @@ const parseDateString = (dateStr) => {
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All First Eamination Data List" className="p-0" />
+                    <HeaderCard title={getTranslation("All First Eamination Data List/सभी प्रथम उत्सर्जन डेटा सूची",lang)} className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -1179,7 +1179,7 @@ const parseDateString = (dateStr) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1215,17 +1215,17 @@ const parseDateString = (dateStr) => {
       {/*FE create form start */}
       <CommonModal
         isOpen={isFEModalOpen}
-        title="Create First Examination Form"
+        title={getTranslation("Create First Examination Form/पहला परीक्षा फॉर्म बनाएँ",lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
-            name: "Patient name/प्रयासक का नाम :",
-            sex: "Gender/प्रयासक का लिंग :",
-            age: "Age/प्रयासक का उम्र :",
-            date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+            name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+            sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+            age: getTranslation("Age/प्रयासक का उम्र :",lang),
+            date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
             ageValue: patientCalAge,
           }}
         />
@@ -1233,7 +1233,7 @@ const parseDateString = (dateStr) => {
         <form onSubmit={handleSubmit}>
       <div className="col-md-6 mb-3">
         <label className="col-sm-12 col-form-label col-xl-6">
-          Date of Assessment
+          {getTranslation("Date of Assessment/मूल्यांकन की तिथि",lang)}
         </label>
         <div className="col-xl-5 col-sm-12">
           <div className="input-group">
@@ -1250,7 +1250,7 @@ const parseDateString = (dateStr) => {
 
       <div className="row mb-3">
         <div className="col-md-6">
-          <label htmlFor="name">Name</label>
+          <label htmlFor="name">{getTranslation("Name/नाम",lang)}</label>
           <input
             type="text"
             id="name"
@@ -1262,7 +1262,7 @@ const parseDateString = (dateStr) => {
           />
         </div>
         <div className="col-md-3">
-          <label htmlFor="weight">Weight (kg)</label>
+          <label htmlFor="weight">{getTranslation("Weight (kg)/वजन (किलोग्राम)",lang)}</label>
           <input
             type="number"
             id="weight"
@@ -1278,7 +1278,7 @@ const parseDateString = (dateStr) => {
 
       <div className="row mb-3">
         <div className="col-md-2">
-          <label htmlFor="pulse">Pulse</label>
+          <label htmlFor="pulse">{getTranslation("Pulse/नाड़ी",lang)}</label>
           <input
             type="number"
             id="pulse"
@@ -1290,7 +1290,7 @@ const parseDateString = (dateStr) => {
           />
         </div>
         <div className="col-md-3">
-          <label htmlFor="bp">BP</label>
+          <label htmlFor="bp">{getTranslation("Blood Pressure/रक्तचाप",lang)}</label>
           <input
             type="text"
             id="bp"
@@ -1318,7 +1318,7 @@ const parseDateString = (dateStr) => {
 
       <div className="row mb-3">
         <div className="col-md-6">
-          <label htmlFor="location">Location</label>
+          <label htmlFor="location">{getTranslation("Location/जगह",lang)}</label>
           <input
             type="text"
             id="location"
@@ -1330,7 +1330,7 @@ const parseDateString = (dateStr) => {
           />
         </div>
         <div className="col-md-6">
-          <label htmlFor="addiction">Addiction</label>
+          <label htmlFor="addiction">{getTranslation("Addiction/लत",lang)}</label>
           <input
             type="text"
             id="addiction"
@@ -1352,7 +1352,7 @@ const parseDateString = (dateStr) => {
     onChange={handleIntoxicatedChange}
   />
   <label className="form-check-label" htmlFor="intoxicated">
-    Intoxicated at the time of admission
+    {getTranslation("Intoxicated at the time of admission/प्रवेश के समय नशे में",lang)}
   </label>
 </div>
 
@@ -1366,7 +1366,7 @@ const parseDateString = (dateStr) => {
                          aria-hidden="true"
                        ></span>
                      ) : (
-                       "Create FE Form"
+                       getTranslation("Create FE Form/FE फॉर्म बनाएं",lang)
                      )}
                    </Button>
                  </div>
@@ -1379,7 +1379,7 @@ const parseDateString = (dateStr) => {
  {/*FE view form start */}
          <CommonModal
         isOpen={viewFEModal}
-        title="View First Examination Form"
+        title={getTranslation("View First Examination Form/प्रथम परीक्षा फॉर्म देखें",lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
@@ -1401,7 +1401,7 @@ const parseDateString = (dateStr) => {
       padding: "20px 0",
     }}
   >
-    First Evaluation / प्रथम मूल्यांकन
+    {getTranslation("First Evaluation / प्रथम मूल्यांकन",lang)}
   </h4>
 
   <Table size="sm" className="table-auto table-bordered">
@@ -1419,7 +1419,7 @@ const parseDateString = (dateStr) => {
       ) : viewFEData ? (
         <>
           <tr>
-            <th className="text-start p-3">Date of admission</th>
+            <th className="text-start p-3">{getTranslation("Date of admission/प्रवेश की तिथि",lang)}</th>
             <td className="border p-3">
               {viewFEData.date_of_assessment
                 ? new Date(viewFEData.date_of_assessment).toLocaleDateString()
@@ -1427,16 +1427,16 @@ const parseDateString = (dateStr) => {
             </td>
           </tr>
           <tr>
-            <th className="text-start p-3">Patient Name</th>
+            <th className="text-start p-3">{getTranslation("Patient Name/रोगी का नाम",lang)}</th>
             <td className="border p-3">{viewFEData?.patient_name}</td>
           </tr>
            
           <tr>
-            <th className="text-start p-3">Weight</th>
+            <th className="text-start p-3">{getTranslation("Weight/वज़न",lang)}</th>
             <td className="border p-3">{viewFEData?.weight}</td>
           </tr>
           <tr>
-            <th className="text-start p-3">Pulse</th>
+            <th className="text-start p-3">{getTranslation("Pulse/नाड़ी",lang)}</th>
             <td className="border p-3">{viewFEData?.pulse_rate}</td>
           </tr>
           <tr>
@@ -1450,23 +1450,23 @@ const parseDateString = (dateStr) => {
           </tr>
     
           <tr>
-            <th className="text-start p-3">Location</th>
+            <th className="text-start p-3">{getTranslation("Location/जगह",lang)}</th>
             <td className="border p-3">{viewFEData.location}</td>
           </tr>
           <tr>
-            <th className="text-start p-3">Addiction</th>
+            <th className="text-start p-3">{getTranslation("Addiction/लत",lang)}</th>
             <td className="border p-3">{viewFEData.addiction}</td>
           </tr>
            
           <tr>
-            <th className="text-start p-3">Intoxicated at the time of admission</th>
+            <th className="text-start p-3">{getTranslation("Intoxicated at the time of admission/प्रवेश के समय नशे में",lang)}</th>
             <td className="border p-3">{viewFEData.intoxicated_at_admission}</td>
           </tr>
         </>
       ) : (
         <tr>
           <td colSpan="2" className="text-center">
-            No data available
+            {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
           </td>
         </tr>
       )}
@@ -1481,7 +1481,7 @@ const parseDateString = (dateStr) => {
   {/*FE Edit form start */}
   <CommonModal
         isOpen={FEEditModal}
-        title="Edit First Examination Form"
+        title={getTranslation("Edit First Examination Form/प्रथम परीक्षा फॉर्म संपादित करें",lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
@@ -1502,7 +1502,7 @@ const parseDateString = (dateStr) => {
         }}>
       <div className="col-md-6 mb-3">
         <label className="col-sm-12 col-form-label col-xl-6">
-          Date of Assessment
+          {getTranslation("Date of Assessment/मूल्यांकन की तिथि",lang)}
         </label>
         <div className="col-xl-5 col-sm-12">
           <div className="input-group">
@@ -1522,7 +1522,7 @@ const parseDateString = (dateStr) => {
 
       <div className="row mb-3">
         <div className="col-md-6">
-          <label htmlFor="name">Name</label>
+          <label htmlFor="name">{getTranslation("Name/नाम",lang)}</label>
           <input
             type="text"
             id="name"
@@ -1539,7 +1539,7 @@ const parseDateString = (dateStr) => {
           />
         </div>
         <div className="col-md-3">
-          <label htmlFor="weight">Weight (kg)</label>
+          <label htmlFor="weight">{getTranslation("Weight (kg)/वजन (किलोग्राम)",lang)}</label>
           <input
             type="number"
             id="weight"
@@ -1559,7 +1559,7 @@ const parseDateString = (dateStr) => {
 
       <div className="row mb-3">
         <div className="col-md-2">
-          <label htmlFor="pulse">Pulse</label>
+          <label htmlFor="pulse">{getTranslation("Pulse/नाड़ी",lang)}</label>
           <input
             type="number"
             id="pulse"
@@ -1576,7 +1576,7 @@ const parseDateString = (dateStr) => {
           />
         </div>
         <div className="col-md-3">
-          <label htmlFor="bp">Blood Pressure</label>
+          <label htmlFor="bp">{getTranslation("Blood Pressure/रक्तचाप",lang)}</label>
           <input
             type="text"
             id="bp"
@@ -1614,7 +1614,7 @@ const parseDateString = (dateStr) => {
 
       <div className="row mb-3">
         <div className="col-md-6">
-          <label htmlFor="location">Location</label>
+          <label htmlFor="location">{getTranslation("Location/जगह",lang)}</label>
           <input
             type="text"
             id="location"
@@ -1631,7 +1631,7 @@ const parseDateString = (dateStr) => {
           />
         </div>
         <div className="col-md-6">
-          <label htmlFor="addiction">Addiction</label>
+          <label htmlFor="addiction">{getTranslation("Addiction/लत",lang)}</label>
           <input
             type="text"
             id="addiction"
@@ -1663,7 +1663,7 @@ const parseDateString = (dateStr) => {
                       }
   />
   <label className="form-check-label" htmlFor="intoxicated">
-    Intoxicated at the time of admission
+    {getTranslation("Intoxicated at the time of admission/प्रवेश के समय नशे में",lang)}
   </label>
 </div>
 
@@ -1677,7 +1677,7 @@ const parseDateString = (dateStr) => {
                          aria-hidden="true"
                        ></span>
                      ) : (
-                       "Update FE Form"
+                       getTranslation("Update FE Form/FE फॉर्म अपडेट करें",lang)
                      )}
                    </Button>
                  </div>
@@ -1690,7 +1690,7 @@ const parseDateString = (dateStr) => {
          {/*FE prefill form start */}
          <CommonModal
   isOpen={FEPrefillModal}
-  title="Readmission First Examination Form"
+  title={getTranslation("Readmission First Examination Form/पुनः प्रवेश प्रथम परीक्षा फॉर्म",lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1712,7 +1712,7 @@ const parseDateString = (dateStr) => {
       {/* Date of Assessment */}
       <div className="col-md-6 mb-3">
         <label className="col-sm-12 col-form-label col-xl-6">
-          Date of Assessment
+          {getTranslation("Date of Assessment/मूल्यांकन की तिथि",lang)}
         </label>
         <div className="col-xl-5 col-sm-12">
           <DatePicker
@@ -1731,7 +1731,7 @@ const parseDateString = (dateStr) => {
       {/* Name + Weight */}
       <div className="row mb-3">
         <div className="col-md-6">
-          <label htmlFor="name">Name</label>
+          <label htmlFor="name">{getTranslation("Name/नाम",lang)}</label>
           <input
             type="text"
             id="name"
@@ -1746,7 +1746,7 @@ const parseDateString = (dateStr) => {
           />
         </div>
         <div className="col-md-3">
-          <label htmlFor="weight">Weight (kg)</label>
+          <label htmlFor="weight">{getTranslation("Weight (kg)/वजन (किलोग्राम)",lang)}</label>
           <input
             type="number"
             id="weight"
@@ -1765,7 +1765,7 @@ const parseDateString = (dateStr) => {
       {/* Pulse + BP + SpO2 */}
       <div className="row mb-3">
         <div className="col-md-2">
-          <label htmlFor="pulse">Pulse</label>
+          <label htmlFor="pulse">{getTranslation("Pulse/नाड़ी",lang)}</label>
           <input
             type="number"
             id="pulse"
@@ -1780,7 +1780,7 @@ const parseDateString = (dateStr) => {
           />
         </div>
         <div className="col-md-3">
-          <label htmlFor="bp">Blood Pressure</label>
+          <label htmlFor="bp">{getTranslation("Blood Pressure/रक्तचाप",lang)}</label>
           <input
             type="text"
             id="bp"
@@ -1815,7 +1815,7 @@ const parseDateString = (dateStr) => {
       {/* Location + Addiction */}
       <div className="row mb-3">
         <div className="col-md-6">
-          <label htmlFor="location">Location</label>
+          <label htmlFor="location">{getTranslation("Location/जगह",lang)}</label>
           <input
             type="text"
             id="location"
@@ -1830,7 +1830,7 @@ const parseDateString = (dateStr) => {
           />
         </div>
         <div className="col-md-6">
-          <label htmlFor="addiction">Addiction</label>
+          <label htmlFor="addiction">{getTranslation("Addiction/लत",lang)}</label>
           <input
             type="text"
             id="addiction"
@@ -1861,7 +1861,7 @@ const parseDateString = (dateStr) => {
           }
         />
         <label className="form-check-label" htmlFor="intoxicated">
-          Intoxicated at the time of admission
+         {getTranslation(" Intoxicated at the time of admission/प्रवेश के समय नशे में",lang)}
         </label>
       </div>
 
@@ -1875,7 +1875,7 @@ const parseDateString = (dateStr) => {
               aria-hidden="true"
             ></span>
           ) : (
-            "Readmission FE Form"
+            getTranslation("Readmission FE Form/पुनः प्रवेश FE फॉर्म",lang)
           )}
         </Button>
       </div>

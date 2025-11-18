@@ -1416,7 +1416,7 @@ export const Back = "Back";
 //section 1
 export const patientFirstAssessment = "Patient first assessment by family / परिवार द्वारा मरीज का प्रथम मूल्यांकन";
 export const dateOfAdmission = "Date of Admission/प्रवेश की तिथि :";
-export const dateOfAssessment = " Date of Assessment/परीक्षण की तारीख :";
+export const dateOfAssessment = "Date of Assessment/परीक्षण की तारीख :";
 export const patientName = "Name of Patient/मरीज का नाम : ";
 export const patientRelativeName = " Name of Patient Relative/ मरीज संबंधी का नाम : ";
 export const patientSex = "Patient Sex/रोगी का लिंग :";
@@ -1432,7 +1432,7 @@ export const last30DaysQuantity = "Last 30 Days Quantity / पिछले 30 �
 //section 2
 export const tableNumber = "S./क्र.";
 export const genralPhysicalExamination = "Genral Physical Examination / सामान्य शारीरिक परीक्षण";
-export const Observation = "Observation अवलोकन";
+export const Observation = "Observation / अवलोकन";
 export const anyMedicalHistory = "Any Medical History / कोई भी चिकित्सा इतिहास";
 export const anyBloodTransfusionHistory = "Any Blood Transfusion History / ब्लड ट्रांसफ्यूजन इतिहास";
 export const mentionIfAny = "Mention if any Medical or Blood Transfsion History /यदि कोई चिकित्सा या ब्लड ट्रांसफ्यूज इतिहास हो तो उल्लेख करें ";
@@ -1445,7 +1445,7 @@ export const no = "NO/नहीं ";
 export const ulcers = "Ulcers / अल्सर";
 export const respiratoryProblem = "Respiratory Problem COPD/TB / श्वसन संबंधी समस्याएं सी. ओ. पी. डी. /टीबी";
 export const jaundice = "Jaundice / पीलिया";
-export const Haematemesis = "Haematemesis / Malena / खून की उल्टी";
+export const Haematemesis = "Haematemesis / खून की उल्टी";
 export const otherAbdominalComplaints = "Other Abdominal Complaints / पेट की अन्य शिकायतें";
 export const cardiovascular = "Cardiovascular (Chest Pain, Dyspnoea) / हृदय संबंधी (सीने में दर्द, श्वास कष्ट)";
 export const mentionIfAny2 = "If any Complications Describe / अगर कोई परेशानी हुई हो विवरण दें ?";
@@ -1454,7 +1454,7 @@ export const mentionIfAny2 = "If any Complications Describe / अगर को�
 export const tableNumber3 = "S./क्र.";
 export const neurological = "Neurological / न्यूरोलॉजिकल";
 export const yes1 = "Yes / हाँ ";
-export const no1 = "NO/नहीं ";
+export const no1 = "NO / नहीं ";
 export const seizure = "Seizure / Fits दौरा/फिट्स";
 export const epilepsy = "Epilepsy / मिर्गी ";
 export const delirium = "Delirium (hallucinations) /प्रलाप (मतिभ्रम )";  
@@ -1465,11 +1465,11 @@ export const blackout = "Blackout / ब्लैक आउट ";
 export const mentionIfAny3 = "If any Complications Describe / अगर कोई परेशानी हुई हो विवरण दें ?";
 
 //section 4
-export const anyOtherFindings = "Any Other Findings  / कोई अन्य निष्कर्ष";
+export const anyOtherFindings = "Any Other Findings / कोई अन्य निष्कर्ष";
 
 //section 5
-export const consent = "Consent : I agreed that all the above filled information are given by me and true. सहमति: मैं सहमत हूं कि ऊपर दी गई सभी जानकारी मेरे द्वारा दी गई है और सत्य है।";
-export const name = "Name/नाम :";
+export const consent = "Consent : I agreed that all the above filled information are given by me and true. /  सहमति: मैं सहमत हूं कि ऊपर दी गई सभी जानकारी मेरे द्वारा दी गई है और सत्य है।";
+export const name = "Name / नाम :";
 export const relationship = "Relationship/संबंध :";
 export const signature = "Signature/हस्ताक्षर";
 
@@ -1481,7 +1481,7 @@ export const prepared = "Prepared By/प्रिपेर्ड बाय :";
 /* Gen__Family data */
 //section 1
 export const patientPersonalInformation   = "Patient Personal Information / व्यक्तिगत जानकारी";
-export const UID = "UID:-";
+export const UID = "UID:-/यूआईडी:-";
 //section 2
 export const dateOfFormFilling = "Date of Form Filling / फॉर्म भरने की तिथि";
 export const patientFamilyAssessment = "Patient Family Assessment / परिवार जानकारी";
@@ -1498,7 +1498,7 @@ export const durationOfRegularUse = "Duration of regular use? / कब से �
 export const dailySpentSubstance = "Daily spent on substance ? / पदार्थ पर प्रतिदिन खर्च ";
 export const patienMonthlyIncome = "Patient Month income / रोगी की मासिक आय ";
 export const familyMonthlyIncome = "Monthly family income / मासिक पारिवारिक आय ";
-export const sourceOfMoney = "Source of money? Kindly mention which are applicable?पैसे का अरैंजमेंट? कृपया बताएं कि कौन से लागू हैं?";
+export const sourceOfMoney = "Source of money? Kindly mention which are applicable? / पैसे का अरैंजमेंट? कृपया बताएं कि कौन से लागू हैं?";
 export const genFriends = "2.Friends / 2.मित्र";
 export const Borrowings = "3.Borrowings / 3.उधार";
 export const Thefting = "4.Thefting / 4.चोरी";
@@ -1507,117 +1507,117 @@ export const ByBluff = "6.by bluff / 6.झांसा देकर";
 export const Illegal = "7.Illegal / 7.अवैध";
 export const AnyOther = "8.Any other / 8.कोई अन्य";
 export const Ifarrange = "If arranges by family than reaction on refusal / अगर परिवार से पैसे तो मना करने पर प्रतिक्रिया ?"
-export const mentionYear = "When (mention year) you know about substance abuse what was your action than? What was  reaction of patient ?जब (वर्ष ) आपको रोगी के मादक पदार्थ सेवन के  बारे में पता चला तो आपने क्या किया? रोगी की प्रतिक्रिया क्या थी?";
+export const mentionYear = "When (mention year) you know about substance abuse what was your action than? What was  reaction of patient ? / जब (वर्ष ) आपको रोगी के मादक पदार्थ सेवन के  बारे में पता चला तो आपने क्या किया? रोगी की प्रतिक्रिया क्या थी?";
 export const action = "When started using excess quantity? what was the pattern?/अधिक मात्रा का उपयोग कब शुरू किया गया? पैटर्न क्या था?";
-export const Residence = "Residence status of patient when started regularly?नियमित रूप से शुरू करने पर रोगी की आवासीय स्थिति?";
-export const experiencedTrauma = "Experienced any Trauma, if yes when & what, what effect on Substance use? Reason for regular use was shock/Trauma? कोई सदमा ,यदि हाँ तो कब और क्या, मादक पदार्थ के उपयोग पर इसका क्या प्रभाव पड़ा? क्नियमित उपयोग का कारण सदमा था?";
-export const occurredPatientBehavior = "When and what changes occurred in the patient's behavior?मरीज के व्यव्हार में कब और क्या परिवर्तन आया?";
-export const sociality = "Did patient's friends and sociality changed with his dependency? if yes, is he is in contact with old sober friends? क्या रोगी के मित्र और सामाजिकता उसकी निर्भरता के साथ बदल गए? यदि हाँ, तो क्या वह पुराने संयमित मित्रों के संपर्क में है?";
-export const effectOfSubstance = "Effect of Substance  in Physical, personal, married, Educational, Professional Life & Family ? & Your Reaction? शारीरिक, व्यक्तिगत, विवाहित, शैक्षिक, व्यावसायिक जीवन और परिवार पर मादक पदार्थ का प्रभाव और आपकी प्रतिक्रिया?";
+export const Residence = "Residence status of patient when started regularly? / नियमित रूप से शुरू करने पर रोगी की आवासीय स्थिति?";
+export const experiencedTrauma = "Experienced any Trauma, if yes when & what, what effect on Substance use? Reason for regular use was shock Trauma? / कोई सदमा ,यदि हाँ तो कब और क्या, मादक पदार्थ के उपयोग पर इसका क्या प्रभाव पड़ा? क्नियमित उपयोग का कारण सदमा था?";
+export const occurredPatientBehavior = "When and what changes occurred in the patient's behavior? / मरीज के व्यव्हार में कब और क्या परिवर्तन आया?";
+export const sociality = "Did patient's friends and sociality changed with his dependency? if yes, is he is in contact with old sober friends? / क्या रोगी के मित्र और सामाजिकता उसकी निर्भरता के साथ बदल गए? यदि हाँ, तो क्या वह पुराने संयमित मित्रों के संपर्क में है?";
+export const effectOfSubstance = "Effect of Substance  in Physical, personal, married, Educational, Professional Life & Family ? & Your Reaction? / शारीरिक, व्यक्तिगत, विवाहित, शैक्षिक, व्यावसायिक जीवन और परिवार पर मादक पदार्थ का प्रभाव और आपकी प्रतिक्रिया?";
 
 //secton 4 table data
-export const ChiefComplaint = "Chief Complaints: मुख्य शिकायतें:";
+export const ChiefComplaint = "Chief Complaints: / मुख्य शिकायतें:";
 export const TreatmentOfSubstance = "Prior Treatment for substance use Dependency / पदार्थ के उपयोग पर निर्भरता के लिए पूर्व उपचार";
 export const howManyTimes = "How Many Times/कितनी बार?";
 export const year = "Year / वर्ष";
-export const placeOfTreatment = "Place of treatment उपचार का स्थान ";
-export const durationOfTime = "Duration & no of Time अवधि एवं  संख्या ";
+export const placeOfTreatment = "Place of treatment / उपचार का स्थान ";
+export const durationOfTime = "Duration & no of Time / अवधि एवं  संख्या ";
 // export const DetailsOfTreatment = "Details of treatment उपचार का विवरण";
-export const daysOfSobriety = "Days of sobriety संयमके दिन ";
-export const cheifAction = "Action एक्शन";
+export const daysOfSobriety = "Days of sobriety / संयमके दिन ";
+export const cheifAction = "Action / एक्शन";
 //section 5
-export const absuingSubstance = "Does he ask you to stop abusing substance? How often has he been successful and for how long? क्या वह आपसे मादक पदार्थों का सेवन बंद करने के लिए कहता है? वह कितनी बार सफल हुआ है और कितने समय तक?";
+export const absuingSubstance = "Does he ask you to stop abusing substance? How often has he been successful and for how long? / क्या वह आपसे मादक पदार्थों का सेवन बंद करने के लिए कहता है? वह कितनी बार सफल हुआ है और कितने समय तक?";
 export const influenceStop = "What Influence or condition made him stop? / किस प्रभाव या परिस्थिति ने उसे रुकने पर मजबूर किया?";
 export const whenStopUsing = "When Stopped using, what work did you do? (In life) / जब पदार्थ के उपयोग बंद कर दिया तो आपने क्या काम किया?(जीवन में)";
 export const itReplaceWhenWhom = "If Relapse When? Why? With Whom? / यदि रिलैप्स हुए कब? क्यों? किसके साथ ?";
-export const afterRelapse = "After Relapse did you change your substance and is your Substance quantity increased? रिलैप्स के बाद क्या आपने अपना मादक पदार्थ बदल दिया और क्या आपकी मादक पदार्थ मात्रा की बढ़ गई है?";
+export const afterRelapse = "After Relapse did you change your substance and is your Substance quantity increased? /  रिलैप्स के बाद क्या आपने अपना मादक पदार्थ बदल दिया और क्या आपकी मादक पदार्थ मात्रा की बढ़ गई है?";
 export const haveDisorder = "Have any mental or physical disorder any accident or injury / रोगी को कोई मानसिक या शारीरिक रोग है?दुर्घटना या चोट?";
-export const isProblmeOrInjury = "Is problem or injury is due to Substance Dependency क्या समस्या या चोट नशे के कारण है?";
+export const isProblmeOrInjury = "Is problem or injury is due to Substance Dependency / क्या समस्या या चोट नशे के कारण है?";
 export const DiagnosedOnTreatment = "Diagnosed on? Treatment? if took or Undergoing / बीमारी का पता कब चला? कोई उपचार लिया या चल रहा हो तो जानकारी ";
 export const DoctorPlaceDuration = "Doctor, Place and duration & Result of Treatment? / चिकित्सक का नाम, अस्पताल, उपचार का समय और परिणाम? ";
-export const ifGone = "If gone under any treatment for Substance abuse? (any Psychiatrist, baba, jadi buti, Religious  etc) क्या आपने मादक पदार्थ के सेवन के लिए कोई उपचार करवाया है? (किसी मनोचिकित्सक, बाबा, जड़ी बूटी, धार्मिक आदि से)";
+export const ifGone = "If gone under any treatment for Substance abuse? (any Psychiatrist, baba, jadi buti, Religious  etc) / क्या आपने मादक पदार्थ के सेवन के लिए कोई उपचार करवाया है? (किसी मनोचिकित्सक, बाबा, जड़ी बूटी, धार्मिक आदि से)";
 export const YouFamiliar = "You familiar with treatment? Effect of the treatment? / क्या इलाज के बारे में आपको पहले पता था? परिणाम क्या रहा?";
 //section 6
 export const relationshipFamilyStatus = "Relationship & Family Status / रिश्ते और पारिवारिक स्थिति";
-export const relationshipStatus = "Relationship status: रिलेशनशिप स्टेटस ?:";
-export const MarriageArrangement = "Marriage Arrangement & Since वैवाहिक व्यवस्था और कब से";
-export const afterMerriageLife = "After marriage life or relationship Status (Happy or not & what about bonding)? if not married Reason? वैवाहिक जीवन या रिलेशनशिप कैसा है (खुश हैं या नहीं / बनती है या नहीं)?  विवाह नहीं हुआ है तो कारण?";
-export const isThereInterference = "Is there interference of wife's family or any relative in the internal matters of your family. If yes than whom & in which affairs. क्या आपके परिवार के अंदरूनी मामलों में पत्नी के परिवार या किसी रिश्तेदार का हस्तक्षेप है? यदि हाँ तो कौन और किन मामलों में?";
+export const relationshipStatus = "Relationship status: / रिलेशनशिप स्टेटस ?:";
+export const MarriageArrangement = "Marriage Arrangement & Since / वैवाहिक व्यवस्था और कब से";
+export const afterMerriageLife = "After marriage life or relationship Status (Happy or not & what about bonding)? if not married Reason? / वैवाहिक जीवन या रिलेशनशिप कैसा है (खुश हैं या नहीं / बनती है या नहीं)?  विवाह नहीं हुआ है तो कारण?";
+export const isThereInterference = "Is there interference of wife's family or any relative in the internal matters of your family. If yes than whom & in which affairs. / क्या आपके परिवार के अंदरूनी मामलों में पत्नी के परिवार या किसी रिश्तेदार का हस्तक्षेप है? यदि हाँ तो कौन और किन मामलों में?";
 export const nameisThere = "Name / नाम ";
 export const relationisThere = "Relation / संबंध ";
 export const relationisAge = "Age / आयु ";
 export const livingStatus = "Living Status / रहने की स्तिथि";
-export const AnyPhysicalDisorder = "Any physical Disorder & disease कोई भी शारीरिक विकार एवं रोग";
+export const AnyPhysicalDisorder = "Any physical Disorder & disease / कोई भी शारीरिक विकार एवं रोग";
 export const ifAnyDisorder = "If any disorder or disease describe / यदि कोई विकार या बीमारी का वर्णन";
 
 //section 7 FAMILY HISTORY :Drinking, Substance abuse or psychiatric problem?  पारिवारिक इतिहास: शराब पीना, मादक पदार्थ का प्रयोग या मानसिक समस्या?
-export const familyHistorySubstanceAbuse = "FAMILY HISTORY :Drinking, Substance abuse or psychiatric problem?  पारिवारिक इतिहास: शराब पीना, मादक पदार्थ का प्रयोग या मानसिक समस्या?";
+export const familyHistorySubstanceAbuse = "FAMILY HISTORY :Drinking, Substance abuse or psychiatric problem? / पारिवारिक इतिहास: शराब पीना, मादक पदार्थ का प्रयोग या मानसिक समस्या?";
 export const motherSide = " Mother’s Side";
 export const Alc = "Alc";
 export const Drug = "Drug";
 export const Psych = "Psych";
 export const fatherSide = "Father’s Side";
-export const grandMother = "Grandmother /  नानी ";
-export const grandFather = "Grandfather /  नाना";
+export const grandMother = "Grandmother / नानी ";
+export const grandFather = "Grandfather / नाना";
 export const mother = "Mother / माँ";
 export const father = "Father / पिता";
 export const aunt = "Aunt /  मामी";
 export const aunt1 = "Aunt / चाची";
 export const uncle = "Uncle / मामा";
 export const uncle1 = "Uncle / चाचा";
-export const anyOtherPlsMention = "any other pls mention कोई अन्य उल्लेख करें ";
-export const anyOtherPlsMention1 = "If any Please mention since From? and Psychiatric Problem and Substance (quantity, substance type) use details ? यदि कोई हो तो कृपया बताएं कि यह कब से है और मनोरोग समस्या एवं मादक पदार्थ विवरण दें(मात्रा, मादक पदार्थका प्रकार)?";
-export const currentStatus = "Current Status?  वर्तमान स्थिति? ";
-export const howWasBonding = "How was bonding & relation with substance user person? पदार्थ पर निर्भर व्यक्ति के साथ संबंध या लगाव बंधन कैसे थे/हैं?";
-export const familyBehaviorPatient = "Family's behavior with the patient मरीज से परिवार का व्यवहार";
-export const monitoringFamily = "Who is the head & monitoring family? परिवार का मुखिया और निगरानीकर्ता कौन है?";
-export const ralationshipFamilyMember = "How are your relationships with family members?  /परिवार के सदस्यों के साथ संबंध कैसे हैं?";
+export const anyOtherPlsMention = "any other pls mention / कोई अन्य उल्लेख करें ";
+export const anyOtherPlsMention1 = "If any Please mention since From? and Psychiatric Problem and Substance (quantity, substance type) use details ? / यदि कोई हो तो कृपया बताएं कि यह कब से है और मनोरोग समस्या एवं मादक पदार्थ विवरण दें(मात्रा, मादक पदार्थका प्रकार)?";
+export const currentStatus = "Current Status? / वर्तमान स्थिति? ";
+export const howWasBonding = "How was bonding & relation with substance user person? / पदार्थ पर निर्भर व्यक्ति के साथ संबंध या लगाव बंधन कैसे थे/हैं?";
+export const familyBehaviorPatient = "Family's behavior with the patient / मरीज से परिवार का व्यवहार";
+export const monitoringFamily = "Who is the head & monitoring family? / परिवार का मुखिया और निगरानीकर्ता कौन है?";
+export const ralationshipFamilyMember = "How are your relationships with family members? / परिवार के सदस्यों के साथ संबंध कैसे हैं?";
 export const childhood = "Childhood /बचपन";
-export const birthConditions = "Birth Conditions जन्म की स्थिति";
-export const parentingHistory = "Parenting History पालन पोषण कैसा था? ";
-export const wasThereAnyConflict = "Was there any conflict in the family during childhood (mother-father, uncle-aunt, any grandparent) If yes, then tell? क्या बचपन में परिवार में कोई विवाद था (माँ-पिताजी, चाचा-चाची, कोई दादा-दादी) यदि हाँ तो बताएं?";
-export const socialityWhere = "Sociality  where born & Living? सामाजिकता जहां पैदा हुआ और रहा  है?";
-export const highRiskBehavior = "High risk behavior? उच्च जोखिम वाला व्यवहार?";
-export const whatWasImpect = "What was impect of substance use scene in movies? फिल्मों में मादक द्रव्यों के उपयोग के दृश्य का क्या प्रभाव था?";
-export const hasAnyoneEverAbused = "Has anyone ever abused? क्या कभी किसी ने दुर्व्यवहार किया है?";
+export const birthConditions = "Birth Conditions / जन्म की स्थिति";
+export const parentingHistory = "Parenting History / पालन पोषण कैसा था? ";
+export const wasThereAnyConflict = "Was there any conflict in the family during childhood (mother-father, uncle-aunt, any grandparent) If yes, then tell? / क्या बचपन में परिवार में कोई विवाद था (माँ-पिताजी, चाचा-चाची, कोई दादा-दादी) यदि हाँ तो बताएं?";
+export const socialityWhere = "Sociality  where born & Living? / सामाजिकता जहां पैदा हुआ और रहा  है?";
+export const highRiskBehavior = "High risk behavior? / उच्च जोखिम वाला व्यवहार?";
+export const whatWasImpect = "What was impect of substance use scene in movies? / फिल्मों में मादक द्रव्यों के उपयोग के दृश्य का क्या प्रभाव था?";
+export const hasAnyoneEverAbused = "Has anyone ever abused? / क्या कभी किसी ने दुर्व्यवहार किया है?";
 //section 7
 export const academicsOccupationalDetails = "Academics Occupational Details/ शैक्षणिक व्यावसायिक विवरण";
-export const EducationStatus = "Education Status: शिक्षा की स्थिति:";
-export const OcuStatus = "Occupational status? कार्य की स्थिति?";
-export const ifDropout = "If dropout what is the reason यदि ड्रॉपआउट हुआ तो क्या कारण है?";
-export const studyWorkDetails = "Study/Work Details: (what was job frequency)  /अध्ययन/कार्य विवरण: (नौकरी की फ्रीक्वेंसी क्या थी?)";
-export const Hobbies1 = "Hobbies : शौक:";
-export const extraSkills = "Extra skills if any: अतिरिक्त कौशल कोई हो:";
-export const achievemntInLife = "Achievement in life: जीवन में कोई उपलब्धि:";
+export const EducationStatus = "Education Status: / शिक्षा की स्थिति:";
+export const OcuStatus = "Occupational status? / कार्य की स्थिति?";
+export const ifDropout = "If dropout what is the reason / यदि ड्रॉपआउट हुआ तो क्या कारण है?";
+export const studyWorkDetails = "Study Work Details: (what was job frequency) / अध्ययन कार्य विवरण: (नौकरी की फ्रीक्वेंसी क्या थी?)";
+export const Hobbies1 = "Hobbies : / शौक:";
+export const extraSkills = "Extra skills if any: / अतिरिक्त कौशल कोई हो:";
+export const achievemntInLife = "Achievement in life: / जीवन में कोई उपलब्धि:";
 //section 8
 export const socialBehavior = "Social Behavior / सामाजिक व्यवहार";
-export const socialBehavior1 = "Social Behavior समाज में व्यवहार";
-export const withWhomSpendFreeTime = "With Whom spend most of the free time  अधिकतर खाली समय किसके साथ बिताते हैं?";
+export const socialBehavior1 = "Social Behavior / समाज में व्यवहार";
+export const withWhomSpendFreeTime = "With Whom spend most of the free time / अधिकतर खाली समय किसके साथ बिताते हैं?";
 export const howManyFriends = "How many Friends have / वर्तमान में  कितने मित्र हैं";
 export const friendSocialStatus = "There Social Status / उनकी सामाजिक स्थिति ";
-export const howMuchDependent = "How much of them are substance dependent  give Numbers उनमें कितने लोग पदार्थ पर निर्भर हैं, संख्या बताइए?";
-export const whoClosedWellWisher = "Who is/was the closed & well wisher person in life? जीवन में सबसे करीबी और शुभचिंतक व्यक्ति कौन है/था?";
+export const howMuchDependent = "How much of them are substance dependent give Numbers / उनमें कितने लोग पदार्थ पर निर्भर हैं, संख्या बताइए?";
+export const whoClosedWellWisher = "Who is or was the closed & well wisher person in life? / जीवन में सबसे करीबी और शुभचिंतक व्यक्ति कौन है या था?";
 
 //section 9 Legal History / लीगल इतिहास 
 
 export const legalHistory = "Legal History / लीगल इतिहास";
-export const domesticViolence = "Domestic violence case if any & on Whom? घरेलू हिंसा अगर हो तो और किस पर ?";
-export const reasonBehindDomesticViolence = "Reason behind Domestic Violence? घरेलू हिंसा के पीछे का कारण?";
-export const drugStatus = "Drug status & QTY at time क्या नशे में थे ?(मात्रा क्या थी ?)";
-export const ifThereIsAnyCriminalCase = "If there is any criminal case  कोई आपराधिक मामला अगर हो तो ";
-export const specificCaseDetails = "Specify Case Details ? केस का विवरण दीजिये ";
-export const currentCaseStatus = "Current case status? केस की वर्तमान स्थिति";
-export const ifWentToJail = " If went to jail mention period & no's जेल गए तो कितने दिनों और कितनी बार ";
-export const ifThereIsAnyCriminalCase5 = "If there is any criminal case कोई आपराधिक मामला अगर हो तो";
+export const domesticViolence = "Domestic violence case if any & on Whom? / घरेलू हिंसा अगर हो तो और किस पर ?";
+export const reasonBehindDomesticViolence = "Reason behind Domestic Violence? / घरेलू हिंसा के पीछे का कारण?";
+export const drugStatus = "Drug status & QTY at time / क्या नशे में थे ?(मात्रा क्या थी ?)";
+export const ifThereIsAnyCriminalCase = "If there is any criminal case / कोई आपराधिक मामला अगर हो तो ";
+export const specificCaseDetails = "Specify Case Details ? / केस का विवरण दीजिये ";
+export const currentCaseStatus = "Current case status? / केस की वर्तमान स्थिति";
+export const ifWentToJail = " If went to jail mention period & no's / जेल गए तो कितने दिनों और कितनी बार ";
+export const ifThereIsAnyCriminalCase5 = "If there is any criminal case / कोई आपराधिक मामला अगर हो तो";
 
 //section Patient behavior  / रोगी का व्यवहार
 export const patientBeh ="Patient behavior  / रोगी का व्यवहार";
-export const whatIsTheMostImportantThing = "What is the most important thing in patient's life? मरीज़ के जीवन में सबसे महत्वपूर्ण चीज़ क्या है?";
-export const lifeAim = "Life's Aim जिंदगी का क्या लक्ष्य था या है ";
+export const whatIsTheMostImportantThing = "What is the most important thing in patient's life? / मरीज़ के जीवन में सबसे महत्वपूर्ण चीज़ क्या है?";
+export const lifeAim = "Life's Aim / जिंदगी का क्या लक्ष्य था या है ";
 
 //section Patient behavior (According to him)  / रोगी का व्यवहार (उनके अनुसार)
 
-export const patientBehavior = "Patient behavior (According to him)  / रोगी का व्यवहार (उनके अनुसार)";
+export const patientBehavior = "Patient behavior (According to him) / रोगी का व्यवहार (उनके अनुसार)";
 
 // export const doEverUseSubstance = "Do ever use Substance alone?  / क्या अकेले मादक पदार्थ उपयोग करते हैं? ";
 // export const MoodyPersonality = "Moody personality? / मूडी व्यक्तित्व?";
@@ -1767,26 +1767,26 @@ export const religionOptions = [
 ];
 
 export const moneySources = [
-  { id: "source_family", label: "Family (परिवार)" },
-  { id: "source_friends", label: "Friends (मित्र)" },
-  { id: "source_borrowings", label: "Borrowings (उधार)" },
-  { id: "source_thefting", label: "Thefting (चोरी)" },
-  { id: "source_theft_in_home", label: "Theft in home (घर में चोरी)" },
-  { id: "source_by_bluff", label: "By bluff (झांसा देकर)" },
-  { id: "source_illegal", label: "Illegal (अवैध)" },
-  { id: "source_any_other", label: "Any other (कोई अन्य)" },
+  { id: "source_family", label: "Family / परिवार" },
+  { id: "source_friends", label: "Friends / मित्र" },
+  { id: "source_borrowings", label: "Borrowings / उधार" },
+  { id: "source_thefting", label: "Thefting / चोरी" },
+  { id: "source_theft_in_home", label: "Theft in home / घर में चोरी" },
+  { id: "source_by_bluff", label: "By bluff / झांसा देकर" },
+  { id: "source_illegal", label: "Illegal / अवैध" },
+  { id: "source_any_other", label: "Any other / कोई अन्य" },
 ];
 
 export const relationshipOptions = [
-  { id: "single", label: "Single (अकेला)" },
-  { id: "in_relationship", label: "In a Relationship (रिलेशनशिप में)" },
-  { id: "engaged", label: "Engaged (सगाई हो चुकी)" },
-  { id: "married", label: "Married (विवाहित)" },
-  { id: "separated", label: "Separated (अलग हुए)" },
-  { id: "divorced", label: "Divorced (तलाकशुदा)" },
-  { id: "widowed", label: "Widowed (विधवा/विधुर)" },
-  { id: "complicated", label: "It's Complicated (जटिल स्थिति)" },
-  { id: "other", label: "Other (अन्य)" },
+  { id: "single", label: "Single / अकेला" },
+  { id: "in_relationship", label: "In a Relationship / रिलेशनशिप में" },
+  { id: "engaged", label: "Engaged / सगाई हो चुकी" },
+  { id: "married", label: "Married / विवाहित" },
+  { id: "separated", label: "Separated / अलग हुए" },
+  { id: "divorced", label: "Divorced / तलाकशुदा" },
+  { id: "widowed", label: "Widowed / विधवा/विधुर " },
+  { id: "complicated", label: "It's Complicated / जटिल स्थिति" },
+  { id: "other", label: "Other / अन्य" },
 ];
 
 
@@ -1858,7 +1858,7 @@ export const patientRegisterTitle = "Patient Registration Form/रोगी प�
 export const patientRelativePhoneNumber = "Patient Phone Number/रोगी फोन नंबर";
 export const patientRelativeEmailAddr = "Patient Relative Email Address/रोगी के संबंधी का ईमेल पता";
 export const patientDateOfBirth = "Patient Date of Birth/रोगी की जन्म तिथि";
-export const pateintAddress = "Patient / Relative Address/रोगी / संबंधी का पता";
+export const pateintAddress = "Patient Relative Address / रोगी संबंधी का पता";
 export const registerYourDetail = "New Patient Registration/नया रोगी पंजीकरण";
 export const IspatientWhatsappNo = "Is Patient Phone Number/क्या मरीज़ का फ़ोन नंबर";
 export const whatsAppNo = "WhatsApp Number/व्हाट्सएप नंबर";
@@ -1870,7 +1870,7 @@ export const FirstPhysicalAssessment ="First Physical Assessment";
 export const Weight = "Weight / वजन";
 export const PulseRate ="Pulse Rate / पल्स रेट";
 export const Bloodpressure="Blood pressure / रक्तचाप";
-export const Temperature="Temperature / तापमान (Mention/उल्लेख)";
+export const Temperature="Temperature / तापमान ";
 export const AnyMedicalHistory="Any Medical History / कोई भी चिकित्सा इतिहास";
 export const AnyBloodTransfusionHistory="Any Blood Transfusion History / ब्लड ट्रांसफ्यूजन इतिहास";
 
@@ -1906,29 +1906,29 @@ export const Lymphadenopathy ="Lymphadenopathy सूजे/बढ़े हु�
 
 //Cognitive Behavioral Test/ संज्ञानात्मक व्यवहार परीक्षण
 export const CognitiveTitle ="Cognitive Behavioral Test/ संज्ञानात्मक व्यवहार परीक्षण";
-export const Questions ="Questions";
-export const MaximumScore  ="Maximum Score ";
-export const PatientScore = "Patient's Score";
+export const Questions ="Questions/प्रश्न";
+export const MaximumScore  ="Maximum Score/अधिकतम स्कोर ";
+export const PatientScore = "Patient's Score/रोगी का स्कोर";
 export const CognitivequestionsTotal = "Total/कुल";
 
 export const Cognitivequestions = [
-  { id: 1, question: "What is the Year? Season? Date? Day of the Week? Month?", maxScore: 5 },
-  { id: 2, question: "Word recall after 1 minute: umbrella, flower, watch, picture, pencil", maxScore: 5 },
-  { id: 3, question: "Name the months of the year backwards.", maxScore: 2 },
-  { id: 4, question: "Serial 3 or (Starting from 40, count backward by 3)", maxScore: 5 },
-  { id: 5, question: "Serial 7 or (Starting from 100, count backward by 7)", maxScore: 5 },
-  { id: 6, question: "Backward counting from 20 to 0", maxScore: 1 },
-  { id: 7, question: "What did you eat for dinner last night?", maxScore: 1 },
-  { id: 8, question: "What did you have for breakfast this morning?", maxScore: 1 },
-  { id: 9, question: "India's Independence Day", maxScore: 1 },
-  { id: 10, question: "Show the patient two simple objects, Such as wristwatch and a pencil.", maxScore: 1 },
+  { id: 1, question: "What is the Year? Season? Date? Day of the Week? Month?/मरीज़ का साल क्या है? ऋतु क्या है? तारीख क्या है? हफ़्ते का दिन क्या है? महीना क्या है?", maxScore: 5 },
+  { id: 2, question: "Word recall after 1 minute: umbrella, flower, watch, picture, pencil/1 मिनट के बाद शब्द याद करें: छाता, फूल, घड़ी, चित्र, पेंसिल", maxScore: 5 },
+  { id: 3, question: "Name the months of the year backwards./वर्ष के महीनों के नाम उल्टे क्रम में लिखें।", maxScore: 2 },
+  { id: 4, question: "Serial 3 or (Starting from 40, count backward by 3)/क्रम 3 या (40 से शुरू करके, 3 से उल्टी गिनती करें)", maxScore: 5 },
+  { id: 5, question: "Serial 7 or (Starting from 100, count backward by 7)/क्रम 7 या (100 से शुरू करके, 7 से उल्टी गिनती करें)", maxScore: 5 },
+  { id: 6, question: "Backward counting from 20 to 0/20 से 0 तक उल्टी गिनती", maxScore: 1 },
+  { id: 7, question: "What did you eat for dinner last night?/कल रात आपने खाने में क्या खाया?", maxScore: 1 },
+  { id: 8, question: "What did you have for breakfast this morning?/आज सुबह आपने नाश्ते में क्या खाया?", maxScore: 1 },
+  { id: 9, question: "India's Independence Day/भारत का स्वतंत्रता दिवस", maxScore: 1 },
+  { id: 10, question: "Show the patient two simple objects, Such as wristwatch and a pencil./रोगी को दो सरल वस्तुएं दिखाएं, जैसे कलाई घड़ी और एक पेंसिल।", maxScore: 1 },
   { id: 11, question: "Please read this and do what it says (Written instruction is 'Close Your Eyes')", maxScore: 1 },
-  { id: 12, question: "India's Prime Minister?", maxScore: 1 },
-  { id: 13, question: "Madhya Pradesh Chief Minister?", maxScore: 1 },
+  { id: 12, question: "India's Prime Minister?/रोगी को दो सरल वस्तुएं दिखाएं, जैसे कलाई घड़ी और एक पेंसिल।", maxScore: 1 },
+  { id: 13, question: "Madhya Pradesh Chief Minister?/मध्य प्रदेश के मुख्यमंत्री कौन हैं?", maxScore: 1 },
 ];
 
 //Space for work कार्य के लिए स्थान
-export const Spaceforwork = "Space for work कार्य के लिए स्थान";
+export const Spaceforwork = "Space for work/ कार्य के लिए स्थान";
 
 //Remarks / टिप्पणी
 export const Remarks = "Remarks / टिप्पणी";
@@ -1941,46 +1941,46 @@ export const SexualHistoryID = "ID";
 export const SexualHistoryquestion = "Question / प्रश्न";
 export const SexualHistoryanswer = "Answer / उत्तर";
 export const SexuaQuesData = [
-  { key: "sex_misconceptions", en: "Did you have sex misconceptions?", hi: "क्या आपके पास यौन भ्रांतियाँ थीं?" },
-  { key: "sexual_games_child", en: "Do you recall playing any games with sexual content as a child (i.e. Doctor)?", hi: "क्या आपको बचपन में यौन सामग्री वाले खेल खेलने की याद है (जैसे डॉक्टर)?" },
-  { key: "unpleasant_experiences", en: "Did you have any unpleasant experiences with undue physical intimacy by strangers or a family member or friend?", hi: "क्या आपके साथ किसी अजनबी, परिवार के सदस्य या मित्र द्वारा अनुचित शारीरिक निकटता का कोई अप्रिय अनुभव हुआ था?" },
-  { key: "bad_attitude_nudity", en: "Do you have a bad attitude toward nudity (or modesty)?", hi: "क्या आपके पास नग्नता (या विनम्रता) के प्रति नकारात्मक दृष्टिकोण है?" },
-  { key: "age_first_sexual_activity", en: "Age at first sexual activity", hi: "पहली यौन गतिविधि की आयु" },
-  { key: "consensual_activity", en: "Consensual/non-consensual", hi: "सहमति/असहमति" },
-  { key: "current_sexual_functioning", en: "Current sexual functioning", hi: "वर्तमान यौन क्रियाशीलता" },
-  { key: "sex_desire_type", en: "Which kind of sex desire do you have?", hi: "आपके पास किस प्रकार की यौन इच्छा है?" },
-  { key: "sexual_identity_comfort", en: "Describe your sexual identity? Are you comfortable with it?", hi: "अपनी यौन पहचान का वर्णन करें? क्या आप इसके साथ सहज हैं?" },
-  { key: "erotic_material_exposure", en: "Did you read erotic material? Go to pornographic movies?", hi: "क्या आपने कामुक सामग्री पढ़ी? क्या आप अश्लील फिल्मों में गए?" },
-  { key: "masturbation_history", en: "Masturbation history (age, attitude, etc.)", hi: "हस्तमैथुन इतिहास (आयु, दृष्टिकोण आदि)" },
-  { key: "masturbation_frequency_years", en: "How often did you masturbate during these years?", hi: "इन वर्षों के दौरान आपने कितनी बार हस्तमैथुन किया?" },
-  { key: "intercourse_frequency", en: "How often do you have intercourse?", hi: "आप कितनी बार संभोग करते हैं?" },
-  { key: "sex_importance_marriage", en: "How do you see the place of sex in marriage? Is it very important to you or not?", hi: "आप विवाह में सेक्स की जगह को कैसे देखते हैं? क्या यह आपके लिए बहुत महत्वपूर्ण है या नहीं?" },
-  { key: "tell_partner_preferences", en: "Do you tell your partner what you do and do not like during sex?", hi: "क्या आप अपने साथी को बताते हैं कि आपको सेक्स के दौरान क्या पसंद और क्या नापसंद है?" },
-  { key: "masturbation_after_marriage", en: "Did you masturbate after marriage because you did not get satisfaction?", hi: "क्या आपने शादी के बाद हस्तमैथुन किया क्योंकि आपको संतुष्टि नहीं मिली?" },
-  { key: "partner_sexual_problems", en: "Do you think your partner has any sexual problems?", hi: "क्या आपको लगता है कि आपके साथी को कोई यौन समस्या है?" },
-  { key: "extramarital_affairs", en: "Do you have extra-marital affairs?", hi: "क्या आपके विवाहेतर संबंध हैं?" },
-  { key: "coitus_outside_marriage", en: "Have you experienced coitus outside of your marriage relationship?", hi: "क्या आपने अपने विवाह संबंध के बाहर संभोग का अनुभव किया है?" },
-  { key: "women_intercourse_thoughts", en: "What did you think of the women who would have intercourse with you? What about the women who refused?", hi: "उन महिलाओं के बारे में आप क्या सोचते थे जो आपके साथ संभोग करती थीं? जो मना करती थीं उनके बारे में क्या?" },
-  { key: "external_aids_usage", en: "Did you use external aids for sex (porn, medicine, physical aids)?", hi: "क्या आपने सेक्स के लिए बाहरी सहायक सामग्री (अश्लील सामग्री, दवाएं, शारीरिक उपकरण) का उपयोग किया?" },
-  { key: "upsetting_experiences", en: "Are there upsetting experiences that may relate? Psychiatric problems? Other medical problems?", hi: "क्या कोई परेशान करने वाले अनुभव हैं जो संबंधित हो सकते हैं? मनोरोग संबंधी समस्याएं? अन्य चिकित्सा समस्याएं?" },
-  { key: "sex_desire_before_after_substance", en: "Did you have a desire for sex before and after substance use?", hi: "क्या आपको पदार्थ उपयोग से पहले और बाद में सेक्स की इच्छा थी?" },
-  { key: "premature_ejaculation_substance", en: "Have you experienced premature ejaculation due to substance abuse?", hi: "क्या आपने नशीली दवाओं के दुरुपयोग के कारण शीघ्रपतन का अनुभव किया है?" },
-  { key: "alcohol_drugs_ejaculation_effect", en: "Have alcohol, drugs, or the use of a condom affected your ejaculation?", hi: "क्या शराब, नशीली दवाओं या कंडोम के उपयोग ने आपके स्खलन को प्रभावित किया है?" },
-  { key: "frequency_comparison_past", en: "How does this compare with your frequency in the past?", hi: "यह आपकी पिछली आवृत्ति की तुलना में कैसा है?" },
-  { key: "heterosexual_homosexual_activity", en: "Heterosexual activity/homosexual activity", hi: "विषमलैंगिक गतिविधि/समलैंगिक गतिविधि" }
+  { key: "sex_misconceptions", en: "Did you have sex misconceptions?/क्या आपके पास यौन भ्रांतियाँ थीं?" },
+  { key: "sexual_games_child", en: "Do you recall playing any games with sexual content as a child (i.e. Doctor)?/क्या आपको बचपन में यौन सामग्री वाले खेल खेलने की याद है (जैसे डॉक्टर)?" },
+  { key: "unpleasant_experiences", en: "Did you have any unpleasant experiences with undue physical intimacy by strangers or a family member or friend?/क्या आपके साथ किसी अजनबी, परिवार के सदस्य या मित्र द्वारा अनुचित शारीरिक निकटता का कोई अप्रिय अनुभव हुआ था?" },
+  { key: "bad_attitude_nudity", en: "Do you have a bad attitude toward nudity (or modesty)?/क्या आपके पास नग्नता (या विनम्रता) के प्रति नकारात्मक दृष्टिकोण है?" },
+  { key: "age_first_sexual_activity", en: "Age at first sexual activity/पहली यौन गतिविधि की आयु" },
+  { key: "consensual_activity", en: "Consensual/non-consensual/सहमति/असहमति" },
+  { key: "current_sexual_functioning", en: "Current sexual functioning/वर्तमान यौन क्रियाशीलता" },
+  { key: "sex_desire_type", en: "Which kind of sex desire do you have?/आपके पास किस प्रकार की यौन इच्छा है?" },
+  { key: "sexual_identity_comfort", en: "Describe your sexual identity? Are you comfortable with it?/अपनी यौन पहचान का वर्णन करें? क्या आप इसके साथ सहज हैं?" },
+  { key: "erotic_material_exposure", en: "Did you read erotic material? Go to pornographic movies?/क्या आपने कामुक सामग्री पढ़ी? क्या आप अश्लील फिल्मों में गए?" },
+  { key: "masturbation_history", en: "Masturbation history (age, attitude, etc.)/हस्तमैथुन इतिहास (आयु, दृष्टिकोण आदि)" },
+  { key: "masturbation_frequency_years", en: "How often did you masturbate during these years?/इन वर्षों के दौरान आपने कितनी बार हस्तमैथुन किया?" },
+  { key: "intercourse_frequency", en: "How often do you have intercourse?/आप कितनी बार संभोग करते हैं?" },
+  { key: "sex_importance_marriage", en: "How do you see the place of sex in marriage? Is it very important to you or not?/आप विवाह में सेक्स की जगह को कैसे देखते हैं? क्या यह आपके लिए बहुत महत्वपूर्ण है या नहीं?" },
+  { key: "tell_partner_preferences", en: "Do you tell your partner what you do and do not like during sex?/क्या आप अपने साथी को बताते हैं कि आपको सेक्स के दौरान क्या पसंद और क्या नापसंद है?" },
+  { key: "masturbation_after_marriage", en: "Did you masturbate after marriage because you did not get satisfaction?/क्या आपने शादी के बाद हस्तमैथुन किया क्योंकि आपको संतुष्टि नहीं मिली?" },
+  { key: "partner_sexual_problems", en: "Do you think your partner has any sexual problems?/क्या आपको लगता है कि आपके साथी को कोई यौन समस्या है?" },
+  { key: "extramarital_affairs", en: "Do you have extra-marital affairs?/क्या आपके विवाहेतर संबंध हैं?" },
+  { key: "coitus_outside_marriage", en: "Have you experienced coitus outside of your marriage relationship?/क्या आपने अपने विवाह संबंध के बाहर संभोग का अनुभव किया है?" },
+  { key: "women_intercourse_thoughts", en: "What did you think of the women who would have intercourse with you? What about the women who refused?/उन महिलाओं के बारे में आप क्या सोचते थे जो आपके साथ संभोग करती थीं? जो मना करती थीं उनके बारे में क्या?" },
+  { key: "external_aids_usage", en: "Did you use external aids for sex (porn, medicine, physical aids)?/क्या आपने सेक्स के लिए बाहरी सहायक सामग्री (अश्लील सामग्री, दवाएं, शारीरिक उपकरण) का उपयोग किया?" },
+  { key: "upsetting_experiences", en: "Are there upsetting experiences that may relate? Psychiatric problems? Other medical problems?/क्या कोई परेशान करने वाले अनुभव हैं जो संबंधित हो सकते हैं? मनोरोग संबंधी समस्याएं? अन्य चिकित्सा समस्याएं?" },
+  { key: "sex_desire_before_after_substance", en: "Did you have a desire for sex before and after substance use?/क्या आपको पदार्थ उपयोग से पहले और बाद में सेक्स की इच्छा थी?" },
+  { key: "premature_ejaculation_substance", en: "Have you experienced premature ejaculation due to substance abuse?/क्या आपने नशीली दवाओं के दुरुपयोग के कारण शीघ्रपतन का अनुभव किया है?" },
+  { key: "alcohol_drugs_ejaculation_effect", en: "Have alcohol, drugs, or the use of a condom affected your ejaculation?/क्या शराब, नशीली दवाओं या कंडोम के उपयोग ने आपके स्खलन को प्रभावित किया है?" },
+  { key: "frequency_comparison_past", en: "How does this compare with your frequency in the past?/यह आपकी पिछली आवृत्ति की तुलना में कैसा है?" },
+  { key: "heterosexual_homosexual_activity", en: "Heterosexual activity/homosexual activity/विषमलैंगिक गतिविधि/समलैंगिक गतिविधि" }
 ];
 
 
 
 //PFA 
 export const neurologicalOptions = [
-  { key: "delirium", label: "Delirium" },
-  { key: "seizure", label: "Seizure" },
-  { key: "blackout", label: "Blackout" },
-  { key: "memory_loss", label: "Memory Loss" },
-  { key: "trembling", label: "Trembling" },
-  { key: "epilepsy", label: "Epilepsy" },
-  { key: "neuropathy", label: "Neuropathy" }
+  { key: "delirium", label: "Delirium/प्रलाप" },
+  { key: "seizure", label: "Seizure/जब्ती" },
+  { key: "blackout", label: "Blackout/अंधकार" },
+  { key: "memory_loss", label: "Memory Loss/स्मृति हानि" },
+  { key: "trembling", label: "Trembling/हिलता हुआ" },
+  { key: "epilepsy", label: "Epilepsy/मिरगी" },
+  { key: "neuropathy", label: "Neuropathy/न्युरोपटी" }
 ];
 
 
@@ -2002,62 +2002,62 @@ export const mentalBehavioursData  = [
   {
     index:1,
     code: "F10.",
-    english: "Mental and behavioral disorders due to use of alcohol",
-    hindi: "शराब के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    english: "Mental and behavioral disorders due to use of alcohol/शराब के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    // hindi: "शराब के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
   },
   {
     index:2,
     code: "F11.",
-    english: "Mental and behavioural disorders due to use of opioids",
-    hindi: "ओपिओइड के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    english: "Mental and behavioural disorders due to use of opioids/ओपिओइड के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    // hindi: "ओपिओइड के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
   },
   {
     index:3,
     code: "F12.",
-    english: "Mental and behavioural disorders due to use of cannabinoids",
-    hindi: "कैनाबिनोइड के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    english: "Mental and behavioural disorders due to use of cannabinoids/कैनाबिनोइड के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    // hindi: "कैनाबिनोइड के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
   },
   {
     index:4,
     code: "F13.",
-    english: "Mental and behavioural disorders due to use of sedatives or hypnotics",
-    hindi: "शामक या कृत्रिम निद्रावस्था के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    english: "Mental and behavioural disorders due to use of sedatives or hypnotics/शामक या कृत्रिम निद्रावस्था के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    // hindi: "शामक या कृत्रिम निद्रावस्था के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
   },
   {
     index:5,
     code: "F14.",
-    english: "Mental and behavioural disorders due to use of cocaine",
-    hindi: "कोकीन के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    english: "Mental and behavioural disorders due to use of cocaine/कोकीन के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    // hindi: "कोकीन के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
   },
   {
     index:6,
     code: "F15.",
-    english: "Mental and behavioural disorders due to use of other stimulants, including caffeine",
-    hindi: "कैफीन सहित अन्य उत्तेजक पदार्थों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    english: "Mental and behavioural disorders due to use of other stimulants, including caffeine/कैफीन सहित अन्य उत्तेजक पदार्थों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    // hindi: "कैफीन सहित अन्य उत्तेजक पदार्थों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
   },
   {
     index:7,
     code: "F16.",
-    english: "Mental and behavioural disorders due to use of hallucinogens (Substance)",
-    hindi: "मतिभ्रम के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार (पदार्थ)",
+    english: "Mental and behavioural disorders due to use of hallucinogens (Substance)/मतिभ्रम के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार (पदार्थ)",
+    // hindi: "मतिभ्रम के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार (पदार्थ)",
   },
   {
     index:8,
     code: "F17.",
-    english: "Mental and behavioural disorders due to use of tobacco",
-    hindi: "तंबाकू के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    english: "Mental and behavioural disorders due to use of tobacco/तंबाकू के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    // hindi: "तंबाकू के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
   },
   {
     index:9,
     code: "F18.",
-    english: "Mental and behavioural disorders due to use of volatile solvents",
-    hindi: "वाष्पशील विलायकों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    english: "Mental and behavioural disorders due to use of volatile solvents/वाष्पशील विलायकों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    // hindi: "वाष्पशील विलायकों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
   },
   {
     index:10,
     code: "F19.",
-    english: "Mental and behavioural disorders due to multiple drug use and use of other psychoactive substances",
-    hindi: "दवाओं के उपयोग और अन्य मनोवैज्ञानिक पदार्थों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    english: "Mental and behavioural disorders due to multiple drug use and use of other psychoactive substances/दवाओं के उपयोग और अन्य मनोवैज्ञानिक पदार्थों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
+    // hindi: "दवाओं के उपयोग और अन्य मनोवैज्ञानिक पदार्थों के उपयोग के कारण मानसिक और व्यवहार संबंधी विकार",
   },
 ];
 
@@ -2105,7 +2105,7 @@ export const substanceList = [
   "D-Propoxyphene / डी-प्रोपॉक्सिफीन",
   "Buprenophine / ब्यूप्रीनॉर्फिन",
   "Pentazocine / पेंटाज़ोसीन",
-  "Sedative/Hypnotics / शान्तक/कृत्रिम निद्रावस्था वाली दवाएँ",
+  "Sedative - Hypnotics / शान्तक/कृत्रिम निद्रावस्था वाली दवाएँ",
   "Amphetamine and Other ATS / एम्फेटामाइन और अन्य ATS"
 ];
 

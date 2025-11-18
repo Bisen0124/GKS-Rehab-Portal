@@ -165,11 +165,11 @@ function Legal() {
             let isLegalCompleted = false;
 
           let userStatus = (
-            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+            <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
           );
           if (admitDate && recentLegalData && admitDate > recentLegalData) {
             isLegalCompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -270,7 +270,7 @@ function Legal() {
               <span
                 onClick={() => handleLegalPreFill(row.legalRecentIds)}
                 style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
+                title={getTranslation("Readmission Legal Form/पुनः प्रवेश कानूनी प्रपत्र",lang)}
               >
                 ✏️
               </span>
@@ -316,7 +316,7 @@ function Legal() {
       cursor: row.isLegalCompleted ? "not-allowed" : "pointer",
       opacity: row.isLegalCompleted ? 0.5 : 1,
     }}
-    title={row.isLegalCompleted ? "Legal Completed" : "Create Legal Form"}
+    title={row.isLegalCompleted ? getTranslation("Legal Completed/कानूनी रूप से पूर्ण",lang) : getTranslation("Create Legal Form/कानूनी प्रपत्र बनाएँ",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -637,8 +637,8 @@ function Legal() {
 
       Swal.fire({
         icon: "success",
-        title: "Legal History Created Successfully",
-        text: "The Legal History assessment was submitted successfully.",
+        title: getTranslation("Legal History Created Successfully/कानूनी इतिहास सफलतापूर्वक रचा गया",lang),
+        text: getTranslation("The Legal History assessment was submitted successfully./कानूनी इतिहास मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
       }).then(() => setIsLegalModalOpen(false));
 
       console.log("✅ Legal History Data", data);
@@ -648,8 +648,8 @@ function Legal() {
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Failed to submit Legal History. Check console for error.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Failed to submit Legal History. Check console for error./कानूनी इतिहास सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   };
@@ -870,8 +870,8 @@ const handleLegalUpdate = async () => {
 
     Swal.fire({
       icon: "success",
-      title: "Legal History Updated Successfully!",
-      text: "Patient's legal history has been updated successfully!",
+      title: getTranslation("Legal History Updated Successfully!/कानूनी इतिहास सफलतापूर्वक अपडेट किया गया!",lang),
+      text: getTranslation("Patient's legal history has been updated successfully!/रोगी का कानूनी इतिहास सफलतापूर्वक अद्यतन कर दिया गया है!",lang),
     }).then(() => {
       setLegalEditModal(false); // ✅ Close modal after success
     });
@@ -881,8 +881,8 @@ const handleLegalUpdate = async () => {
 
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to update Legal History. Check console for details.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to update Legal History. Check console for details./कानूनी इतिहास अपडेट करने में विफल. विवरण के लिए कंसोल देखें.",lang),
     });
   }
 };
@@ -901,8 +901,8 @@ const handleLegalPreFill = async (prefillLegalID = null) => {
   if (!prefillLegalID) {
     Swal.fire({
       icon: "warning",
-      title: "Missing Legal ID",
-      text: "No valid Legal History ID was provided for prefill.",
+      title: getTranslation("Missing Legal ID/कानूनी आईडी गुम होना",lang),
+      text: getTranslation("No valid Legal History ID was provided for prefill./प्रीफ़िल के लिए कोई वैध कानूनी इतिहास आईडी प्रदान नहीं की गई थी।",lang),
     });
     return;
   }
@@ -929,8 +929,8 @@ const handleLegalPreFill = async (prefillLegalID = null) => {
     if (!response.ok) {
       Swal.fire({
         icon: "error",
-        title: "Fetch Failed",
-        text: data.message || "Unable to fetch Legal data for prefill.",
+        title: getTranslation("Fetch Failed/प्राप्त करना विफल",lang),
+        text: data.message || getTranslation("Unable to fetch Legal data for prefill./प्रीफ़िल के लिए कानूनी डेटा प्राप्त करने में असमर्थ.",lang),
       });
       return;
     }
@@ -939,8 +939,8 @@ const handleLegalPreFill = async (prefillLegalID = null) => {
     if (!latestAssessment) {
       Swal.fire({
         icon: "info",
-        title: "No Data Found",
-        text: "No Legal data available for this ID.",
+        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
+        text: getTranslation("No Legal data available for this ID./इस आईडी के लिए कोई कानूनी डेटा उपलब्ध नहीं है।",lang),
       });
       return;
     }
@@ -998,8 +998,8 @@ const handleLegalPreFill = async (prefillLegalID = null) => {
     console.error("Prefill fetch error:", error);
     Swal.fire({
       icon: "error",
-      title: "Network Error",
-      text: "Unable to fetch Legal data due to a network issue.",
+      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
+      text: getTranslation("Unable to fetch Legal data due to a network issue./नेटवर्क समस्या के कारण कानूनी डेटा प्राप्त करने में असमर्थ.",lang),
     });
   }
 };
@@ -1056,8 +1056,8 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
     Swal.fire({
       icon: "success",
-      title: "Legal History Created Successfully",
-      text: "The Legal History readmission form was submitted successfully.",
+      title: getTranslation("Legal History Created Successfully/कानूनी इतिहास सफलतापूर्वक रचा गया",lang),
+      text: getTranslation("The Legal History readmission form was submitted successfully./कानूनी इतिहास पुनः प्रवेश फॉर्म सफलतापूर्वक प्रस्तुत किया गया।",lang),
     }).then(() => setLegalPrefillModal(false)); // ✅ close prefill modal
 
     console.log("✅ Legal History Data", data);
@@ -1067,8 +1067,8 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
     setIsLoading(false);
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to submit Legal History. Check console for error.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to submit Legal History. Check console for error./कानूनी इतिहास सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };
@@ -1105,7 +1105,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1127,7 +1127,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1170,7 +1170,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All Legal History Patient Data List" className="p-0" />
+                    <HeaderCard title={getTranslation("All Legal History Patient Data List/सभी कानूनी इतिहास रोगी डेटा सूची",lang)} className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -1190,7 +1190,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1226,17 +1226,17 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
       {/* SUD Brief create form start */}
       <CommonModal
         isOpen={isLegalModalOpen}
-        title={`Create ${legalHistory}`}
+        title={getTranslation(`Create ${legalHistory}`,lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
-            name: "Patient name/प्रयासक का नाम :",
-            sex: "Gender/प्रयासक का लिंग :",
-            age: "Age/प्रयासक का उम्र :",
-            date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+           name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+           sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+           age: getTranslation("Age/प्रयासक का उम्र :",lang),
+           date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
             ageValue: patientCalAge,
           }}
         />
@@ -1244,7 +1244,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
           <form className="theme-form" onSubmit={SubmitLegalFormHandler}>
             <div class="col-md-6 mb-3">
               <Label className="col-sm-12 col-form-label  col-xl-6">
-                {dateOfAssessment}
+                {getTranslation(dateOfAssessment,lang)}
               </Label>
               <Col xl="5" sm="12">
                 <div className="input-group">
@@ -1262,7 +1262,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
             {/* Legal History Start */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{domesticViolence}</Label>
+                <Label>{getTranslation(domesticViolence,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1276,7 +1276,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{reasonBehindDomesticViolence}</Label>
+                <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1290,7 +1290,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{drugStatus}</Label>
+                <Label>{getTranslation(drugStatus,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1304,7 +1304,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{ifThereIsAnyCriminalCase}</Label>
+                <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1318,7 +1318,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{specificCaseDetails}</Label>
+                <Label>{getTranslation(specificCaseDetails,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1332,7 +1332,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{currentCaseStatus}</Label>
+                <Label>{getTranslation(currentCaseStatus,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1346,7 +1346,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{drugStatus}</Label>
+                <Label>{getTranslation(drugStatus,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1360,7 +1360,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{ifWentToJail}</Label>
+                <Label>{getTranslation(ifWentToJail,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1383,7 +1383,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 aria-hidden="true"
               ></span>
             ) : (
-              "Create Legal History / लीगल इतिहास"
+              getTranslation("Create Legal History / कानूनी इतिहास बनाएँ",lang)
             )}
           </Button>
         </div>
@@ -1396,7 +1396,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
      {/* View Legal History data into modal start */}
 <CommonModal
   isOpen={viewLegalModal}
-  title={"View Legal History"}
+  title={getTranslation("View Legal History/कानूनी इतिहास देखें",lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1408,7 +1408,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
         padding: "20px 0",
       }}
     >
-      Legal History / लीगल इतिहास
+      {getTranslation("Legal History / लीगल इतिहास",lang)}
     </h4>
 
     <Table size="sm" className="table-auto table-bordered">
@@ -1422,23 +1422,23 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
         ) : viewLegalData ? (
           <>
             <tr>
-              <th className="text-start p-3">Name</th>
+              <th className="text-start p-3">{getTranslation("Name/नाम",lang)}</th>
               <td className="border p-3">{viewLegalData.name}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Gender</th>
+              <th className="text-start p-3">{getTranslation("Gender/लिंग",lang)}</th>
               <td className="border p-3">{viewLegalData.gender}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Phone</th>
+              <th className="text-start p-3">{getTranslation("Phone/फ़ोन",lang)}</th>
               <td className="border p-3">{viewLegalData.phone}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Email</th>
+              <th className="text-start p-3">{getTranslation("Email/ईमेल",lang)}</th>
               <td className="border p-3">{viewLegalData.email}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Assessment Date</th>
+              <th className="text-start p-3">{getTranslation("Assessment Date/मूल्यांकन तिथि",lang)}</th>
               <td className="border p-3">
                 {viewLegalData.date_of_assessment
                   ? new Date(viewLegalData.date_of_assessment).toLocaleDateString()
@@ -1446,46 +1446,46 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Domestic Violence Case</th>
+              <th className="text-start p-3">{getTranslation("Domestic Violence Case/घरेलू हिंसा का मामला",lang)}</th>
               <td className="border p-3">{viewLegalData.domestic_violence_case}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Reason Behind Domestic Violence</th>
+              <th className="text-start p-3">{getTranslation("Reason Behind Domestic Violence/घरेलू हिंसा के पीछे का कारण",lang)}</th>
               <td className="border p-3">{viewLegalData.reason_behind_domestic_violence}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Drug Status Quantity (At Time)</th>
+              <th className="text-start p-3">{getTranslation("Drug Status Quantity (At Time)/दवा की स्थिति मात्रा (समय पर)",lang)}</th>
               <td className="border p-3">{viewLegalData.drug_status_quantity_at_time}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Any Criminal Case</th>
+              <th className="text-start p-3">{getTranslation("Any Criminal Case/कोई भी आपराधिक मामला",lang)}</th>
               <td className="border p-3">{viewLegalData.any_criminal_case}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Case Details</th>
+              <th className="text-start p-3">{getTranslation("Case Details/मामले का विवरण",lang)}</th>
               <td className="border p-3">{viewLegalData.case_details_specify}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Current Case Status</th>
+              <th className="text-start p-3">{getTranslation("Current Case Status/वर्तमान मामले की स्थिति",lang)}</th>
               <td className="border p-3">{viewLegalData.current_case_status}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Drug Status Quantity (Current)</th>
+              <th className="text-start p-3">{getTranslation("Drug Status Quantity (Current)/दवा की स्थिति मात्रा (वर्तमान)",lang)}</th>
               <td className="border p-3">{viewLegalData.drug_status_quantity_current}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Jail Period Duration</th>
+              <th className="text-start p-3">{getTranslation("Jail Period Duration/जेल की अवधि",lang)}</th>
               <td className="border p-3">{viewLegalData.jail_period_duration}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Status</th>
+              <th className="text-start p-3">{getTranslation("Status/स्थिति",lang)}</th>
               <td className="border p-3">{viewLegalData.status}</td>
             </tr>
           </>
         ) : (
           <tr>
             <td colSpan="2" className="text-center">
-              No data available
+              {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
             </td>
           </tr>
         )}
@@ -1498,7 +1498,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 {/* Legal update form start */}
 <CommonModal
   isOpen={LegalEditModal}
-  title={`Edit ${legalHistory}`}
+  title={getTranslation(`Edit ${legalHistory}`,lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1521,7 +1521,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
       {/* Date of Assessment */}
       <div className="col-md-6 mb-3">
         <Label className="col-sm-12 col-form-label col-xl-6">
-          {dateOfAssessment}
+          {getTranslation(dateOfAssessment,lang)}
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
@@ -1546,7 +1546,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
       {/* Legal History Start */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{domesticViolence}</Label>
+          <Label>{getTranslation(domesticViolence,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1565,7 +1565,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{reasonBehindDomesticViolence}</Label>
+          <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1584,7 +1584,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{drugStatus}</Label>
+          <Label>{getTranslation(drugStatus,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1603,7 +1603,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{ifThereIsAnyCriminalCase}</Label>
+          <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1622,7 +1622,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{specificCaseDetails}</Label>
+          <Label>{getTranslation(specificCaseDetails,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1641,7 +1641,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{currentCaseStatus}</Label>
+          <Label>{getTranslation(currentCaseStatus,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1660,7 +1660,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{drugStatus}</Label>
+          <Label>{getTranslation(drugStatus,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1679,7 +1679,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{ifWentToJail}</Label>
+          <Label>{getTranslation(ifWentToJail,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1707,7 +1707,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
               aria-hidden="true"
             ></span>
           ) : (
-            "Update Legal History / लीगल इतिहास अपडेट करें"
+            getTranslation("Update Legal History / लीगल इतिहास अपडेट करें",lang)
           )}
         </Button>
       </div>
@@ -1721,7 +1721,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 {/* Legal prefill readmission form start */}
 <CommonModal
   isOpen={LegalPrefillModal}
-  title={`Readmission ${legalHistory}`}
+  title={getTranslation(`Readmission ${legalHistory}`,lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1744,7 +1744,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
       {/* Date of Assessment */}
       <div className="col-md-6 mb-3">
         <Label className="col-sm-12 col-form-label col-xl-6">
-          {dateOfAssessment}
+          {getTranslation(dateOfAssessment,lang)}
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
@@ -1769,7 +1769,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
       {/* Legal History Start */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{domesticViolence}</Label>
+          <Label>{getTranslation(domesticViolence,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1788,7 +1788,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{reasonBehindDomesticViolence}</Label>
+          <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1807,7 +1807,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{drugStatus}</Label>
+          <Label>{getTranslation(drugStatus,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1826,7 +1826,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{ifThereIsAnyCriminalCase}</Label>
+          <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1845,7 +1845,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{specificCaseDetails}</Label>
+          <Label>{getTranslation(specificCaseDetails,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1864,7 +1864,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{currentCaseStatus}</Label>
+          <Label>{getTranslation(currentCaseStatus,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1883,7 +1883,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{drugStatus}</Label>
+          <Label>{getTranslation(drugStatus,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1902,7 +1902,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{ifWentToJail}</Label>
+          <Label>{getTranslation(ifWentToJail,lang)}</Label>
           <Input
             type="textarea"
             className="form-control"
@@ -1930,7 +1930,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
               aria-hidden="true"
             ></span>
           ) : (
-            "Readmission Legal History / लीगल इतिहास अपडेट करें"
+            getTranslation("Readmission Legal History / लीगल इतिहास अपडेट करें",lang)
           )}
         </Button>
       </div>

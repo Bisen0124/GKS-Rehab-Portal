@@ -337,12 +337,12 @@ function Register() {
   const handleDelete = async (userId) => {
     // Using SweetAlert for confirmation
     Swal.fire({
-      title: "Are you sure?",
-      text: "Once deleted, you will not be able to recover this user!",
+      title: getTranslation("Are you sure?/क्या आपको यकीन है?",lang),
+      text: getTranslation("Once deleted, you will not be able to recover this user!/एक बार हटा दिए जाने के बाद, आप इस उपयोगकर्ता को पुनः प्राप्त नहीं कर पाएंगे!",lang),
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Ok",
-      cancelButtonText: "Cancel",
+      confirmButtonText: getTranslation("Ok/ठीक है",lang),
+      cancelButtonText: getTranslation("Cancel/रद्द करना",lang),
       reverseButtons: true,
     }).then(async (result) => {
       if (result.isConfirmed) {
@@ -402,7 +402,11 @@ function Register() {
         }
       } else {
         // If user cancels
-        Swal.fire("Cancelled", "The user is safe.", "info");
+        Swal.fire(
+           getTranslation("Cancelled/रद्द",lang), 
+           getTranslation("The user is safe./उपयोगकर्ता सुरक्षित है.",lang), 
+           "info"
+        );
       }
     });
   };
@@ -1252,7 +1256,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
       </Container>
       <CommonModal
         isOpen={modal}
-        title={patientRegisterTitle}
+        title={getTranslation("Patient Registration Form/रोगी पंजीकरण फॉर्म" , lang)}
         toggler={toggle}
         maxWidth="1200px"
       >
@@ -1588,7 +1592,8 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       className="col-sm-12 col-form-label col-xl-6 form-label"
                       htmlFor="selectRole"
                     >
-                      Select Role
+                      
+                      <Translated text={"Select Role/भूमिका चुनें"} />
                     </label>
                     <div className="col-sm-12 col-xl-5">
                     <select
@@ -1677,7 +1682,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <span className="sr-only">Loading...</span>
                     </div>
                   ) : (
-                    "Register"
+                    "पंजीकरण करवाना"
                   )}
                 </Button>
               </div>
@@ -1798,8 +1803,8 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
       onClick={handleDownloadPDF}
     >
       {pfaDownload
-        ? "Your patient report is being downloaded... / आपका patient रिपोर्ट डाउनलोड हो रहा है..."
-        : "Download patient registered report"}
+        ? getTranslation("Your patient report is being downloaded... / आपका patient रिपोर्ट डाउनलोड हो रहा है...", lang)
+        : getTranslation("Download patient registered report/रोगी पंजीकृत रिपोर्ट डाउनलोड करें",lang)}
     </button>
   </div>
 
@@ -1835,7 +1840,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       />
                     </div>
                     <div className="col-md-6">
-                      <Label>{getTranslation("Patient Relative Name/",lang)}</Label>
+                      <Label>{getTranslation("Patient Relative Name/रोगी का संबंधी का नाम",lang)}</Label>
                       <Input
                         type="text"
                         placeholder="Relative Name"

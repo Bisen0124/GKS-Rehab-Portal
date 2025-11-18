@@ -215,7 +215,7 @@ function SUDBrief() {
               <span
                 // onClick={() => handleFDAPreFill(row.recent_fda_id)}
                 style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
+                title={getTranslation("Readmission Substance Use Dependency (SUD) Form/पुनः प्रवेश पदार्थ उपयोग निर्भरता (SUD) प्रपत्र",lang)}
               >
                 ✏️
               </span>
@@ -253,7 +253,7 @@ function SUDBrief() {
       cursor: row.isSUDBriefCompleted ? "not-allowed" : "pointer",
       opacity: row.isSUDBriefCompleted ? 0.5 : 1,
     }}
-    title={row.isSUDBriefCompleted ? "SUDBrief Completed" : "Create SUD Brief"}
+    title={row.isSUDBriefCompleted ? getTranslation("SUDBrief Completed/एसयूडीब्रीफ पूरा हुआ",lang) : getTranslation("Create SUD Brief/SUD संक्षिप्त विवरण बनाएँ",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -453,7 +453,7 @@ function SUDBrief() {
           <span
             onClick={() => handleSUDBriefindividualEdit(row.intake_sud_id)}
             style={{ cursor: "pointer", marginLeft: "10px" }}
-            title="Edit"
+            title={getTranslation("Edit/संपादन करना",lang)}
           >
             <svg
               style={{ color: "green" }}
@@ -651,8 +651,8 @@ function SUDBrief() {
 
       Swal.fire({
         icon: "success",
-        title: "SUD Brief Created Successfully",
-        text: "The SUD Brief assessment was submitted successfully.",
+        title: getTranslation("SUD Brief Created Successfully/SUD संक्षिप्त विवरण सफलतापूर्वक बनाया गया",lang),
+        text: getTranslation("The SUD Brief assessment was submitted successfully./एसयूडी संक्षिप्त मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
       }).then(() => setIsSUDbriefModalOpen(false));
 
       console.log("SUD Brief Data", data);
@@ -662,8 +662,8 @@ function SUDBrief() {
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Failed to submit. Check console for error.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   };
@@ -1027,8 +1027,8 @@ const handleSUDBriefUpdate = async () => {
 
     Swal.fire({
       icon: "success",
-      title: "SUD Update Successfully!",
-      text: "Substance Use Dependency assessment has been updated successfully!",
+      title: getTranslation("SUD Update Successfully!/SUD अद्यतन सफलतापूर्वक!",lang),
+      text: getTranslation("Substance Use Dependency assessment has been updated successfully!/पदार्थ उपयोग निर्भरता मूल्यांकन सफलतापूर्वक अद्यतन किया गया है!",lang),
     }).then(() => {
       setSUDBriefeditModal(false); // ✅ Close modal after success
     });
@@ -1038,8 +1038,8 @@ const handleSUDBriefUpdate = async () => {
 
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to update SUD assessment. Check console for details.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to update SUD assessment. Check console for details./SUD मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
     });
   }
 };
@@ -1100,7 +1100,7 @@ const handleSUDBriefUpdate = async () => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1122,7 +1122,7 @@ const handleSUDBriefUpdate = async () => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                     {getTranslation(" Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1165,7 +1165,7 @@ const handleSUDBriefUpdate = async () => {
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All Substance Use Dependenc Patient Data List" className="p-0" />
+                    <HeaderCard title={getTranslation("All Substance Use Dependenc Patient Data List/सभी पदार्थ उपयोग निर्भरता रोगी डेटा सूची",lang)} className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -1185,7 +1185,7 @@ const handleSUDBriefUpdate = async () => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                     {getTranslation(" Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1221,17 +1221,17 @@ const handleSUDBriefUpdate = async () => {
       {/* SUD Brief create form start */}
       <CommonModal
         isOpen={isSUDbriefModalOpen}
-        title="Create Substance Use Dependency / मादक पदार्थ उपयोग निर्भरता"
+        title={getTranslation("Create Substance Use Dependency / मादक पदार्थ उपयोग निर्भरता",lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
-            name: "Patient name/प्रयासक का नाम :",
-            sex: "Gender/प्रयासक का लिंग :",
-            age: "Age/प्रयासक का उम्र :",
-            date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+            name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+            sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+            age: getTranslation("Age/प्रयासक का उम्र :",lang),
+            date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
             ageValue: patientCalAge,
           }}
         />
@@ -1240,7 +1240,7 @@ const handleSUDBriefUpdate = async () => {
             <div class="row">
               <div class="col-md-6 mb-3">
                 <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {dateOfAssessment}
+                  {getTranslation(dateOfAssessment,lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -1258,7 +1258,7 @@ const handleSUDBriefUpdate = async () => {
               <div class="col-md-6 mb-3">
                 <div class="form-group">
                   <label class="form-label">
-                    Dependent To / निर्भरता का प्रकार
+                    {getTranslation("Dependent To / निर्भरता का प्रकार",lang)}
                   </label>
                   <Input
                     name="dependent_to"
@@ -1273,7 +1273,7 @@ const handleSUDBriefUpdate = async () => {
               <div class="col-md-6 mb-3">
                 <div class="form-group">
                   <label class="form-label">
-                    Substance daily Quantity? / पदार्थ की दैनिक मात्रा?
+                    {getTranslation("Substance daily Quantity? / पदार्थ की दैनिक मात्रा?",lang)}
                   </label>
                   <Input
                     name="substance_daily_quantity"
@@ -1288,7 +1288,7 @@ const handleSUDBriefUpdate = async () => {
               <div class="col-md-6 mb-3">
                 <div class="form-group">
                   <label class="form-label">
-                    Used first time? / पहली बार पदार्थ कब लिया?
+                    {getTranslation("Used first time? / पहली बार पदार्थ कब लिया?",lang)}
                   </label>
                   <Input
                     name="used_first_time"
@@ -1303,7 +1303,7 @@ const handleSUDBriefUpdate = async () => {
               <div class="col-md-6 mb-3">
                 <div class="form-group">
                   <label class="form-label">
-                    Patient Month income / रोगी की मासिक आय
+                    {getTranslation("Patient Month income / रोगी की मासिक आय",lang)}
                   </label>
                   <Input
                     name="patient_monthly_income"
@@ -1318,7 +1318,7 @@ const handleSUDBriefUpdate = async () => {
               <div class="col-md-6 mb-3">
                 <div class="form-group">
                   <label class="form-label">
-                    Daily spent on substance? / पदार्थ पर प्रतिदिन खर्च?
+                    {getTranslation("Daily spent on substance? / पदार्थ पर प्रतिदिन खर्च?",lang)}
                   </label>
                   <Input
                     name="daily_spent_on_substance"
@@ -1333,8 +1333,7 @@ const handleSUDBriefUpdate = async () => {
               <div class="col-md-6 mb-3">
                 <div class="form-group">
                   <label class="form-label">
-                    Recurrence of substance use / पदार्थ के प्रयोग की
-                    पुनरावृत्ति
+                    {getTranslation("Recurrence of substance use / पदार्थ के प्रयोग की पुनरावृत्ति",lang)}
                   </label>
                   <Input
                     name="recurrence_of_substance_use"
@@ -1349,7 +1348,7 @@ const handleSUDBriefUpdate = async () => {
               <div class="col-md-6 mb-3">
                 <div class="form-group">
                   <label class="form-label">
-                    Last 30 days Quantity? / पिछले 30 दिनों की मात्रा?
+                    {getTranslation("Last 30 days Quantity? / पिछले 30 दिनों की मात्रा?",lang)}
                   </label>
                   <Input
                     name="last_30_days_quantity"
@@ -1364,7 +1363,7 @@ const handleSUDBriefUpdate = async () => {
               <div class="col-md-6 mb-3">
                 <div class="form-group">
                   <label class="form-label">
-                    Duration of regular use? / नियमित सेवन कब कर रहे हैं?
+                    {getTranslation("Duration of regular use? / नियमित सेवन कब कर रहे हैं?",lang)}
                   </label>
                   <Input
                     name="duration_of_regular_use"
@@ -1379,7 +1378,7 @@ const handleSUDBriefUpdate = async () => {
               <div class="col-md-6 mb-3">
                 <div class="form-group">
                   <label class="form-label">
-                    Monthly family income / मासिक पारिवारिक आय
+                   {getTranslation(" Monthly family income / मासिक पारिवारिक आय",lang)}
                   </label>
                   <Input
                     name="monthly_family_income"
@@ -1394,7 +1393,7 @@ const handleSUDBriefUpdate = async () => {
               <div class="col-md-6 mb-3">
                 <div class="form-group">
                   <label class="form-label">
-                    Source of money? / पैसे का स्रोत:
+                    {getTranslation("Source of money? / पैसे का स्रोत:",lang)}
                   </label>
                   <Input
                     name="source_of_money"
@@ -1410,8 +1409,7 @@ const handleSUDBriefUpdate = async () => {
             {/* <!-- Full Width Inputs from here onward --> */}
             <div class="mb-3">
               <label class="form-label">
-                If expenses more than income where do you arrange? / यदि आपके
-                खर्च आय से ज्यादा हैं तो व्यवस्था कँहा से करते हैं?
+               {getTranslation(" If expenses more than income where do you arrange? / यदि आपके खर्च आय से ज्यादा हैं तो व्यवस्था कँहा से करते हैं?",lang)}
               </label>
               <textarea
                 name="expense_more_than_income_arrangement"
@@ -1424,10 +1422,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                Substance abuse Started When? Why? Where? With Whom (No of
-                Person)? Place? Substance? Quantity? Brand? / मादक पदार्थ का
-                सेवन कब शुरू हुआ? क्यों? कहाँ? किसके साथ (कितने लोग) ? स्थान?
-                पदार्थ? मात्रा? ब्रांड?
+               {getTranslation(" Substance abuse Started When? Why? Where? With Whom (No of Person)? Place? Substance? Quantity? Brand? / मादक पदार्थ कांपना सेवन कब शुरू हुआ? क्यों? कहाँ? किसके साथ (कितने लोग) ? स्थान? पदार्थ?मात्रा? ब्रांड?",lang)}
               </label>
               <textarea
                 name="substance_abuse_started_when"
@@ -1440,10 +1435,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                If started with Tobacco after how much time you moved to other
-                Substance (like Alcohol Ganja etc) & why? / यदि तम्बाकू से
-                शुरुआत की थी तो कितने समय बाद आप अन्य मादक पदार्थ (जैसे शराब,
-                गांजा आदि) की ओर चले गए और क्यों?
+                {getTranslation("If started with Tobacco after how much time you moved to other Substance (like Alcohol Ganja etc) & why? / यदि तम्बाकू से शुरुआत की थी तो कितने समय बाद आप अन्य मादक पदार्थ (जैसे शराब,गांजा आदि) की ओर चले गए और क्यों?",lang)}
               </label>
               <textarea
                 name="alcohol_tobacco_experience"
@@ -1456,8 +1448,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                How was your first experience of Substance abuse? / मादक पदार्थ
-                के सेवन का आपका पहला अनुभव कैसा था?
+              {getTranslation("  How was your first experience of Substance abuse? / मादक पदार्थ के सेवन का आपका पहला अनुभव कैसा था?",lang)}
               </label>
               <textarea
                 name="first_substance_experience"
@@ -1470,10 +1461,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                In how much time abuse Substance 2nd time & with whom? How often
-                did you take Substance in the first year? / आपने कितनी बार और
-                किसके साथ मिलकर दूसरी बार मादक पदार्थ का सेवन किया? आपने पहले
-                वर्ष में कितनी बार मादक पदार्थ का सेवन किया?
+               {getTranslation(" In how much time abuse Substance 2nd time & with whom? How often did you take Substance in the first year? / आपने कितनी बार और किसके साथ मिलकर दूसरी बार मादक पदार्थ का सेवन किया? आपने पहले वर्ष में कितनी बार मादक पदार्थ का सेवन किया?",lang)}
               </label>
               <textarea
                 name="second_time_abuse_frequency"
@@ -1486,8 +1474,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                Mental obsession for Substance started on? / मादक पदार्थ के
-                प्रति मानसिक जुनून की शुरुआत कब हुयी?
+                {getTranslation("Mental obsession for Substance started on? / मादक पदार्थ के प्रति मानसिक जुनून की शुरुआत कब हुयी?",lang)}
               </label>
               <textarea
                 name="mental_obsession_started_when"
@@ -1500,10 +1487,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                Experienced any Trauma, if yes when & what, what effect on
-                Substance use? Reason for regular use was shock/Trauma? कोई सदमा
-                ,यदि हाँ तो कब और क्या, मादक पदार्थ के उपयोग पर इसका क्या प्रभाव
-                पड़ा? क्नियमित उपयोग का कारण सदमा था?
+                {getTranslation("Experienced any Trauma, if yes when & what, what effect on Substance use? Reason for regular use was shock/Trauma? कोई सदमा,यदि हाँ तो कब और क्या, मादक पदार्थ के उपयोग पर इसका क्या प्रभाव पड़ा? क्नियमित उपयोग का कारण सदमा था?",lang)}
               </label>
               <textarea
                 name="trauma_effect_on_substance_use"
@@ -1516,8 +1500,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                Why & When started Regular use & with Whom? / नियमित उपयोग क्यों
-                और कब शुरू हुआ? किसके साथ ?
+                {getTranslation("Why & When started Regular use & with Whom? / नियमित उपयोग क्यों और कब शुरू हुआ? किसके साथ ?",lang)}
               </label>
               <textarea
                 name="regular_use_when_with_whom"
@@ -1530,8 +1513,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                Residence status of patient when started regularly / ?नियमित रूप
-                से शुरू होने पर रोगी की आवासीय स्थिति?
+                {getTranslation("Residence status of patient when started regularly / ?नियमित रूप से शुरू होने पर रोगी की आवासीय स्थिति?",lang)}
               </label>
               <textarea
                 name="residence_status_regular_use"
@@ -1544,10 +1526,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                list the friends with whom you started regular use. Were they
-                are same friends you started with? / उन दोस्तों की सूची बनाएँ
-                जिनके साथ आपने नियमित उपयोग शुरू किया था। क्या वे वही दोस्त थे
-                जिनके साथ शुरुवात की ?
+               {getTranslation(" list the friends with whom you started regular use. Were they are same friends you started with? / उन दोस्तों की सूची बनाएँ जिनके साथ आपने नियमित उपयोग शुरू किया था। क्या वे वही दोस्त थे जिनके साथ शुरुवात की ?",lang)}
               </label>
               <textarea
                 name="friends_regular_use"
@@ -1560,9 +1539,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                if tried multiple Substance in early stage mention?(if yes why
-                with whom?) / क्या आपने कई मादक पदार्थ का इस्तेमाल किया है?(यदि
-                हां तो क्यों किसके साथ?)
+               {getTranslation(" if tried multiple Substance in early stage mention?(if yes why with whom?) / क्या आपने कई मादक पदार्थ का इस्तेमाल किया है?(यदि हां तो क्यों किसके साथ?)",lang)}
               </label>
               <textarea
                 name="multiple_substances_early_stage"
@@ -1575,12 +1552,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                Are you in touch with those friends with whom you initially used
-                Substance ? Current relationship with those? Are they Dependent,
-                social Dependent or Sober. / क्या आप उन दोस्तों के संपर्क में
-                हैं जिनके साथ आपने शुरू में मादक पदार्थ लिया था? उनके साथ
-                वर्तमान संबंध क्या हैं? क्या वे आश्रित, सामाजिक आश्रित या संयमित
-                हैं?{" "}
+                {getTranslation("Are you in touch with those friends with whom you initially used Substance ? Current relationship with those? Are they Dependent, social Dependent or Sober. / क्या आप उन दोस्तों के संपर्क में हैं जिनके साथ आपने शुरू में मादक पदार्थ लिया था? उनके साथ वर्तमान संबंध क्या हैं? क्या वे आश्रित, सामाजिक आश्रित या संयमित हैं?",lang)}
               </label>
               <textarea
                 name="touch_friends_current_relationship"
@@ -1593,10 +1565,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                What is reaction of family & friends (who are sober) when they
-                know? What was reaction of patient? / जब परिवार और दोस्तों (जो
-                संयमी हैं) को पता चला तो उनकी क्या प्रतिक्रिया थी? मरीज़ की क्या
-                प्रतिक्रिया थी?
+                {getTranslation("What is reaction of family & friends (who are sober) when they know? What was reaction of patient? / जब परिवार और दोस्तों (जो संयमी हैं) को पता चला तो उनकी क्या प्रतिक्रिया थी? मरीज़ की क्या प्रतिक्रिया थी?",lang)}
               </label>
               <textarea
                 name="family_friends_reaction"
@@ -1609,10 +1578,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                Effect of Substance in Physical, personal, married, Educational,
-                Professional Life & Family ? & Your Reaction? / शारीरिक,
-                व्यक्तिगत, विवाहित, शैक्षिक, व्यावसायिक जीवन और परिवार पर मादक
-                पदार्थ का प्रभाव और आपकी प्रतिक्रिया?
+               {getTranslation(" Effect of Substance in Physical, personal, married, Educational, Professional Life & Family ? & Your Reaction? / शारीरिक, व्यक्तिगत, विवाहित, शैक्षिक, व्यावसायिक जीवन और परिवार पर मादक पदार्थ का प्रभाव और आपकी प्रतिक्रिया?",lang)}
               </label>
               <textarea
                 name="substance_effect_physical"
@@ -1625,7 +1591,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                Chief Complaints: / मुख्य शिकायतें:
+                {getTranslation("Chief Complaints: / मुख्य शिकायतें:",lang)}
               </label>
               <textarea
                 name="chief_complaints"
@@ -1639,41 +1605,39 @@ const handleSUDBriefUpdate = async () => {
             {/*  Prior Treatment for substance use Dependency / पदार्थ के उपयोग पर निर्भरता के लिए पूर्व उपचार start */}
             <div className="mb-4">
               <label className="form-label fw-bold">
-                Prior Treatment for substance use Dependency / पदार्थ के उपयोग
-                पर निर्भरता के लिए पूर्व उपचार
+               {getTranslation(" Prior Treatment for substance use Dependency / पदार्थ के उपयोग पर निर्भरता के लिए पूर्व उपचार",lang)}
               </label>
 
               <table className="table table-bordered">
                 <thead className="table-light">
                   <tr>
                     <th colspan="2">
-                      Prior Treatment for substance use Dependency / पदार्थ के
-                      उपयोग पर निर्भरता के लिए पूर्व उपचार
+                      {getTranslation("Prior Treatment for substance use Dependency / पदार्थ के उपयोग पर निर्भरता के लिए पूर्व उपचार",lang)}
                     </th>
-                    <th colspan="2">How Many Times / कितनी बार?</th>
+                    <th colspan="2">{getTranslation("How Many Times / कितनी बार?",lang)}</th>
                   </tr>
                   <tr>
                     <th>
-                      Year
+                      {getTranslation("Year/वर्ष",lang)}
                       <br />
-                      <small>वर्ष</small>
+                     
                     </th>
                     <th>
-                      Place of Treatment
+                     {getTranslation(" Place of Treatment/उपचार का स्थान",lang)}
                       <br />
-                      <small>उपचार का स्थान</small>
+                     
                     </th>
                     <th>
-                      Duration & No. of Times
+                      {getTranslation("Duration & No. of Times/अवधि एवं संख्या",lang)}
                       <br />
-                      <small>अवधि एवं संख्या</small>
+                      
                     </th>
                     <th>
-                      Days of Sobriety
+                     {getTranslation(" Days of Sobriety/संयमित दिन",lang)}
                       <br />
-                      <small>संयमित दिन</small>
+                       
                     </th>
-                    <th>Action</th>
+                    <th>{getTranslation("Action/कार्रवाई",lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1742,7 +1706,7 @@ const handleSUDBriefUpdate = async () => {
                             className="btn btn-success btn-sm"
                             onClick={addRow}
                           >
-                            Add
+                           {getTranslation(" Add/जोड़ना",lang)}
                           </button>
                         ) : (
                           <button
@@ -1750,7 +1714,7 @@ const handleSUDBriefUpdate = async () => {
                             className="btn btn-danger btn-sm"
                             onClick={() => deleteRow(index)}
                           >
-                            Delete
+                            {getTranslation("Delete/मिटाना",lang)}
                           </button>
                         )}
                       </td>
@@ -1763,10 +1727,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                How Many times tried to stop Substance dependency ?how many
-                times Succeeded & for how much time? / कितनी बार मादक पदार्थों
-                का सेवन बंद करने की कोशिश की? कितनी बार सफलता मिली और कितने समय
-                के लिए?
+               {getTranslation(" How Many times tried to stop Substance dependency ?how many times Succeeded & for how much time? / कितनी बार मादक पदार्थों का सेवन बंद करने की कोशिश की? कितनी बार सफलता मिली और कितने समय के लिए?",lang)}
               </label>
               <textarea
                 name="substance_stop_tried"
@@ -1780,8 +1741,7 @@ const handleSUDBriefUpdate = async () => {
             <div class="mb-3">
               <label class="form-label">
                 {" "}
-                Coping mechanism during stop using Substance / पदार्थ के उपयोग
-                बंद करने के दौरान मुकाबला तंत्र
+                {getTranslation("Coping mechanism during stop using Substance / पदार्थ के उपयोग बंद करने के दौरान मुकाबला तंत्र",lang)}
               </label>
               <textarea
                 name="coping_mechanisms"
@@ -1794,8 +1754,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                When Stopped using, what work did you do? (In life) / जब पदार्थ
-                के उपयोग बंद कर दिया तो आपने क्या काम किया?(जीवन में)
+               {getTranslation(" When Stopped using, what work did you do? (In life) / जब पदार्थ के उपयोग बंद कर दिया तो आपने क्या काम किया?(जीवन में)",lang)}
               </label>
               <textarea
                 name="work_after_stop"
@@ -1808,8 +1767,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                What Influence made you stop? / किस प्रभाव ने आपको रुकने रुकने
-                के लिए प्रेरित किया?
+               {getTranslation(" What Influence made you stop? / किस प्रभाव ने आपको रुकने रुकने के लिए प्रेरित किया?",lang)}
               </label>
               <textarea
                 name="influence_reason_to_stop"
@@ -1822,8 +1780,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                If Relapse When? Why? With Whom? / यदि रिलैप्स हुए कब? क्यों?
-                किसके साथ ?
+               {getTranslation(" If Relapse When? Why? With Whom? / यदि रिलैप्स हुए कब? क्यों? किसके साथ ?",lang)}
               </label>
               <textarea
                 name="why_relapse"
@@ -1836,10 +1793,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                After Relapse did you change your substance and is your
-                Substance quantity increased? / रिलैप्स के बाद क्या आपने अपना
-                मादक पदार्थ बदल दिया और क्या आपकी मादक पदार्थ मात्रा की बढ़ गई
-                है?
+              {getTranslation("  After Relapse did you change your substance and is your Substance quantity increased? / रिलैप्स के बाद क्या आपने अपना मादक पदार्थ बदल दिया और क्या आपकी मादक पदार्थ मात्रा की बढ़ गई है?",lang)}
               </label>
               <textarea
                 name="substance_change_quantity"
@@ -1850,13 +1804,12 @@ const handleSUDBriefUpdate = async () => {
               ></textarea>
             </div>
 
-            <H4>Patient Health / रोगी का स्वास्थ्य</H4>
+            <H4>{getTranslation("Patient Health / रोगी का स्वास्थ्य",lang)}</H4>
 
             <div class="mb-3">
               <label class="form-label">
                 {" "}
-                Have any mental or physical disorder any accident or injury /
-                रोगी को कोई मानसिक या शारीरिक रोग है?दुर्घटना या चोट?
+               {getTranslation(" Have any mental or physical disorder any accident or injury / रोगी को कोई मानसिक या शारीरिक रोग है?दुर्घटना या चोट?",lang)}
               </label>
               <textarea
                 name="mental_physical_disorders"
@@ -1869,8 +1822,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                Diagnosed on? Treatment? if took or Undergoing / बीमारी का पता
-                कब चला? कोई उपचार लिया या चल रहा हो तो जानकारी
+                {getTranslation("Diagnosed on? Treatment? if took or Undergoing / बीमारी का पता कब चला? कोई उपचार लिया या चल रहा हो तो जानकारी",lang)}
               </label>
               <textarea
                 name="diagnosed_on_treatment"
@@ -1883,8 +1835,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                Doctor, Place and duration & Result of Treatment? / चिकित्सक का
-                नाम, अस्पताल, उपचार का समय और परिणाम?  {" "}
+                {getTranslation("Doctor, Place and duration & Result of Treatment? / चिकित्सक का नाम, अस्पताल, उपचार का समय और परिणाम?",lang)} {" "}
               </label>
               <textarea
                 name="doctor_treatment_details"
@@ -1897,10 +1848,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                If gone under any treatment for Substance abuse? (any
-                Psychiatrist, baba, jadi buti, Religious etc) / क्या आपने मादक
-                पदार्थ के सेवन के लिए कोई उपचार करवाया है? (किसी मनोचिकित्सक,
-                बाबा, जड़ी बूटी, धार्मिक आदि से)
+               {getTranslation(" If gone under any treatment for Substance abuse? (any Psychiatrist, baba, jadi buti, Religious etc) / क्या आपने मादक पदार्थ के सेवन के लिए कोई उपचार करवाया है? (किसी मनोचिकित्सक, बाबा, जड़ी बूटी, धार्मिक आदि से)",lang)}
               </label>
               <textarea
                 name="traditional_healer_treatment"
@@ -1913,8 +1861,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                If yes where? When? For how much Time? / अगर हाँ तो कहाँ? कब?
-                कितने समय के लिए?
+                {getTranslation("If yes where? When? For how much Time? / अगर हाँ तो कहाँ? कब? कितने समय के लिए?",lang)}
               </label>
               <textarea
                 name="how_long_when"
@@ -1927,8 +1874,7 @@ const handleSUDBriefUpdate = async () => {
 
             <div class="mb-3">
               <label class="form-label">
-                You familiar with treatment? Effect of the treatment? / क्या
-                इलाज के बारे में आपको पहले पता था? परिणाम क्या रहा?
+               {getTranslation(" You familiar with treatment? Effect of the treatment? / क्या इलाज के बारे में आपको पहले पता था? परिणाम क्या रहा?",lang)}
               </label>
               <textarea
                 name="treatment_effect_result"
@@ -1948,7 +1894,7 @@ const handleSUDBriefUpdate = async () => {
                     aria-hidden="true"
                   ></span>
                 ) : (
-                  "Create SUD Brief"
+                  getTranslation("Create SUD Brief/SUD संक्षिप्त विवरण बनाएँ",lang)
                 )}
               </Button>
             </div>
@@ -1960,7 +1906,7 @@ const handleSUDBriefUpdate = async () => {
       {/* View SUD Brief data into modal start */}
       <CommonModal
         isOpen={viewSUDBriefModal}
-        title={"View Intake SUD Brief Assessmen"}
+        title={getTranslation("View Intake SUD Brief Assessmen/सेवन SUD संक्षिप्त मूल्यांकन देखें",lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
@@ -1972,7 +1918,7 @@ const handleSUDBriefUpdate = async () => {
               padding: "20px 0",
             }}
           >
-            Substance Use Dependency / मादक पदार्थ उपयोग निर्भरता
+            {getTranslation("Substance Use Dependency / मादक पदार्थ उपयोग निर्भरता",lang)}
           </h4>
 
           <Table size="sm" className="table-auto table-bordered">
@@ -1992,29 +1938,29 @@ const handleSUDBriefUpdate = async () => {
               ) : viewSUDBriefData ? (
                 <>
                   <tr>
-                    <th className="text-start p-3">Name</th>
+                    <th className="text-start p-3">{getTranslation("Name/नाम",lang)}</th>
                     <td className="border p-3">{viewSUDBriefData.name}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Relative Name</th>
+                    <th className="text-start p-3">{getTranslation("Relative Name/रिश्तेदार का नाम",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.relative_name}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Gender</th>
+                    <th className="text-start p-3">{getTranslation("Gender/लिंग",lang)}</th>
                     <td className="border p-3">{viewSUDBriefData.gender}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Phone</th>
+                    <th className="text-start p-3">{getTranslation("Phone/फ़ोन",lang)}</th>
                     <td className="border p-3">{viewSUDBriefData.phone}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Email</th>
+                    <th className="text-start p-3">{getTranslation("Email/ईमेल",lang)}</th>
                     <td className="border p-3">{viewSUDBriefData.email}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Assessment Date</th>
+                    <th className="text-start p-3">{getTranslation("Assessment Date/मूल्यांकन तिथि",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.date_of_assessment
                         ? new Date(
@@ -2024,120 +1970,120 @@ const handleSUDBriefUpdate = async () => {
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Dependent To</th>
+                    <th className="text-start p-3">{getTranslation("Dependent To/आश्रित",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.dependent_to}
                     </td>
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Recurrence of Substance Use
+                     {getTranslation("Recurrence of Substance Use/पदार्थ के उपयोग की पुनरावृत्ति",lang)}
                     </th>
                     <td className="border p-3">
                       {viewSUDBriefData.recurrence_of_substance_use}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Daily Quantity</th>
+                    <th className="text-start p-3">{getTranslation("Daily Quantity/दैनिक मात्रा",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.substance_daily_quantity}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Last 30 Days Quantity</th>
+                    <th className="text-start p-3">{getTranslation("Last 30 Days Quantity/पिछले 30 दिनों की मात्रा",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.last_30_days_quantity}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">First Use</th>
+                    <th className="text-start p-3">{getTranslation("First Use/पहला उपयोग",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.used_first_time}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Duration of Regular Use</th>
+                    <th className="text-start p-3">{getTranslation("Duration of Regular Use/नियमित उपयोग की अवधि",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.duration_of_regular_use}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Monthly Income</th>
+                    <th className="text-start p-3">{getTranslation("Monthly Income/मासिक आय",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.patient_monthly_income}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Family Income</th>
+                    <th className="text-start p-3">{getTranslation("Family Income/पारिवारिक आय",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.monthly_family_income}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Daily Spent on Substance</th>
+                    <th className="text-start p-3">{getTranslation("Daily Spent on Substance/पदार्थ पर दैनिक खर्च",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.daily_spent_on_substance}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Source of Money</th>
+                    <th className="text-start p-3">{getTranslation("Source of Money/धन का स्रोत",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.source_of_money}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Expense Arrangement</th>
+                    <th className="text-start p-3">{getTranslation("Expense Arrangement/व्यय व्यवस्था",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.expense_more_than_income_arrangement}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Substance Abuse Started</th>
+                    <th className="text-start p-3">{getTranslation("Substance Abuse Started/मादक द्रव्यों का सेवन शुरू",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.substance_abuse_started_when}
                     </td>
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Alcohol/Tobacco Experience
+                   {getTranslation(" Alcohol or Tobacco Experience/शराब या तंबाकू का अनुभव",lang)}
                     </th>
                     <td className="border p-3">
                       {viewSUDBriefData.alcohol_tobacco_experience}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">First Experience</th>
+                    <th className="text-start p-3">{getTranslation("First Experience/पहला अनुभव",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.first_substance_experience}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Second Time Frequency</th>
+                    <th className="text-start p-3">{getTranslation("Second Time Frequency/दूसरी बार आवृत्ति",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.second_time_abuse_frequency}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Mental Obsession Started</th>
+                    <th className="text-start p-3">{getTranslation("Mental Obsession Started/मानसिक जुनून शुरू हुआ",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.mental_obsession_started_when}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Chief Complaints</th>
+                    <th className="text-start p-3">{getTranslation("Chief Complaints/मुख्य शिकायतें",lang)}</th>
                     <td className="border p-3">
                       {viewSUDBriefData.chief_complaints}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Status</th>
+                    <th className="text-start p-3">{getTranslation("Status/स्थिति",lang)}</th>
                     <td className="border p-3">{viewSUDBriefData.status}</td>
                   </tr>
                 </>
               ) : (
                 <tr>
                   <td colSpan="2" className="text-center">
-                    No data available
+                    {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
                   </td>
                 </tr>
               )}
@@ -2153,8 +2099,8 @@ const handleSUDBriefUpdate = async () => {
             onClick={handleDownloadPDF}
           >
             {pfaDownload
-              ? "Your SUD Brief is being downloaded.../ आपका SUD डाउनलोड हो रहा है..."
-              : "Download SUD Brief"}
+              ? getTranslation("Your SUD Brief is being downloaded.../ आपका SUD डाउनलोड हो रहा है...",lang)
+              : getTranslation("Download SUD Brief/SUD संक्षिप्त विवरण डाउनलोड करें",lang)}
           </button>
         </div>
       </CommonModal>
@@ -2164,7 +2110,7 @@ const handleSUDBriefUpdate = async () => {
       {/* Edit FDA individual form data start */}
       <CommonModal
         isOpen={SUDBriefeditModal}
-        title="Edit Create Substance Use Dependency / मादक पदार्थ उपयोग निर्भरता"
+        title={getTranslation("Edit Create Substance Use Dependency / मादक पदार्थ उपयोग निर्भरता",lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
@@ -2179,7 +2125,7 @@ const handleSUDBriefUpdate = async () => {
             {/* Date of Assessment */}
             <div class="col-md-6 mb-3">
               <Label className="col-sm-12 col-form-label  col-xl-6">
-                {dateOfAssessment}
+                {getTranslation(dateOfAssessment,lang)}
               </Label>
               <Col xl="5" sm="12">
                 <div className="input-group">
@@ -2201,7 +2147,7 @@ const handleSUDBriefUpdate = async () => {
             <div className="col-md-6 mb-3">
               <div className="form-group">
               <label class="form-label">
-                    Dependent To / निर्भरता का प्रकार
+                    {getTranslation("Dependent To / निर्भरता का प्रकार",lang)}
                   </label>
                 <Input
                   type="text"
@@ -2297,16 +2243,16 @@ const handleSUDBriefUpdate = async () => {
           {/* Treatment Records */}
           <div className="mb-4">
             <label className="form-label fw-bold">
-              Prior Treatment for substance use Dependency
+              {getTranslation("Prior Treatment for substance use Dependency/पदार्थ उपयोग निर्भरता के लिए पूर्व उपचार",lang)}
             </label>
             <table className="table table-bordered">
               <thead className="table-light">
                 <tr>
-                  <th>Year</th>
-                  <th>Place</th>
-                  <th>Duration</th>
-                  <th>Days of Sobriety</th>
-                  <th>Action</th>
+                  <th>{getTranslation("Year/वर्ष",lang)}</th>
+                  <th>{getTranslation("Place/जगह",lang)}</th>
+                  <th>{getTranslation("Duration/अवधि",lang)}</th>
+                  <th>{getTranslation("Days of Sobriety/संयम के दिन",lang)}</th>
+                  <th>{getTranslation("Action/कार्रवाई",lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -2343,7 +2289,7 @@ const handleSUDBriefUpdate = async () => {
                           className="btn btn-success btn-sm"
                           onClick={addRow}
                         >
-                          Add
+                          {getTranslation("Add/जोड़ना",lang)}
                         </button>
                       ) : (
                         <button
@@ -2351,7 +2297,7 @@ const handleSUDBriefUpdate = async () => {
                           className="btn btn-danger btn-sm"
                           onClick={() => deleteRow(index)}
                         >
-                          Delete
+                          {getTranslation("Delete/मिटाना",lang)}
                         </button>
                       )}
                     </td>
@@ -2371,7 +2317,7 @@ const handleSUDBriefUpdate = async () => {
                   aria-hidden="true"
                 ></span>
               ) : (
-                "Update SUD Brief"
+                getTranslation("Update SUD Brief/SUD संक्षिप्त अद्यतन",lang)
               )}
             </Button>
           </div>

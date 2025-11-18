@@ -640,7 +640,7 @@ function GenFamily() {
               <span
                 onClick={() => handleGenEditPreeFillData(row.recentGenfamID)}
                 style={{ cursor: "pointer" }}
-                title="Readmission PFA"
+                title={getTranslation("Readmission PFA/पुनः प्रवेश पीएफए",lang)}
               >
                 ✏️
               </span>
@@ -2893,7 +2893,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
       </Btn> */}
       <CommonModal
         isOpen={genFamilyModal}
-        title={patientPersonalInformation}
+        title={getTranslation(patientPersonalInformation,lang)}
         toggler={closeGenFamily}
         maxWidth="1200px"
       >
@@ -2905,10 +2905,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <PatientCommonInfo
               selectedUser={selectedUser}
               labels={{
-                name: "Patient name/प्रयासक का नाम :",
-                sex: "Gender/प्रयासक का लिंग :",
-                age: "Age/प्रयासक का उम्र :",
-                date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+                name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+                sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+                age: getTranslation("Age/प्रयासक का उम्र :",lang),
+                date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
                 ageValue: patientCalAge,
               }}
             />
@@ -2918,7 +2918,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <div className="row pt-3 pb-3">
               <FormGroup className="form-group row col-md-6">
                 <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {UID}
+                  {getTranslation(UID,lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -2936,7 +2936,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <div className="col-md-6">
                 <FormGroup className="form-group row">
                   <Label className="col-sm-12 col-form-label  col-xl-6">
-                    {dateOfFormFilling}
+                    {getTranslation(dateOfFormFilling,lang)}
                   </Label>
                   <Col xl="5" sm="12">
                     <div className="input-group">
@@ -2980,7 +2980,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             {/*Occupation Status*/}
             <div className="row pt-3 pb-3">
               <div className="col-md-3">
-                <Label>{relation}</Label>
+                <Label>{getTranslation(relation,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -2993,7 +2993,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/*Marital Status*/}
               <div className="col-md-3">
-                <Label>{marital}</Label>
+                <Label>{getTranslation(marital,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -3006,7 +3006,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/*Living Situation*/}
               <div className="col-md-3">
-                <Label>{living}</Label>
+                <Label>{getTranslation(living,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -3018,7 +3018,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               {/*Religion*/}
               <div className="col-md-3">
-                <Label>{religion}</Label>
+                <Label>{getTranslation(religion,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -3033,11 +3033,11 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             {/*End Living Situation and Religion*/}
             {/*Substance Use Dependency / नशीले पदार्थ उपयोग निर्भरता */}
-            <h5 className="mt-3">{substanceDependency}</h5>
+            <h5 className="mt-3">{getTranslation(substanceDependency,lang)}</h5>
             <div className="row pt-3 pb-3">
               {/*Duration of regular use? / कब से पदार्थ निर्भर हैं? */}
               <div className="col-md-3">
-                <Label for="custom-duration">{durationOfRegularUse}</Label>
+                <Label for="custom-duration">{getTranslation(durationOfRegularUse,lang)}</Label>
                 <Input
                   type="text"
                   id="custom-duration"
@@ -3049,7 +3049,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               {/*Daily Spent? / दिनमा कितना पदार्थ उपयोग कर रहे हैं? */}
               <div className="col-md-3">
-                <Label for="daily-spent">{dailySpentSubstance}</Label>
+                <Label for="daily-spent">{getTranslation(dailySpentSubstance,lang)}</Label>
                 <Input
                   type="number"
                   id="daily-spent"
@@ -3063,7 +3063,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               {/*Patient Monthly Income? / महीने में कितना आय हैं? */}
               <div className="col-md-3">
-                <Label for="monthly-income">{patienMonthlyIncome}</Label>
+                <Label for="monthly-income">{getTranslation(patienMonthlyIncome,lang)}</Label>
                 <Input
                   type="number"
                   id="monthly-income"
@@ -3077,7 +3077,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               {/*Family Monthly Income? / महीने में कितना आय हैं? */}
               <div className="col-md-3">
-                <Label for="family-income">{familyMonthlyIncome}</Label>
+                <Label for="family-income">{getTranslation(familyMonthlyIncome,lang)}</Label>
                 <Input
                   type="number"
                   id="family-income"
@@ -3092,7 +3092,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             </div>
             {/*End Substance Use Dependency*/}
             {/*Source of money? Kindly mention which are applicable?पैसे का अरैंजमेंट? कृपया बताएं कि कौन से लागू हैं?*/}
-            <h5 className="mt-3">{sourceOfMoney}</h5>
+            <h5 className="mt-3">{getTranslation(sourceOfMoney,lang)}</h5>
             <div className="row pt-3 pb-3 ">
               {moneySources.map((source) => (
                 <div key={source.id} className="moneySource col-md-3">
@@ -3104,7 +3104,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     className="checkbox_animated"
                     onChange={handleSourceOfMoney}
                   />
-                  <Label htmlFor={source.id}>{source.label}</Label>
+                  <Label htmlFor={source.id}>{getTranslation(source.label,lang)}</Label>
 
                   {source.id === "source_any_other" &&
                     formData[source.id] === "Yes" && (
@@ -3126,7 +3126,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <div className="row">
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{Ifarrange}</Label>
+                  <Label>{getTranslation(Ifarrange,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3139,7 +3139,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{mentionYear}</Label>
+                  <Label>{getTranslation(mentionYear,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3152,7 +3152,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{action}</Label>
+                  <Label>{getTranslation(action,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3165,7 +3165,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{Residence}</Label>
+                  <Label>{getTranslation(Residence,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3178,7 +3178,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{experiencedTrauma}</Label>
+                  <Label>{getTranslation(experiencedTrauma,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3191,7 +3191,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{occurredPatientBehavior}</Label>
+                  <Label>{getTranslation(occurredPatientBehavior,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3204,7 +3204,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{sociality}</Label>
+                  <Label>{getTranslation(sociality,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3217,7 +3217,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{effectOfSubstance}</Label>
+                  <Label>{getTranslation(effectOfSubstance,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3231,7 +3231,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{ChiefComplaint}</Label>
+                  <Label>{getTranslation(ChiefComplaint,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3248,20 +3248,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
             {/*Chief Complaint*/}
             <div className="cheif__complaint">
               <div className="table-responsive">
-                <h5 className="mt-3 mb-3">{ChiefComplaint}</h5>
+                <h5 className="mt-3 mb-3">{getTranslation(ChiefComplaint,lang)}</h5>
 
                 <Table bordered>
                   <thead>
                     <tr>
-                      <th scope="col">{TreatmentOfSubstance}</th>
-                      <th scope="col">{howManyTimes}</th>
+                      <th scope="col">{getTranslation(TreatmentOfSubstance,lang)}</th>
+                      <th scope="col">{getTranslation(howManyTimes,lang)}</th>
                     </tr>
                     <tr>
-                      <th scope="col">{year}</th>
-                      <th scope="col">{placeOfTreatment}</th>
-                      <th scope="col">{durationOfTime}</th>
-                      <th scope="col">{daysOfSobriety}</th>
-                      <th scope="col">{cheifAction}</th>
+                      <th scope="col">{getTranslation(year,lang)}</th>
+                      <th scope="col">{getTranslation(placeOfTreatment,lang)}</th>
+                      <th scope="col">{getTranslation(durationOfTime,lang)}</th>
+                      <th scope="col">{getTranslation(daysOfSobriety,lang)}</th>
+                      <th scope="col">{getTranslation(cheifAction,lang)}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3335,7 +3335,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{absuingSubstance}</Label>
+                <Label>{getTranslation(absuingSubstance,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3349,7 +3349,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{influenceStop}</Label>
+                <Label>{getTranslation(influenceStop,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3363,7 +3363,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{whenStopUsing}</Label>
+                <Label>{getTranslation(whenStopUsing,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3377,7 +3377,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{itReplaceWhenWhom}</Label>
+                <Label>{getTranslation(itReplaceWhenWhom,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3391,7 +3391,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{afterRelapse}</Label>
+                <Label>{getTranslation(afterRelapse,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3405,7 +3405,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{haveDisorder}</Label>
+                <Label>{getTranslation(haveDisorder,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3419,7 +3419,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{isProblmeOrInjury}</Label>
+                <Label>{getTranslation(isProblmeOrInjury,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3433,7 +3433,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{DiagnosedOnTreatment}</Label>
+                <Label>{getTranslation(DiagnosedOnTreatment,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3447,7 +3447,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{DoctorPlaceDuration}</Label>
+                <Label>{getTranslation(DoctorPlaceDuration,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3461,7 +3461,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{ifGone}</Label>
+                <Label>{getTranslation(ifGone,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3475,7 +3475,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{YouFamiliar}</Label>
+                <Label>{getTranslation(YouFamiliar,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3489,9 +3489,9 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             {/*Relationship status: रिलेशनशिप स्टेटस ?: */}
             <div className="row">
-              <H5 className="mt-3 mb-3">{relationshipFamilyStatus}</H5>
+              <H5 className="mt-3 mb-3">{getTranslation(relationshipFamilyStatus,lang)}</H5>
               <div className="col-md-6">
-                <Label htmlFor="marital_status">{relationshipStatus}</Label>
+                <Label htmlFor="marital_status">{getTranslation(relationshipStatus,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3535,7 +3535,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Marriage Arrangement &Since वैवाहिक व्यवस्था और कब से*/}
               <div className="col-md-6">
                 <FormGroup className="mb-0">
-                  <Label>{MarriageArrangement}</Label>
+                  <Label>{getTranslation(MarriageArrangement,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3550,7 +3550,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*After marriage life or relationship Status*/}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{afterMerriageLife}</Label>
+                  <Label>{getTranslation(afterMerriageLife,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3565,7 +3565,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Is there interference of wife's family or any relative in the internal matters of your family. If yes than whom & in which affairs*/}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{isThereInterference}</Label>
+                  <Label>{getTranslation(isThereInterference,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3582,12 +3582,12 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   <Table bordered>
                     <thead>
                       <tr>
-                        <th scope="col">{nameisThere}</th>
-                        <th scope="col">{relationisThere}</th>
-                        <th scope="col">{relationisAge}</th>
-                        <th scope="col">{livingStatus}</th>
-                        <th scope="col">{AnyPhysicalDisorder}</th>
-                        <th scope="col">{cheifAction}</th>
+                        <th scope="col">{getTranslation(nameisThere,lang)}</th>
+                        <th scope="col">{getTranslation(relationisThere,lang)}</th>
+                        <th scope="col">{getTranslation(relationisAge,lang)}</th>
+                        <th scope="col">{getTranslation(livingStatus,lang)}</th>
+                        <th scope="col">{getTranslation(AnyPhysicalDisorder,lang)}</th>
+                        <th scope="col">{getTranslation(cheifAction,lang)}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3669,7 +3669,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
 
                 <FormGroup className="mb-0">
-                  <Label>{ifAnyDisorder}</Label>
+                  <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3685,23 +3685,23 @@ console.log(latestGenFamilyData.substance_use_dependency)
 पारिवारिक इतिहास: शराब पीना, मादक पदार्थ का प्रयोग या मानसिक समस्या?*/}
               <div className="col-md-12 mb-4">
                 <div className="table-responsive">
-                  <p className="mt-3 mb-3">{familyHistorySubstanceAbuse}</p>
+                  <p className="mt-3 mb-3">{getTranslation(familyHistorySubstanceAbuse,lang)}</p>
                   <Table bordered>
                     <thead>
                       <tr>
-                        <th>Mother Side</th>
-                        <th>Alcohol</th>
-                        <th>Drug</th>
-                        <th>Psych</th>
-                        <th>Father Side</th>
-                        <th>Alcohol</th>
-                        <th>Drug</th>
-                        <th>Psych</th>
+                      <th>{getTranslation("Mother Side/मातृ पक्ष",lang)}</th>
+                          <th>{getTranslation("Alcohol/शराब",lang)}</th>
+                          <th>{getTranslation("Drug/दवाई",lang)}</th>
+                          <th>{getTranslation("Psych/साइक",lang)}</th>
+                          <th>{getTranslation("Father Side/पिता पक्ष",lang)}</th>
+                          <th>{getTranslation("Alcohol/शराब",lang)}</th>
+                          <th>{getTranslation("Drug/दवाई",lang)}</th>
+                          <th>{getTranslation("Psych/साइक",lang)}</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr>
-                        <td>Grandmother</td>
+                        <td>{getTranslation("Grandmother/दादी",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -3756,7 +3756,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                             }
                           />
                         </td>
-                        <td>Grandmother</td>
+                        <td>{getTranslation("Grandmother/दादी",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -3813,7 +3813,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         </td>
                       </tr>
                       <tr>
-                        <td>Grandfather</td>
+                        <td>{getTranslation("Grandfather/दादाजी",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -3868,7 +3868,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                             }
                           />
                         </td>
-                        <td>Grandfather</td>
+                        <td>{getTranslation("Grandfather/दादाजी",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -3925,7 +3925,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         </td>
                       </tr>
                       <tr>
-                        <td>Mother</td>
+                        <td>{getTranslation("Mother/माँ",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -3980,7 +3980,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                             }
                           />
                         </td>
-                        <td>Father</td>
+                        <td>{getTranslation("Father/पिता",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -4037,7 +4037,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         </td>
                       </tr>
                       <tr>
-                        <td>Aunt / मामी</td>
+                        <td>{getTranslation("Aunt / मामी",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -4092,7 +4092,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                             }
                           />
                         </td>
-                        <td>Aunt / चाची</td>
+                        <td>{getTranslation("Aunt / चाची",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -4149,7 +4149,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         </td>
                       </tr>
                       <tr>
-                        <td>Uncle / मामा</td>
+                        <td>{getTranslation("Uncle / मामा",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -4204,7 +4204,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                             }
                           />
                         </td>
-                        <td>Uncle / चाचा</td>
+                        <td>{getTranslation("Uncle / चाचा",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -4262,7 +4262,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       </tr>
                       <tr>
                         {/* Mother side */}
-                        <td>{anyOtherPlsMention}</td>
+                        <td>{getTranslation(anyOtherPlsMention,lang)}</td>
                         <td colSpan={3}>
                           <Input
                             type="text"
@@ -4287,7 +4287,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           />
                         </td>
                         {/* Father side */}
-                        <td>{anyOtherPlsMention}</td>
+                        <td>{getTranslation(anyOtherPlsMention,lang)}</td>
                         <td colSpan={3}>
                           <Input
                             type="text"
@@ -4319,7 +4319,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/*Current Status? वर्तमान स्थिति?*/}
               <div className="col-md-12 mt-3">
-                <Label>{anyOtherPlsMention1}</Label>
+                <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -4333,7 +4333,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Current Status? वर्तमान स्थिति?*/}
 
               <div className="col-md-12 mt-3 mb-3">
-                <Label>{currentStatus}</Label>
+                <Label>{getTranslation(currentStatus,lang)}</Label>
                 {/* <Input
                   className="form-control form-control-primary btn-square"
                   name="select"
@@ -4368,7 +4368,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{howWasBonding}</Label>
+                  <Label>{getTranslation(howWasBonding,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4382,7 +4382,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{familyBehaviorPatient}</Label>
+                  <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4396,7 +4396,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{monitoringFamily}</Label>
+                  <Label>{getTranslation(monitoringFamily,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4410,7 +4410,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{ralationshipFamilyMember}</Label>
+                  <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4424,10 +4424,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/* Childhood /बचपन */}
 
-              <H5 className="mt-3 mb-3">{childhood}</H5>
+              <H5 className="mt-3 mb-3">{getTranslation(childhood,lang)}</H5>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{birthConditions}</Label>
+                  <Label>{getTranslation(birthConditions,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4441,7 +4441,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{parentingHistory}</Label>
+                  <Label>{getTranslation(parentingHistory,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4455,7 +4455,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{wasThereAnyConflict}</Label>
+                  <Label>{getTranslation(wasThereAnyConflict,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4470,7 +4470,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Sociality  where born & Living?
 सामाजिकता जहां पैदा हुआ और रहा  है?*/}
               <div className="col-md-12">
-                <Label htmlFor="birthPlace">{socialityWhere}</Label>
+                <Label htmlFor="birthPlace">{getTranslation(socialityWhere,lang)}</Label>
                 <Input
                   type="text"
                   id="birthPlace"
@@ -4481,7 +4481,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 />
 
                 <br />
-                <Label htmlFor="birthPlace">{highRiskBehavior}</Label>
+                <Label htmlFor="birthPlace">{getTranslation(highRiskBehavior,lang)}</Label>
                 <Input
                   type="text"
                   id="currentLocation"
@@ -4494,7 +4494,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12 mt-3 mb-3">
                 <FormGroup className="mb-0">
-                  <Label>{whatWasImpect}</Label>
+                  <Label>{getTranslation(whatWasImpect,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4508,7 +4508,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{hasAnyoneEverAbused}</Label>
+                  <Label>{getTranslation(hasAnyoneEverAbused,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4523,9 +4523,9 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/* Academics Occupational Details Start */}
 
               {/*Academics Occupational Details/ शैक्षणिक व्यावसायिक विवरण*/}
-              <H5 className="mt-3 mb-3">{academicsOccupationalDetails}</H5>
+              <H5 className="mt-3 mb-3">{getTranslation(academicsOccupationalDetails,lang)}</H5>
               <div className="col-md-6">
-                <Label htmlFor="educationStatus">{EducationStatus}</Label>
+                <Label htmlFor="educationStatus">{getTranslation(EducationStatus,lang)}</Label>
                 {/* <Input
                   id="educationStatus"
                   className="form-control form-control-primary btn-square"
@@ -4567,7 +4567,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/*Occupational status? कार्य की स्थिति?*/}
               <div className="col-md-6">
-                <Label htmlFor="occupation">{OcuStatus}</Label>
+                <Label htmlFor="occupation">{getTranslation(OcuStatus,lang)}</Label>
                 {/* <Input
                   id="occupation"
                   className="form-control form-control-primary btn-square"
@@ -4610,7 +4610,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*If dropout what is the reason यदि ड्रॉपआउट हुआ तो क्या कारण है?*/}
               <div className="col-md-12 mt-3">
                 <FormGroup className="mb-0">
-                  <Label>{ifDropout}</Label>
+                  <Label>{getTranslation(ifDropout,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4625,7 +4625,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Study/Work Details: (what was job frequency)  /अध्ययन/कार्य विवरण: (नौकरी की फ्रीक्वेंसी क्या थी?)*/}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{studyWorkDetails}</Label>
+                  <Label>{getTranslation(studyWorkDetails,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4640,7 +4640,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Hobbies : शौक:*/}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{Hobbies1}</Label>
+                  <Label>{getTranslation(Hobbies1,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4655,7 +4655,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Extra skills if any: अतिरिक्त कौशल कोई हो:*/}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{extraSkills}</Label>
+                  <Label>{getTranslation(extraSkills,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4671,7 +4671,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                */}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{achievemntInLife}</Label>
+                  <Label>{getTranslation(achievemntInLife,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4687,10 +4687,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/* Social Behavior Start */}
               {/* Social Behavior / सामाजिक व्यवहार */}
-              <H5 className="mt-3 mb-3">{socialBehavior}</H5>
+              <H5 className="mt-3 mb-3">{getTranslation(socialBehavior,lang)}</H5>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{socialBehavior1}</Label>
+                  <Label>{getTranslation(socialBehavior1,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4704,7 +4704,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{withWhomSpendFreeTime}</Label>
+                  <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4718,7 +4718,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{howManyFriends}</Label>
+                  <Label>{getTranslation(howManyFriends,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4732,7 +4732,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{friendSocialStatus}</Label>
+                  <Label>{getTranslation(friendSocialStatus,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4746,7 +4746,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{howMuchDependent}</Label>
+                  <Label>{getTranslation(howMuchDependent,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4760,7 +4760,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{whoClosedWellWisher}</Label>
+                  <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4776,10 +4776,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/* Legal History Start */}
               {/* Legal History / लीगल इतिहास */}
-              <H5 className="mt-3 mb-3">{legalHistory}</H5>
+              <H5 className="mt-3 mb-3">{getTranslation(legalHistory,lang)}</H5>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{domesticViolence}</Label>
+                  <Label>{getTranslation(domesticViolence,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4793,7 +4793,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{reasonBehindDomesticViolence}</Label>
+                  <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4807,7 +4807,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{drugStatus}</Label>
+                  <Label>{getTranslation(drugStatus,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4821,7 +4821,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{ifThereIsAnyCriminalCase}</Label>
+                  <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4835,7 +4835,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{specificCaseDetails}</Label>
+                  <Label>{getTranslation(specificCaseDetails,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4849,7 +4849,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{currentCaseStatus}</Label>
+                  <Label>{getTranslation(currentCaseStatus,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4863,7 +4863,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{ifWentToJail}</Label>
+                  <Label>{getTranslation(ifWentToJail,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4880,11 +4880,11 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/* Patient behavior Start */}
               {/* Patient behavior / रोगी का व्यवहार */}
 
-              <H5 className="mt-3 mb-3">{patientBeh}</H5>
+              <H5 className="mt-3 mb-3">{getTranslation(patientBeh,lang)}</H5>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{whatIsTheMostImportantThing}</Label>
+                  <Label>{getTranslation(whatIsTheMostImportantThing,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4898,7 +4898,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{lifeAim}</Label>
+                  <Label>{getTranslation(lifeAim,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4910,15 +4910,15 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </FormGroup>
               </div>
 
-              <H5 className="mt-3 mb-3">{patientBehavior}</H5>
+              <H5 className="mt-3 mb-3">{getTranslation(patientBehavior,lang)}</H5>
               <div className="col-md-12 table-responsive">
                 <table className="table table-bordered">
                   <thead>
                     <tr>
-                      <th>{tableNumber}</th>
-                      <th>{patientBehavior}</th>
-                      <th>{yes}</th>
-                      <th>{no}</th>
+                      <th>{getTranslation(tableNumber,lang)}</th>
+                      <th>{getTranslation(patientBehavior,lang)}</th>
+                      <th>{getTranslation(yes,lang)}</th>
+                      <th>{getTranslation(no,lang)}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -4926,7 +4926,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       return (
                         <tr key={key}>
                           <td>{index + 1}</td>
-                          <td className="w-75">{label}</td>
+                          <td className="w-75">{getTranslation(label,lang)}</td>
                           {["Yes", "No"].map((value) => {
                             const inputId = `patientBehavior_${key}_${value}`;
                             return (
@@ -4973,7 +4973,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     }
                   />
                   <Label className="text-muted" for="checkbox1">
-                    {consent}
+                    {getTranslation(consent,lang)}
                   </Label>
                 </div>
               </div>
@@ -4981,7 +4981,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Content section start*/}
               <div className="row mt-3 mb-3">
                 <div className="col-md-4">
-                  <Label>{name}</Label>
+                  <Label>{getTranslation(name,lang)}</Label>
                   <Input
                     type="text"
                     placeholder="Name"
@@ -4991,7 +4991,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   />
                 </div>
                 <div className="col-md-4">
-                  <Label>{relationship}</Label>
+                  <Label>{getTranslation(relationship,lang)}</Label>
                   <Input
                     type="text"
                     placeholder="Relationship"
@@ -5001,7 +5001,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   />
                 </div>
                 <div className="col-md-4">
-                  <Label>{signature}</Label>
+                  <Label>{getTranslation(signature,lang)}</Label>
                   <Input
                     type="text"
                     placeholder="Signature"
@@ -5011,7 +5011,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   />
                 </div>
                 <div className="col-md-12 mt-3 mb-3">
-                  <Label>{prepared}</Label>
+                  <Label>{getTranslation(prepared,lang)}</Label>
                   <Input
                     type="text"
                     placeholder="Prepared By"
@@ -5031,7 +5031,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       aria-hidden="true"
                     ></span>
                   ) : (
-                    "Submit Gen Family Form"
+                    getTranslation("Submit Gen Family Form/सामान्य परिवार फॉर्म जमा करें",lang)
                   )}
                 </Button>
               </div>
@@ -5050,7 +5050,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="General Family Form" className="p-0" />
+                    <HeaderCard title={getTranslation("General Family Form/सामान्य परिवार प्रपत्र",lang)} className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -5070,7 +5070,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -5114,7 +5114,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All Gen Family Data List" className="p-0" />
+                    <HeaderCard title={getTranslation("All General Family Data List/सभी सामान्य पारिवारिक डेटा सूची",lang)} className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -5134,7 +5134,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -5172,7 +5172,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
       {/* View Gen Family Data Modal start */}
       <CommonModal
         isOpen={viewGenFamilyModel}
-        title={patientPersonalInformation + " Details "}
+        title={getTranslation(patientPersonalInformation,lang)}
         toggler={closeGenFamily}
         maxWidth="1200px"
       >
@@ -5181,7 +5181,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     textAlign: "center",
                     textDecoration: "underline",
                     padding: "20px 0",
-                  }}>{patientPersonalInformation}</h4>
+                  }}>{getTranslation(patientPersonalInformation,lang)}</h4>
           
          
             <div className="table-responsive">
@@ -5252,8 +5252,8 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <table className="table table-bordered table-sm">
               <thead className="table-light">
                 <tr>
-                  <th>Role</th>
-                  <th>Details</th>
+                  <th>Role/भूमिका</th>
+                  <th>Details/विवरण</th>
                 </tr>
               </thead>
               <tbody>
@@ -5298,10 +5298,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
           <table className="table table-bordered table-sm">
             <thead className="table-light">
               <tr>
-                <th className="p-3">Treatment Year</th>
-                <th className="p-3">Treatment Place</th>
-                <th className="p-3">Treatment Duration</th>
-                <th className="p-3">Days of Sobriety</th>
+                <th className="p-3">Treatment Year/उपचार वर्ष</th>
+                <th className="p-3">Treatment Place/उपचार स्थान</th>
+                <th className="p-3">Treatment Duration/उपचार अवधि</th>
+                <th className="p-3">Days of Sobriety/संयम के दिन</th>
               </tr>
             </thead>
             <tbody>
@@ -5395,8 +5395,8 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   onClick={handleDownloadPDF}
                 >
                   {pfaDownload
-                    ? "Your Patient Personal Information is being downloaded.../ आपका PPI डाउनलोड हो रहा है..."
-                    : "Download Your Patient Personal Information (PPI) / अपना प्रथम व्यक्तिगत जानकारी डाउनलोड करें"}
+                    ? getTranslation( "Your Patient Personal Information is being downloaded.../ आपका PPI डाउनलोड हो रहा है...",lang)
+                    : getTranslation("Download Your Patient Personal Information (PPI) / अपना प्रथम व्यक्तिगत जानकारी डाउनलोड करें",lang)}
                 </button>
               </div>
       </CommonModal>
@@ -5406,7 +5406,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
       {/* Edit gen family data / data will fetch by latest gen family id and showing into edit modal like pre fetch fill data into form for create re admission of genfamily form start*/}
       <CommonModal
         isOpen={GeneditModal}
-        title={"Gen Family Re admission form"}
+        title={getTranslation("Gen Family Re admission form/सामान्य परिवार पुनः प्रवेश फॉर्म",lang)}
         toggler={closeGenFamily}
         maxWidth="1200px"
       >
@@ -5419,7 +5419,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <div className="row pt-3 pb-3">
               <FormGroup className="form-group row col-md-6">
                 <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {UID}
+                  {getTranslation(UID,lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -5444,7 +5444,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <div className="col-md-6">
               <FormGroup className="form-group row">
                 <Label className="col-sm-12 col-form-label col-xl-6">
-                  {dateOfFormFilling}
+                  {getTranslation(dateOfFormFilling,lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -5470,7 +5470,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             {/* Occupation Status */}
             <div className="row pt-3 pb-3">
               <div className="col-md-3">
-                <Label>{relation}</Label>
+                <Label>{getTranslation(relation,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -5488,7 +5488,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/* Marital Status */}
               <div className="col-md-3">
-                <Label>{marital}</Label>
+                <Label>{getTranslation(marital,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -5506,7 +5506,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/* Living Situation */}
               <div className="col-md-3">
-                <Label>{living}</Label>
+                <Label>{getTranslation(living,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -5524,7 +5524,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/* Religion */}
               <div className="col-md-3">
-                <Label>{religion}</Label>
+                <Label>{getTranslation(religion,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -5542,11 +5542,11 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/*End Living Situation and Religion*/}
               {/*Substance Use Dependency / नशीले पदार्थ उपयोग निर्भरता */}
-              <h5 className="mt-3">{substanceDependency}</h5>
+              <h5 className="mt-3">{getTranslation(substanceDependency,lang)}</h5>
               <div className="row pt-3 pb-3">
                 {/*Duration of regular use? / कब से पदार्थ निर्भर हैं? */}
                 <div className="col-md-3">
-                  <Label for="custom-duration">{durationOfRegularUse}</Label>
+                  <Label for="custom-duration">{getTranslation(durationOfRegularUse,lang)}</Label>
                   <Input
                     type="text"
                     id="custom-duration"
@@ -5562,7 +5562,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 {/*Daily Spent? / दिनमा कितना पदार्थ उपयोग कर रहे हैं? */}
                 <div className="col-md-3">
-                  <Label for="daily-spent">{dailySpentSubstance}</Label>
+                  <Label for="daily-spent">{getTranslation(dailySpentSubstance,lang)}</Label>
                   <Input
                     type="number"
                     id="daily-spent"
@@ -5580,7 +5580,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 {/*Patient Monthly Income? / महीने में कितना आय हैं? */}
                 <div className="col-md-3">
-                  <Label for="monthly-income">{patienMonthlyIncome}</Label>
+                  <Label for="monthly-income">{getTranslation(patienMonthlyIncome,lang)}</Label>
                   <Input
                     type="number"
                     id="monthly-income"
@@ -5598,7 +5598,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 {/*Family Monthly Income? / महीने में कितना आय हैं? */}
                 <div className="col-md-3">
-                  <Label for="family-income">{familyMonthlyIncome}</Label>
+                  <Label for="family-income">{getTranslation(familyMonthlyIncome,lang)}</Label>
                   <Input
                     type="number"
                     id="family-income"
@@ -5618,7 +5618,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               {/*End Substance Use Dependency*/}
               {/*Source of money? Kindly mention which are applicable?पैसे का अरैंजमेंट? कृपया बताएं कि कौन से लागू हैं?*/}
-              <h5 className="mt-3">{sourceOfMoney}</h5>
+              <h5 className="mt-3">{getTranslation(sourceOfMoney,lang)}</h5>
               <div className="row pt-3 pb-3 ">
                 {moneySources.map((source) => (
                   <div key={source.id} className="moneySource col-md-3">
@@ -5635,7 +5635,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         }))
                       }
                     />
-                    <Label htmlFor={source.id}>{source.label}</Label>
+                    <Label htmlFor={source.id}>{getTranslation(source.label,lang)}</Label>
 
                     {source.id === "source_any_other" &&
                       GenfamiltEditData[source.id] === "Yes" && (
@@ -5664,7 +5664,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <div className="row">
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{Ifarrange}</Label>
+                    <Label>{getTranslation(Ifarrange,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -5682,7 +5682,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{mentionYear}</Label>
+                    <Label>{getTranslation(mentionYear,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -5700,7 +5700,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{action}</Label>
+                    <Label>{getTranslation(action,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -5718,7 +5718,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{Residence}</Label>
+                    <Label>{getTranslation(Residence,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -5736,7 +5736,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{experiencedTrauma}</Label>
+                    <Label>{getTranslation(experiencedTrauma,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -5754,7 +5754,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{occurredPatientBehavior}</Label>
+                    <Label>{getTranslation(occurredPatientBehavior,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -5772,7 +5772,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{sociality}</Label>
+                    <Label>{getTranslation(sociality,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -5790,7 +5790,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{effectOfSubstance}</Label>
+                    <Label>{getTranslation(effectOfSubstance,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -5809,7 +5809,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{ChiefComplaint}</Label>
+                    <Label>{getTranslation(ChiefComplaint,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -5831,20 +5831,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Chief Complaint*/}
               <div className="cheif__complaint">
                 <div className="table-responsive">
-                  <h5 className="mt-3 mb-3">{ChiefComplaint}</h5>
+                  <h5 className="mt-3 mb-3">{getTranslation(ChiefComplaint,lang)}</h5>
 
                   <Table bordered>
                     <thead>
                       <tr>
-                        <th scope="col">{TreatmentOfSubstance}</th>
-                        <th scope="col">{howManyTimes}</th>
+                        <th scope="col">{getTranslation(TreatmentOfSubstance,lang)}</th>
+                        <th scope="col">{getTranslation(howManyTimes,lang)}</th>
                       </tr>
                       <tr>
-                        <th scope="col">{year}</th>
-                        <th scope="col">{placeOfTreatment}</th>
-                        <th scope="col">{durationOfTime}</th>
-                        <th scope="col">{daysOfSobriety}</th>
-                        <th scope="col">{cheifAction}</th>
+                        <th scope="col">{getTranslation(year,lang)}</th>
+                        <th scope="col">{getTranslation(placeOfTreatment,lang)}</th>
+                        <th scope="col">{getTranslation(durationOfTime,lang)}</th>
+                        <th scope="col">{getTranslation(daysOfSobriety,lang)}</th>
+                        <th scope="col">{getTranslation(cheifAction,lang)}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -5895,7 +5895,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                                 className="btn btn-danger"
                                 onClick={() => removeTreatmentRow(index)}
                               >
-                                Remove
+                                {getTranslation("Remove/निकालना",lang)}
                               </Button>
                             )}
                           </td>
@@ -5909,14 +5909,14 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     className="btn btn-secondary mt-3 mb-3"
                     onClick={addTreatmentRow}
                   >
-                    + Add More
+                    {getTranslation("+ Add More/ + अधिक जोड़ें",lang)}
                   </Button>
                 </div>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{absuingSubstance}</Label>
+                  <Label>{getTranslation(absuingSubstance,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -5935,7 +5935,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{influenceStop}</Label>
+                  <Label>{getTranslation(influenceStop,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -5954,7 +5954,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{whenStopUsing}</Label>
+                  <Label>{getTranslation(whenStopUsing,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -5973,7 +5973,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{itReplaceWhenWhom}</Label>
+                  <Label>{getTranslation(itReplaceWhenWhom,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -5992,7 +5992,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{afterRelapse}</Label>
+                  <Label>{getTranslation(afterRelapse,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -6011,7 +6011,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{haveDisorder}</Label>
+                  <Label>{getTranslation(haveDisorder,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -6030,7 +6030,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{isProblmeOrInjury}</Label>
+                  <Label>{getTranslation(isProblmeOrInjury,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -6049,7 +6049,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{DiagnosedOnTreatment}</Label>
+                  <Label>{getTranslation(DiagnosedOnTreatment,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -6068,7 +6068,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{DoctorPlaceDuration}</Label>
+                  <Label>{getTranslation(DoctorPlaceDuration,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -6087,7 +6087,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{ifGone}</Label>
+                  <Label>{getTranslation(ifGone,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -6106,7 +6106,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{YouFamiliar}</Label>
+                  <Label>{getTranslation(YouFamiliar,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -6125,9 +6125,9 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/*Relationship status: रिलेशनशिप स्टेटस ?: */}
               <div className="row">
-                <H5 className="mt-3 mb-3">{relationshipFamilyStatus}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(relationshipFamilyStatus,lang)}</H5>
                 <div className="col-md-6">
-                  <Label htmlFor="marital_status">{relationshipStatus}</Label>
+                  <Label htmlFor="marital_status">{getTranslation(relationshipStatus,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -6176,7 +6176,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Marriage Arrangement &Since वैवाहिक व्यवस्था और कब से*/}
                 <div className="col-md-6">
                   <FormGroup className="mb-0">
-                    <Label>{MarriageArrangement}</Label>
+                    <Label>{getTranslation(MarriageArrangement,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -6196,7 +6196,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*After marriage life or relationship Status*/}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{afterMerriageLife}</Label>
+                    <Label>{getTranslation(afterMerriageLife,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -6216,7 +6216,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Is there interference of wife's family or any relative in the internal matters of your family. If yes than whom & in which affairs*/}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{isThereInterference}</Label>
+                    <Label>{getTranslation(isThereInterference,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -6238,12 +6238,12 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     <Table bordered>
                       <thead>
                         <tr>
-                          <th scope="col">{nameisThere}</th>
-                          <th scope="col">{relationisThere}</th>
-                          <th scope="col">{relationisAge}</th>
-                          <th scope="col">{livingStatus}</th>
-                          <th scope="col">{AnyPhysicalDisorder}</th>
-                          <th scope="col">{cheifAction}</th>
+                          <th scope="col">{getTranslation(nameisThere,lang)}</th>
+                          <th scope="col">{getTranslation(relationisThere,lang)}</th>
+                          <th scope="col">{getTranslation(relationisAge,lang)}</th>
+                          <th scope="col">{getTranslation(livingStatus,lang)}</th>
+                          <th scope="col">{getTranslation(AnyPhysicalDisorder,lang)}</th>
+                          <th scope="col">{getTranslation(cheifAction,lang)}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -6379,12 +6379,12 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       className="btn btn-secondary mt-4 mb-3"
                       onClick={addInterferenceRow}
                     >
-                      + Add More
+                      {getTranslation("+ Add More/+ और जोड़ें",lang)}
                     </Button>
                   </div>
 
                   <FormGroup className="mb-0">
-                    <Label>{ifAnyDisorder}</Label>
+                    <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -6406,23 +6406,23 @@ console.log(latestGenFamilyData.substance_use_dependency)
 पारिवारिक इतिहास: शराब पीना, मादक पदार्थ का प्रयोग या मानसिक समस्या?*/}
                 <div className="col-md-12 mb-4">
                   <div className="table-responsive">
-                    <p className="mt-3 mb-3">{familyHistorySubstanceAbuse}</p>
+                    <p className="mt-3 mb-3">{getTranslation(familyHistorySubstanceAbuse,lang)}</p>
                     <Table bordered>
                       <thead>
                         <tr>
-                          <th>Mother Side</th>
-                          <th>Alcohol</th>
-                          <th>Drug</th>
-                          <th>Psych</th>
-                          <th>Father Side</th>
-                          <th>Alcohol</th>
-                          <th>Drug</th>
-                          <th>Psych</th>
+                        <th>{getTranslation("Mother Side/मातृ पक्ष",lang)}</th>
+                          <th>{getTranslation("Alcohol/शराब",lang)}</th>
+                          <th>{getTranslation("Drug/दवाई",lang)}</th>
+                          <th>{getTranslation("Psych/साइक",lang)}</th>
+                          <th>{getTranslation("Father Side/पिता पक्ष",lang)}</th>
+                          <th>{getTranslation("Alcohol/शराब",lang)}</th>
+                          <th>{getTranslation("Drug/दवाई",lang)}</th>
+                          <th>{getTranslation("Psych/साइक",lang)}</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td>Grandmother</td>
+                        <td>{getTranslation("Grandmother/दादी",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -6474,7 +6474,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               }
                             />
                           </td>
-                          <td>Grandmother</td>
+                          <td>{getTranslation("Grandmother/दादी",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -6529,7 +6529,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         </tr>
 
                         <tr>
-                          <td>Grandfather</td>
+                        <td>{getTranslation("Grandfather/दादाजी",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -6584,7 +6584,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               }
                             />
                           </td>
-                          <td>Grandfather</td>
+                          <td>{getTranslation("Grandfather/दादाजी",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -6643,7 +6643,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
 
                         <tr>
-                          <td>Mother</td>
+                        <td>{getTranslation("Mother/माँ",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -6695,7 +6695,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               }
                             />
                           </td>
-                          <td>Father</td>
+                          <td>{getTranslation("Father/पिता",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -6750,7 +6750,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         </tr>
 
                         <tr>
-                          <td>Aunt / मामी</td>
+                          <td>{getTranslation("Aunt / मामी",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -6802,7 +6802,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               }
                             />
                           </td>
-                          <td>Aunt / चाची</td>
+                          <td>{getTranslation("Aunt / चाची",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -6857,7 +6857,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         </tr>
 
                         <tr>
-                          <td>Uncle / मामा</td>
+                          <td>{getTranslation("Uncle / मामा",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -6909,7 +6909,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               }
                             />
                           </td>
-                          <td>Uncle / चाचा</td>
+                          <td>{getTranslation("Uncle / चाचा",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -6975,7 +6975,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 {/*Current Status? वर्तमान स्थिति?*/}
                 <div className="col-md-12 mt-3">
-                  <Label>{anyOtherPlsMention1}</Label>
+                  <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -6994,7 +6994,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Current Status? वर्तमान स्थिति?*/}
 
                 <div className="col-md-12 mt-3 mb-3">
-                  <Label>{currentStatus}</Label>
+                  <Label>{getTranslation(currentStatus,lang)}</Label>
                   {/* <Input
                   className="form-control form-control-primary btn-square"
                   name="select"
@@ -7034,7 +7034,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{howWasBonding}</Label>
+                    <Label>{getTranslation(howWasBonding,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7053,7 +7053,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{familyBehaviorPatient}</Label>
+                    <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7072,7 +7072,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{monitoringFamily}</Label>
+                    <Label>{getTranslation(monitoringFamily,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7091,7 +7091,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{ralationshipFamilyMember}</Label>
+                    <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7110,10 +7110,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 {/* Childhood /बचपन */}
 
-                <H5 className="mt-3 mb-3">{childhood}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(childhood,lang)}</H5>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{birthConditions}</Label>
+                    <Label>{getTranslation(birthConditions,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7132,7 +7132,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{parentingHistory}</Label>
+                    <Label>{getTranslation(parentingHistory,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7151,7 +7151,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{wasThereAnyConflict}</Label>
+                    <Label>{getTranslation(wasThereAnyConflict,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7171,7 +7171,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Sociality  where born & Living?
 सामाजिकता जहां पैदा हुआ और रहा  है?*/}
                 <div className="col-md-12">
-                  <Label htmlFor="birthPlace">{socialityWhere}</Label>
+                  <Label htmlFor="birthPlace">{getTranslation(socialityWhere,lang)}</Label>
                   <Input
                     type="text"
                     id="birthPlace"
@@ -7186,7 +7186,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   />
 
                   <br />
-                  <Label htmlFor="birthPlace">{highRiskBehavior}</Label>
+                  <Label htmlFor="birthPlace">{getTranslation(highRiskBehavior,lang)}</Label>
                   <Input
                     type="text"
                     id="currentLocation"
@@ -7203,7 +7203,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12 mt-3 mb-3">
                   <FormGroup className="mb-0">
-                    <Label>{whatWasImpect}</Label>
+                    <Label>{getTranslation(whatWasImpect,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7222,7 +7222,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{hasAnyoneEverAbused}</Label>
+                    <Label>{getTranslation(hasAnyoneEverAbused,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7242,9 +7242,9 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/* Academics Occupational Details Start */}
 
                 {/*Academics Occupational Details/ शैक्षणिक व्यावसायिक विवरण*/}
-                <H5 className="mt-3 mb-3">{academicsOccupationalDetails}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(academicsOccupationalDetails,lang)}</H5>
                 <div className="col-md-6">
-                  <Label htmlFor="educationStatus">{EducationStatus}</Label>
+                  <Label htmlFor="educationStatus">{getTranslation(EducationStatus,lang)}</Label>
                   {/* <Input
                   id="educationStatus"
                   className="form-control form-control-primary btn-square"
@@ -7291,7 +7291,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 {/*Occupational status? कार्य की स्थिति?*/}
                 <div className="col-md-6">
-                  <Label htmlFor="occupation">{OcuStatus}</Label>
+                  <Label htmlFor="occupation">{getTranslation(OcuStatus,lang)}</Label>
                   {/* <Input
                   id="occupation"
                   className="form-control form-control-primary btn-square"
@@ -7339,7 +7339,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*If dropout what is the reason यदि ड्रॉपआउट हुआ तो क्या कारण है?*/}
                 <div className="col-md-12 mt-3">
                   <FormGroup className="mb-0">
-                    <Label>{ifDropout}</Label>
+                    <Label>{getTranslation(ifDropout,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7359,7 +7359,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Study/Work Details: (what was job frequency)  /अध्ययन/कार्य विवरण: (नौकरी की फ्रीक्वेंसी क्या थी?)*/}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{studyWorkDetails}</Label>
+                    <Label>{getTranslation(studyWorkDetails,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7379,7 +7379,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Hobbies : शौक:*/}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{Hobbies1}</Label>
+                    <Label>{getTranslation(Hobbies1,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7399,7 +7399,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Extra skills if any: अतिरिक्त कौशल कोई हो:*/}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{extraSkills}</Label>
+                    <Label>{getTranslation(extraSkills,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7420,7 +7420,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                */}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{achievemntInLife}</Label>
+                    <Label>{getTranslation(achievemntInLife,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7441,10 +7441,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 {/* Social Behavior Start */}
                 {/* Social Behavior / सामाजिक व्यवहार */}
-                <H5 className="mt-3 mb-3">{socialBehavior}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(socialBehavior,lang)}</H5>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{socialBehavior1}</Label>
+                    <Label>{getTranslation(socialBehavior1,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7463,7 +7463,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{withWhomSpendFreeTime}</Label>
+                    <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7482,7 +7482,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{howManyFriends}</Label>
+                    <Label>{getTranslation(howManyFriends,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7501,7 +7501,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{friendSocialStatus}</Label>
+                    <Label>{getTranslation(friendSocialStatus,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7520,7 +7520,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{howMuchDependent}</Label>
+                    <Label>{getTranslation(howMuchDependent,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7539,7 +7539,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{whoClosedWellWisher}</Label>
+                    <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7560,10 +7560,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 {/* Legal History Start */}
                 {/* Legal History / लीगल इतिहास */}
-                <H5 className="mt-3 mb-3">{legalHistory}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(legalHistory,lang)}</H5>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{domesticViolence}</Label>
+                    <Label>{getTranslation(domesticViolence,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7582,7 +7582,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{reasonBehindDomesticViolence}</Label>
+                    <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7601,7 +7601,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{drugStatus}</Label>
+                    <Label>{getTranslation(drugStatus,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7620,7 +7620,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{ifThereIsAnyCriminalCase}</Label>
+                    <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7639,7 +7639,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{specificCaseDetails}</Label>
+                    <Label>{getTranslation(specificCaseDetails,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7658,7 +7658,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{currentCaseStatus}</Label>
+                    <Label>{getTranslation(currentCaseStatus,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7677,7 +7677,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{ifWentToJail}</Label>
+                    <Label>{getTranslation(ifWentToJail,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7699,11 +7699,11 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/* Patient behavior Start */}
                 {/* Patient behavior / रोगी का व्यवहार */}
 
-                <H5 className="mt-3 mb-3">{patientBeh}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(patientBeh,lang)}</H5>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{whatIsTheMostImportantThing}</Label>
+                    <Label>{getTranslation(whatIsTheMostImportantThing,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7722,7 +7722,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{lifeAim}</Label>
+                    <Label>{getTranslation(lifeAim,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -7739,22 +7739,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </FormGroup>
                 </div>
 
-                <H5 className="mt-3 mb-3">{patientBehavior}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(patientBehavior,lang)}</H5>
                 <div className="col-md-12 table-responsive">
                   <table className="table table-bordered">
                     <thead>
                       <tr>
-                        <th>{tableNumber}</th>
-                        <th>{patientBehavior}</th>
-                        <th>{yes}</th>
-                        <th>{no}</th>
+                        <th>{getTranslation(tableNumber,lang)}</th>
+                        <th>{getTranslation(patientBehavior,lang)}</th>
+                        <th>{getTranslation(yes,lang)}</th>
+                        <th>{getTranslation(no,lang)}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {patientBehaviorFormattedList.map(({ key, label }, index) => (
                         <tr key={key}>
                           <td>{index + 1}</td>
-                          <td className="w-75">{label}</td>
+                          <td className="w-75">{getTranslation(label,lang)}</td>
                           {["Yes", "No"].map((value) => {
                             const inputId = `patientBehavior_${key}_${value}`;
                             return (
@@ -7803,7 +7803,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       }
                     />
                     <Label className="text-muted" for="checkbox1">
-                      {consent}
+                      {getTranslation(consent,lang)}
                     </Label>
                   </div>
                 </div>
@@ -7811,7 +7811,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Content section start*/}
                 <div className="row mt-3 mb-3">
                   <div className="col-md-4">
-                    <Label>{name}</Label>
+                    <Label>{getTranslation(name,lang)}</Label>
                     <Input
                       type="text"
                       placeholder="Name"
@@ -7826,7 +7826,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                   <div className="col-md-4">
-                    <Label>{relationship}</Label>
+                    <Label>{getTranslation(relationship,lang)}</Label>
                     <Input
                       type="text"
                       placeholder="Relationship"
@@ -7841,7 +7841,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                   <div className="col-md-4">
-                    <Label>{signature}</Label>
+                    <Label>{getTranslation(signature,lang)}</Label>
                     <Input
                       type="text"
                       placeholder="Signature"
@@ -7856,7 +7856,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                   <div className="col-md-12 mt-3 mb-3">
-                    <Label>{prepared}</Label>
+                    <Label>{getTranslation(prepared,lang)}</Label>
                     <Input
                       type="text"
                       placeholder="Prepared By"
@@ -7881,7 +7881,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         aria-hidden="true"
                       ></span>
                     ) : (
-                      "Create Re Gen Family Admission"
+                      getTranslation("Recreate General Family Admission/सामान्य पारिवारिक प्रवेश को पुनः बनाएँ",lang)
                     )}
                   </Button>
                 </div>
@@ -7899,7 +7899,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 {/* Edit individual gen family data by gen_fam_id  */}
 <CommonModal
         isOpen={genEditIndividualmodal}
-        title={"Edit Gen Family Data"}
+        title={getTranslation("Edit General Family Data/सामान्य पारिवारिक डेटा संपादित करें",lang)}
         toggler={closeGenFamily}
         maxWidth="1200px"
       >
@@ -7912,7 +7912,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <div className="row pt-3 pb-3">
               <FormGroup className="form-group row col-md-6">
                 <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {UID}
+                  {getTranslation(UID,lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -7937,7 +7937,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <div className="col-md-6">
               <FormGroup className="form-group row">
                 <Label className="col-sm-12 col-form-label col-xl-6">
-                  {dateOfFormFilling}
+                  {getTranslation(dateOfFormFilling,lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -7963,7 +7963,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             {/* Occupation Status */}
             <div className="row pt-3 pb-3">
               <div className="col-md-3">
-                <Label>{relation}</Label>
+                <Label>{getTranslation(relation,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -7981,7 +7981,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/* Marital Status */}
               <div className="col-md-3">
-                <Label>{marital}</Label>
+                <Label>{getTranslation(marital,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -7999,7 +7999,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/* Living Situation */}
               <div className="col-md-3">
-                <Label>{living}</Label>
+                <Label>{getTranslation(living,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -8017,7 +8017,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/* Religion */}
               <div className="col-md-3">
-                <Label>{religion}</Label>
+                <Label>{getTranslation(religion,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control mt-2"
@@ -8035,11 +8035,11 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/*End Living Situation and Religion*/}
               {/*Substance Use Dependency / नशीले पदार्थ उपयोग निर्भरता */}
-              <h5 className="mt-3">{substanceDependency}</h5>
+              <h5 className="mt-3">{getTranslation(substanceDependency,lang)}</h5>
               <div className="row pt-3 pb-3">
                 {/*Duration of regular use? / कब से पदार्थ निर्भर हैं? */}
                 <div className="col-md-3">
-                  <Label for="custom-duration">{durationOfRegularUse}</Label>
+                  <Label for="custom-duration">{getTranslation(durationOfRegularUse,lang)}</Label>
                   <Input
                     type="text"
                     id="custom-duration"
@@ -8055,7 +8055,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 {/*Daily Spent? / दिनमा कितना पदार्थ उपयोग कर रहे हैं? */}
                 <div className="col-md-3">
-                  <Label for="daily-spent">{dailySpentSubstance}</Label>
+                  <Label for="daily-spent">{getTranslation(dailySpentSubstance,lang)}</Label>
                   <Input
                     type="number"
                     id="daily-spent"
@@ -8073,7 +8073,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 {/*Patient Monthly Income? / महीने में कितना आय हैं? */}
                 <div className="col-md-3">
-                  <Label for="monthly-income">{patienMonthlyIncome}</Label>
+                  <Label for="monthly-income">{getTranslation(patienMonthlyIncome,lang)}</Label>
                   <Input
                     type="number"
                     id="monthly-income"
@@ -8091,7 +8091,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 {/*Family Monthly Income? / महीने में कितना आय हैं? */}
                 <div className="col-md-3">
-                  <Label for="family-income">{familyMonthlyIncome}</Label>
+                  <Label for="family-income">{getTranslation(familyMonthlyIncome,lang)}</Label>
                   <Input
                     type="number"
                     id="family-income"
@@ -8111,7 +8111,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               {/*End Substance Use Dependency*/}
               {/*Source of money? Kindly mention which are applicable?पैसे का अरैंजमेंट? कृपया बताएं कि कौन से लागू हैं?*/}
-              <h5 className="mt-3">{sourceOfMoney}</h5>
+              <h5 className="mt-3">{getTranslation(sourceOfMoney,lang)}</h5>
               <div className="row pt-3 pb-3 ">
                 {moneySources.map((source) => (
                   <div key={source.id} className="moneySource col-md-3">
@@ -8128,7 +8128,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         }))
                       }
                     />
-                    <Label htmlFor={source.id}>{source.label}</Label>
+                    <Label htmlFor={source.id}>{getTranslation(source.label,lang)}</Label>
 
                     {source.id === "source_any_other" &&
                       GenfamiltEditData[source.id] === "Yes" && (
@@ -8157,7 +8157,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <div className="row">
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{Ifarrange}</Label>
+                    <Label>{getTranslation(Ifarrange,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8175,7 +8175,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{mentionYear}</Label>
+                    <Label>{getTranslation(mentionYear,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8193,7 +8193,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{action}</Label>
+                    <Label>{getTranslation(action,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8211,7 +8211,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{Residence}</Label>
+                    <Label>{getTranslation(Residence,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8229,7 +8229,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{experiencedTrauma}</Label>
+                    <Label>{getTranslation(experiencedTrauma,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8247,7 +8247,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{occurredPatientBehavior}</Label>
+                    <Label>{getTranslation(occurredPatientBehavior,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8265,7 +8265,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{sociality}</Label>
+                    <Label>{getTranslation(sociality,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8283,7 +8283,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{effectOfSubstance}</Label>
+                    <Label>{getTranslation(effectOfSubstance,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8302,7 +8302,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{ChiefComplaint}</Label>
+                    <Label>{getTranslation(ChiefComplaint,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8324,20 +8324,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Chief Complaint*/}
               <div className="cheif__complaint">
                 <div className="table-responsive">
-                  <h5 className="mt-3 mb-3">{ChiefComplaint}</h5>
+                  <h5 className="mt-3 mb-3">{getTranslation(ChiefComplaint,lang)}</h5>
 
                   <Table bordered>
                     <thead>
                       <tr>
-                        <th scope="col">{TreatmentOfSubstance}</th>
-                        <th scope="col">{howManyTimes}</th>
+                        <th scope="col">{getTranslation(TreatmentOfSubstance,lang)}</th>
+                        <th scope="col">{getTranslation(howManyTimes,lang)}</th>
                       </tr>
                       <tr>
-                        <th scope="col">{year}</th>
-                        <th scope="col">{placeOfTreatment}</th>
-                        <th scope="col">{durationOfTime}</th>
-                        <th scope="col">{daysOfSobriety}</th>
-                        <th scope="col">{cheifAction}</th>
+                        <th scope="col">{getTranslation(year,lang)}</th>
+                        <th scope="col">{getTranslation(placeOfTreatment,lang)}</th>
+                        <th scope="col">{getTranslation(durationOfTime,lang)}</th>
+                        <th scope="col">{getTranslation(daysOfSobriety)}</th>
+                        <th scope="col">{getTranslation(cheifAction,lang)}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -8387,7 +8387,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                                 className="btn btn-danger"
                                 onClick={() => removeTreatmentRow(index)}
                               >
-                                Remove
+                                {getTranslation("Remove/निकालना",lang)}
                               </Button>
                             )}
                           </td>
@@ -8401,14 +8401,14 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     className="btn btn-secondary mt-3 mb-3"
                     onClick={addTreatmentRow}
                   >
-                    + Add More
+                    {getTranslation("+ Add More/+ और जोड़ें",lang)}
                   </Button>
                 </div>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{absuingSubstance}</Label>
+                  <Label>{getTranslation(absuingSubstance,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8427,7 +8427,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{influenceStop}</Label>
+                  <Label>{getTranslation(influenceStop,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8446,7 +8446,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{whenStopUsing}</Label>
+                  <Label>{getTranslation(whenStopUsing,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8465,7 +8465,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{itReplaceWhenWhom}</Label>
+                  <Label>{getTranslation(itReplaceWhenWhom,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8484,7 +8484,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{afterRelapse}</Label>
+                  <Label>{getTranslation(afterRelapse,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8503,7 +8503,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{haveDisorder}</Label>
+                  <Label>{getTranslation(haveDisorder,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8522,7 +8522,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{isProblmeOrInjury}</Label>
+                  <Label>{getTranslation(isProblmeOrInjury,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8541,7 +8541,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{DiagnosedOnTreatment}</Label>
+                  <Label>{getTranslation(DiagnosedOnTreatment,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8560,7 +8560,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{DoctorPlaceDuration}</Label>
+                  <Label>{getTranslation(DoctorPlaceDuration,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8579,7 +8579,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{ifGone}</Label>
+                  <Label>{getTranslation(ifGone,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8598,7 +8598,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{YouFamiliar}</Label>
+                  <Label>{getTranslation(YouFamiliar,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8617,9 +8617,9 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/*Relationship status: रिलेशनशिप स्टेटस ?: */}
               <div className="row">
-                <H5 className="mt-3 mb-3">{relationshipFamilyStatus}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(relationshipFamilyStatus,lang)}</H5>
                 <div className="col-md-6">
-                  <Label htmlFor="marital_status">{relationshipStatus}</Label>
+                  <Label htmlFor="marital_status">{getTranslation(relationshipStatus,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -8668,7 +8668,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Marriage Arrangement &Since वैवाहिक व्यवस्था और कब से*/}
                 <div className="col-md-6">
                   <FormGroup className="mb-0">
-                    <Label>{MarriageArrangement}</Label>
+                    <Label>{getTranslation(relationshipStatus,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8688,7 +8688,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*After marriage life or relationship Status*/}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{afterMerriageLife}</Label>
+                    <Label>{getTranslation(afterMerriageLife,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8708,7 +8708,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Is there interference of wife's family or any relative in the internal matters of your family. If yes than whom & in which affairs*/}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{isThereInterference}</Label>
+                    <Label>{getTranslation(isThereInterference,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8730,12 +8730,12 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     <Table bordered>
                       <thead>
                         <tr>
-                          <th scope="col">{nameisThere}</th>
-                          <th scope="col">{relationisThere}</th>
-                          <th scope="col">{relationisAge}</th>
-                          <th scope="col">{livingStatus}</th>
-                          <th scope="col">{AnyPhysicalDisorder}</th>
-                          <th scope="col">{cheifAction}</th>
+                          <th scope="col">{getTranslation(nameisThere,lang)}</th>
+                          <th scope="col">{getTranslation(relationisThere,lang)}</th>
+                          <th scope="col">{getTranslation(relationisAge,lang)}</th>
+                          <th scope="col">{getTranslation(livingStatus,lang)}</th>
+                          <th scope="col">{getTranslation(AnyPhysicalDisorder,lang)}</th>
+                          <th scope="col">{getTranslation(cheifAction,lang)}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -8794,7 +8794,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                                   className="btn btn-danger"
                                   onClick={() => removeInterferenceRow(index)}
                                 >
-                                  Remove
+                                  {getTranslation("Remove/निकालना",lang)}
                                 </Button>
                               )}
                             </td>
@@ -8808,12 +8808,12 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       className="btn btn-secondary mt-4 mb-3"
                       onClick={addInterferenceRow}
                     >
-                      + Add More
+                      {getTranslation("Add More / और जोड़ें",lang)}
                     </Button>
                   </div>
 
                   <FormGroup className="mb-0">
-                    <Label>{ifAnyDisorder}</Label>
+                    <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -8835,23 +8835,23 @@ console.log(latestGenFamilyData.substance_use_dependency)
 पारिवारिक इतिहास: शराब पीना, मादक पदार्थ का प्रयोग या मानसिक समस्या?*/}
                 <div className="col-md-12 mb-4">
                   <div className="table-responsive">
-                    <p className="mt-3 mb-3">{familyHistorySubstanceAbuse}</p>
+                    <p className="mt-3 mb-3">{getTranslation(familyHistorySubstanceAbuse,lang)}</p>
                     <Table bordered>
                       <thead>
                         <tr>
-                          <th>Mother Side</th>
-                          <th>Alcohol</th>
-                          <th>Drug</th>
-                          <th>Psych</th>
-                          <th>Father Side</th>
-                          <th>Alcohol</th>
-                          <th>Drug</th>
-                          <th>Psych</th>
+                          <th>{getTranslation("Mother Side/मातृ पक्ष",lang)}</th>
+                          <th>{getTranslation("Alcohol/शराब",lang)}</th>
+                          <th>{getTranslation("Drug/दवाई",lang)}</th>
+                          <th>{getTranslation("Psych/साइक",lang)}</th>
+                          <th>{getTranslation("Father Side/पिता पक्ष",lang)}</th>
+                          <th>{getTranslation("Alcohol/शराब",lang)}</th>
+                          <th>{getTranslation("Drug/दवाई",lang)}</th>
+                          <th>{getTranslation("Psych/साइक",lang)}</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td>Grandmother</td>
+                          <td>{getTranslation("Grandmother/दादी",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -8903,7 +8903,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               }
                             />
                           </td>
-                          <td>Grandmother</td>
+                          <td>{getTranslation("Grandmother/दादी",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -8958,7 +8958,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         </tr>
 
                         <tr>
-                          <td>Grandfather</td>
+                          <td>{getTranslation("Grandfather/दादाजी",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -9013,7 +9013,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               }
                             />
                           </td>
-                          <td>Grandfather</td>
+                          <td>{getTranslation("Grandfather/दादाजी",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -9072,7 +9072,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
 
                         <tr>
-                          <td>Mother</td>
+                          <td>{getTranslation("Mother/माँ",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -9179,7 +9179,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         </tr>
 
                         <tr>
-                          <td>Aunt / मामी</td>
+                          <td>{getTranslation("Aunt / मामी",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -9231,7 +9231,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               }
                             />
                           </td>
-                          <td>Aunt / चाची</td>
+                          <td>{getTranslation("Aunt / चाची",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -9286,7 +9286,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         </tr>
 
                         <tr>
-                          <td>Uncle / मामा</td>
+                          <td>{getTranslation("Uncle / मामा",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -9338,7 +9338,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               }
                             />
                           </td>
-                          <td>Uncle / चाचा</td>
+                          <td>{getTranslation("Uncle / चाचा",lang)}</td>
                           <td>
                             <Input
                               type="checkbox"
@@ -9404,7 +9404,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 {/*Current Status? वर्तमान स्थिति?*/}
                 <div className="col-md-12 mt-3">
-                  <Label>{anyOtherPlsMention1}</Label>
+                  <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -9423,7 +9423,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Current Status? वर्तमान स्थिति?*/}
 
                 <div className="col-md-12 mt-3 mb-3">
-                  <Label>{currentStatus}</Label>
+                  <Label>{getTranslation(currentStatus,lang)}</Label>
                   {/* <Input
                   className="form-control form-control-primary btn-square"
                   name="select"
@@ -9463,7 +9463,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{howWasBonding}</Label>
+                    <Label>{getTranslation(howWasBonding,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9482,7 +9482,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{familyBehaviorPatient}</Label>
+                    <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9501,7 +9501,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{monitoringFamily}</Label>
+                    <Label>{getTranslation(monitoringFamily,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9520,7 +9520,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{ralationshipFamilyMember}</Label>
+                    <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9539,10 +9539,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 {/* Childhood /बचपन */}
 
-                <H5 className="mt-3 mb-3">{childhood}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(childhood,lang)}</H5>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{birthConditions}</Label>
+                    <Label>{getTranslation(birthConditions,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9561,7 +9561,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{parentingHistory}</Label>
+                    <Label>{getTranslation(parentingHistory,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9580,7 +9580,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{wasThereAnyConflict}</Label>
+                    <Label>{getTranslation(wasThereAnyConflict,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9600,7 +9600,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Sociality  where born & Living?
 सामाजिकता जहां पैदा हुआ और रहा  है?*/}
                 <div className="col-md-12">
-                  <Label htmlFor="birthPlace">{socialityWhere}</Label>
+                  <Label htmlFor="birthPlace">{getTranslation(socialityWhere,lang)}</Label>
                   <Input
                     type="text"
                     id="birthPlace"
@@ -9615,7 +9615,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   />
 
                   <br />
-                  <Label htmlFor="birthPlace">{highRiskBehavior}</Label>
+                  <Label htmlFor="birthPlace">{getTranslation(highRiskBehavior,lang)}</Label>
                   <Input
                     type="text"
                     id="currentLocation"
@@ -9632,7 +9632,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12 mt-3 mb-3">
                   <FormGroup className="mb-0">
-                    <Label>{whatWasImpect}</Label>
+                    <Label>{getTranslation(whatWasImpect,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9651,7 +9651,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{hasAnyoneEverAbused}</Label>
+                    <Label>{getTranslation(hasAnyoneEverAbused,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9671,9 +9671,9 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/* Academics Occupational Details Start */}
 
                 {/*Academics Occupational Details/ शैक्षणिक व्यावसायिक विवरण*/}
-                <H5 className="mt-3 mb-3">{academicsOccupationalDetails}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(academicsOccupationalDetails,lang)}</H5>
                 <div className="col-md-6">
-                  <Label htmlFor="educationStatus">{EducationStatus}</Label>
+                  <Label htmlFor="educationStatus">{getTranslation(EducationStatus,lang)}</Label>
                   {/* <Input
                   id="educationStatus"
                   className="form-control form-control-primary btn-square"
@@ -9720,7 +9720,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 {/*Occupational status? कार्य की स्थिति?*/}
                 <div className="col-md-6">
-                  <Label htmlFor="occupation">{OcuStatus}</Label>
+                  <Label htmlFor="occupation">{getTranslation(OcuStatus,lang)}</Label>
                   {/* <Input
                   id="occupation"
                   className="form-control form-control-primary btn-square"
@@ -9768,7 +9768,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*If dropout what is the reason यदि ड्रॉपआउट हुआ तो क्या कारण है?*/}
                 <div className="col-md-12 mt-3">
                   <FormGroup className="mb-0">
-                    <Label>{ifDropout}</Label>
+                    <Label>{getTranslation(ifDropout,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9788,7 +9788,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Study/Work Details: (what was job frequency)  /अध्ययन/कार्य विवरण: (नौकरी की फ्रीक्वेंसी क्या थी?)*/}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{studyWorkDetails}</Label>
+                    <Label>{getTranslation(studyWorkDetails,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9808,7 +9808,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Hobbies : शौक:*/}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{Hobbies1}</Label>
+                    <Label>{getTranslation(Hobbies1,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9828,7 +9828,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Extra skills if any: अतिरिक्त कौशल कोई हो:*/}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{extraSkills}</Label>
+                    <Label>{getTranslation(extraSkills,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9849,7 +9849,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                */}
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{achievemntInLife}</Label>
+                    <Label>{getTranslation(achievemntInLife,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9870,10 +9870,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 {/* Social Behavior Start */}
                 {/* Social Behavior / सामाजिक व्यवहार */}
-                <H5 className="mt-3 mb-3">{socialBehavior}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(socialBehavior,lang)}</H5>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{socialBehavior1}</Label>
+                    <Label>{getTranslation(socialBehavior1,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9892,7 +9892,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{withWhomSpendFreeTime}</Label>
+                    <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9911,7 +9911,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{howManyFriends}</Label>
+                    <Label>{getTranslation(howManyFriends,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9930,7 +9930,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{friendSocialStatus}</Label>
+                    <Label>{getTranslation(friendSocialStatus,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9949,7 +9949,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{howMuchDependent}</Label>
+                    <Label>{getTranslation(howMuchDependent,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9968,7 +9968,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{whoClosedWellWisher}</Label>
+                    <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -9989,10 +9989,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 {/* Legal History Start */}
                 {/* Legal History / लीगल इतिहास */}
-                <H5 className="mt-3 mb-3">{legalHistory}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(legalHistory,lang)}</H5>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{domesticViolence}</Label>
+                    <Label>{getTranslation(domesticViolence,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -10011,7 +10011,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{reasonBehindDomesticViolence}</Label>
+                    <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -10030,7 +10030,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{drugStatus}</Label>
+                    <Label>{getTranslation(drugStatus,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -10049,7 +10049,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{ifThereIsAnyCriminalCase}</Label>
+                    <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -10068,7 +10068,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{specificCaseDetails}</Label>
+                    <Label>{getTranslation(specificCaseDetails,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -10087,7 +10087,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{currentCaseStatus}</Label>
+                    <Label>{getTranslation(currentCaseStatus,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -10106,7 +10106,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{ifWentToJail}</Label>
+                    <Label>{getTranslation(ifWentToJail,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -10128,11 +10128,11 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/* Patient behavior Start */}
                 {/* Patient behavior / रोगी का व्यवहार */}
 
-                <H5 className="mt-3 mb-3">{patientBeh}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(patientBeh,lang)}</H5>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{whatIsTheMostImportantThing}</Label>
+                    <Label>{getTranslation(whatIsTheMostImportantThing,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -10151,7 +10151,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{lifeAim}</Label>
+                    <Label>{getTranslation(lifeAim,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -10168,22 +10168,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </FormGroup>
                 </div>
 
-                <H5 className="mt-3 mb-3">{patientBehavior}</H5>
+                <H5 className="mt-3 mb-3">{getTranslation(patientBehavior,lang)}</H5>
                 <div className="col-md-12 table-responsive">
                   <table className="table table-bordered">
                     <thead>
                       <tr>
-                        <th>{tableNumber}</th>
-                        <th>{patientBehavior}</th>
-                        <th>{yes}</th>
-                        <th>{no}</th>
+                        <th>{getTranslation(tableNumber,lang)}</th>
+                        <th>{getTranslation(patientBehavior,lang)}</th>
+                        <th>{getTranslation(yes,lang)}</th>
+                        <th>{getTranslation(no,lang)}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {patientBehaviorFormattedList.map(({ key, label }, index) => (
                         <tr key={key}>
                           <td>{index + 1}</td>
-                          <td className="w-75">{label}</td>
+                          <td className="w-75">{getTranslation(label,lang)}</td>
                           {["Yes", "No"].map((value) => {
                             const inputId = `patientBehavior_${key}_${value}`;
                             return (
@@ -10232,7 +10232,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       }
                     />
                     <Label className="text-muted" for="checkbox1">
-                      {consent}
+                      {getTranslation(consent,lang)}
                     </Label>
                   </div>
                 </div>
@@ -10240,7 +10240,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Content section start*/}
                 <div className="row mt-3 mb-3">
                   <div className="col-md-4">
-                    <Label>{name}</Label>
+                    <Label>{getTranslation(name,lang)}</Label>
                     <Input
                       type="text"
                       placeholder="Name"
@@ -10255,7 +10255,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                   <div className="col-md-4">
-                    <Label>{relationship}</Label>
+                    <Label>{getTranslation(relationship,lang)}</Label>
                     <Input
                       type="text"
                       placeholder="Relationship"
@@ -10270,7 +10270,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                   <div className="col-md-4">
-                    <Label>{signature}</Label>
+                    <Label>{getTranslation(signature,lang)}</Label>
                     <Input
                       type="text"
                       placeholder="Signature"
@@ -10285,7 +10285,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                   <div className="col-md-12 mt-3 mb-3">
-                    <Label>{prepared}</Label>
+                    <Label>{getTranslation(prepared,lang)}</Label>
                     <Input
                       type="text"
                       placeholder="Prepared By"
@@ -10310,7 +10310,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         aria-hidden="true"
                       ></span>
                     ) : (
-                      "Update Gen Family Details"
+                      getTranslation("Update Gen Family Details/जनरल परिवार विवरण अपडेट करें",lang)
                     )}
                   </Button>
                 </div>

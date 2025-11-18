@@ -325,11 +325,11 @@ function FDA() {
 
             let isFDACompleted = false;
           let userStatus = (
-            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+            <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
           );
           if (admitDate && FDADate && admitDate > FDADate) {
            isFDACompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
   
           const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -443,7 +443,7 @@ function FDA() {
               <span
                 onClick={() => handleFDAPreFill(row.recent_fda_id)}
                 style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
+                title={getTranslation("Readmission FDA Form/पुनः प्रवेश FDA फॉर्म",lang)}
               >
                 ✏️
               </span>
@@ -481,7 +481,7 @@ function FDA() {
       cursor: row.isFDACompleted ? "not-allowed" : "pointer",
       opacity: row.isFDACompleted ? 0.5 : 1,
     }}
-    title={row.isFDACompleted ? "FDA Completed" : "Create FDA"}
+    title={row.isFDACompleted ? getTranslation("FDA Completed/एफडीए पूरा हुआ",lang) : getTranslation("Create FDA/एफडीए बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -572,8 +572,8 @@ function FDA() {
   
       Swal.fire({
         icon: "success",
-        title: "FDA Created Successfully",
-        text: "The FDA assessment was submitted successfully.",
+        title: getTranslation("FDA Created Successfully/FDA सफलतापूर्वक बनाया गया",lang),
+        text: getTranslation("The FDA assessment was submitted successfully./एफडीए मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
       }).then(() => setModal(false));
   
       console.log("FDA Data", data);
@@ -722,8 +722,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       setIsLoading(false);
       Swal.fire({
         icon: "success",
-        title: "FDA Readmission Created Successfully",
-        text: "The FDA Reassessment was submitted successfully.",
+        title: getTranslation("FDA Readmission Created Successfully/FDA पुनः प्रवेश सफलतापूर्वक बनाया गया",lang),
+        text: getTranslation("The FDA Reassessment was submitted successfully./FDA पुनः प्रवेश सफलतापूर्वक बनाया गया",lang),
       }).then(() => {
         // This runs after the user clicks "OK"
         setModal(false);
@@ -734,8 +734,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       console.error(err);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Failed to submit. Check console for error.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   }
@@ -965,8 +965,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         setIsLoading(false);
         Swal.fire({
           icon: "success",
-          title: "FDA Update Successfully!",
-          text: "FDA has been update successfully!",
+          title: getTranslation("FDA Update Successfully!/FDA अद्यतन सफलतापूर्वक!",lang),
+          text: getTranslation("FDA has been update successfully!/एफडीए को सफलतापूर्वक अद्यतन किया गया है!",lang),
         }).then(() => {
           // This runs after the user clicks "OK"
           setFDAeditModal(true)
@@ -977,8 +977,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         console.error(err);
         Swal.fire({
           icon: "error",
-          title: "Unexpected Error",
-          text: "Failed to submit. Check console for error.",
+          title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+          text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
         }).then(()=>{
           setIsLoading(false); // Start loading
         });
@@ -999,7 +999,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1021,7 +1021,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1067,7 +1067,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="All First Dependency Assessment Data List"
+                      title={getTranslation("All First Dependency Assessment Data List/सभी प्रथम निर्भरता मूल्यांकन डेटा सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1089,7 +1089,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1126,7 +1126,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       {/* FDA   */}
       <CommonModal
         isOpen={modal}
-        title={fda}
+        title={getTranslation(fda,lang)}
         toggler={closePFAModal}
         maxWidth="1200px"
       >
@@ -1134,11 +1134,11 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
           <PatientCommonInfo
             selectedUser={selectedUser}
             labels={{
-              name: "Patient name/प्रयासक का नाम :",
-              sex: "Gender/प्रयासक का लिंग :",
-              age: "Age/प्रयासक का उम्र :",
-              date_of_admission: "Date of Admission/प्रवेश की तिथि :",
-              ageValue: patientCalAge,
+             name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+             sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+             age: getTranslation("Age/प्रयासक का उम्र :",lang),
+             date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
+             ageValue: patientCalAge,
             }}
           />
 
@@ -1147,7 +1147,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
             <div className="col-md-6">
               <FormGroup className="form-group row">
                 <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {dateOfAssessment}
+                  {getTranslation(dateOfAssessment,lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -1173,9 +1173,9 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
             <Table bordered>
               <thead>
                 <tr>
-                  <th>{tableNumber}</th>
-                  <th style={{ width: "10%" }}>Code</th>
-                  <th>{mentalBehaviour}</th>
+                  <th>{getTranslation(tableNumber,lang)}</th>
+                  <th style={{ width: "10%" }}>{getTranslation("Code/कोड",lang)}</th>
+                  <th>{getTranslation(mentalBehaviour,lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1184,8 +1184,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                     <td>{index}</td>
                     <td>{code}</td>
                     <td>
-                      <div>{english}</div>
-                      <div className="text-muted">{hindi}</div>
+                      <div>{getTranslation(english,lang)}</div>
+                      <div className="text-muted">{getTranslation(hindi,lang)}</div>
                     </td>
                   </tr>
                 ))}
@@ -1199,18 +1199,18 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
             <Table bordered>
               <thead>
                 <tr>
-                  <th>{tableNumber2}</th>
-                  <th>{addictionSeverity}</th>
-                  <th>{yes1}</th>
-                  <th>{no1}</th>
+                  <th>{getTranslation(tableNumber2,lang)}</th>
+                  <th>{getTranslation(addictionSeverity,lang)}</th>
+                  <th>{getTranslation(yes1,lang)}</th>
+                  <th>{getTranslation(no1,lang)}</th>
                 </tr>
               </thead>
               <tbody>
                 {fdaAdsiction.map(({ key, label }, index) => (
                   <tr key={key}>
                     <td>{index + 1}</td>
-                    <td>{label}</td>
-                    {["Yes", "No"].map((value) => {
+                    <td>{getTranslation(label,lang)}</td>
+                    {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                       const inputId = `addiction_${key}_${value}`;
                       return (
                         <td key={inputId} className="radio radio-primary">
@@ -1234,7 +1234,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
           </div>
           <div className="col-md-12 px-2">
             <FormGroup className="mb-4 mt-4">
-              <Label>{Remarks}</Label>
+              <Label>{getTranslation(Remarks,lang)}</Label>
               <Input
                 type="text"
                 className="form-control"
@@ -1249,7 +1249,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
           </div>
           <div className="col-md-12 px-2">
             <FormGroup className="mb-4 mt-4">
-              <Label>{prepared}</Label>
+              <Label>{getTranslation(prepared,lang)}</Label>
               <Input
                 type="text"
                 className="form-control"
@@ -1273,7 +1273,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   aria-hidden="true"
                 ></span>
               ) : (
-                "Create FDA"
+                getTranslation("Create FDA/एफडीए बनाएं",lang)
               )}
             </Button>
           </div>
@@ -1283,7 +1283,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       {/* Readmission FDA Edit Modal */}
       <CommonModal
         isOpen={FDAReadmissionModal}
-        title="Readmission PFA"
+        title={getTranslation("Readmission PFA/पुनः प्रवेश पीएफए",lang)}
         toggler={closeUserViewModal}
         maxWidth="1200px"
       >
@@ -1320,17 +1320,17 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
             <Table bordered>
               <thead>
                 <tr>
-                  <th>{tableNumber2}</th>
-                  <th>{addictionSeverity}</th>
-                  <th>{yes1}</th>
-                  <th>{no1}</th>
+                  <th>{getTranslation(tableNumber2,lang)}</th>
+                  <th>{getTranslation(addictionSeverity,lang)}</th>
+                  <th>{getTranslation(yes1,lang)}</th>
+                  <th>{getTranslation(no1,lang)}</th>
                 </tr>
               </thead>
               <tbody>
                 {fdaAdsiction.map(({ key, label }, index) => (
                   <tr key={key}>
                     <td>{index + 1}</td>
-                    <td>{label}</td>
+                    <td>{getTranslation(label,lang)}</td>
                     {["Yes", "No"].map((value) => {
                       const inputId = `addiction_${key}_${value}`;
                       const currentValue = FDAEditData?.addictionSeverity?.[key] || "";
@@ -1379,7 +1379,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
 
           <div className="col-md-12">
             <FormGroup className="mb-4 mt-4">
-              <Label>Prepared By</Label>
+              <Label>{getTranslation("Prepared By/द्वारा तैयार",lang)}</Label>
               <Input
                 type="text"
                 className="form-control"
@@ -1404,7 +1404,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   aria-hidden="true"
                 ></span>
               ) : (
-                "Create Re-FDA"
+                getTranslation("Recreate FDA/एफडीए का पुनर्निर्माण",lang)
               )}
             </Button>
           </div>
@@ -1416,7 +1416,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       {/* View FDA data into modal start */}
       <CommonModal
         isOpen={viewFDADataModal}
-        title={"First Dependency Assessment / प्रथम निर्भरता मूल्यांकन Details"}
+        title={getTranslation("First Dependency Assessment / प्रथम निर्भरता मूल्यांकन",lang)}
         toggler={closePFAModal}
         maxWidth="1200px"
       >
@@ -1428,7 +1428,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
               padding: "20px 0",
             }}
           >
-            First Dependency Assessment / प्रथम निर्भरता मूल्यांकन
+            {getTranslation("First Dependency Assessment / प्रथम निर्भरता मूल्यांकन",lang)}
           </h4>
 
           <Table size="sm" className="table-auto table-bordered">
@@ -1449,38 +1449,38 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
               ) : viewFDAData ? (
                 <>
 
-                  <tr><th className="text-start p-3">Name</th><td className="border p-3">{viewFDAData.name}</td></tr>
-                  <tr><th className="text-start p-3">Relative Name</th><td className="border p-3">{viewFDAData.relative_name}</td></tr>
-                  <tr><th className="text-start p-3">Gender</th><td className="border p-3">{viewFDAData.gender}</td></tr>
-                  <tr><th className="text-start p-3">Phone</th><td className="border p-3">{viewFDAData.phone}</td></tr>
-                  <tr><th className="text-start p-3">Email</th><td className="border p-3">{viewFDAData.email}</td></tr>
-                  <tr><th className="text-start p-3">User GKS ID</th><td className="border p-3">{viewFDAData.user_gks_id}</td></tr>
-                  <tr><th className="text-start p-3">Entry GKS ID</th><td className="border p-3">{viewFDAData.entry_gks_id}</td></tr>
-                  <tr><th className="text-start p-3">Visit No</th><td className="border p-3">{viewFDAData.visit_no}</td></tr>
-                  <tr><th className="text-start p-3">Substance Type</th><td className="border p-3">{viewFDAData.substance_description}</td></tr>
-                  <tr><th className="text-start p-3">Substance Code</th><td className="border p-3">{viewFDAData.substance_code}</td></tr>
-                  <tr><th className="text-start p-3">Desire to Quit</th><td className="border p-3">{viewFDAData.desire_to_quit}</td></tr>
-                  <tr><th className="text-start p-3">Lack of Control</th><td className="border p-3">{viewFDAData.lack_control}</td></tr>
-                  <tr><th className="text-start p-3">Lack of Responsibility</th><td className="border p-3">{viewFDAData.lack_responsibility}</td></tr>
-                  <tr><th className="text-start p-3">Time Spent Using</th><td className="border p-3">{viewFDAData.time_purchasing_using}</td></tr>
-                  <tr><th className="text-start p-3">Cravings</th><td className="border p-3">{viewFDAData.cravings}</td></tr>
-                  <tr><th className="text-start p-3">Relationship Problems</th><td className="border p-3">{viewFDAData.relationship_problems}</td></tr>
-                  <tr><th className="text-start p-3">Using Dangerously</th><td className="border p-3">{viewFDAData.using_dangerously}</td></tr>
-                  <tr><th className="text-start p-3">Losing Interest</th><td className="border p-3">{viewFDAData.losing_interest}</td></tr>
-                  <tr><th className="text-start p-3">Increasing Tolerance</th><td className="border p-3">{viewFDAData.increasing_tolerance}</td></tr>
-                  <tr><th className="text-start p-3">Experiencing Withdrawal</th><td className="border p-3">{viewFDAData.experiencing_withdrawal}</td></tr>
-                  <tr><th className="text-start p-3">Addiction Severity</th><td className="border p-3">{viewFDAData.addiction_severity_rating}</td></tr>
-                  <tr><th className="text-start p-3">Remarks</th><td className="border p-3">{viewFDAData.remarks}</td></tr>
-                  <tr><th className="text-start p-3">Prepared By</th><td className="border p-3">{viewFDAData.prepared_by}</td></tr>
-                  <tr><th className="text-start p-3">Assessment Date</th><td className="border p-3">{new Date(viewFDAData.date_of_assessment).toLocaleDateString()}</td></tr>
-                  <tr><th className="text-start p-3">Created By</th><td className="border p-3">{viewFDAData.created_by_name}</td></tr>
-                  <tr><th className="text-start p-3">Updated By</th><td className="border p-3">{viewFDAData.updated_by_name}</td></tr>
-                  <tr><th className="text-start p-3">Status</th><td className="border p-3">{viewFDAData.status}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation('Name/नाम',lang)}</th><td className="border p-3">{viewFDAData.name}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Relative Name/रिश्तेदार का नाम",lang)}</th><td className="border p-3">{viewFDAData.relative_name}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Gender/लिंग",lang)}</th><td className="border p-3">{viewFDAData.gender}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Phone/फ़ोन",lang)}</th><td className="border p-3">{viewFDAData.phone}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Email/ईमेल",lang)}</th><td className="border p-3">{viewFDAData.email}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("User GKS ID/उपयोगकर्ता GKS आईडी",lang)}</th><td className="border p-3">{viewFDAData.user_gks_id}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Entry GKS ID/प्रविष्टि जीकेएस आईडी",lang)}</th><td className="border p-3">{viewFDAData.entry_gks_id}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Visit No/विज़िट नं.",lang)}</th><td className="border p-3">{viewFDAData.visit_no}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Substance Type/पदार्थ का प्रकार",lang)}</th><td className="border p-3">{viewFDAData.substance_description}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Substance Code/पदार्थ कोड",lang)}</th><td className="border p-3">{viewFDAData.substance_code}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Desire to Quit/छोड़ने की इच्छा",lang)}</th><td className="border p-3">{viewFDAData.desire_to_quit}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Lack of Control/नियंत्रण का अभाव",lang)}</th><td className="border p-3">{viewFDAData.lack_control}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Lack of Responsibility/जिम्मेदारी का अभाव",lang)}</th><td className="border p-3">{viewFDAData.lack_responsibility}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Time Spent Using/उपयोग में बिताया गया समय",lang)}</th><td className="border p-3">{viewFDAData.time_purchasing_using}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Cravings/लालसा",lang)}</th><td className="border p-3">{viewFDAData.cravings}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Relationship Problems/रिश्ते की समस्याएं",lang)}</th><td className="border p-3">{viewFDAData.relationship_problems}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Using Dangerously/खतरनाक तरीके से उपयोग करना",lang)}</th><td className="border p-3">{viewFDAData.using_dangerously}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Losing Interest/रुचि खोना",lang)}</th><td className="border p-3">{viewFDAData.losing_interest}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Increasing Tolerance/सहनशीलता में वृद्धि",lang)}</th><td className="border p-3">{viewFDAData.increasing_tolerance}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Experiencing Withdrawal/वापसी का अनुभव",lang)}</th><td className="border p-3">{viewFDAData.experiencing_withdrawal}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Addiction Severity/लत की गंभीरता",lang)}</th><td className="border p-3">{viewFDAData.addiction_severity_rating}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Remarks/टिप्पणी",lang)}</th><td className="border p-3">{viewFDAData.remarks}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Prepared By/द्वारा तैयार",lang)}</th><td className="border p-3">{viewFDAData.prepared_by}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Assessment Date/मूल्यांकन तिथि",lang)}</th><td className="border p-3">{new Date(viewFDAData.date_of_assessment).toLocaleDateString()}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Created By/के द्वारा बनाई गई",lang)}</th><td className="border p-3">{viewFDAData.created_by_name}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Updated By/द्वारा अपडेट किया गया",lang)}</th><td className="border p-3">{viewFDAData.updated_by_name}</td></tr>
+                  <tr><th className="text-start p-3">{getTranslation("Status/स्थिति",lang)}</th><td className="border p-3">{viewFDAData.status}</td></tr>
                 </>
               ) : (
                 <tr>
                   <td colSpan="2" className="text-center">
-                    No data available
+                    {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
                   </td>
                 </tr>
               )}
@@ -1497,8 +1497,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   onClick={handleDownloadPDF}
                 >
                   {pfaDownload
-                    ? "Your FDA is being downloaded.../ आपका FDA डाउनलोड हो रहा है..."
-                    : "Download Your First Dependency Assessment / प्रथम निर्भरता मूल्यांकन डाउनलोड करें"}
+                    ? getTranslation("Your FDA is being downloaded.../ आपका FDA डाउनलोड हो रहा है...",lang)
+                    : getTranslation("Download Your First Dependency Assessment / प्रथम निर्भरता मूल्यांकन डाउनलोड करें",lang)}
                 </button>
               </div>
       </CommonModal>
@@ -1508,7 +1508,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       {/* Edit FDA individual form data start */}
       <CommonModal
         isOpen={FDAeditModal}
-        title="Edit First Dependency Assessment (FDA)"
+        title={getTranslation("Edit First Dependency Assessment (FDA)/प्रथम निर्भरता मूल्यांकन (FDA) संपादित करें",lang)}
         toggler={closeUserViewModal}
         maxWidth="1200px"
       >
@@ -1522,7 +1522,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
             <div className="col-md-6">
               <FormGroup className="form-group row">
                 <Label className="col-sm-12 col-form-label col-xl-6">
-                  Date of Assessment
+                  {getTranslation("Date of Assessment/मूल्यांकन की तिथि",lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -1546,18 +1546,18 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
             <Table bordered>
               <thead>
                 <tr>
-                  <th>{tableNumber2}</th>
-                  <th>{addictionSeverity}</th>
-                  <th>{yes1}</th>
-                  <th>{no1}</th>
+                  <th>{getTranslation(tableNumber2,lang)}</th>
+                  <th>{getTranslation(addictionSeverity,lang)}</th>
+                  <th>{getTranslation(yes1,lang)}</th>
+                  <th>{getTranslation(no1,lang)}</th>
                 </tr>
               </thead>
               <tbody>
                 {fdaAdsiction.map(({ key, label }, index) => (
                   <tr key={key}>
                     <td>{index + 1}</td>
-                    <td>{label}</td>
-                    {["Yes", "No"].map((value) => {
+                    <td>{getTranslation(label,lang)}</td>
+                    {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                       const inputId = `addiction_${key}_${value}`;
                       const currentValue = FDAEditData?.addictionSeverity?.[key] || "";
 
@@ -1591,7 +1591,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
 
           <div className="col-md-12 px-3">
             <FormGroup className="mb-4 mt-4">
-              <Label>Remarks</Label>
+              <Label>{getTranslation("Remarks/टिप्पणी",lang)}</Label>
               <Input
                 type="text"
                 className="form-control"
@@ -1605,7 +1605,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
 
           <div className="col-md-12 px-3">
             <FormGroup className="mb-4 mt-4">
-              <Label>Prepared By</Label>
+            <Label>{getTranslation("Prepared By/द्वारा तैयार",lang)}</Label>
               <Input
                 type="text"
                 className="form-control"
@@ -1630,7 +1630,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   aria-hidden="true"
                 ></span>
               ) : (
-                "First Dependency Assessment (FDA) Update"
+                getTranslation("First Dependency Assessment (FDA) Update/प्रथम निर्भरता मूल्यांकन (एफडीए) अद्यतन",lang)
               )}
             </Button>
           </div>

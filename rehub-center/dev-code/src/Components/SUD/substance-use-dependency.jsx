@@ -138,9 +138,9 @@ function SUD() {
                         ? new Date(user.recent_fda_date)
                         : null;
 
-                    let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
+                    let userStatus = <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>;
                     if (admitDate && FDADate && admitDate > FDADate) {
-                        userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+                        userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
                     }
 
                     const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -216,7 +216,7 @@ function SUD() {
                             <span
                                 onClick={() => handleSUDPreFill(row.recent_sda_id)}
                                 style={{ cursor: "pointer" }}
-                                title="Readmission FDA Form"
+                                title={getTranslation("Readmission FDA Form/पुनः प्रवेश FDA फॉर्म",lang)}
                             >
                                 ✏️
                             </span>
@@ -227,7 +227,7 @@ function SUD() {
                             <span
                                 onClick={() => createSUD(row.id)}
                                 style={{ cursor: "pointer" }}
-                                title="Create PDA"
+                                title={getTranslation("Create PDA/पीडीए बनाएं",lang)}
                             >
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -303,12 +303,12 @@ function SUD() {
                     const admitDate = entry.admit_date ? new Date(entry.admit_date) : null;
                     const sdaDate = entry.date_of_assessment ? new Date(entry.date_of_assessment) : null;
 
-                    let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
+                    let userStatus = <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>;
                     if (admitDate && sdaDate && admitDate < sdaDate) {
-                        userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+                        userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
                     }
 
-                    const dischargeStatusText = entry.discharge_status === 1 ? "Discharged" : "Not Discharged";
+                    const dischargeStatusText = entry.discharge_status === 1 ? getTranslation("Discharged/छुट्टी दे दी गई",lang) : getTranslation("Not Discharged/छुट्टी नहीं दी गई",lang);
 
                     return {
                         id: entry.user_id,
@@ -458,7 +458,7 @@ function SUD() {
     const [substances, setSubstances] = useState(
         substanceList.map((name, index) => ({
             substance_id: index + 1,
-            substance_name: name,
+            substance_name: getTranslation(name,lang),
             ever_used: "",
             duration: "",
             current_use: "",
@@ -501,7 +501,7 @@ function SUD() {
         const payload = {
             user_id: selectedUser[0]?.user_id,
             date_of_assessment: formData.sudDateOfAssessment,
-            patient_name: selectedUser[0].name,
+            patient_name: selectedUser[0]?.name,
             substance_details: substances,
             consent: formData.consent,
             signature: formData.SUDsignature
@@ -532,8 +532,8 @@ function SUD() {
             setIsLoading(false);
             Swal.fire({
                 icon: "success",
-                title: "SUD Created Successfully",
-                text: "The SUD assessment was submitted successfully.",
+                title: getTranslation("SUD Created Successfully/SUD सफलतापूर्वक बनाया गया",lang),
+                text: getTranslation("The SUD assessment was submitted successfully./एसयूडी मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
             }).then(() => {
                 // This runs after the user clicks "OK"
                 setModal(false);
@@ -543,8 +543,8 @@ function SUD() {
             setIsLoading(false);
             Swal.fire({
                 icon: "error",
-                title: "Unexpected Error",
-                text: "SUD failed! Unknown error occurred.",
+                title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+                text: getTranslation("SUD failed! Unknown error occurred./SUD विफल! अज्ञात त्रुटि हुई.",lang),
             });
         }
     };
@@ -705,8 +705,8 @@ function SUD() {
             if (!response.ok) {
                 Swal.fire({
                     icon: "error",
-                    title: "SUD Failed",
-                    text: "The SUD readmission has been failed!",
+                    title: getTranslation("SUD Failed/SUD विफल",lang),
+                    text: getTranslation("The SUD readmission has been failed!/एसयूडी पुनः प्रवेश असफल हो गया है!",lang),
                 }).then(() => {
                     // This runs after the user clicks "OK"
                     setModal(false);
@@ -714,8 +714,8 @@ function SUD() {
             } else {
                 Swal.fire({
                     icon: "success",
-                    title: "SUD Readmission Success",
-                    text: "The SUD readmission has been successfully created.",
+                    title: getTranslation("SUD Readmission Success/एसयूडी पुनः प्रवेश सफलता",lang),
+                    text: getTranslation("The SUD readmission has been successfully created./एसयूडी पुनः प्रवेश सफलतापूर्वक बनाया गया है।",lang),
                 }).then(() => {
                     // This runs after the user clicks "OK"
                     setModal(false);
@@ -910,8 +910,8 @@ function SUD() {
             if (!response.ok) {
                 Swal.fire({
                     icon: "error",
-                    title: "SUD Failed",
-                    text: "The SUD updation has been failed!",
+                    title: getTranslation("SUD Failed/SUD विफल",lang),
+                    text: getTranslation("The SUD updation has been failed!/SUD अद्यतनीकरण विफल हो गया है!",lang),
                 }).then(() => {
                     // This runs after the user clicks "OK"
                     setSUDindiviualEditmodal(false);
@@ -919,8 +919,8 @@ function SUD() {
             } else {
                 Swal.fire({
                     icon: "success",
-                    title: "SUD update Success",
-                    text: "The SUD update has been successfully created.",
+                    title: getTranslation("SUD update Success/SUD अद्यतन सफल",lang),
+                    text: getTranslation("The SUD update has been successfully created./SUD अद्यतन सफलतापूर्वक बनाया गया है.",lang),
                 }).then(() => {
                     // This runs after the user clicks "OK"
                     setSUDindiviualEditmodal(false);
@@ -984,7 +984,7 @@ function SUD() {
                                 <CardBody>
                                     <div class="d-flex pb-2 justify-content-between">
                                         <HeaderCard
-                                            title="Registered Patient List"
+                                            title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                                             className="p-0"
                                         />
                                     </div>
@@ -1006,7 +1006,7 @@ function SUD() {
                                     </div>
                                     {stillLoading ? (
                                         <div className="loading-text">
-                                            Data is fetching from server. Please wait...
+                                            {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                                         </div>
                                     ) : (
                                         <DataTable
@@ -1051,7 +1051,7 @@ function SUD() {
                                 <CardBody>
                                     <div class="d-flex pb-2 justify-content-between">
                                         <HeaderCard
-                                            title="All Substance Use Dependecny (SUD) Patient Data List"
+                                            title={getTranslation("All Substance Use Dependecny (SUD) Patient Data List/सभी पदार्थ उपयोग निर्भरता (AND) रोगी डेटा सूची",lang)}
                                             className="p-0"
                                         />
                                     </div>
@@ -1073,7 +1073,7 @@ function SUD() {
                                     </div>
                                     {stillLoading ? (
                                         <div className="loading-text">
-                                            Data is fetching from server. Please wait...
+                                            {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                                         </div>
                                     ) : (
                                         <DataTable
@@ -1111,7 +1111,7 @@ function SUD() {
             {/* Create SUD form popup modal start */}
             <CommonModal
                 isOpen={modal}
-                title={sud}
+                title={getTranslation(sud,lang)}
                 toggler={closePFAModal}
                 maxWidth="1200px"
             >
@@ -1120,10 +1120,10 @@ function SUD() {
                         <PatientCommonInfo
                             selectedUser={selectedUser}
                             labels={{
-                                name: "Patient name/प्रयासक का नाम :",
-                                sex: "Gender/प्रयासक का लिंग :",
-                                age: "Age/प्रयासक का उम्र :",
-                                date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+                                name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+                                sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+                                age: getTranslation("Age/प्रयासक का उम्र :",lang),
+                                date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
                                 ageValue: patientCalAge,
                             }}
                         />
@@ -1132,7 +1132,7 @@ function SUD() {
                             <div className="col-md-6">
                                 <FormGroup className="form-group row">
                                     <Label className="col-sm-12 col-form-label  col-xl-6">
-                                        {dateOfAssessment}
+                                        {getTranslation(dateOfAssessment,lang)}
                                     </Label>
                                     <Col xl="5" sm="12">
                                         <div className="input-group">
@@ -1154,14 +1154,14 @@ function SUD() {
                         <Table className="table table-bordered m-3">
                             <thead>
                                 <tr>
-                                    <th>S.No</th>
-                                    <th>Substance<br />मादक पदार्थ</th>
-                                    <th>Ever Used<br />उपयोग किया</th>
-                                    <th>Duration<br />अवधि</th>
-                                    <th>Current Use<br />वर्तमान उपयोग</th>
-                                    <th>Current Use Pattern<br />यूज़ पैटर्न</th>
-                                    <th>Usual Dose<br />मात्रा</th>
-                                    <th>Remarks<br />टिप्पणियाँ</th>
+                                    <th>{getTranslation("Serial No/सीरीयल नम्बर",lang)}</th>
+                                    <th>{getTranslation("Substance/मादक पदार्थ",lang)}</th>
+                                    <th>{getTranslation("Ever Used/उपयोग किया",lang)}</th>
+                                    <th>{getTranslation("Duration/अवधि",lang)}</th>
+                                    <th>{getTranslation("Current Use/वर्तमान उपयोग",lang)}</th>
+                                    <th>{getTranslation("Current Use Pattern/यूज़ पैटर्न",lang)}</th>
+                                    <th>{getTranslation("Usual Dose/मात्रा",lang)}</th>
+                                    <th>{getTranslation("Remarks/टिप्पणियाँ",lang)}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1175,9 +1175,9 @@ function SUD() {
                                                 value={item.ever_used}
                                                 onChange={(e) => handleSubstances(index, "ever_used", e.target.value)}
                                             >
-                                                <option value="">Select</option>
-                                                <option value="Yes">Yes</option>
-                                                <option value="No">No</option>
+                                                <option value="">{getTranslation("Select/चुनना",lang)}</option>
+                                                <option value="Yes">{getTranslation("Yes/हाँ",lang)}</option>
+                                                <option value="No">{getTranslation("No/नहीं",lang)}</option>
                                             </select>
                                         </td>
 
@@ -1250,13 +1250,13 @@ function SUD() {
                                 }
                             />
                             <Label className="text-muted" for="checkbox1">
-                                {consent}
+                                {getTranslation(consent,lang)}
                             </Label>
                         </div>
                         <div className="col-md-12 px-3">
                             <Col md="4">
                                 <FormGroup>
-                                    <Label>{signature}</Label>
+                                    <Label>{getTranslation(signature,lang)}</Label>
                                     <Input
                                         type="text"
                                         placeholder="Signature"
@@ -1283,7 +1283,7 @@ function SUD() {
                                         aria-hidden="true"
                                     ></span>
                                 ) : (
-                                    "Create substance use dependency (SUD)"
+                                    getTranslation("Create substance use dependency (SUD)/पदार्थ उपयोग निर्भरता (SUD) बनाएँ",lang)
                                 )}
                             </Button>
                         </div>
@@ -1296,7 +1296,7 @@ function SUD() {
             {/* Readmission SUD form modal start */}
             <CommonModal
                 isOpen={SUDeditModal}
-                title="Readmission SUD"
+                title={getTranslation("Readmission substance use dependency (SUD)/पुनः प्रवेश पदार्थ उपयोग निर्भरता (SUD)",lang)}
                 toggler={closeSUDmodal}
                 maxWidth="1200px"
             >
@@ -1308,7 +1308,7 @@ function SUD() {
                         <div className="col-md-6">
                             <FormGroup className="form-group row">
                                 <Label className="col-sm-12 col-form-label col-xl-6">
-                                    Date of Assessment
+                                    {getTranslation("Date of Assessment/मूल्यांकन की तिथि",lang)}
                                 </Label>
                                 <Col xl="5" sm="12">
                                     <div className="input-group">
@@ -1333,14 +1333,14 @@ function SUD() {
                             <Table className="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <th>S.No</th>
-                                        <th>Substance<br />मादक पदार्थ</th>
-                                        <th>Ever Used<br />उपयोग किया</th>
-                                        <th>Duration<br />अवधि</th>
-                                        <th>Current Use<br />वर्तमान उपयोग</th>
-                                        <th>Current Use Pattern<br />यूज़ पैटर्न</th>
-                                        <th>Usual Dose<br />मात्रा</th>
-                                        <th>Remarks<br />टिप्पणियाँ</th>
+                                    <th>{getTranslation("Serial No/सीरीयल नम्बर",lang)}</th>
+                                    <th>{getTranslation("Substance/मादक पदार्थ",lang)}</th>
+                                    <th>{getTranslation("Ever Used/उपयोग किया",lang)}</th>
+                                    <th>{getTranslation("Duration/अवधि",lang)}</th>
+                                    <th>{getTranslation("Current Use/वर्तमान उपयोग",lang)}</th>
+                                    <th>{getTranslation("Current Use Pattern/यूज़ पैटर्न",lang)}</th>
+                                    <th>{getTranslation("Usual Dose/मात्रा",lang)}</th>
+                                    <th>{getTranslation("Remarks/टिप्पणियाँ",lang)}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1354,9 +1354,9 @@ function SUD() {
                                                     value={item.ever_used || ""}
                                                     onChange={(e) => handleEditSubstances(index, "ever_used", e.target.value)}
                                                 >
-                                                    <option value="">Select</option>
-                                                    <option value="Yes">Yes</option>
-                                                    <option value="No">No</option>
+                                                    <option value="">{getTranslation("Select/चुनना",lang)}</option>
+                                                <option value="Yes">{getTranslation("Yes/हाँ",lang)}</option>
+                                                <option value="No">{getTranslation("No/नहीं",lang)}</option>
                                                 </select>
                                             </td>
                                             <td>
@@ -1417,7 +1417,7 @@ function SUD() {
                                         }
                                     />
                                     <Label className="text-muted" for="checkbox2">
-                                        {consent}
+                                        {getTranslation(consent,lang)}
                                     </Label>
                                 </div>
                             </div>
@@ -1425,7 +1425,7 @@ function SUD() {
                             <div className="col-md-12">
                                 <Col md="4">
                                     <FormGroup>
-                                        <Label>{signature}</Label>
+                                        <Label>{getTranslation(signature,lang)}</Label>
                                         <Input
                                             type="text"
                                             name="signature"
@@ -1453,7 +1453,7 @@ function SUD() {
                                             aria-hidden="true"
                                         ></span>
                                     ) : (
-                                        "Create Readmission SUD"
+                                        getTranslation("Create Readmission SUD/पुनः प्रवेश SUD बनाएँ",lang)
                                     )}
                                 </Button>
                             </div>
@@ -1468,7 +1468,7 @@ function SUD() {
             {/* View SUD data modal start */}
             <CommonModal
                 isOpen={viewSUDmodal}
-                title="View Substance Use Dependency (SUD)"
+                title={getTranslation("View Substance Use Dependency (SUD)/पदार्थ उपयोग निर्भरता (SUD) देखें",lang)}
                 toggler={closeSUDmodal}
                 maxWidth="1200px"
             >
@@ -1481,7 +1481,7 @@ function SUD() {
                                 padding: "20px 0",
                             }}
                         >
-                            Substance Use Dependency / पदार्थ उपयोग निर्भरता
+                            {getTranslation("Substance Use Dependency / पदार्थ उपयोग निर्भरता",lang)}
                         </h4>
                         <Table size="sm" className="table-bordered">
   <tbody style={{ fontSize: "14px" }}>
@@ -1506,26 +1506,27 @@ function SUD() {
           ) : (
             <>
               <tr key={index}>
-                <td className="fw-bold text-capitalize">Substance Details</td>
+                <td className="fw-bold text-capitalize">{getTranslation("Substance Details/पदार्थ विवरण",lang)}</td>
                 <td className="p-0">
                   <Table size="sm" bordered>
                     <thead>
                       <tr>
                         <th>#</th>
-                        <th>Name</th>
-                        <th>Ever Used</th>
-                        <th>Duration</th>
-                        <th>Current Use</th>
-                        <th>Pattern</th>
-                        <th>Usual Dose</th>
-                        <th>Remarks</th>
+                        <th>{getTranslation("Name/नाम", lang)}</th>
+                        <th>{getTranslation("Ever Used/कभी इस्तेमाल किया", lang)}</th>
+                        <th>{getTranslation("Duration/अवधि", lang)}</th>
+                        <th>{getTranslation("Current Use/वर्तमान उपयोग", lang)}</th>
+                        <th>{getTranslation("Pattern/नमूना", lang)}</th>
+                        <th>{getTranslation("Usual Dose/सामान्य खुराक", lang)}</th>
+                        <th>{getTranslation("Remark/टिप्पणी", lang)}</th>
+
                       </tr>
                     </thead>
                     <tbody>
                       {value.map((sub, idx) => (
                         <tr key={idx}>
                           <td>{idx + 1}</td>
-                          <td>{sub.substance_name}</td>
+                          <td>{getTranslation(sub.substance_name,lang)}</td>
                           <td>{sub.ever_used || "-"}</td>
                           <td>{sub.duration || "-"}</td>
                           <td>{sub.current_use || "-"}</td>
@@ -1545,7 +1546,7 @@ function SUD() {
     ) : (
       <tr>
         <td colSpan="2" className="text-center">
-          No data available
+         {getTranslation(" No data available/कोई डेटा मौजूद नहीं",lang)}
         </td>
       </tr>
     )}
@@ -1560,8 +1561,8 @@ function SUD() {
                   onClick={handleDownloadPDF}
                 >
                   {pfaDownload
-                    ? "Your SUD is being downloaded.../ आपका SUD डाउनलोड हो रहा है..."
-                    : "Download Your Substance Use Dependency / पदार्थ उपयोग निर्भरता डाउनलोड करें"}
+                    ? getTranslation("Your SUD is being downloaded.../ आपका SUD डाउनलोड हो रहा है...",lang)
+                    : getTranslation("Download Your Substance Use Dependency / पदार्थ उपयोग निर्भरता डाउनलोड करें",lang)}
                 </button>
               </div>
                 </Col>
@@ -1573,7 +1574,7 @@ function SUD() {
              {/* Edit SUD individual form modal start */}
              <CommonModal
                 isOpen={SUDindiviualEditmodal}
-                title="Edit Substance Use Dependency (SUD)"
+                title={getTranslation("Edit Substance Use Dependency (SUD)/पदार्थ उपयोग निर्भरता (SUD) संपादित करें",lang)}
                 toggler={closeSUDmodal}
                 maxWidth="1200px"
             >
@@ -1585,7 +1586,7 @@ function SUD() {
                         <div className="col-md-6">
                             <FormGroup className="form-group row">
                                 <Label className="col-sm-12 col-form-label col-xl-6">
-                                    Date of Assessment
+                                    {getTranslation("Date of Assessment/मूल्यांकन की तिथि",lang)}
                                 </Label>
                                 <Col xl="5" sm="12">
                                     <div className="input-group">
@@ -1610,30 +1611,30 @@ function SUD() {
                             <Table className="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <th>S.No</th>
-                                        <th>Substance<br />मादक पदार्थ</th>
-                                        <th>Ever Used<br />उपयोग किया</th>
-                                        <th>Duration<br />अवधि</th>
-                                        <th>Current Use<br />वर्तमान उपयोग</th>
-                                        <th>Current Use Pattern<br />यूज़ पैटर्न</th>
-                                        <th>Usual Dose<br />मात्रा</th>
-                                        <th>Remarks<br />टिप्पणियाँ</th>
+                                    <th>{getTranslation("Serial No/सीरीयल नम्बर",lang)}</th>
+                                    <th>{getTranslation("Substance/मादक पदार्थ",lang)}</th>
+                                    <th>{getTranslation("Ever Used/उपयोग किया",lang)}</th>
+                                    <th>{getTranslation("Duration/अवधि",lang)}</th>
+                                    <th>{getTranslation("Current Use/वर्तमान उपयोग",lang)}</th>
+                                    <th>{getTranslation("Current Use Pattern/यूज़ पैटर्न",lang)}</th>
+                                    <th>{getTranslation("Usual Dose/मात्रा",lang)}</th>
+                                    <th>{getTranslation("Remarks/टिप्पणियाँ",lang)}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {SUDselectedUser?.substance_details?.map((item, index) => (
                                         <tr key={index}>
                                             <td>{index + 1}</td>
-                                            <td>{item.substance_name}</td>
+                                            <td>{getTranslation(item.substance_name,lang)}</td>
                                             <td width="10%">
                                                 <select
                                                     className="form-control"
                                                     value={item.ever_used || ""}
                                                     onChange={(e) => handleEditSubstances(index, "ever_used", e.target.value)}
                                                 >
-                                                    <option value="">Select</option>
-                                                    <option value="Yes">Yes</option>
-                                                    <option value="No">No</option>
+                                                     <option value="">{getTranslation("Select/चुनना",lang)}</option>
+                                                <option value="Yes">{getTranslation("Yes/हाँ",lang)}</option>
+                                                <option value="No">{getTranslation("No/नहीं",lang)}</option>
                                                 </select>
                                             </td>
                                             <td>
@@ -1694,7 +1695,7 @@ function SUD() {
                                         }
                                     />
                                     <Label className="text-muted" for="checkbox2">
-                                        {consent}
+                                        {getTranslation(consent,lang)}
                                     </Label>
                                 </div>
                             </div>
@@ -1702,7 +1703,7 @@ function SUD() {
                             <div className="col-md-12">
                                 <Col md="4">
                                     <FormGroup>
-                                        <Label>{signature}</Label>
+                                        <Label>{getTranslation(signature,lang)}</Label>
                                         <Input
                                             type="text"
                                             name="signature"
@@ -1730,7 +1731,7 @@ function SUD() {
                                             aria-hidden="true"
                                         ></span>
                                     ) : (
-                                        "Update Substance Use Dependency (SUD) Data"
+                                        getTranslation("Update Substance Use Dependency (SUD) Data/पदार्थ उपयोग निर्भरता (SUD) डेटा अपडेट करें",lang)
                                     )}
                                 </Button>
                             </div>

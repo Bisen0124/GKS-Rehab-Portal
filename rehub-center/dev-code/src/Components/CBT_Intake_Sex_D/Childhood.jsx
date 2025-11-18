@@ -107,7 +107,17 @@ import { useBranch } from "../../contexts/BranchContext";
 
 import { Btn, Breadcrumbs, H4 } from "../../AbstractElements";
 
+
+import Translated from "../Translated";
+import { useLang } from "../../contexts/LangContext";
+import { getTranslation } from "../../utils/translator";
+
+
 function Childhood() {
+
+   const { lang } = useLang(); // get current language from context
+
+
   //spinner extract from other file
   const selectedSpinner = Data.find(
     (item) => item.spinnerClass === "loader-37"
@@ -216,19 +226,19 @@ function Childhood() {
   //Getting registred patient data into table row
   const tableColumns = [
     {
-      name: "User ID",
+      name: getTranslation("User ID/उपयोगकर्ता पहचान",lang),
       selector: (row) => row.id,
       sortable: true,
       center: true,
     },
     {
-      name: "GKS ID",
+      name: getTranslation("GKS ID/जीकेएस आईडी",lang),
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
     {
-      name: "Name",
+      name: getTranslation("Name/नाम",lang),
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -243,7 +253,7 @@ function Childhood() {
       ),
     },
     {
-      name: "Status",
+      name: getTranslation("Status/स्थिति",lang),
       selector: (row) => row.status,
       sortable: true,
       cell: (row) => (
@@ -254,7 +264,7 @@ function Childhood() {
     },
 
     {
-      name: "Action",
+      name: getTranslation("Action/कार्रवाई",lang),
       center: true,
       cell: (row) => {
         // Hide all actions if discharged
@@ -269,7 +279,7 @@ function Childhood() {
               <span
                 onClick={() => handleChildhoodPreFill(row.recentChildhoodIDs)}
                 style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
+                title={getTranslation("Readmission Childhood Form/पुनः प्रवेश बचपन फॉर्म",lang)}
               >
                 ✏️
               </span>
@@ -315,7 +325,7 @@ function Childhood() {
       cursor: row.isChildhoodCompleted ? "not-allowed" : "pointer",
       opacity: row.isChildhoodCompleted ? 0.5 : 1,
     }}
-    title={row.isChildhoodCompleted ? "Childhood Completed" : "Create Childhood Form"}
+    title={row.isChildhoodCompleted ? getTranslation("Childhood Completed/बचपन पूरा हुआ",lang) : getTranslation("Create Childhood Form/बचपन का फॉर्म बनाएँ",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -434,14 +444,14 @@ function Childhood() {
 
   const tableColumnsFDAList = [
     {
-      name: "Childhood ID",
+      name: getTranslation("Childhood ID's/बचपन आईडी",lang),
       selector: (row) => row.intake_childhood_id,
       sortable: true,
       center: true,
     },
     // { name: "GKS ID", selector: (row) => row.gks_id, sortable: true, center: true },
     {
-      name: "Name",
+      name: getTranslation("Name/नाम",lang),
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -456,19 +466,19 @@ function Childhood() {
       ),
     },
     {
-      name: "Email",
+      name: getTranslation("Email/ईमेल",lang),
       selector: (row) => row.email,
       sortable: true,
       center: true,
     },
     {
-      name: "Phone",
+      name: getTranslation("Phone/फ़ोन",lang),
       selector: (row) => row.phone,
       sortable: true,
       center: true,
     },
     {
-      name: "Status",
+      name: getTranslation("Status/स्थिति",lang),
       selector: (row) => row.status,
       sortable: true,
       cell: (row) => (
@@ -478,14 +488,14 @@ function Childhood() {
       ),
     },
     {
-      name: "Action",
+      name: getTranslation("Action/कार्रवाई",lang),
       center: true,
       cell: (row) => (
         <div className="d-flex gap-2">
           <span
             onClick={() => viewChildhoodFormData(row.intake_childhood_id)}
             style={{ cursor: "pointer" }}
-            title="View"
+            title={getTranslation("View/देखना",lang)}
           >
             <svg
               style={{ color: "#d56337" }}
@@ -509,7 +519,7 @@ function Childhood() {
               handleChildhoodindividualEdit(row.intake_childhood_id)
             }
             style={{ cursor: "pointer", marginLeft: "10px" }}
-            title="Edit"
+            title={getTranslation("Edit/संपादन करना",lang)}
           >
             <svg
               style={{ color: "green" }}
@@ -641,8 +651,8 @@ function Childhood() {
 
       Swal.fire({
         icon: "success",
-        title: "Childhood Assessment Created Successfully",
-        text: "The childhood assessment was submitted successfully.",
+        title: getTranslation("Childhood Assessment Created Successfully/बचपन का मूल्यांकन सफलतापूर्वक बनाया गया",lang),
+        text: getTranslation("The childhood assessment was submitted successfully./बचपन का मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
       }).then(() => setIsChildhoodModalOpen(false));
 
       console.log("Childhood API Data", data);
@@ -652,8 +662,8 @@ function Childhood() {
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Failed to submit. Check console for error.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   };
@@ -899,8 +909,8 @@ function Childhood() {
 
       Swal.fire({
         icon: "success",
-        title: "Childhood Updated Successfully!",
-        text: "Childhood assessment has been updated successfully!",
+        title: getTranslation("Childhood Updated Successfully!/बचपन सफलतापूर्वक अपडेट किया गया!",lang),
+        text: getTranslation("Childhood assessment has been updated successfully!/बचपन का मूल्यांकन सफलतापूर्वक अद्यतन कर दिया गया है!",lang),
       }).then(() => {
         setChildhoodeditModal(false); // ✅ Close modal after success
       });
@@ -910,8 +920,8 @@ function Childhood() {
 
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Failed to update Childhood assessment. Check console for details.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Failed to update Childhood assessment. Check console for details./बचपन का आकलन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
       });
     }
   };
@@ -933,8 +943,8 @@ const handleChildhoodPreFill = async (prefillChildhoodID = null) => {
   if (!prefillChildhoodID) {
     Swal.fire({
       icon: "warning",
-      title: "Missing Childhood ID",
-      text: "No valid Childhood ID was provided for prefill.",
+      title: getTranslation("Missing Childhood ID/गुमशुदा बचपन की आईडी",lang),
+      text: getTranslation("No valid Childhood ID was provided for prefill./प्रीफिल के लिए कोई वैध चाइल्डहुड आईडी प्रदान नहीं की गई।",lang),
     });
     return;
   }
@@ -961,8 +971,8 @@ const handleChildhoodPreFill = async (prefillChildhoodID = null) => {
     if (!response.ok) {
       Swal.fire({
         icon: "error",
-        title: "Fetch Failed",
-        text: data.message || "Unable to fetch Childhood data for prefill.",
+        title: getTranslation("Fetch Failed/प्राप्त करना विफल",lang),
+        text: data.message || getTranslation("Unable to fetch Childhood data for prefill./प्रीफ़िल के लिए बचपन का डेटा प्राप्त करने में असमर्थ.",lang),
       });
       return;
     }
@@ -971,8 +981,8 @@ const handleChildhoodPreFill = async (prefillChildhoodID = null) => {
     if (!latestAssessment) {
       Swal.fire({
         icon: "info",
-        title: "No Data Found",
-        text: "No Childhood data available for this ID.",
+        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
+        text: getTranslation("No Childhood data available for this ID./इस आईडी के लिए कोई बचपन संबंधी डेटा उपलब्ध नहीं है।",lang),
       });
       return;
     }
@@ -1035,8 +1045,8 @@ const handleChildhoodPreFill = async (prefillChildhoodID = null) => {
     console.error("Prefill fetch error:", error);
     Swal.fire({
       icon: "error",
-      title: "Network Error",
-      text: "Unable to fetch Childhood data due to a network issue.",
+      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
+      text: getTranslation("Unable to fetch Childhood data due to a network issue./नेटवर्क समस्या के कारण बचपन का डेटा प्राप्त करने में असमर्थ.",lang),
     });
   }
 };
@@ -1102,8 +1112,8 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
 
     Swal.fire({
       icon: "success",
-      title: "Childhood Re-Assessment Created Successfully",
-      text: "The childhood re-Assessment was submitted successfully.",
+      title: getTranslation("Childhood Re-Assessment Created Successfully/बचपन का पुनर्मूल्यांकन सफलतापूर्वक बनाया गया",lang),
+      text: getTranslation("The childhood re-Assessment was submitted successfully./बचपन का पुनः मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
     }).then(() => setIsChildhoodModalOpen(false));
 
     console.log("Childhood API Data", data);
@@ -1113,8 +1123,8 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
     setIsLoading(false);
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to submit. Check console for error.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };
@@ -1173,7 +1183,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       .from(element)
       .save()
       .then(() => {
-        toast.success("Download complete!");
+        toast.success(getTranslation("Download complete!/डाउनलोड पूर्ण!",lang));
         element.classList.remove("pdf-scale");
 
         setTimeout(() => {
@@ -1195,7 +1205,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1217,7 +1227,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1260,7 +1270,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All Childhood /बचपन Patient Data List" className="p-0" />
+                    <HeaderCard title={getTranslation("All Childhood /बचपन Patient Data List",lang)} className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -1280,7 +1290,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1316,17 +1326,17 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Childhood create form start */}
       <CommonModal
         isOpen={isChildhoodModalOpen}
-        title="Create Childhood /बचपन Form"
+        title={getTranslation("Create Childhood Form /बचपन का फॉर्म बनाएँ",lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
-            name: "Patient name/प्रयासक का नाम :",
-            sex: "Gender/प्रयासक का लिंग :",
-            age: "Age/प्रयासक का उम्र :",
-            date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+            name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+            sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+            age: getTranslation("Age/प्रयासक का उम्र :",lang),
+            date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
             ageValue: patientCalAge,
           }}
         />
@@ -1334,7 +1344,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
           <form className="theme-form" onSubmit={SubmitChildhoodFormHandler}>
             <div class="col-md-6 mb-3">
               <Label className="col-sm-12 col-form-label  col-xl-6">
-                {dateOfAssessment}
+                {getTranslation(dateOfAssessment,lang)}
               </Label>
               <Col xl="5" sm="12">
                 <div className="input-group">
@@ -1354,7 +1364,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Parenting History */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Parenting History / पालन-पोषण का इतिहास</Label>
+                <Label>{getTranslation("Parenting History / पालन-पोषण का इतिहास",lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1370,8 +1380,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>
-                  If there was a dispute in the family in childhood describe? /
-                  बचपन में परिवार में कोई विवाद हुआ हो तो उसका वर्णन करें?
+                 {getTranslation(" If there was a dispute in the family in childhood describe? / बचपन में परिवार में कोई विवाद हुआ हो तो उसका वर्णन करें?",lang)}
                 </Label>
                 <Input
                   type="textarea"
@@ -1387,8 +1396,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Sociality */}
             <div className="col-md-12">
               <Label>
-                Sociality (where born & living?) / सामाजिकता (जहां पैदा हुआ और
-                रहा?)
+                {getTranslation("Sociality (where born & living?) / सामाजिकता (जहां पैदा हुआ और रहा?)",lang)}
               </Label>
               <Input
                 type="textarea"
@@ -1399,7 +1407,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               />
 
               <br />
-              <Label>High Risk Behavior / उच्च जोखिम व्यवहार</Label>
+              <Label>{getTranslation("High Risk Behavior / उच्च जोखिम व्यवहार",lang)}</Label>
               <Input
                 type="textarea"
                 name="high_risk_behavior"
@@ -1413,7 +1421,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12 mt-3 mb-3">
               <FormGroup className="mb-0">
                 <Label>
-                  What was impact of movies? / फिल्मों का क्या प्रभाव पड़ा?
+                  {getTranslation("What was impact of movies? / फिल्मों का क्या प्रभाव पड़ा?",lang)}
                 </Label>
                 <Input
                   type="textarea"
@@ -1430,8 +1438,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12 mt-3 mb-3">
               <FormGroup className="mb-0">
                 <Label>
-                  Has anyone ever abused you? 1.Emotionally? 2.Physically?
-                  3.Sexually? / क्या कभी किसी ने आपके साथ दुर्व्यवहार किया है?
+                  {getTranslation("Has anyone ever abused you? 1.Emotionally? 2.Physically? 3.Sexually? / क्या कभी किसी ने आपके साथ दुर्व्यवहार किया है? 1. भावनात्मक रूप से? 2. शारीरिक रूप से? 3. यौन रूप से?",lang)}
                 </Label>
                 <Input
                   type="textarea"
@@ -1447,11 +1454,11 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Academics & Occupation */}
             <div className="row">
               <H5 className="mt-3 mb-3">
-                Academics & Occupational Details / शैक्षणिक एवं व्यावसायिक विवरण
+                {getTranslation("Academics & Occupational Details / शैक्षणिक एवं व्यावसायिक विवरण",lang)}
               </H5>
 
               <div className="col-md-6">
-                <Label>Education Status / शैक्षणिक स्थिति</Label>
+                <Label>{getTranslation("Education Status / शैक्षणिक स्थिति",lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1463,7 +1470,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               </div>
 
               <div className="col-md-6">
-                <Label>Occupational Status / कार्य की स्थिति</Label>
+                <Label>{getTranslation("Occupational Status / कार्य की स्थिति",lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1479,8 +1486,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12 mt-3">
               <FormGroup className="mb-0">
                 <Label>
-                  If dropout what is the reason? / यदि ड्रॉपआउट हुआ तो क्या कारण
-                  है?
+                  {getTranslation("If dropout what is the reason? / यदि ड्रॉपआउट हुआ तो क्या कारण है?",lang)}
                 </Label>
                 <Input
                   type="textarea"
@@ -1496,7 +1502,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Study/Work Details */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Study/Work Details / अध्ययन / कार्य विवरण</Label>
+                <Label>{getTranslation("Study or Work Details / अध्ययन / कार्य विवरण",lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1511,7 +1517,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Hobbies */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Hobbies / शौक</Label>
+                <Label>{getTranslation("Hobbies / शौक",lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1526,7 +1532,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Extra Skills */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Extra Skills / अतिरिक्त कौशल</Label>
+                <Label>{getTranslation("Extra Skills / अतिरिक्त कौशल",lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1541,7 +1547,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Achievement in Life */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Achievement in life / जीवन में उपलब्धियां</Label>
+                <Label>{getTranslation("Achievement in life / जीवन में उपलब्धियां",lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1556,7 +1562,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Why Here */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Why are you here? / आप यहाँ क्यों हैं?</Label>
+                <Label>{getTranslation("Why are you here? / आप यहाँ क्यों हैं?",lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1571,7 +1577,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Why Family Sent */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Why family sent? / परिवार ने क्यों भेजा?</Label>
+                <Label>{getTranslation("Why family sent? / परिवार ने क्यों भेजा?",lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1589,7 +1595,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 {isLoading ? (
                   <span className="spinner-border spinner-border-sm"></span>
                 ) : (
-                  "Create Childhood"
+                  getTranslation("Create Childhood/बचपन बनाएँ",lang)
                 )}
               </Button>
             </div>
@@ -1601,7 +1607,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* View Childhood data into modal start */}
       <CommonModal
         isOpen={viewChildhoodModal}
-        title="View Childhood / बचपन Form"
+        title={getTranslation("View Childhood Form/ बचपन का फॉर्म देखें",lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
@@ -1613,7 +1619,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               padding: "20px 0",
             }}
           >
-            Childhood / बचपन
+            {getTranslation("Childhood / बचपन",lang)}
           </h4>
 
           <Table size="sm" className="table-auto table-bordered">
@@ -1633,23 +1639,23 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               ) : viewChildhoodData ? (
                 <>
                   <tr>
-                    <th className="text-start p-3">Name</th>
+                    <th className="text-start p-3">{getTranslation("Name/नाम",lang)}</th>
                     <td className="border p-3">{viewChildhoodData.name}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Gender</th>
+                    <th className="text-start p-3">{getTranslation("Gender/लिंग",lang)}</th>
                     <td className="border p-3">{viewChildhoodData.gender}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Phone</th>
+                    <th className="text-start p-3">{getTranslation("Phone/फ़ोन",lang)}</th>
                     <td className="border p-3">{viewChildhoodData.phone}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Email</th>
+                    <th className="text-start p-3">{getTranslation("Email/ईमेल",lang)}</th>
                     <td className="border p-3">{viewChildhoodData.email}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Assessment Date</th>
+                    <th className="text-start p-3">{getTranslation("Assessment Date/मूल्यांकन तिथि",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.date_of_assessment
                         ? new Date(
@@ -1659,14 +1665,14 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Parenting History</th>
+                    <th className="text-start p-3">{getTranslation("Parenting History/पालन-पोषण का इतिहास",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.parenting_history}
                     </td>
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Family Dispute (Childhood)
+                      {getTranslation("Family Dispute (Childhood)/पारिवारिक विवाद (बचपन)",lang)}
                     </th>
                     <td className="border p-3">
                       {viewChildhoodData.family_dispute_childhood}
@@ -1674,91 +1680,91 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Sociality (Born & Living)
+                      {getTranslation("Sociality (Born & Living)/सामाजिकता (जन्म और जीवन)",lang)}
                     </th>
                     <td className="border p-3">
                       {viewChildhoodData.sociality_born_living}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">High Risk Behavior</th>
+                    <th className="text-start p-3">{getTranslation("High Risk Behavior/उच्च जोखिम वाला व्यवहार",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.high_risk_behavior}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Impact of Movies</th>
+                    <th className="text-start p-3">{getTranslation("Impact of Movies/फिल्मों का प्रभाव",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.impact_substance_movies}
                     </td>
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Abuse History Description
+                     {getTranslation("Abuse History Description/दुर्व्यवहार इतिहास विवरण",lang)}
                     </th>
                     <td className="border p-3">
                       {viewChildhoodData.abuse_history_description}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Education Status</th>
+                    <th className="text-start p-3">{getTranslation("Education Status/शिक्षा की स्थिति",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.education_status}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Occupational Status</th>
+                    <th className="text-start p-3">{getTranslation("Occupational Status/व्यावसायिक स्थिति",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.occupational_status}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Dropout Reason</th>
+                    <th className="text-start p-3">{getTranslation("Dropout Reason/ड्रॉपआउट का कारण",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.dropout_reason}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Study/Work Details</th>
+                    <th className="text-start p-3">{getTranslation("Study/Work Details/अध्ययन/कार्य विवरण",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.study_work_details}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Hobbies</th>
+                    <th className="text-start p-3">{getTranslation("Hobbies/शौक",lang)}</th>
                     <td className="border p-3">{viewChildhoodData.hobbies}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Extra Skills</th>
+                    <th className="text-start p-3">{getTranslation("Extra Skills/अतिरिक्त कौशल",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.extra_skills}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Achievement in Life</th>
+                    <th className="text-start p-3">{getTranslation("Achievement in Life/जीवन में उपलब्धियाँ",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.achievement_life}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Why Here?</th>
+                    <th className="text-start p-3">{getTranslation("Why Here?/यहां क्यों?",lang)}</th>
                     <td className="border p-3">{viewChildhoodData.why_here}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Why Family Sent?</th>
+                    <th className="text-start p-3">{getTranslation("Why Family Sent?/परिवार ने क्यों भेजा?",lang)}</th>
                     <td className="border p-3">
                       {viewChildhoodData.why_family_sent}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Status</th>
+                    <th className="text-start p-3">{getTranslation("Status/स्थिति",lang)}</th>
                     <td className="border p-3">{viewChildhoodData.status}</td>
                   </tr>
                 </>
               ) : (
                 <tr>
                   <td colSpan="2" className="text-center">
-                    No data available
+                    {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
                   </td>
                 </tr>
               )}
@@ -1774,8 +1780,8 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             onClick={handleDownloadPDF}
           >
             {pfaDownload
-              ? "Your Childhood / बचपन form is being downloaded.../ आपका Childhood / बचपन form डाउनलोड हो रहा है..."
-              : "Download Childhood / बचपन Form"}
+              ? getTranslation("Your Childhood form is being downloaded.../ आपका बचपन फॉर्म डाउनलोड हो रहा है...",lang)
+              : getTranslation("Download Childhood / बचपन फॉर्म",lang)}
           </button>
         </div>
       </CommonModal>
@@ -1784,7 +1790,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Edit Childhood individual form data start */}
       <CommonModal
         isOpen={SUDChildhoodeditModal}
-        title="Edit Childhood /बचपन"
+        title={getTranslation("Edit Childhood /बचपन",lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
@@ -1799,7 +1805,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Date of Assessment */}
             <div className="col-md-6 mb-3">
               <Label className="col-sm-12 col-form-label col-xl-6">
-                Date of Assessment / मूल्यांकन की तिथि
+                {getTranslation("Date of Assessment / मूल्यांकन की तिथि",lang)}
               </Label>
               <Col xl="5" sm="12">
                 <div className="input-group">
@@ -1820,7 +1826,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Parenting History */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Parenting History / पालन-पोषण का इतिहास</Label>
+                <Label>{getTranslation("Parenting History / पालन-पोषण का इतिहास",lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -1840,8 +1846,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>
-                  If there was a dispute in the family in childhood describe? /
-                  बचपन में परिवार में कोई विवाद हुआ हो तो उसका वर्णन करें?
+                  {getTranslation("If there was a dispute in the family in childhood describe? / बचपन में परिवार में कोई विवाद हुआ हो तो उसका वर्णन करें?",lang)}
                 </Label>
                 <Input
                   type="textarea"
@@ -1861,8 +1866,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Sociality */}
             <div className="col-md-12">
               <Label>
-                Sociality (where born & living?) / सामाजिकता (जहां पैदा हुआ और
-                रहा?)
+                {getTranslation("Sociality (where born & living?) / सामाजिकता (जहां पैदा हुआ और रहा?)",lang)}
               </Label>
               <Input
                 type="textarea"
@@ -1877,7 +1881,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               />
 
               <br />
-              <Label>High Risk Behavior / उच्च जोखिम व्यवहार</Label>
+              <Label>{getTranslation("High Risk Behavior / उच्च जोखिम व्यवहार",lang)}</Label>
               <Input
                 type="textarea"
                 name="high_risk_behavior"
@@ -1895,7 +1899,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12 mt-3 mb-3">
               <FormGroup className="mb-0">
                 <Label>
-                  What was impact of movies? / फिल्मों का क्या प्रभाव पड़ा?
+                 {getTranslation(" What was impact of movies? / फिल्मों का क्या प्रभाव पड़ा?",lang)}
                 </Label>
                 <Input
                   type="textarea"
@@ -1916,8 +1920,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12 mt-3 mb-3">
               <FormGroup className="mb-0">
                 <Label>
-                  Has anyone ever abused you? 1.Emotionally? 2.Physically?
-                  3.Sexually? / क्या कभी किसी ने आपके साथ दुर्व्यवहार किया है?
+                  {getTranslation("Has anyone ever abused you? 1.Emotionally? 2.Physically? 3.Sexually? / क्या कभी किसी ने आपके साथ दुर्व्यवहार किया है? 1. भावनात्मक रूप से? 2. शारीरिक रूप से? 3. यौन रूप से?",lang)}
                 </Label>
                 <Input
                   type="textarea"
@@ -1937,11 +1940,11 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Academics & Occupation */}
             <div className="row">
               <H5 className="mt-3 mb-3">
-                Academics & Occupational Details / शैक्षणिक एवं व्यावसायिक विवरण
+                {getTranslation("Academics & Occupational Details / शैक्षणिक एवं व्यावसायिक विवरण",lang)}
               </H5>
 
               <div className="col-md-6">
-                <Label>Education Status / शैक्षणिक स्थिति</Label>
+                <Label>{getTranslation("Education Status / शैक्षणिक स्थिति",lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -1957,7 +1960,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               </div>
 
               <div className="col-md-6">
-                <Label>Occupational Status / कार्य की स्थिति</Label>
+                <Label>{getTranslation("Occupational Status / कार्य की स्थिति",lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -1977,8 +1980,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12 mt-3">
               <FormGroup className="mb-0">
                 <Label>
-                  If dropout what is the reason? / यदि ड्रॉपआउट हुआ तो क्या कारण
-                  है?
+                 {getTranslation(" If dropout what is the reason? / यदि ड्रॉपआउट हुआ तो क्या कारण है?",lang)}
                 </Label>
                 <Input
                   type="textarea"
@@ -1998,7 +2000,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Study/Work Details */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Study/Work Details / अध्ययन / कार्य विवरण</Label>
+                <Label>{getTranslation("Study/Work Details / अध्ययन / कार्य विवरण",lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -2017,7 +2019,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Hobbies */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Hobbies / शौक</Label>
+                <Label>{getTranslation("Hobbies / शौक",lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -2036,7 +2038,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Extra Skills */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Extra Skills / अतिरिक्त कौशल</Label>
+                <Label>{getTranslation("Extra Skills / अतिरिक्त कौशल",lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -2055,7 +2057,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Achievement in Life */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Achievement in life / जीवन में उपलब्धियां</Label>
+                <Label>{getTranslation("Achievement in life / जीवन में उपलब्धियां",lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -2074,7 +2076,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Why Here */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Why are you here? / आप यहाँ क्यों हैं?</Label>
+                <Label>{getTranslation("Why are you here? / आप यहाँ क्यों हैं?",lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -2093,7 +2095,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             {/* Why Family Sent */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>Why family sent? / परिवार ने क्यों भेजा?</Label>
+                <Label>{getTranslation("Why family sent? / परिवार ने क्यों भेजा?",lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -2115,7 +2117,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 {isLoading ? (
                   <span className="spinner-border spinner-border-sm"></span>
                 ) : (
-                  "Update Childhood Form Data"
+                  getTranslation("Update Childhood Form Data/बचपन के फ़ॉर्म का डेटा अपडेट करें",lang)
                 )}
               </Button>
             </div>
@@ -2127,7 +2129,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
      {/* Prefill readmission Childhood individual form data start */}
 <CommonModal
   isOpen={ChildhoodPrefillModal}
-  title="Readmission Childhood / बचपन"
+  title={getTranslation("Readmission Childhood / पुनः प्रवेश बचपन फॉर्म",lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -2139,7 +2141,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Date of Assessment */}
       <div className="col-md-6 mb-3">
         <Label className="col-sm-12 col-form-label col-xl-6">
-          Date of Assessment / मूल्यांकन की तिथि
+          {getTranslation("Date of Assessment / मूल्यांकन की तिथि",lang)}
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
@@ -2160,7 +2162,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Parenting History */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>Parenting History / पालन-पोषण का इतिहास</Label>
+          <Label>{getTranslation("Parenting History / पालन-पोषण का इतिहास",lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -2180,8 +2182,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>
-            If there was a dispute in the family in childhood describe? / बचपन
-            में परिवार में कोई विवाद हुआ हो तो उसका वर्णन करें?
+            {getTranslation("If there was a dispute in the family in childhood describe? / बचपन में परिवार में कोई विवाद हुआ हो तो उसका वर्णन करें?",lang)}
           </Label>
           <Input
             type="textarea"
@@ -2201,7 +2202,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Sociality */}
       <div className="col-md-12">
         <Label>
-          Sociality (where born & living?) / सामाजिकता (जहां पैदा हुआ और रहा?)
+          {getTranslation("Sociality (where born & living?) / सामाजिकता (जहां पैदा हुआ और रहा?)",lang)}
         </Label>
         <Input
           type="textarea"
@@ -2216,7 +2217,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
         />
 
         <br />
-        <Label>High Risk Behavior / उच्च जोखिम व्यवहार</Label>
+        <Label>{getTranslation("High Risk Behavior / उच्च जोखिम व्यवहार",lang)}</Label>
         <Input
           type="textarea"
           name="high_risk_behavior"
@@ -2233,7 +2234,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Impact of Movies */}
       <div className="col-md-12 mt-3 mb-3">
         <FormGroup className="mb-0">
-          <Label>What was impact of movies? / फिल्मों का क्या प्रभाव पड़ा?</Label>
+          <Label>{getTranslation("What was impact of movies? / फिल्मों का क्या प्रभाव पड़ा?",lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -2253,8 +2254,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       <div className="col-md-12 mt-3 mb-3">
         <FormGroup className="mb-0">
           <Label>
-            Has anyone ever abused you? 1.Emotionally? 2.Physically? 3.Sexually?
-            / क्या कभी किसी ने आपके साथ दुर्व्यवहार किया है?
+            {getTranslation("Has anyone ever abused you? 1.Emotionally? 2.Physically? 3.Sexually? / क्या कभी किसी ने आपके साथ दुर्व्यवहार किया है? 1. भावनात्मक रूप से? 2. शारीरिक रूप से? 3. यौन रूप से?",lang)}
           </Label>
           <Input
             type="textarea"
@@ -2274,11 +2274,11 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Academics & Occupation */}
       <div className="row">
         <H5 className="mt-3 mb-3">
-          Academics & Occupational Details / शैक्षणिक एवं व्यावसायिक विवरण
+          {getTranslation("Academics & Occupational Details / शैक्षणिक एवं व्यावसायिक विवरण",lang)}
         </H5>
 
         <div className="col-md-6">
-          <Label>Education Status / शैक्षणिक स्थिति</Label>
+          <Label>{getTranslation("Education Status / शैक्षणिक स्थिति",lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -2294,7 +2294,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
         </div>
 
         <div className="col-md-6">
-          <Label>Occupational Status / कार्य की स्थिति</Label>
+          <Label>{getTranslation("Occupational Status / कार्य की स्थिति",lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -2314,7 +2314,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       <div className="col-md-12 mt-3">
         <FormGroup className="mb-0">
           <Label>
-            If dropout what is the reason? / यदि ड्रॉपआउट हुआ तो क्या कारण है?
+            {getTranslation("If dropout what is the reason? / यदि ड्रॉपआउट हुआ तो क्या कारण है?",lang)}
           </Label>
           <Input
             type="textarea"
@@ -2334,7 +2334,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Study/Work Details */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>Study/Work Details / अध्ययन / कार्य विवरण</Label>
+          <Label>{getTranslation("Study/Work Details / अध्ययन / कार्य विवरण",lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -2353,7 +2353,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Hobbies */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>Hobbies / शौक</Label>
+          <Label>{getTranslation("Hobbies / शौक",lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -2372,7 +2372,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Extra Skills */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>Extra Skills / अतिरिक्त कौशल</Label>
+          <Label>{getTranslation("Extra Skills / अतिरिक्त कौशल",lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -2391,7 +2391,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Achievement in Life */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>Achievement in life / जीवन में उपलब्धियां</Label>
+          <Label>{getTranslation("Achievement in life / जीवन में उपलब्धियां",lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -2410,7 +2410,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Why Here */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>Why are you here? / आप यहाँ क्यों हैं?</Label>
+          <Label>{getTranslation("Why are you here? / आप यहाँ क्यों हैं?",lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -2429,7 +2429,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       {/* Why Family Sent */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>Why family sent? / परिवार ने क्यों भेजा?</Label>
+          <Label>{getTranslation("Why family sent? / परिवार ने क्यों भेजा?",lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -2451,7 +2451,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
           {isLoading ? (
             <span className="spinner-border spinner-border-sm"></span>
           ) : (
-            "Readmission Childhood Form Data"
+            getTranslation("Readmission Childhood Form Data/पुनः प्रवेश बचपन फॉर्म डेटा",lang)
           )}
         </Button>
       </div>

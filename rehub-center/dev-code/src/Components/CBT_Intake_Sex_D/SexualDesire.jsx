@@ -245,10 +245,10 @@ function SexualDesire() {
 
             let isSHCompleted = false;
 
-          let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
+          let userStatus = <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>;
           if (admitDate && CBTDate && admitDate > CBTDate) {
             isSHCompleted = false;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           // const dischargeStatusText = user.discharge_status_text || "Unknown";
@@ -327,7 +327,7 @@ function SexualDesire() {
               <span
                 onClick={() => handleSDPreFill(row.recent_sha_id)}
                 style={{ cursor: "pointer" }}
-                title="Readmission Sexsual Desire Form"
+                title={getTranslation("Readmission Sexsual Desire Form/पुनः प्रवेश यौन इच्छा प्रपत्र",lang)}
               >
                 ✏️
               </span>
@@ -365,7 +365,7 @@ function SexualDesire() {
       cursor: row.isSHCompleted ? "not-allowed" : "pointer",
       opacity: row.isSHCompleted ? 0.5 : 1,
     }}
-    title={row.isSHCompleted ? "Sexsual Desire Completed" : "Create Sexsual Desire From"}
+    title={row.isSHCompleted ? getTranslation("Sexsual Desire Completed/यौन इच्छा पूरी हुई",lang) : getTranslation("Create Sexsual Desire From/यौन इच्छा पैदा करें",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -439,12 +439,12 @@ function SexualDesire() {
           const admitDate = entry.admit_date ? new Date(entry.admit_date) : null;
           const SDDate = entry.date_of_assessment ? new Date(entry.date_of_assessment) : null;
 
-          let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
+          let userStatus = <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>;
           if (admitDate && SDDate && admitDate < SDDate) {
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
-          const dischargeStatusText = entry.discharge_status === 1 ? "Discharged" : "Not Discharged";
+          const dischargeStatusText = entry.discharge_status === 1 ? getTranslation("Discharged/छुट्टी दे दी गई",lang) : getTranslation("Not Discharged/छुट्टी नहीं दी गई",lang);
 
           return {
             id: entry?.user_id || "N/A",
@@ -518,7 +518,7 @@ function SexualDesire() {
             <span
               onClick={() => ViewSDindividualData(row.sha_id)}
               style={{ cursor: "pointer" }}
-              title="View"
+              title={getTranslation("View/देखना",lang)}
             >
               <svg
                 style={{ color: "#d56337" }}
@@ -540,7 +540,7 @@ function SexualDesire() {
             <span
               onClick={() => handleEditSDIndividualData(row.sha_id)}
               style={{ cursor: "pointer", marginLeft: "10px" }}
-              title="Edit"
+              title={getTranslation("Edit/संपादन करना",lang)}
             >
               <svg
                 style={{ color: "green" }}
@@ -685,23 +685,23 @@ function SexualDesire() {
       if (response.ok) {
         Swal.fire({
           icon: "success",
-          title: "Sexual History Submitted",
-          text: "The sexual desire form has been submitted successfully.",
+          title: getTranslation("Sexual History Submitted/यौन इतिहास प्रस्तुत किया गया",lang),
+          text: getTranslation("The sexual desire form has been submitted successfully./यौन इच्छा प्रपत्र सफलतापूर्वक प्रस्तुत कर दिया गया है।",lang),
         });
       } else {
         console.error("Error Response:", result);
         Swal.fire({
           icon: "error",
-          title: "Submission Failed",
-          text: result.message || "There was an error submitting the form.",
+          title: getTranslation("Submission Failed/सबमिशन विफल",lang),
+          text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
         });
       }
     } catch (error) {
       console.error("Fetch Error:", error);
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Network or server issue occurred.",
+        title: getTranslation("Error/गलती",lang),
+        text: getTranslation("Network or server issue occurred./नेटवर्क या सर्वर समस्या उत्पन्न हुई.",lang),
       });
     } finally {
       setIsLoading(false);
@@ -852,23 +852,23 @@ function SexualDesire() {
       if (response.ok) {
         Swal.fire({
           icon: "success",
-          title: "Sexual History Readmission Created",
-          text: "The sexual desire form readmission has been created successfully.",
+          title: getTranslation("Sexual History Readmission Created/यौन इतिहास पुनः प्रवेश बनाया गया",lang),
+          text: getTranslation("The sexual desire form readmission has been created successfully./यौन इच्छा प्रपत्र पुनः प्रवेश सफलतापूर्वक बनाया गया है।",lang),
         });
       } else {
         console.error("Error Response:", result);
         Swal.fire({
           icon: "error",
-          title: "Submission Failed",
-          text: result.message || "There was an error submitting the form.",
+          title: getTranslation("Submission Failed/सबमिशन विफल",lang),
+          text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
         });
       }
     } catch (error) {
       console.error("Fetch Error:", error);
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Network or server issue occurred.",
+        title: getTranslation("Error/गलती",lang),
+        text: getTranslation("Network or server issue occurred./नेटवर्क या सर्वर समस्या उत्पन्न हुई.",lang),
       });
     } finally {
       setIsLoading(false);
@@ -1088,23 +1088,23 @@ function SexualDesire() {
       if (response.ok) {
         Swal.fire({
           icon: "success",
-          title: "Sexual History Updated",
-          text: "The sexual desire form has been successfully updated.",
+          title: getTranslation("Sexual History Updated/यौन इतिहास अद्यतन",lang),
+          text: getTranslation("The sexual desire form has been successfully updated./यौन इच्छा प्रपत्र को सफलतापूर्वक अद्यतन कर दिया गया है।",lang),
         });
       } else {
         console.error("Error Response:", result);
         Swal.fire({
           icon: "error",
-          title: "Update Failed",
-          text: result.message || "There was an error submitting the form.",
+          title: getTranslation("Update Failed/भार बढ़ाना विफल हुवा",lang),
+          text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
         });
       }
     } catch (error) {
       console.error("Fetch Error:", error);
       Swal.fire({
         icon: "error",
-        title: "Network Error",
-        text: "A network or server issue occurred.",
+        title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
+        text: getTranslation("A network or server issue occurred./नेटवर्क या सर्वर संबंधी समस्या उत्पन्न हुई.",lang),
       });
     } finally {
       setIsLoading(false);
@@ -1128,7 +1128,7 @@ function SexualDesire() {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1150,7 +1150,7 @@ function SexualDesire() {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1196,7 +1196,7 @@ function SexualDesire() {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="All Sexual History / यौन इतिहास Patient Data List"
+                      title={getTranslation("All Sexual History Patient Data List/सभी यौन इतिहास रोगी डेटा सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1218,7 +1218,7 @@ function SexualDesire() {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1257,7 +1257,7 @@ function SexualDesire() {
       {/* Create and submit Sexual desire from start  */}
       <CommonModal
         isOpen={modal}
-        title="Create Sexual History / यौन इतिहास Form"
+        title={getTranslation("Create Sexual History Form / यौन इतिहास प्रपत्र बनाएँ",lang)}
         toggler={closeAllModal}
         maxWidth="1200px"
       >
@@ -1267,11 +1267,11 @@ function SexualDesire() {
             <PatientCommonInfo
               selectedUser={selectedUser}
               labels={{
-                name: "Patient name/प्रयासक का नाम :",
-                sex: "Gender/प्रयासक का लिंग :",
-                age: "Age/प्रयासक का उम्र :",
-                date_of_admission: "Date of Admission/प्रवेश की तिथि :",
-                ageValue: patientCalAge,
+               name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+               sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+               age: getTranslation("Age/प्रयासक का उम्र :",lang),
+               date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
+               ageValue: patientCalAge,
               }}
             />
             <div className="sd__createWrapper p-3">
@@ -1280,7 +1280,7 @@ function SexualDesire() {
                 <div className="col-md-6 mt-3">
                   <FormGroup className="form-group row">
                     <Label className="col-sm-12 col-form-label  col-xl-6">
-                      {dateOfAssessment}
+                      {getTranslation(dateOfAssessment,lang)}
                     </Label>
                     <Col xl="5" sm="12">
                       <div className="input-group">
@@ -1299,9 +1299,9 @@ function SexualDesire() {
                 <Table bordered>
                   <thead>
                     <tr>
-                      <th scope="col">{SexualHistoryID}</th>
-                      <th scope="col">{SexualHistoryquestion}</th>
-                      <th scope="col">{SexualHistoryanswer}</th>
+                      <th scope="col">{getTranslation(SexualHistoryID,lang)}</th>
+                      <th scope="col">{getTranslation(SexualHistoryquestion,lang)}</th>
+                      <th scope="col">{getTranslation(SexualHistoryanswer,lang)}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1311,7 +1311,7 @@ function SexualDesire() {
                           {index + 1}
                         </td>
                         <td className="border px-4 py-2">
-                          <strong>{q.en}</strong>
+                          <strong>{getTranslation(q.en,lang)}</strong>
                           <br />
                           <span className="text-gray-600">{q.hi}</span>
                         </td>
@@ -1346,11 +1346,11 @@ function SexualDesire() {
                       }
 
                     />
-                    {consent}
+                    {getTranslation(consent,lang)}
                   </Label>
                 </div>
                 <div className="col-md-12">
-                  <Label>{signature}</Label>
+                  <Label>{getTranslation(signature,lang)}</Label>
                   <Input type="text" className="form-control"
                     name="signature"
                     value={forData.signature}
@@ -1358,7 +1358,7 @@ function SexualDesire() {
                   />
                 </div>
                 <div className="col-md-12">
-                  <Label>{prepared}</Label>
+                  <Label>{getTranslation(prepared,lang)}</Label>
                   <Input type="text" className="form-control"
                     name="prepared"
                     value={forData.prepared}
@@ -1378,7 +1378,7 @@ function SexualDesire() {
                     aria-hidden="true"
                   ></span>
                 ) : (
-                  "Create Sexual Desire (CBT)"
+                  getTranslation("Create Sexual Desire Form/यौन इच्छा प्रपत्र बनाएँ",lang)
                 )}
               </Button>
             </div>
@@ -1391,7 +1391,7 @@ function SexualDesire() {
       {/* Readmission and submit Sexual desire from start  */}
       <CommonModal
         isOpen={prefillSDModal}
-        title={`Readmission ${SexualHistory}`}
+        title={getTranslation(`Readmission ${SexualHistory}`,lang)}
         toggler={closeAllModal}
         maxWidth="1200px"
       >
@@ -1414,7 +1414,7 @@ function SexualDesire() {
                 <div className="col-md-6 mt-3">
                   <FormGroup className="form-group row">
                     <Label className="col-sm-12 col-form-label  col-xl-6">
-                      {dateOfAssessment}
+                      {getTranslation(dateOfAssessment,lang)}
                     </Label>
                     <Col xl="5" sm="12">
                       <div className="input-group">
@@ -1440,9 +1440,9 @@ function SexualDesire() {
                 <Table bordered>
                   <thead>
                     <tr>
-                      <th scope="col">{SexualHistoryID}</th>
-                      <th scope="col">{SexualHistoryquestion}</th>
-                      <th scope="col">{SexualHistoryanswer}</th>
+                      <th scope="col">{getTranslation(SexualHistoryID,lang)}</th>
+                      <th scope="col">{getTranslation(SexualHistoryquestion,lang)}</th>
+                      <th scope="col">{getTranslation(SexualHistoryanswer,lang)}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1450,7 +1450,7 @@ function SexualDesire() {
                       <tr key={q.key} className="border">
                         <td className="border px-4 py-2 text-center">{index + 1}</td>
                         <td className="border px-4 py-2">
-                          <strong>{q.en}</strong>
+                          <strong>{getTranslation(q.en,lang)}</strong>
                           <br />
                           <span className="text-gray-600">{q.hi}</span>
                         </td>
@@ -1494,11 +1494,11 @@ function SexualDesire() {
                       }
 
                     />
-                    {consent}
+                    {getTranslation(consent,lang)}
                   </Label>
                 </div>
                 <div className="col-md-12">
-                  <Label>{signature}</Label>
+                  <Label>{getTranslation(signature,lang)}</Label>
                   <Input type="text" className="form-control"
                     name="signature"
                     value={prefillSDdata?.signature}
@@ -1513,7 +1513,7 @@ function SexualDesire() {
 
                 <div className="col-md-12">
                   <br />
-                  <Label>{prepared}</Label>
+                  <Label>{getTranslation(prepared,lang)}</Label>
                   <Input type="text" className="form-control"
                     name="prepared"
                     value={prefillSDdata?.prepared}
@@ -1538,7 +1538,7 @@ function SexualDesire() {
                     aria-hidden="true"
                   ></span>
                 ) : (
-                  "Readmission Sexual Desire (CBT)"
+                  getTranslation("Readmission Sexual Desire Form/पुनः प्रवेश यौन इच्छा प्रपत्र",lang)
                 )}
               </Button>
             </div>
@@ -1551,7 +1551,7 @@ function SexualDesire() {
       {/* View sexual desire data form start */}
       <CommonModal
         isOpen={viewSexualDataModal}
-        title={`View ${SexualHistory}`}
+        title={getTranslation(`View ${SexualHistory}`,lang)}
         toggler={closeAllModal}
         maxWidth="1200px"
       >
@@ -1566,52 +1566,51 @@ function SexualDesire() {
                     padding: "20px 0",
                   }}
                 >
-                  {SexualHistory}
+                  {getTranslation(SexualHistory,lang)}
                 </h4>
               {viewSexualData ? (
                 
                 <Table className="table table-bordered table-striped">
                   <thead className="table-light">
                     <tr>
-                      <th>Field</th>
-                      <th>Value</th>
+                      <th>{getTranslation("Field/मैदान",lang)}</th>
+                      <th>{getTranslation("Value/कीमत",lang)}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {Object.entries({
-                      Name: viewSexualData.name,
-                      "Relative Name": viewSexualData.relative_name,
-                      "Phone": viewSexualData.phone,
-                      "Gender": viewSexualData.gender,
-                      "Sexual Misconceptions": viewSexualData.sex_misconceptions,
-                      "Sexual Games as Child": viewSexualData.sexual_games_child,
-                      "Unpleasant Experiences": viewSexualData.unpleasant_experiences,
-                      "Bad Attitude Toward Nudity": viewSexualData.bad_attitude_nudity,
-                      "Age of First Sexual Activity": viewSexualData.age_first_sexual_activity,
-                      "Consensual Activity": viewSexualData.consensual_activity,
-                      "Current Sexual Functioning": viewSexualData.current_sexual_functioning,
-                      "Sexual Desire Type": viewSexualData.sex_desire_type,
-                      "Comfort with Sexual Identity": viewSexualData.sexual_identity_comfort,
-                      "Erotic Material Exposure": viewSexualData.erotic_material_exposure,
-                      "Masturbation History": viewSexualData.masturbation_history,
-                      "Masturbation Frequency (Years)": viewSexualData.masturbation_frequency_years,
-                      "Intercourse Frequency": viewSexualData.intercourse_frequency,
-                      "Sex Importance in Marriage": viewSexualData.sex_importance_marriage,
-                      "Tell Partner Preferences": viewSexualData.tell_partner_preferences,
-                      "Masturbation After Marriage": viewSexualData.masturbation_after_marriage,
-                      "Partner Sexual Problems": viewSexualData.partner_sexual_problems,
-                      "Extramarital Affairs": viewSexualData.extramarital_affairs,
-                      "Coitus Outside Marriage": viewSexualData.coitus_outside_marriage,
-                      "Thoughts About Women": viewSexualData.women_intercourse_thoughts,
-                      "External Aids Usage": viewSexualData.external_aids_usage,
-                      "Upsetting Experiences": viewSexualData.upsetting_experiences,
-                      "Sexual Desire Before/After Substance": viewSexualData.sex_desire_before_after_substance,
-                      "Premature Ejaculation (Substance)": viewSexualData.premature_ejaculation_substance,
-                      "Ejaculation Effect (Alcohol/Drugs)": viewSexualData.alcohol_drugs_ejaculation_effect,
-                      "Frequency Comparison to Past": viewSexualData.frequency_comparison_past,
-                      "Heterosexual/Homosexual Activity": viewSexualData.heterosexual_homosexual_activity,
-                      "Prepared By": viewSexualData.prepared_by,
-                      Signature: viewSexualData.signature,
+                        [getTranslation("Name/नाम",lang)]: viewSexualData.name,
+                        [getTranslation("Phone/फ़ोन", lang)]: viewSexualData.phone,
+                        [getTranslation("Gender/लिंग", lang)]: viewSexualData.gender,
+                        [getTranslation("Sexual Misconceptions/यौन भ्रांतियाँ", lang)]: viewSexualData.sex_misconceptions,
+                        [getTranslation("Sexual Games as Child/बचपन के यौन खेल", lang)]: viewSexualData.sexual_games_child,
+                        [getTranslation("Unpleasant Experiences/अप्रिय अनुभव", lang)]: viewSexualData.unpleasant_experiences,
+                        [getTranslation("Bad Attitude Toward Nudity/नग्नता के प्रति खराब रवैया", lang)]: viewSexualData.bad_attitude_nudity,
+                        [getTranslation("Age of First Sexual Activity/पहली यौन गतिविधि की आयु", lang)]: viewSexualData.age_first_sexual_activity,
+                        [getTranslation("Consensual Activity/सहमति से गतिविधि", lang)]: viewSexualData.consensual_activity,
+                        [getTranslation("Current Sexual Functioning/वर्तमान यौन कार्यप्रणाली", lang)]: viewSexualData.current_sexual_functioning,
+                        [getTranslation("Sexual Desire Type/यौन इच्छा का प्रकार", lang)]: viewSexualData.sex_desire_type,
+                        [getTranslation("Comfort with Sexual Identity/यौन पहचान के साथ आराम", lang)]: viewSexualData.sexual_identity_comfort,
+                        [getTranslation("Erotic Material Exposure/कामुक सामग्री का संपर्क", lang)]: viewSexualData.erotic_material_exposure,
+                        [getTranslation("Masturbation History/हस्तमैथुन का इतिहास", lang)]: viewSexualData.masturbation_history,
+                        [getTranslation("Masturbation Frequency (Years)/हस्तमैथुन आवृत्ति (वर्ष)", lang)]: viewSexualData.masturbation_frequency_years,
+                        [getTranslation("Intercourse Frequency/संभोग की आवृत्ति", lang)]: viewSexualData.intercourse_frequency,
+                        [getTranslation("Sex Importance in Marriage/विवाह में सेक्स का महत्व", lang)]: viewSexualData.sex_importance_marriage,
+                        [getTranslation("Tell Partner Preferences/साथी को पसंद बताना", lang)]: viewSexualData.tell_partner_preferences,
+                        [getTranslation("Masturbation After Marriage/विवाह के बाद हस्तमैथुन", lang)]: viewSexualData.masturbation_after_marriage,
+                        [getTranslation("Partner Sexual Problems/साथी की यौन समस्याएँ", lang)]: viewSexualData.partner_sexual_problems,
+                        [getTranslation("Extramarital Affairs/बाह्य संबंध", lang)]: viewSexualData.extramarital_affairs,
+                        [getTranslation("Coitus Outside Marriage/विवाह के बाहर संभोग", lang)]: viewSexualData.coitus_outside_marriage,
+                        [getTranslation("Thoughts About Women/महिलाओं के बारे में विचार", lang)]: viewSexualData.women_intercourse_thoughts,
+                        [getTranslation("External Aids Usage/बाहरी सहायक उपयोग", lang)]: viewSexualData.external_aids_usage,
+                        [getTranslation("Upsetting Experiences/परेशान करने वाले अनुभव", lang)]: viewSexualData.upsetting_experiences,
+                        [getTranslation("Sexual Desire Before Or After Substance/पदार्थ के सेवन से पहले या बाद में यौन इच्छा", lang)]: viewSexualData.sex_desire_before_after_substance,
+                        [getTranslation("Premature Ejaculation (Substance)/शीघ्रपतन (पदार्थ)", lang)]: viewSexualData.premature_ejaculation_substance,
+                        [getTranslation("Ejaculation Effect Or Alcohol Or Drugs /स्खलन प्रभाव या शराब या ड्रग्स", lang)]: viewSexualData.alcohol_drugs_ejaculation_effect,
+                        [getTranslation("Frequency Comparison to Past/अतीत से आवृत्ति तुलना", lang)]: viewSexualData.frequency_comparison_past,
+                        [getTranslation("Heterosexual Or Homosexual Activity/विषमलैंगिक या समलैंगिक गतिविधि", lang)]: viewSexualData.heterosexual_homosexual_activity,
+                        [getTranslation("Prepared By/द्वारा तैयार", lang)]: viewSexualData.prepared_by,                      
+                      [getTranslation("Signature/हस्ताक्षर",lang)]: viewSexualData.signature,
                     }).map(([key, value]) => (
                       <tr key={key}>
                         <td className="fw-bold">{key}</td>
@@ -1621,7 +1620,7 @@ function SexualDesire() {
                   </tbody>
                 </Table>
               ) : (
-                <p className="text-center text-danger">No data available.</p>
+                <p className="text-center text-danger">{getTranslation("No data available./कोई डेटा मौजूद नहीं।",lang)}</p>
               )}
           </div>
         )}
@@ -1633,8 +1632,8 @@ function SexualDesire() {
                 onClick={handleDownloadPDF}
               >
                 {pfaDownload
-                  ? "Your Sexual Desire is being downloaded.../ आपका CBT डाउनलोड हो रहा है..."
-                  : "Download Your View Sexual History / यौन इतिहास डाउनलोड करें"}
+                  ? getTranslation("Your Sexual Desire is being downloaded.../ आपकी यौन इच्छा डाउनलोड की जा रही है...",lang)
+                  : getTranslation("Download Your View Sexual History / यौन इतिहास डाउनलोड करें",lang)}
               </button>
             </div>
 
@@ -1648,7 +1647,7 @@ function SexualDesire() {
       {/* Update and submit Sexual desire from start  */}
       <CommonModal
         isOpen={editindividualModal}
-        title={`Edit/Update ${SexualHistory}`}
+        title={getTranslation(`Update ${SexualHistory}`,lang)}
         toggler={closeAllModal}
         maxWidth="1200px"
       >
@@ -1673,7 +1672,7 @@ function SexualDesire() {
                 <div className="col-md-6 mt-3">
                   <FormGroup className="form-group row">
                     <Label className="col-sm-12 col-form-label  col-xl-6">
-                      {dateOfAssessment}
+                      {getTranslation(dateOfAssessment,lang)}
                     </Label>
                     <Col xl="5" sm="12">
                       <div className="input-group">
@@ -1699,9 +1698,9 @@ function SexualDesire() {
                 <Table bordered>
                   <thead>
                     <tr>
-                      <th scope="col">{SexualHistoryID}</th>
-                      <th scope="col">{SexualHistoryquestion}</th>
-                      <th scope="col">{SexualHistoryanswer}</th>
+                      <th scope="col">{getTranslation(SexualHistoryID,lang)}</th>
+                      <th scope="col">{getTranslation(SexualHistoryquestion,lang)}</th>
+                      <th scope="col">{getTranslation(SexualHistoryanswer,lang)}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1709,7 +1708,7 @@ function SexualDesire() {
                       <tr key={q.key} className="border">
                         <td className="border px-4 py-2 text-center">{index + 1}</td>
                         <td className="border px-4 py-2">
-                          <strong>{q.en}</strong>
+                          <strong>{getTranslation(q.en,lang)}</strong>
                           <br />
                           <span className="text-gray-600">{q.hi}</span>
                         </td>
@@ -1753,11 +1752,11 @@ function SexualDesire() {
                       }
 
                     />
-                    {consent}
+                    {getTranslation(consent,lang)}
                   </Label>
                 </div>
                 <div className="col-md-12">
-                  <Label>{signature}</Label>
+                  <Label>{getTranslation(signature,lang)}</Label>
                   <Input type="text" className="form-control"
                     name="signature"
                     value={editindividualSDData?.signature}
@@ -1772,7 +1771,7 @@ function SexualDesire() {
 
                 <div className="col-md-12">
                   <br />
-                  <Label>{prepared}</Label>
+                  <Label>{getTranslation(prepared,lang)}</Label>
                   <Input type="text" className="form-control"
                     name="prepared"
                     value={editindividualSDData?.prepared}
@@ -1797,7 +1796,7 @@ function SexualDesire() {
                     aria-hidden="true"
                   ></span>
                 ) : (
-                  "Update Sexual Desire (CBT)"
+                  getTranslation("Update Sexual Desire Form/यौन इच्छा फ़ॉर्म अपडेट करें",lang)
                 )}
               </Button>
             </div>

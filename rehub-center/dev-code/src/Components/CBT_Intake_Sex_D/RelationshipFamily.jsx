@@ -275,7 +275,7 @@ function RelationshipFamily() {
               <span
                 onClick={() => handleIRFprefill(row.IRFrecentIds)}
                 style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
+                title={getTranslation("Readmission Relationship & Family Status Form/पुनः प्रवेश संबंध और पारिवारिक स्थिति प्रपत्र",lang)}
               >
                 ✏️
               </span>
@@ -321,7 +321,7 @@ function RelationshipFamily() {
       cursor: row.isIRFCompleted ? "not-allowed" : "pointer",
       opacity: row.isIRFCompleted ? 0.5 : 1,
     }}
-    title={row.isIRFCompleted ? "RF Completed" : "Create Relationship Family Form"}
+    title={row.isIRFCompleted ? getTranslation("RF Completed/आरएफ पूरा हुआ",lang) : getTranslation("Create Relationship Family Form/संबंध परिवार फ़ॉर्म बनाएँ",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -506,7 +506,7 @@ function RelationshipFamily() {
           <span
             onClick={() => viewIRFFormData(row.irf_id)}
             style={{ cursor: "pointer" }}
-            title="View"
+            title={getTranslation("View/देखना",lang)}
           >
             <svg
               style={{ color: "#d56337" }}
@@ -528,7 +528,7 @@ function RelationshipFamily() {
           <span
             onClick={() => handleIRFIndividualEdit(row.irf_id)}
             style={{ cursor: "pointer", marginLeft: "10px" }}
-            title="Edit"
+            title={getTranslation("Edit/संपादन करना",lang)}
           >
             <svg
               style={{ color: "green" }}
@@ -882,8 +882,8 @@ function RelationshipFamily() {
 
       Swal.fire({
         icon: "success",
-        title: "IRF Created Successfully",
-        text: "The IRF assessment was submitted successfully.",
+        title: getTranslation("IRF Created Successfully/IRF सफलतापूर्वक बनाया गया",lang),
+        text: getTranslation("The IRF assessment was submitted successfully./आईआरएफ मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
       }).then(() => setIsIRFModalOpen(false));
 
       console.log("✅ IRF Data:", data);
@@ -893,8 +893,8 @@ function RelationshipFamily() {
 
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Failed to submit IRF. Check console for error.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Failed to submit IRF. Check console for error./IRF सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   };
@@ -1157,8 +1157,8 @@ const handleIRFUpdate = async () => {
 
     Swal.fire({
       icon: "success",
-      title: "IRF Update Successful!",
-      text: "IRF assessment has been updated successfully!",
+      title: getTranslation("IRF Update Successful!/आईआरएफ अपडेट सफल!",lang),
+      text: getTranslation("IRF assessment has been updated successfully!/आईआरएफ मूल्यांकन सफलतापूर्वक अद्यतन किया गया है!",lang),
     }).then(() => {
       setIRFEditModal(false); // ✅ Close modal after success
     });
@@ -1168,8 +1168,8 @@ const handleIRFUpdate = async () => {
 
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to update IRF assessment. Check console for details.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to update IRF assessment. Check console for details./Failed to update IRF assessment. Check console for details.",lang),
     });
   }
 };
@@ -1189,8 +1189,8 @@ const handleIRFprefill = async (prefillIRFID = null) => {
   if (!prefillIRFID) {
     Swal.fire({
       icon: "warning",
-      title: "Missing IRF ID",
-      text: "No valid IRF ID was provided for prefill.",
+      title: getTranslation("Missing IRF ID/गुम IRF ID",lang),
+      text: getTranslation("No valid IRF ID was provided for prefill./प्रीफिल के लिए कोई वैध IRF ID प्रदान नहीं की गई।",lang),
     });
     return;
   }
@@ -1227,8 +1227,8 @@ const handleIRFprefill = async (prefillIRFID = null) => {
     if (!latestAssessment) {
       Swal.fire({
         icon: "info",
-        title: "No Data Found",
-        text: "No IRF data available for this ID.",
+        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
+        text: getTranslation("No IRF data available for this ID./इस आईडी के लिए कोई IRF डेटा उपलब्ध नहीं है।",lang),
       });
       return;
     }
@@ -1290,8 +1290,8 @@ const handleIRFprefill = async (prefillIRFID = null) => {
     console.error("Prefill fetch error:", error);
     Swal.fire({
       icon: "error",
-      title: "Network Error",
-      text: "Unable to fetch IRF data due to a network issue.",
+      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
+      text: getTranslation("Unable to fetch IRF data due to a network issue./नेटवर्क समस्या के कारण IRF डेटा प्राप्त करने में असमर्थ।",lang),
     });
   }
 };
@@ -1372,8 +1372,8 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
     Swal.fire({
       icon: "success",
-      title: "IRF Created Successfully",
-      text: "The IRF assessment was submitted successfully.",
+      title: getTranslation("IRF Created Successfully/IRF सफलतापूर्वक बनाया गया",lang),
+      text: getTranslation("The IRF assessment was submitted successfully./आईआरएफ मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
     }).then(() => setIsIRFModalOpen(false));
 
     console.log("✅ IRF Data:", data);
@@ -1383,8 +1383,8 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to submit IRF. Check console for error.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to submit IRF. Check console for error./IRF सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };
@@ -1450,7 +1450,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1472,7 +1472,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                     {getTranslation(" Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1515,7 +1515,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All Relationship & Family Status Patient Data List" className="p-0" />
+                    <HeaderCard title={getTranslation("All Relationship & Family Status Patient Data List/सभी संबंध और पारिवारिक स्थिति रोगी डेटा सूची",lang)} className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -1535,7 +1535,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1571,17 +1571,17 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
       {/* IRF create form start */}
       <CommonModal
         isOpen={isIRFModalOpen}
-        title={`Create ${relationshipFamilyStatus}`}
+        title={getTranslation(`Create ${relationshipFamilyStatus}`,lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
-            name: "Patient name/प्रयासक का नाम :",
-            sex: "Gender/प्रयासक का लिंग :",
-            age: "Age/प्रयासक का उम्र :",
-            date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+            name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+            sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+            age: getTranslation("Age/प्रयासक का उम्र :",lang),
+            date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
             ageValue: patientCalAge,
           }}
         />
@@ -1590,7 +1590,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
             <div className="row">
               <div class="col-md-12 mb-3">
                 <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {dateOfAssessment}
+                  {getTranslation(dateOfAssessment,lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -1607,7 +1607,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
               {/* Relationship Status */}
               <div className="col-md-6">
-                <Label htmlFor="marital_status">{relationshipStatus}</Label>
+                <Label htmlFor="marital_status">{getTranslation(relationshipStatus,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1621,7 +1621,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               {/* Marriage Arrangement */}
               <div className="col-md-6">
                 <FormGroup className="mb-0">
-                  <Label>{MarriageArrangement}</Label>
+                  <Label>{getTranslation(MarriageArrangement,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -1636,7 +1636,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               {/* After Marriage Life */}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{afterMerriageLife}</Label>
+                  <Label>{getTranslation(afterMerriageLife,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -1654,12 +1654,12 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   <Table bordered>
                     <thead>
                       <tr>
-                        <th scope="col">{nameisThere}</th>
-                        <th scope="col">{relationisThere}</th>
-                        <th scope="col">{relationisAge}</th>
-                        <th scope="col">{livingStatus}</th>
-                        <th scope="col">{AnyPhysicalDisorder}</th>
-                        <th scope="col">{cheifAction}</th>
+                        <th scope="col">{getTranslation(nameisThere,lang)}</th>
+                        <th scope="col">{getTranslation(relationisThere,lang)}</th>
+                        <th scope="col">{getTranslation(relationisAge,lang)}</th>
+                        <th scope="col">{getTranslation(livingStatus,lang)}</th>
+                        <th scope="col">{getTranslation(AnyPhysicalDisorder,lang)}</th>
+                        <th scope="col">{getTranslation(cheifAction,lang)}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1727,7 +1727,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                                 className="btn btn-danger"
                                 onClick={() => removeInterferenceRow(index)}
                               >
-                                Remove
+                                {getTranslation("Remove/निकालना",lang)}
                               </Button>
                             )}
                           </td>
@@ -1741,12 +1741,12 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                     className="btn btn-secondary mt-4 mb-3"
                     onClick={addInterferenceRow}
                   >
-                    + Add More
+                    {getTranslation("+ Add More/+ और जोड़ें",lang)}
                   </Button>
                 </div>
 
                 <FormGroup className="mb-0">
-                  <Label>{ifAnyDisorder}</Label>
+                  <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -1761,26 +1761,26 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                
               <div className="col-md-12 mb-4">
                 <div className="table-responsive">
-                  <p className="mt-3 mb-3">{familyHistorySubstanceAbuse}</p>
+                  <p className="mt-3 mb-3">{getTranslation(familyHistorySubstanceAbuse,lang)}</p>
 
                   <Table bordered>
                     <thead>
                       <tr>
-                        <th>Mother Side</th>
-                        <th>Alcohol</th>
-                        <th>substance</th>
-                        <th>Psych</th>
-                        <th>Father Side</th>
-                        <th>Alcohol</th>
-                        <th>substance</th>
-                        <th>Psych</th>
+                        <th>{getTranslation("Mother Side/मातृ पक्ष",lang)}</th>
+                        <th>{getTranslation("Alcohol/शराब",lang)}</th>
+                        <th>{getTranslation("substance/पदार्थ",lang)}</th>
+                        <th>{getTranslation("Psych/साइक",lang)}</th>
+                        <th>{getTranslation("Father Side/पिता पक्ष",lang)}</th>
+                        <th>{getTranslation("Alcohol/शराब",lang)}</th>
+                        <th>{getTranslation("substance/पदार्थ",lang)}</th>
+                        <th>{getTranslation("Psych/साइक",lang)}</th>
                       </tr>
                     </thead>
 
                     <tbody>
                       {/* Grandmother */}
                       <tr>
-                        <td>Grandmother</td>
+                        <td>{getTranslation("Grandmother/दादी",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -1836,7 +1836,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                           />
                         </td>
 
-                        <td>Grandmother</td>
+                        <td>{getTranslation("Grandmother/दादी",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -1895,7 +1895,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
                       {/* Grandfather */}
                       <tr>
-                        <td>Grandfather</td>
+                        <td>{getTranslation("Grandfather/दादाजी",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -1951,7 +1951,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                           />
                         </td>
 
-                        <td>Grandfather</td>
+                        <td>{getTranslation("Grandfather/दादाजी",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -2010,7 +2010,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
                       {/* Mother / Father */}
                       <tr>
-                        <td>Mother</td>
+                        <td>{getTranslation("Mother/माँ",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -2066,7 +2066,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                           />
                         </td>
 
-                        <td>Father</td>
+                        <td>{getTranslation("Father/पिता",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -2125,7 +2125,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
                       {/* Aunt */}
                       <tr>
-                        <td>Aunt / मामी</td>
+                        <td>{getTranslation("Aunt / मामी",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -2181,7 +2181,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                           />
                         </td>
 
-                        <td>Aunt / चाची</td>
+                        <td>{getTranslation("Aunt / चाची",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -2240,7 +2240,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
                       {/* Uncle */}
                       <tr>
-                        <td>Uncle / मामा</td>
+                        <td>{getTranslation("Uncle / मामा",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -2296,7 +2296,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                           />
                         </td>
 
-                        <td>Uncle / चाचा</td>
+                        <td>{getTranslation("Uncle / चाचा",lang)}</td>
                         <td>
                           <Input
                             type="checkbox"
@@ -2356,7 +2356,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                       {/* Any Other */}
                       <tr>
                         {/* Mother side */}
-                        <td>{anyOtherPlsMention}</td>
+                        <td>{getTranslation(anyOtherPlsMention,lang)}</td>
                         <td colSpan={3}>
                           <Input
                             type="text"
@@ -2371,7 +2371,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                         </td>
 
                         {/* Father side */}
-                        <td>{anyOtherPlsMention}</td>
+                        <td>{getTranslation(anyOtherPlsMention,lang)}</td>
                         <td colSpan={3}>
                           <Input
                             type="text"
@@ -2393,7 +2393,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
               {/* Psychological Problem */}
               <div className="col-md-12 mt-3">
-                <Label>{anyOtherPlsMention1}</Label>
+                <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -2406,7 +2406,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
               {/* Current Status */}
               <div className="col-md-12 mt-3 mb-3">
-                <Label>{currentStatus}</Label>
+                <Label>{getTranslation(currentStatus,lang)}</Label>
                 <Input
                   type="text"
                   name="current_status"
@@ -2419,7 +2419,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               {/* Relationship with User */}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{howWasBonding}</Label>
+                  <Label>{getTranslation(howWasBonding,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -2434,7 +2434,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               {/* Family Behavior */}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{familyBehaviorPatient}</Label>
+                  <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -2449,7 +2449,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               {/* Head of Family */}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{monitoringFamily}</Label>
+                  <Label>{getTranslation(monitoringFamily,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -2464,7 +2464,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               {/* Relationships with Family */}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{ralationshipFamilyMember}</Label>
+                  <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -2486,7 +2486,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                       aria-hidden="true"
                     ></span>
                   ) : (
-                    "Submit Relationship & Family Status / रिश्ते और पारिवारिक स्थिति"
+                    getTranslation("Submit Relationship & Family Status / रिश्ते और पारिवारिक स्थिति",lang)
                   )}
                 </Button>
               </div>
@@ -2499,7 +2499,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
       {/* View IRF form data start */}
       <CommonModal
         isOpen={viewIRFModal}
-        title={`View ${relationshipFamilyStatus}`}
+        title={getTranslation(`View ${relationshipFamilyStatus}`,lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
@@ -2511,7 +2511,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               padding: "20px 0",
             }}
           >
-            {relationshipFamilyStatus}
+            {getTranslation(relationshipFamilyStatus,lang)}
           </h4>
 
           <Table size="sm" className="table-auto table-bordered">
@@ -2530,27 +2530,27 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                 <>
                   {/* User Info */}
                   <tr>
-                    <th className="text-start p-3">Name</th>
+                    <th className="text-start p-3">{getTranslation("Name/नाम",lang)}</th>
                     <td className="border p-3">{viewIRFData.name}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Relative Name</th>
+                    <th className="text-start p-3">{getTranslation("Relative Name/रिश्तेदार का नाम",lang)}</th>
                     <td className="border p-3">{viewIRFData.relative_name}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Gender</th>
+                    <th className="text-start p-3">{getTranslation("Gender/लिंग",lang)}</th>
                     <td className="border p-3">{viewIRFData.gender}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Phone</th>
+                    <th className="text-start p-3">{getTranslation("Phone/फ़ोन",lang)}</th>
                     <td className="border p-3">{viewIRFData.phone}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Email</th>
+                    <th className="text-start p-3">{getTranslation("Email/ईमेल",lang)}</th>
                     <td className="border p-3">{viewIRFData.email}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Date of Birth</th>
+                    <th className="text-start p-3">{getTranslation("Date of Birth/जन्म तिथि",lang)}</th>
                     <td className="border p-3">
                       {viewIRFData.dob
                         ? new Date(viewIRFData.dob).toLocaleDateString()
@@ -2560,7 +2560,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
                   {/* Admission Details */}
                   <tr>
-                    <th className="text-start p-3">Admit Date</th>
+                    <th className="text-start p-3">{getTranslation("Admit Date/प्रवेश तिथि",lang)}</th>
                     <td className="border p-3">
                       {viewIRFData.admit_date
                         ? new Date(viewIRFData.admit_date).toLocaleDateString()
@@ -2568,17 +2568,17 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Ward Name</th>
+                    <th className="text-start p-3">{getTranslation("Ward Name/वार्ड का नाम",lang)}</th>
                     <td className="border p-3">{viewIRFData.ward_name}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Visit No</th>
+                    <th className="text-start p-3">{getTranslation("Visit No/विज़िट नं.",lang)}</th>
                     <td className="border p-3">{viewIRFData.visit_no}</td>
                   </tr>
 
                   {/* Assessment */}
                   <tr>
-                    <th className="text-start p-3">Assessment Date</th>
+                    <th className="text-start p-3">{getTranslation("Assessment Date/मूल्यांकन तिथि",lang)}</th>
                     <td className="border p-3">
                       {viewIRFData.date_of_assessment
                         ? new Date(
@@ -2588,19 +2588,19 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Relationship Status</th>
+                    <th className="text-start p-3">{getTranslation("Relationship Status/रिश्ते की स्थिति",lang)}</th>
                     <td className="border p-3">
                       {viewIRFData.relationship_status}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Marriage Arrangement</th>
+                    <th className="text-start p-3">{getTranslation("Marriage Arrangement/विवाह व्यवस्था",lang)}</th>
                     <td className="border p-3">
                       {viewIRFData.marriage_arrangement}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">After Marriage Status</th>
+                    <th className="text-start p-3">{getTranslation("After Marriage Status/शादी के बाद की स्थिति",lang)}</th>
                     <td className="border p-3">
                       {viewIRFData.after_marriage_status}
                     </td>
@@ -2608,17 +2608,17 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
                   {/* Family Members */}
                   <tr>
-                    <th className="text-start p-3">Family Members</th>
+                    <th className="text-start p-3">{getTranslation("Family Members/परिवार के सदस्य",lang)}</th>
                     <td className="border p-3">
                       {viewIRFData.family_members?.length > 0 ? (
                         <Table size="sm" bordered>
                           <thead>
                             <tr>
-                              <th>Name</th>
-                              <th>Relation</th>
-                              <th>Age</th>
-                              <th>Living Status</th>
-                              <th>Physical Disorder</th>
+                              <th>{getTranslation("Name/नाम",lang)}</th>
+                              <th>{getTranslation("Relation/रिश्ता",lang)}</th>
+                              <th>{getTranslation("Age/आयु",lang)}</th>
+                              <th>{getTranslation("Living Status/जीवन स्तर",lang)}</th>
+                              <th>{getTranslation("Physical Disorder/शारीरिक विकार",lang)}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -2634,7 +2634,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                           </tbody>
                         </Table>
                       ) : (
-                        "No Family Members"
+                        getTranslation("No Family Members/कोई पारिवारिक सदस्य नहीं",lang)
                       )}
                     </td>
                   </tr>
@@ -2642,16 +2642,16 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   {/* Family History */}
                   <tr>
                     <th className="text-start p-3">
-                      Family History (Father Side)
+                     {getTranslation(" Family History (Father Side)/पारिवारिक इतिहास (पिता पक्ष)",lang)}
                     </th>
                     <td className="border p-3">
                       <Table size="sm" bordered>
                         <thead>
                           <tr>
-                            <th>Member</th>
-                            <th>Alcohol</th>
-                            <th>Substance</th>
-                            <th>Psych</th>
+                            <th>{getTranslation("Member/सदस्य",lang)}</th>
+                            <th>{getTranslation("Alcohol/शराब",lang)}</th>
+                            <th>{getTranslation("Substance/पदार्थ",lang)}</th>
+                            <th>{getTranslation("Psych/साइक",lang)}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2672,16 +2672,16 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Family History (Mother Side)
+                      {getTranslation("Family History (Mother Side)/पारिवारिक इतिहास (मातृ पक्ष)",lang)}
                     </th>
                     <td className="border p-3">
                       <Table size="sm" bordered>
                         <thead>
                           <tr>
-                            <th>Member</th>
-                            <th>Alcohol</th>
-                            <th>Substance</th>
-                            <th>Psych</th>
+                            <th>{getTranslation("Member/सदस्य",lang)}</th>
+                            <th>{getTranslation("Alcohol/शराब",lang)}</th>
+                            <th>{getTranslation("Substance/पदार्थ",lang)}</th>
+                            <th>{getTranslation("Psych/साइक",lang)}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2703,12 +2703,12 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
                   {/* Other Info */}
                   <tr>
-                    <th className="text-start p-3">Disorder Description</th>
+                    <th className="text-start p-3">{getTranslation("Disorder Description/विकार विवरण",lang)}</th>
                     <td className="border p-3">{viewIRFData.disorder_desc}</td>
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Psych Problem Description
+                      {getTranslation("Psych Problem Description/मनोवैज्ञानिक समस्या का विवरण",lang)}
                     </th>
                     <td className="border p-3">
                       {viewIRFData.psych_problem_desc}
@@ -2716,7 +2716,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Any Other Father Side Mention
+                      {getTranslation("Any Other Father Side Mention/पिता पक्ष का कोई अन्य उल्लेख",lang)}
                     </th>
                     <td className="border p-3">
                       {viewIRFData.any_other_father_side_mention}
@@ -2724,7 +2724,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Any Other Mother Side Mention
+                      {getTranslation("Any Other Mother Side Mention/माँ की ओर से कोई अन्य उल्लेख",lang)}
                     </th>
                     <td className="border p-3">
                       {viewIRFData.any_other_mother_side_mention}
@@ -2733,12 +2733,12 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
                   {/* Current Status */}
                   <tr>
-                    <th className="text-start p-3">Current Status</th>
+                    <th className="text-start p-3">{getTranslation("Current Status/वर्तमान स्थिति",lang)}</th>
                     <td className="border p-3">{viewIRFData.current_status}</td>
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Bonding Relation with User
+                     {getTranslation(" Bonding Relation with User/उपयोगकर्ता के साथ संबंध बनाना",lang)}
                     </th>
                     <td className="border p-3">
                       {viewIRFData.bonding_relation_with_user}
@@ -2746,18 +2746,18 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   </tr>
                   <tr>
                     <th className="text-start p-3">
-                      Family Behavior with Patient
+                     {getTranslation(" Family Behavior with Patient/रोगी के साथ पारिवारिक व्यवहार",lang)}
                     </th>
                     <td className="border p-3">
                       {viewIRFData.family_behavior_with_patient}
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Head of Family</th>
+                    <th className="text-start p-3">{getTranslation("Head of Family/परिवार का मुखिया",lang)}</th>
                     <td className="border p-3">{viewIRFData.head_of_family}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Family Relationships</th>
+                    <th className="text-start p-3">{getTranslation("Family Relationships/पारिवारिक रिश्ते",lang)}</th>
                     <td className="border p-3">
                       {viewIRFData.family_relationships}
                     </td>
@@ -2765,11 +2765,11 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
                   {/* Meta */}
                   <tr>
-                    <th className="text-start p-3">Status</th>
+                    <th className="text-start p-3">{getTranslation("Status/स्थिति",lang)}</th>
                     <td className="border p-3">{viewIRFData.status}</td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Created At</th>
+                    <th className="text-start p-3">{getTranslation("Created At/बनाया गया",lang)}</th>
                     <td className="border p-3">
                       {viewIRFData.created_at
                         ? new Date(viewIRFData.created_at).toLocaleString()
@@ -2777,7 +2777,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                     </td>
                   </tr>
                   <tr>
-                    <th className="text-start p-3">Updated At</th>
+                    <th className="text-start p-3">{getTranslation("Updated At/अपडेट किया गया",lang)}</th>
                     <td className="border p-3">
                       {viewIRFData.updated_at
                         ? new Date(viewIRFData.updated_at).toLocaleString()
@@ -2788,7 +2788,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               ) : (
                 <tr>
                   <td colSpan="2" className="text-center">
-                    No data available
+                   {getTranslation(" No data available/कोई डेटा मौजूद नहीं",lang)}
                   </td>
                 </tr>
               )}
@@ -2804,8 +2804,8 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
             onClick={handleDownloadPDF}
           >
             {pfaDownload
-              ? "Your IRF Report is being downloaded.../ आपका IRF डाउनलोड हो रहा है..."
-              : "Download IRF Report"}
+              ? getTranslation("Your IRF Report is being downloaded.../ आपका IRF डाउनलोड हो रहा है...",lang)
+              : getTranslation("Download IRF Report/आईआरएफ रिपोर्ट डाउनलोड करें",lang)}
           </button>
         </div>
       </CommonModal>
@@ -2814,7 +2814,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
       {/* IRF edit form start */}
       <CommonModal
         isOpen={IRFEditModal}
-        title={`Edit ${relationshipFamilyStatus}`}
+        title={getTranslation(`Edit ${relationshipFamilyStatus}`,lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
@@ -2828,7 +2828,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Date of Assessment */}
     <div className="col-md-12 mb-3">
       <Label className="col-sm-12 col-form-label col-xl-6">
-        {dateOfAssessment}
+        {getTranslation(dateOfAssessment,lang)}
       </Label>
       <Col xl="5" sm="12">
         <div className="input-group">
@@ -2845,7 +2845,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
     {/* Relationship Status */}
     <div className="col-md-6">
-      <Label>{relationshipStatus}</Label>
+      <Label>{getTranslation(relationshipStatus,lang)}</Label>
       <Input
         type="textarea"
         rows="3"
@@ -2862,7 +2862,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Marriage Arrangement */}
     <div className="col-md-6">
       <FormGroup className="mb-0">
-        <Label>{MarriageArrangement}</Label>
+        <Label>{getTranslation(MarriageArrangement,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -2880,7 +2880,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* After Marriage Life */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{afterMerriageLife}</Label>
+        <Label>{getTranslation(afterMerriageLife,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -2901,12 +2901,12 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         <Table bordered>
           <thead>
             <tr>
-              <th>{nameisThere}</th>
-              <th>{relationisThere}</th>
-              <th>{relationisAge}</th>
-              <th>{livingStatus}</th>
-              <th>{AnyPhysicalDisorder}</th>
-              <th>{cheifAction}</th>
+              <th>{getTranslation(nameisThere,lang)}</th>
+              <th>{getTranslation(relationisThere,lang)}</th>
+              <th>{getTranslation(relationisAge,lang)}</th>
+              <th>{getTranslation(livingStatus,lang)}</th>
+              <th>{getTranslation(AnyPhysicalDisorder,lang)}</th>
+              <th>{getTranslation(cheifAction,lang)}</th>
             </tr>
           </thead>
           <tbody>
@@ -2941,7 +2941,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                         }));
                       }}
                     >
-                      Remove
+                      {getTranslation("Remove/निकालना",lang)}
                     </Button>
                   )}
                 </td>
@@ -2962,12 +2962,12 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
             }))
           }
         >
-          + Add More
+         {getTranslation("+ Add More/+ और जोड़ें",lang)}
         </Button>
       </div>
 
       <FormGroup className="mb-0">
-        <Label>{ifAnyDisorder}</Label>
+      <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -2982,18 +2982,18 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Family History Substance Abuse */}
     <div className="col-md-12 mb-4">
       <div className="table-responsive">
-        <p className="mt-3 mb-3">{familyHistorySubstanceAbuse}</p>
+        <p className="mt-3 mb-3">{getTranslation(familyHistorySubstanceAbuse,lang)}</p>
         <Table bordered>
           <thead>
             <tr>
-              <th>Mother Side</th>
-              <th>Alcohol</th>
-              <th>substance</th>
-              <th>Psych</th>
-              <th>Father Side</th>
-              <th>Alcohol</th>
-              <th>substance</th>
-              <th>Psych</th>
+            <th>{getTranslation("Mother Side/मातृ पक्ष",lang)}</th>
+            <th>{getTranslation("Alcohol/शराब",lang)}</th>
+            <th>{getTranslation("substance/पदार्थ",lang)}</th>
+            <th>{getTranslation("Psych/साइक",lang)}</th>
+            <th>{getTranslation("Father Side/पिता पक्ष",lang)}</th>
+            <th>{getTranslation("Alcohol/शराब",lang)}</th>
+            <th>{getTranslation("substance/पदार्थ",lang)}</th>
+            <th>{getTranslation("Psych/साइक",lang)}</th>
             </tr>
           </thead>
           <tbody>
@@ -3057,7 +3057,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
   {/* Any Other */}
   <tr>
     {/* Mother side */}
-    <td>{anyOtherPlsMention}</td>
+    <td>{getTranslation(anyOtherPlsMention,lang)}</td>
     <td colSpan={3}>
       <Input
         type="text"
@@ -3072,7 +3072,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     </td>
 
     {/* Father side */}
-    <td>{anyOtherPlsMention}</td>
+    <td>{getTranslation(anyOtherPlsMention,lang)}</td>
     <td colSpan={3}>
       <Input
         type="text"
@@ -3096,7 +3096,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
     {/* Psychological Problem */}
     <div className="col-md-12 mt-3">
-      <Label>{anyOtherPlsMention1}</Label>
+      <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
       <Input
         type="textarea"
         rows="3"
@@ -3109,7 +3109,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
     {/* Current Status */}
     <div className="col-md-12 mt-3 mb-3">
-      <Label>{currentStatus}</Label>
+      <Label>{getTranslation(currentStatus,lang)}</Label>
       <Input
         type="text"
         value={IRFEditData?.current_status || ""}
@@ -3122,7 +3122,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Relationship with User */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{howWasBonding}</Label>
+        <Label>{getTranslation(howWasBonding,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -3140,7 +3140,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Family Behavior */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{familyBehaviorPatient}</Label>
+        <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -3158,7 +3158,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Head of Family */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{monitoringFamily}</Label>
+        <Label>{getTranslation(monitoringFamily,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -3173,7 +3173,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Relationships with Family */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{ralationshipFamilyMember}</Label>
+        <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -3194,7 +3194,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         {isLoading ? (
           <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
         ) : (
-          "Submit Relationship & Family Status / रिश्ते और पारिवारिक स्थिति"
+          getTranslation("Submit Relationship & Family Status / रिश्ते और पारिवारिक स्थिति",lang)
         )}
       </Button>
     </div>
@@ -3212,7 +3212,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
        {/* IRF Prefill form start */}
 <CommonModal
   isOpen={IRFPrefillModal}
-  title={`Readmission ${relationshipFamilyStatus}`}
+  title={getTranslation(`Readmission ${relationshipFamilyStatus}`,lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -3224,7 +3224,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         {/* Date of Assessment */}
         <div className="col-md-12 mb-3">
           <Label className="col-sm-12 col-form-label col-xl-6">
-            {dateOfAssessment}
+            {getTranslation(dateOfAssessment,lang)}
           </Label>
           <Col xl="5" sm="12">
             <div className="input-group">
@@ -3244,7 +3244,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
         {/* Relationship Status */}
         <div className="col-md-6">
-          <Label>{relationshipStatus}</Label>
+          <Label>{getTranslation(relationshipStatus,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -3261,7 +3261,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         {/* Marriage Arrangement */}
         <div className="col-md-6">
           <FormGroup className="mb-0">
-            <Label>{MarriageArrangement}</Label>
+            <Label>{getTranslation(MarriageArrangement,lang)}</Label>
             <Input
               type="textarea"
               rows="3"
@@ -3279,7 +3279,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         {/* After Marriage Life */}
         <div className="col-md-12">
           <FormGroup className="mb-0">
-            <Label>{afterMerriageLife}</Label>
+            <Label>{getTranslation(afterMerriageLife,lang)}</Label>
             <Input
               type="textarea"
               rows="3"
@@ -3300,12 +3300,12 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
             <Table bordered>
               <thead>
                 <tr>
-                  <th>{nameisThere}</th>
-                  <th>{relationisThere}</th>
-                  <th>{relationisAge}</th>
-                  <th>{livingStatus}</th>
-                  <th>{AnyPhysicalDisorder}</th>
-                  <th>{cheifAction}</th>
+                <th scope="col">{getTranslation(nameisThere,lang)}</th>
+                <th scope="col">{getTranslation(relationisThere,lang)}</th>
+                <th scope="col">{getTranslation(relationisAge,lang)}</th>
+                <th scope="col">{getTranslation(livingStatus,lang)}</th>
+                <th scope="col">{getTranslation(AnyPhysicalDisorder,lang)}</th>
+                <th scope="col">{getTranslation(cheifAction,lang)}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3351,7 +3351,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                             }));
                           }}
                         >
-                          Remove
+                          {getTranslation("Remove/निकालना",lang)}
                         </Button>
                       )}
                     </td>
@@ -3378,14 +3378,14 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                 }))
               }
             >
-              + Add More
+              {getTranslation("+ Add More/+ और जोड़ें",lang)}
             </Button>
           </div>
         </div>
 
         {/* ...apply same pattern for rest of fields... */}
         <FormGroup className="mb-0">
-        <Label>{ifAnyDisorder}</Label>
+        <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -3400,18 +3400,18 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
       {/* Family History Substance Abuse */}
     <div className="col-md-12 mb-4">
       <div className="table-responsive">
-        <p className="mt-3 mb-3">{familyHistorySubstanceAbuse}</p>
+        <p className="mt-3 mb-3">{getTranslation(familyHistorySubstanceAbuse,lang)}</p>
         <Table bordered>
           <thead>
             <tr>
-              <th>Mother Side</th>
-              <th>Alcohol</th>
-              <th>substance</th>
-              <th>Psych</th>
-              <th>Father Side</th>
-              <th>Alcohol</th>
-              <th>substance</th>
-              <th>Psych</th>
+            <th>{getTranslation("Mother Side/मातृ पक्ष",lang)}</th>
+            <th>{getTranslation("Alcohol/शराब",lang)}</th>
+            <th>{getTranslation("substance/पदार्थ",lang)}</th>
+            <th>{getTranslation("Psych/साइक",lang)}</th>
+            <th>{getTranslation("Father Side/पिता पक्ष",lang)}</th>
+            <th>{getTranslation("Alcohol/शराब",lang)}</th>
+            <th>{getTranslation("substance/पदार्थ",lang)}</th>
+            <th>{getTranslation("Psych/साइक",lang)}</th>
             </tr>
           </thead>
           <tbody>
@@ -3475,7 +3475,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
   {/* Any Other */}
   <tr>
     {/* Mother side */}
-    <td>{anyOtherPlsMention}</td>
+    <td>{getTranslation(anyOtherPlsMention,lang)}</td>
     <td colSpan={3}>
       <Input
         type="text"
@@ -3490,7 +3490,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     </td>
 
     {/* Father side */}
-    <td>{anyOtherPlsMention}</td>
+    <td>{getTranslation(anyOtherPlsMention,lang)}</td>
     <td colSpan={3}>
       <Input
         type="text"
@@ -3516,7 +3516,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
      {/* Psychological Problem */}
      <div className="col-md-12 mt-3">
-      <Label>{anyOtherPlsMention1}</Label>
+      <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
       <Input
         type="textarea"
         rows="3"
@@ -3529,7 +3529,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
     {/* Current Status */}
     <div className="col-md-12 mt-3 mb-3">
-      <Label>{currentStatus}</Label>
+      <Label>{getTranslation(currentStatus,lang)}</Label>
       <Input
         type="text"
         value={IRFPrefillData?.current_status || ""}
@@ -3542,7 +3542,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Relationship with User */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{howWasBonding}</Label>
+        <Label>{getTranslation(howWasBonding,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -3560,7 +3560,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Family Behavior */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{familyBehaviorPatient}</Label>
+        <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -3578,7 +3578,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Head of Family */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{monitoringFamily}</Label>
+        <Label>{getTranslation(monitoringFamily,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -3593,7 +3593,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Relationships with Family */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{ralationshipFamilyMember}</Label>
+        <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
         <Input
           type="textarea"
           rows="3"
@@ -3618,7 +3618,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                 aria-hidden="true"
               ></span>
             ) : (
-              "Readmission Relationship & Family Status / रिश्ते और पारिवारिक स्थिति"
+              getTranslation("Readmission Relationship & Family Status / रिश्ते और पारिवारिक स्थिति",lang)
             )}
           </Button>
         </div>

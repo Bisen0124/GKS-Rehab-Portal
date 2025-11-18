@@ -221,11 +221,11 @@ function CBT() {
 
             let isCBTCompleted = false;
 
-          let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
+          let userStatus = <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>;
 
           if (admitDate && CBTDate && admitDate > CBTDate) {
             isCBTCompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           // const dischargeStatusText = user.discharge_status_text || "Unknown";
@@ -303,7 +303,7 @@ function CBT() {
               <span
               onClick={() => handleCBTPreFill(row.recent_cbt_id)}
               style={{ cursor: "pointer" }}
-              title="Readmission FDA Form"
+              title={getTranslation("Readmission CBT Form/पुनः प्रवेश सीबीटी फॉर्म",lang)}
               >
                 ✏️
               </span>
@@ -341,7 +341,7 @@ function CBT() {
       cursor: row.isCBTCompleted ? "not-allowed" : "pointer",
       opacity: row.isCBTCompleted ? 0.5 : 1,
     }}
-    title={row.isCBTCompleted ? "CBT Completed" : "Create CBT"}
+    title={row.isCBTCompleted ? getTranslation("CBT Completed/सीबीटी पूरा हुआ",lang) : getTranslation("Create CBT/सीबीटी बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -415,9 +415,9 @@ function CBT() {
           const admitDate = entry.admit_date ? new Date(entry.admit_date) : null;
           const CBTDate = entry.date_of_assessment ? new Date(entry.date_of_assessment) : null;
 
-          let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
+          let userStatus = <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>;
           if (admitDate && CBTDate && admitDate < CBTDate) {
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           const dischargeStatusText = entry.discharge_status === 1 ? "Discharged" : "Not Discharged";
@@ -696,8 +696,8 @@ function CBT() {
       if (response.ok) {
         Swal.fire({
           icon: "success",
-          title: "CBT Assessment Success!",
-          text: "CBT Assessment submitted successfully",
+          title: getTranslation("CBT Assessment Success!/सीबीटी मूल्यांकन सफल!",lang),
+          text: getTranslation("CBT Assessment submitted successfully/CBT मूल्यांकन सफलतापूर्वक सबमिट किया गया",lang),
         }).then(() => {
           // This runs after the user clicks "OK"
           setModal(false);
@@ -707,8 +707,8 @@ function CBT() {
         setIsLoading(false);
         Swal.fire({
           icon: "error",
-          title: "Error submitting CBT!",
-          text: "Error submitting CBT Assessment",
+          title: getTranslation("Error submitting CBT!/सीबीटी सबमिट करने में त्रुटि!",lang),
+          text: getTranslation("Error submitting CBT Assessment/CBT मूल्यांकन सबमिट करने में त्रुटि",lang),
         });
         console.error("CBT Error:", result);
 
@@ -874,16 +874,16 @@ function CBT() {
       if (response.ok) {
         Swal.fire({
           icon: "success",
-          title: "CBT Readmission Assessment Success!",
-          text: "CBT Readmission Assessment Created successfully",
+          title: getTranslation("CBT Readmission Assessment Success!/सीबीटी पुनः प्रवेश मूल्यांकन सफल!",lang),
+          text: getTranslation("CBT Readmission Assessment Created successfully/CBT पुनः प्रवेश मूल्यांकन सफलतापूर्वक बनाया गया",lang),
         }).then(() => {
           setCBTpreefillModal(false); // Close the modal
         });
       } else {
         Swal.fire({
           icon: "error",
-          title: "Error submitting CBT!",
-          text: "Error Readmission CBT Assessment",
+          title: getTranslation("Error submitting CBT!/सीबीटी सबमिट करने में त्रुटि!",lang),
+          text: getTranslation("Error Readmission CBT Assessment/त्रुटि पुनः प्रवेश सीबीटी मूल्यांकन",lang),
         });
         console.error("CBT Error:", result);
       }
@@ -1115,16 +1115,16 @@ const token = localStorage.getItem("Authorization");
     if (response.ok) {
       Swal.fire({
         icon: "success",
-        title: "CBT Assessment Update!",
-        text: "CBT Assessment has been update",
+        title: getTranslation("CBT Assessment Update!/सीबीटी मूल्यांकन अद्यतन!",lang),
+        text: getTranslation("CBT Assessment has been update/सीबीटी मूल्यांकन अद्यतन किया गया है/सीबीटी मूल्यांकन अद्यतन/सीबीटी मूल्यांकन अद्यतन किया गया है",lang),
       }).then(() => {
         setCBTindividuallUpdateDataModal(false); // Close the modal
       });
     } else {
       Swal.fire({
         icon: "error",
-        title: "Error Updating CBT!",
-        text: "Error Updating CBT Assessment",
+        title: getTranslation("Error Updating CBT!/सीबीटी अपडेट करने में त्रुटि!",lang),
+        text: getTranslation("Error Updating CBT Assessment/CBT मूल्यांकन अपडेट करते समय त्रुटि",lang),
       });
       console.error("CBT Error:", result);
     }
@@ -1151,7 +1151,7 @@ const token = localStorage.getItem("Authorization");
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1173,7 +1173,7 @@ const token = localStorage.getItem("Authorization");
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1219,7 +1219,7 @@ const token = localStorage.getItem("Authorization");
                                 <CardBody>
                                     <div class="d-flex pb-2 justify-content-between">
                                         <HeaderCard
-                                            title="All Cognitive Behavioral Test Patient List"
+                                            title={getTranslation("All Cognitive Behavioral Test Patient List/सभी संज्ञानात्मक व्यवहार परीक्षण रोगी सूची",lang)}
                                             className="p-0"
                                         />
                                     </div>
@@ -1241,7 +1241,7 @@ const token = localStorage.getItem("Authorization");
                                     </div>
                                     {stillLoading ? (
                                         <div className="loading-text">
-                                            Data is fetching from server. Please wait...
+                                            {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                                         </div>
                                     ) : (
                                         <DataTable
@@ -1280,7 +1280,7 @@ const token = localStorage.getItem("Authorization");
 {/* Create and submit CBT from start  */}
       <CommonModal
         isOpen={modal}
-        title={CognitiveTitle}
+        title={getTranslation(CognitiveTitle,lang)}
         toggler={closePFAModal}
         maxWidth="1200px"
       >
@@ -1290,10 +1290,10 @@ const token = localStorage.getItem("Authorization");
             <PatientCommonInfo
               selectedUser={selectedUser}
               labels={{
-                name: "Patient name/प्रयासक का नाम :",
-                sex: "Gender/प्रयासक का लिंग :",
-                age: "Age/प्रयासक का उम्र :",
-                date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+                name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+                sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+                age: getTranslation("Age/प्रयासक का उम्र :",lang),
+                date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
                 ageValue: patientCalAge,
               }}
             />
@@ -1304,7 +1304,7 @@ const token = localStorage.getItem("Authorization");
               <div className="col-md-12 mt-4">
                 <FormGroup className="form-group row">
                   <Label className="col-sm-12 col-form-label col-xl-3">
-                    {dateOfAssessment}
+                    {getTranslation(dateOfAssessment,lang)}
                   </Label>
                   <Col xl="5" sm="12">
                     <div className="input-group">
@@ -1323,17 +1323,17 @@ const token = localStorage.getItem("Authorization");
               <Table bordered>
                 <thead>
                   <tr>
-                    <th>{tableNumber}</th>
-                    <th>{Questions}</th>
-                    <th>{MaximumScore}</th>
-                    <th>{PatientScore}</th>
+                    <th>{getTranslation(tableNumber,lang)}</th>
+                    <th>{getTranslation(Questions,lang)}</th>
+                    <th>{getTranslation(MaximumScore,lang)}</th>
+                    <th>{getTranslation(PatientScore,lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Cognitivequestions.map((q, index) => (
                     <tr key={q.id}>
                       <td>{index + 1}</td>
-                      <td>{q.question}</td>
+                      <td>{getTranslation(q.question,lang)}</td>
                       <td>{q.maxScore}</td>
                       <td>
                         <Input
@@ -1351,7 +1351,7 @@ const token = localStorage.getItem("Authorization");
                   ))}
                   <tr>
                     <td></td>
-                    <td>{CognitivequestionsTotal}</td>
+                    <td>{getTranslation(CognitivequestionsTotal,lang)}</td>
                     <td>{30}</td>
                     <td>{totalScore}</td>
                   </tr>
@@ -1361,7 +1361,7 @@ const token = localStorage.getItem("Authorization");
             <div className="row px-3">
               <div className="col-md-12 mt-4">
                 <FormGroup className="mb-0">
-                  <Label>{Spaceforwork}</Label>
+                  <Label>{getTranslation(Spaceforwork,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -1373,7 +1373,7 @@ const token = localStorage.getItem("Authorization");
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{Remarks}</Label>
+                  <Label>{getTranslation(Remarks,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -1384,7 +1384,7 @@ const token = localStorage.getItem("Authorization");
                 </FormGroup>
               </div>
               <div className="col-md-12">
-                <Label>{prepared}</Label>
+                <Label>{getTranslation(prepared,lang)}</Label>
                 <Input
                   type="text"
                   className="form-control"
@@ -1403,7 +1403,7 @@ const token = localStorage.getItem("Authorization");
                     aria-hidden="true"
                   ></span>
                 ) : (
-                  "Create Cognitive Behavioral Test (CBT)"
+                  getTranslation("Create Cognitive Behavioral Test (CBT)/संज्ञानात्मक व्यवहार परीक्षण (सीबीटी) बनाएं",lang)
                 )}
               </Button>
             </div>
@@ -1416,7 +1416,7 @@ const token = localStorage.getItem("Authorization");
 {/* Pre-fill readmisson CBT from start  */}
 <CommonModal
         isOpen={CBTpreefillModal}
-        title={`Edit ${CognitiveTitle}`}
+        title={getTranslation(`Edit ${CognitiveTitle}`,lang)}
         toggler={closePFAModal}
         maxWidth="1200px"
       >
@@ -1440,7 +1440,7 @@ const token = localStorage.getItem("Authorization");
     <div className="col-md-12 mt-4">
       <FormGroup className="form-group row">
         <Label className="col-sm-12 col-form-label col-xl-3">
-          {dateOfAssessment}
+          {getTranslation(dateOfAssessment,lang)}
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
@@ -1467,10 +1467,10 @@ const token = localStorage.getItem("Authorization");
     <Table bordered>
       <thead>
         <tr>
-          <th>{tableNumber}</th>
-          <th>{Questions}</th>
-          <th>{MaximumScore}</th>
-          <th>{PatientScore}</th>
+          <th>{getTranslation(tableNumber,lang)}</th>
+          <th>{getTranslation(Questions,lang)}</th>
+          <th>{getTranslation(MaximumScore,lang)}</th>
+          <th>{getTranslation(PatientScore,lang)}</th>
         </tr>
       </thead>
       <tbody>
@@ -1494,7 +1494,7 @@ const token = localStorage.getItem("Authorization");
           return (
             <tr key={q.id}>
               <td>{index + 1}</td>
-              <td>{q.question}</td>
+              <td>{getTranslation(q.question,lang)}</td>
               <td>{q.maxScore}</td>
               <td>
                 <Input
@@ -1524,7 +1524,7 @@ const token = localStorage.getItem("Authorization");
         })}
         <tr>
           <td></td>
-          <td>{CognitivequestionsTotal}</td>
+          <td>{getTranslation(CognitivequestionsTotal,lang)}</td>
           <td>30</td>
           <td>{CBTpreefillData.total_score || 0}</td>
         </tr>
@@ -1535,7 +1535,7 @@ const token = localStorage.getItem("Authorization");
     {/* Each editable field */}
     <div className="col-md-12 mt-4">
       <FormGroup className="mb-0">
-        <Label>{Spaceforwork}</Label>
+        <Label>{getTranslation(Spaceforwork,lang)}</Label>
         <Input
           type="textarea"
           className="form-control"
@@ -1552,7 +1552,7 @@ const token = localStorage.getItem("Authorization");
     </div>
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{Remarks}</Label>
+        <Label>{getTranslation(Remarks,lang)}</Label>
         <Input
           type="textarea"
           className="form-control"
@@ -1568,7 +1568,7 @@ const token = localStorage.getItem("Authorization");
       </FormGroup>
     </div>
     <div className="col-md-12">
-      <Label>{prepared}</Label>
+      <Label>{getTranslation(prepared,lang)}</Label>
       <Input
         type="text"
         className="form-control"
@@ -1589,7 +1589,7 @@ const token = localStorage.getItem("Authorization");
       {isLoading ? (
         <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       ) : (
-        "Readmission Cognitive Behavioral Test (CBT)"
+        getTranslation("Readmission Cognitive Behavioral Test (CBT)/पुनः प्रवेश संज्ञानात्मक व्यवहार परीक्षण (सीबीटी)",lang)
       )}
     </Button>
   </div>
@@ -1604,7 +1604,7 @@ const token = localStorage.getItem("Authorization");
 {/* View/Display CBT form data start */}
 <CommonModal
         isOpen={viewCBTDataModal}
-        title={`View ${CognitiveTitle}`}
+        title={getTranslation(`View ${CognitiveTitle}`,lang)}
         toggler={closePFAModal}
         maxWidth="1200px"
       >
@@ -1619,97 +1619,97 @@ const token = localStorage.getItem("Authorization");
         padding: "20px 0",
       }}
     >
-      {CognitiveTitle}
+      {getTranslation(CognitiveTitle,lang)}
     </h4>
     <Table bordered className="table-striped">
       <tbody>
         <tr>
-          <th>Patient Name</th>
+          <th>{getTranslation("Patient Name/रोगी का नाम",lang)}</th>
           <td>{viewCBTData.name}</td>
-          <th>Gender</th>
+          <th>{getTranslation("Gender/लिंग",lang)}</th>
           <td>{viewCBTData.gender}</td>
         </tr>
         <tr>
-          <th>Phone</th>
+          <th>{getTranslation("Phone/फ़ोन",lang)}</th>
           <td>{viewCBTData.phone}</td>
-          <th>Email</th>
+          <th>{getTranslation("Email/ईमेल",lang)}</th>
           <td>{viewCBTData.email}</td>
         </tr>
         <tr>
-          <th>Date of Birth</th>
+          <th>{getTranslation("Date of Birth/जन्म तिथि",lang)}</th>
           <td>{new Date(viewCBTData.dob).toLocaleDateString()}</td>
-          <th>Date of Assessment</th>
+          <th>{getTranslation("Date of Assessment/मूल्यांकन की तिथि",lang)}</th>
           <td>{new Date(viewCBTData.date_of_assessment).toLocaleDateString()}</td>
         </tr>
         <tr>
-          <th>Entry ID</th>
+          <th>{getTranslation("Entry ID/प्रविष्टि आईडी",lang)}</th>
           <td>{viewCBTData.entry_gks_id}</td>
-          <th>Visit No</th>
+          <th>{getTranslation("Visit No/विज़िट नं.",lang)}</th>
           <td>{viewCBTData.visit_no}</td>
         </tr>
         <tr>
-          <th>Prepared By</th>
+          <th>{getTranslation("Prepared By/द्वारा तैयार",lang)}</th>
           <td colSpan={3}>{viewCBTData.prepared_by}</td>
         </tr>
         <tr>
           <th colSpan={4} className="bg-light text-center">
-            <strong>Individual Cognitive Scores</strong>
+            <strong>{getTranslation("Individual Cognitive Scores/व्यक्तिगत संज्ञानात्मक स्कोर",lang)}</strong>
           </th>
         </tr>
         <tr>
-          <td>Orientation</td>
+          <td>{getTranslation("Orientation/अभिविन्यास",lang)}</td>
           <td>{viewCBTData.orientation_score}</td>
-          <td>Word Recall</td>
+          <td>{getTranslation("Word Recall/शब्द स्मरण",lang)}</td>
           <td>{viewCBTData.word_recall_score}</td>
         </tr>
         <tr>
-          <td>Months Backward</td>
+          <td>{getTranslation("Months Backward/महीने पीछे",lang)}</td>
           <td>{viewCBTData.months_backwards_score}</td>
-          <td>Serial 3</td>
+          <td>{getTranslation("Serial 3/धारावाहिक 3",lang)}</td>
           <td>{viewCBTData.serial_3_score}</td>
         </tr>
         <tr>
-          <td>Serial 7</td>
+          <td>{getTranslation("Serial 7/सीरियल 7",lang)}</td>
           <td>{viewCBTData.serial_7_score}</td>
-          <td>Backward Counting</td>
+          <td>{getTranslation("Backward Counting/पीछे की ओर गिनती",lang)}</td>
           <td>{viewCBTData.backward_counting_score}</td>
         </tr>
         <tr>
-          <td>Dinner Question</td>
+          <td>{getTranslation("Dinner Question/रात्रिभोज प्रश्न",lang)}</td>
           <td>{viewCBTData.dinner_question_score}</td>
-          <td>Breakfast Question</td>
+          <td>{getTranslation("Breakfast Question/नाश्ते का प्रश्न",lang)}</td>
           <td>{viewCBTData.breakfast_question_score}</td>
         </tr>
         <tr>
-          <td>Independence Day</td>
+          <td>{getTranslation("Independence Day/स्वतंत्रता दिवस",lang)}</td>
           <td>{viewCBTData.independence_day_score}</td>
-          <td>Object Naming</td>
+          <td>{getTranslation("Object Naming/ऑब्जेक्ट नामकरण",lang)}</td>
           <td>{viewCBTData.object_naming_score}</td>
         </tr>
         <tr>
-          <td>Written Instruction</td>
+          <td>{getTranslation("Written Instruction/लिखित निर्देश",lang)}</td>
           <td>{viewCBTData.written_instruction_score}</td>
-          <td>Prime Minister</td>
+          <td>{getTranslation("Prime Minister/प्रधान मंत्री",lang)}</td>
           <td>{viewCBTData.prime_minister_score}</td>
         </tr>
         <tr>
-          <td>Chief Minister</td>
+          <td>{getTranslation("Chief Minister/मुख्यमंत्री",lang)}</td>
           <td>{viewCBTData.chief_minister_score}</td>
-          <td><strong>Total Score</strong></td>
+          <td><strong>{getTranslation("Total Score/कुल स्कोर",lang)}</strong></td>
           <td><strong>{viewCBTData.total_score}</strong></td>
         </tr>
         <tr>
-          <th>Space for Work</th>
+          <th>{getTranslation("Space for Work/कार्य के लिए स्थान",lang)}</th>
           <td colSpan={3}>{viewCBTData.space_for_work}</td>
         </tr>
         <tr>
-          <th>Remarks</th>
+          <th>{getTranslation("Remarks/टिप्पणी",lang)}</th>
           <td colSpan={3}>{viewCBTData.remarks}</td>
         </tr>
         <tr>
-          <th>Status</th>
+          <th>{getTranslation("Status/स्थिति",lang)}</th>
           <td>{viewCBTData.status}</td>
-          <th>Created By</th>
+          <th>{getTranslation("Created By/के द्वारा बनाई गई",lang)}</th>
           <td>{viewCBTData.created_by_name}</td>
         </tr>
       </tbody>
@@ -1725,8 +1725,8 @@ const token = localStorage.getItem("Authorization");
                   onClick={handleDownloadPDF}
                 >
                   {pfaDownload
-                    ? "Your CBT is being downloaded.../ आपका CBT डाउनलोड हो रहा है..."
-                    : "Download Your Cognitive Behavioral Test/ संज्ञानात्मक व्यवहार परीक्षण डाउनलोड करें"}
+                    ? getTranslation("Your CBT is being downloaded.../ आपका CBT डाउनलोड हो रहा है...",lang)
+                    : getTranslation("Download Your Cognitive Behavioral Test/ संज्ञानात्मक व्यवहार परीक्षण डाउनलोड करें",lang)}
                 </button>
               </div>
  
@@ -1740,7 +1740,7 @@ const token = localStorage.getItem("Authorization");
       {/* Update/Edit individual CBT from start  */}
 <CommonModal
         isOpen={CBTindividuallUpdateDataModal}
-        title={`Update ${CognitiveTitle}`}
+        title={getTranslation(`Update ${CognitiveTitle}`,lang)}
         toggler={closePFAModal}
         maxWidth="1200px"
       >
@@ -1764,7 +1764,7 @@ const token = localStorage.getItem("Authorization");
     <div className="col-md-12 mt-4">
       <FormGroup className="form-group row">
         <Label className="col-sm-12 col-form-label col-xl-3">
-          {dateOfAssessment}
+          {getTranslation(dateOfAssessment,lang)}
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
@@ -1791,10 +1791,10 @@ const token = localStorage.getItem("Authorization");
     <Table bordered>
       <thead>
         <tr>
-          <th>{tableNumber}</th>
-          <th>{Questions}</th>
-          <th>{MaximumScore}</th>
-          <th>{PatientScore}</th>
+          <th>{getTranslation(tableNumber,lang)}</th>
+          <th>{getTranslation(Questions,lang)}</th>
+          <th>{getTranslation(MaximumScore,lang)}</th>
+          <th>{getTranslation(PatientScore,lang)}</th>
         </tr>
       </thead>
       <tbody>
@@ -1818,7 +1818,7 @@ const token = localStorage.getItem("Authorization");
           return (
             <tr key={q.id}>
               <td>{index + 1}</td>
-              <td>{q.question}</td>
+              <td>{getTranslation(q.question,lang)}</td>
               <td>{q.maxScore}</td>
               <td>
                 <Input
@@ -1848,7 +1848,7 @@ const token = localStorage.getItem("Authorization");
         })}
         <tr>
           <td></td>
-          <td>{CognitivequestionsTotal}</td>
+          <td>{getTranslation(CognitivequestionsTotal,lang)}</td>
           <td>30</td>
           <td>{CBTindividuallUpdateData.total_score || 0}</td>
         </tr>
@@ -1859,7 +1859,7 @@ const token = localStorage.getItem("Authorization");
     {/* Each editable field */}
     <div className="col-md-12 mt-4">
       <FormGroup className="mb-0">
-        <Label>{Spaceforwork}</Label>
+        <Label>{getTranslation(Spaceforwork,lang)}</Label>
         <Input
           type="textarea"
           className="form-control"
@@ -1876,7 +1876,7 @@ const token = localStorage.getItem("Authorization");
     </div>
     <div className="col-md-12">
       <FormGroup className="mb-0">
-        <Label>{Remarks}</Label>
+        <Label>{getTranslation(Remarks,lang)}</Label>
         <Input
           type="textarea"
           className="form-control"
@@ -1892,7 +1892,7 @@ const token = localStorage.getItem("Authorization");
       </FormGroup>
     </div>
     <div className="col-md-12">
-      <Label>{prepared}</Label>
+      <Label>{getTranslation(prepared,lang)}</Label>
       <Input
         type="text"
         className="form-control"
@@ -1913,7 +1913,7 @@ const token = localStorage.getItem("Authorization");
       {isLoading ? (
         <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
       ) : (
-        "Update Cognitive Behavioral Test (CBT)"
+       getTranslation("Update Cognitive Behavioral Test (CBT)/संज्ञानात्मक व्यवहार परीक्षण (सीबीटी) को अपडेट करें",lang)
       )}
     </Button>
   </div>

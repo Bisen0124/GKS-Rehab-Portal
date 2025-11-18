@@ -171,11 +171,11 @@ function SocialBehavior() {
 
           let isSBCompleted = false;
           let userStatus = (
-            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+            <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
           );
           if (admitDate && SBDate && admitDate > SBDate) {
             isSBCompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -276,7 +276,7 @@ function SocialBehavior() {
               <span
                 onClick={() => handleSBPreFill(row.recentSbIds)}
                 style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
+                title={getTranslation("Readmission Social Behaviour Form/पुनः प्रवेश सामाजिक व्यवहार प्रपत्र",lang)}
               >
                 ✏️
               </span>
@@ -297,7 +297,7 @@ function SocialBehavior() {
       cursor: row.isSBCompleted ? "not-allowed" : "pointer",
       opacity: row.isSBCompleted ? 0.5 : 1,
     }}
-    title={row.isSBCompleted ? "Social behaviour completed" : "Create Social behaviour Form"}
+    title={row.isSBCompleted ? getTranslation("Social behaviour completed/सामाजिक व्यवहार पूरा हुआ",lang) : getTranslation("Create Social behaviour Form/सामाजिक व्यवहार प्रपत्र बनाएँ",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -627,8 +627,8 @@ function SocialBehavior() {
 
       Swal.fire({
         icon: "success",
-        title: "Social Behavior Created Successfully",
-        text: "The Social Behavior assessment was submitted successfully.",
+        title: getTranslation("Social Behavior Created Successfully/सामाजिक व्यवहार सफलतापूर्वक बनाया गया",lang),
+        text: getTranslation("The Social Behavior assessment was submitted successfully./सामाजिक व्यवहार मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
       }).then(() => setIsSocialModalOpen(false));
 
       console.log("✅ Social Behavior Response:", data);
@@ -638,8 +638,8 @@ function SocialBehavior() {
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Failed to submit. Check console for error.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   };
@@ -864,8 +864,8 @@ const handleSocialBehaviorUpdate = async () => {
 
     Swal.fire({
       icon: "success",
-      title: "Updated Successfully!",
-      text: "Social Behavior assessment has been updated successfully.",
+      title: getTranslation("Updated Successfully!/सफलतापूर्वक अपडेट किया गया!",lang),
+      text: getTranslation("Social Behavior assessment has been updated successfully./सामाजिक व्यवहार मूल्यांकन सफलतापूर्वक अद्यतन कर दिया गया है.",lang),
     }).then(() => {
       setSocialBehaviorEditModal(false); // close modal
     });
@@ -875,8 +875,8 @@ const handleSocialBehaviorUpdate = async () => {
 
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to update Social Behavior assessment. Check console for details.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to update Social Behavior assessment. Check console for details./सामाजिक व्यवहार मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
     });
   }
 };
@@ -897,8 +897,8 @@ const handleSBPreFill = async (prefillSBID = null) => {
   if (!prefillSBID) {
     Swal.fire({
       icon: "warning",
-      title: "Missing Social Behavior ID",
-      text: "No valid Social Behavior ID was provided for prefill.",
+      title: getTranslation("Missing Social Behavior ID/सामाजिक व्यवहार आईडी गुम है",lang),
+      text: getTranslation("No valid Social Behavior ID was provided for prefill./प्रीफ़िल के लिए कोई वैध सामाजिक व्यवहार आईडी प्रदान नहीं की गई थी.",lang),
     });
     return;
   }
@@ -935,8 +935,8 @@ const handleSBPreFill = async (prefillSBID = null) => {
     if (!latestAssessment) {
       Swal.fire({
         icon: "info",
-        title: "No Data Found",
-        text: "No Social Behavior data available for this ID.",
+        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
+        text: getTranslation("No Social Behavior data available for this ID./इस आईडी के लिए कोई सामाजिक व्यवहार डेटा उपलब्ध नहीं है।",lang),
       });
       return;
     }
@@ -989,8 +989,8 @@ const handleSBPreFill = async (prefillSBID = null) => {
     console.error("Prefill fetch error:", error);
     Swal.fire({
       icon: "error",
-      title: "Network Error",
-      text: "Unable to fetch Social Behavior data due to a network issue.",
+      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
+      text: getTranslation("Unable to fetch Social Behavior data due to a network issue./नेटवर्क समस्या के कारण सामाजिक व्यवहार डेटा प्राप्त करने में असमर्थ.",lang),
     });
   }
 };
@@ -1041,8 +1041,8 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 
     Swal.fire({
       icon: "success",
-      title: "Readmission Social Behavior Created Successfully",
-      text: "The Readmission Social Behavior assessment was submitted successfully.",
+      title: getTranslation("Readmission Social Behavior Created Successfully/पुनः प्रवेश सामाजिक व्यवहार सफलतापूर्वक बनाया गया",lang),
+      text: getTranslation("The Readmission Social Behavior assessment was submitted successfully./पुनः प्रवेश सामाजिक व्यवहार मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
     }).then(() => setIsSocialModalOpen(false));
 
     console.log("✅ Social Behavior Response:", data);
@@ -1052,8 +1052,8 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
     setIsLoading(false);
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to submit. Check console for error.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };
@@ -1125,7 +1125,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1147,7 +1147,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1190,7 +1190,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All Social Behavior Patient Data List" className="p-0" />
+                    <HeaderCard title={getTranslation("All Social Behavior Patient Data List/सभी सामाजिक व्यवहार रोगी डेटा सूची",lang)} className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -1210,7 +1210,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                     {getTranslation(" Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1246,17 +1246,17 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Social create form start */}
       <CommonModal
         isOpen={isSocialModalOpen}
-        title={`Create ${socialBehavior}`}
+        title={getTranslation(`Create ${socialBehavior}`,lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
-            name: "Patient name/प्रयासक का नाम :",
-            sex: "Gender/प्रयासक का लिंग :",
-            age: "Age/प्रयासक का उम्र :",
-            date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+            name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+            sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+            age: getTranslation("Age/प्रयासक का उम्र :",lang),
+            date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
             ageValue: patientCalAge,
           }}
         />
@@ -1266,7 +1266,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 
  <div class="col-md-6 mb-3">
                 <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {dateOfAssessment}
+                  {getTranslation(dateOfAssessment,lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -1283,7 +1283,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{socialBehavior1}</Label>
+                <Label>{getTranslation(socialBehavior1,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1297,7 +1297,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{withWhomSpendFreeTime}</Label>
+                <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1311,7 +1311,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{howManyFriends}</Label>
+                <Label>{getTranslation(howManyFriends,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1325,7 +1325,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{friendSocialStatus}</Label>
+                <Label>{getTranslation(friendSocialStatus,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1339,7 +1339,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{howMuchDependent}</Label>
+                <Label>{getTranslation(howMuchDependent,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1353,7 +1353,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{whoClosedWellWisher}</Label>
+                <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -1375,7 +1375,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                     aria-hidden="true"
                   ></span>
                 ) : (
-                  "Create Social Behavior / सामाजिक व्यवहार"
+                  getTranslation("Create Social Behavior / सामाजिक व्यवहार बनाएँ",lang)
                 )}
               </Button>
             </div>
@@ -1387,7 +1387,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 {/* View Social Behavior data into modal start */}
 <CommonModal
   isOpen={viewSocailModal}
-  title={`View ${socialBehavior}`}
+  title={getTranslation(`View ${socialBehavior}`,lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1399,7 +1399,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
         padding: "20px 0",
       }}
     >
-      {`View ${socialBehavior}`}
+      {getTranslation(`View ${socialBehavior}`,lang)}
     </h4>
 
     <Table size="sm" className="table-auto table-bordered">
@@ -1417,23 +1417,23 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
         ) : viewSocailData ? (
           <>
             <tr>
-              <th className="text-start p-3">Name</th>
+              <th className="text-start p-3">{getTranslation("Name/नाम",lang)}</th>
               <td className="border p-3">{viewSocailData.name}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Gender</th>
+              <th className="text-start p-3">{getTranslation("Gender/लिंग",lang)}</th>
               <td className="border p-3">{viewSocailData.gender}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Phone</th>
+              <th className="text-start p-3">{getTranslation("Phone/फ़ोन",lang)}</th>
               <td className="border p-3">{viewSocailData.phone}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Email</th>
+              <th className="text-start p-3">{getTranslation("Email/ईमेल",lang)}</th>
               <td className="border p-3">{viewSocailData.email}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Assessment Date</th>
+              <th className="text-start p-3">{getTranslation("Assessment Date/मूल्यांकन तिथि",lang)}</th>
               <td className="border p-3">
                 {viewSocailData.date_of_assessment
                   ? new Date(viewSocailData.date_of_assessment).toLocaleDateString()
@@ -1441,40 +1441,40 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Social Behavior</th>
+              <th className="text-start p-3">{getTranslation("Social Behavior/सामाजिक व्यवहार",lang)}</th>
               <td className="border p-3">{viewSocailData.social_behavior}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">With Whom Spend Free Time</th>
+              <th className="text-start p-3">{getTranslation("With Whom Spend Free Time/किसके साथ खाली समय बिताएँ",lang)}</th>
               <td className="border p-3">{viewSocailData.with_whom_spend_time}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">How Many Friends</th>
+              <th className="text-start p-3">{getTranslation("How Many Friends/कितने दोस्त",lang)}</th>
               <td className="border p-3">{viewSocailData.how_many_friends}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Friends’ Social Status</th>
+              <th className="text-start p-3">{getTranslation("Friends’ Social Status/दोस्तों की सामाजिक स्थिति",lang)}</th>
               <td className="border p-3">{viewSocailData.their_social_status}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Substance Dependent Friends</th>
+              <th className="text-start p-3">{getTranslation("Substance Dependent Friends/पदार्थ पर निर्भर मित्र",lang)}</th>
               <td className="border p-3">
                 {viewSocailData.substance_dependent_friends_count}
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Well-Wisher Person</th>
+              <th className="text-start p-3">{getTranslation("Well-Wisher Person/शुभचिंतक व्यक्ति",lang)}</th>
               <td className="border p-3">{viewSocailData.well_wisher_person}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Status</th>
+              <th className="text-start p-3">{getTranslation("Status/स्थिति",lang)}</th>
               <td className="border p-3">{viewSocailData.status}</td>
             </tr>
           </>
         ) : (
           <tr>
             <td colSpan="2" className="text-center">
-              No data available
+             {getTranslation(" No data available/कोई डेटा मौजूद नहीं",lang)}
             </td>
           </tr>
         )}
@@ -1490,8 +1490,8 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       onClick={handleDownloadPDF}
     >
       {pfaDownload
-        ? "Your Social Behavior is being downloaded... / आपका सामाजिक व्यवहार डाउनलोड हो रहा है..."
-        : "Download Social Behavior"}
+        ? getTranslation("Your Social Behavior is being downloaded... / आपका सामाजिक व्यवहार डाउनलोड हो रहा है...",lang)
+        : getTranslation("Download Social Behavior/सामाजिक व्यवहार डाउनलोड करें",lang)}
     </button>
   </div>
 </CommonModal>
@@ -1501,7 +1501,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 {/* Update Social Behavior Form start */}
 <CommonModal
   isOpen={socialBehaviorEditModal}
-  title={`Update ${socialBehavior}`}
+  title={getTranslation(`Update ${socialBehavior}`,lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1524,7 +1524,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Assessment Date */}
       <div className="col-md-6 mb-3">
         <Label className="col-sm-12 col-form-label col-xl-6">
-          {dateOfAssessment}
+          {getTranslation(dateOfAssessment,lang)}
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
@@ -1549,7 +1549,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Social Behavior */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{socialBehavior1}</Label>
+          <Label>{getTranslation(socialBehavior1,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1568,7 +1568,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* With Whom Spend Time */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{withWhomSpendFreeTime}</Label>
+          <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1587,7 +1587,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* How Many Friends */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{howManyFriends}</Label>
+          <Label>{getTranslation(howManyFriends,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1606,7 +1606,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Friends’ Social Status */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{friendSocialStatus}</Label>
+          <Label>{getTranslation(friendSocialStatus,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1625,7 +1625,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Substance Dependent Friends Count */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{howMuchDependent}</Label>
+          <Label>{getTranslation(howMuchDependent,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1644,7 +1644,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Well-Wisher Person */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{whoClosedWellWisher}</Label>
+          <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1670,7 +1670,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
               aria-hidden="true"
             ></span>
           ) : (
-            "Update Social Behavior / सामाजिक व्यवहार"
+            getTranslation("Update Social Behavior / सामाजिक व्यवहार अपडेट करें",lang)
           )}
         </Button>
       </div>
@@ -1683,7 +1683,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 {/* Pre-fill Readmission Social Behavior Form start */}
 <CommonModal
   isOpen={SBPrefillModal}
-  title={`Readmission ${socialBehavior}`}
+  title={getTranslation(`Readmission ${socialBehavior}`,lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1706,7 +1706,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Assessment Date */}
       <div className="col-md-6 mb-3">
         <Label className="col-sm-12 col-form-label col-xl-6">
-          {dateOfAssessment}
+          {getTranslation(dateOfAssessment,lang)}
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
@@ -1731,7 +1731,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Social Behavior */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{socialBehavior1}</Label>
+          <Label>{getTranslation(socialBehavior1,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1750,7 +1750,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* With Whom Spend Time */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{withWhomSpendFreeTime}</Label>
+          <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1769,7 +1769,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* How Many Friends */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{howManyFriends}</Label>
+          <Label>{getTranslation(howManyFriends,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1788,7 +1788,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Friends’ Social Status */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{friendSocialStatus}</Label>
+          <Label>{getTranslation(friendSocialStatus,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1807,7 +1807,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Substance Dependent Friends Count */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{howMuchDependent}</Label>
+          <Label>{getTranslation(howMuchDependent,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1826,7 +1826,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       {/* Well-Wisher Person */}
       <div className="col-md-12">
         <FormGroup className="mb-0">
-          <Label>{whoClosedWellWisher}</Label>
+          <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
           <Input
             type="textarea"
             rows="3"
@@ -1852,7 +1852,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
               aria-hidden="true"
             ></span>
           ) : (
-            "Readmission Social Behavior / सामाजिक व्यवहार"
+            getTranslation("Readmission Social Behavior / पुनः प्रवेश सामाजिक व्यवहार",lang)
           )}
         </Button>
       </div>

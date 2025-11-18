@@ -311,7 +311,7 @@ const Detoxification = () => {
               <span
                 onClick={() => handleDetoxPrefill(row.recentDetoxId)}
                 style={{ cursor: "pointer" }}
-                title="Readmission Sexsual Desire Form"
+                title={getTranslation("Readmission Detoxification Form/पुनः प्रवेश विषहरण प्रपत्र",lang)}
               >
                 ✏️
               </span>
@@ -355,10 +355,10 @@ const Detoxification = () => {
   <span
     onClick={() => (row.isDetoxCompleted ? null : createDetoxificationHandler(row.id))}
     style={{
-      cursor: row.isDetoxCompleted ? "not-allowed" : "pointer",
+      cursor: row.isDetoxCompleted ? getTranslation("not-allowed/अनुमति नहीं",lang) : "pointer",
       opacity: row.isDetoxCompleted ? 0.5 : 1,
     }}
-    title={row.isDetoxCompleted ? "Detox Completed" : "Create Detoxification Form"}
+    title={row.isDetoxCompleted ? getTranslation("Detox Completed/डिटॉक्स पूरा हुआ",lang) : getTranslation("Create Detoxification Form/डिटॉक्सिफिकेशन फॉर्म बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -509,7 +509,7 @@ const Detoxification = () => {
       center: true,
     },
     {
-      name: "Detox ID/डिटॉक्स आईडी",
+      name: getTranslation("Detox ID/डिटॉक्स आईडी",lang),
       selector: (row) => row.detox_id,
       sortable: true,
       center: true,
@@ -740,8 +740,8 @@ const Detoxification = () => {
       if (response.ok) {
         Swal.fire({
           icon: "success",
-          title: "Detoxification Submitted",
-          text: "The detoxification form has been submitted successfully.",
+          title: getTranslation("Detoxification Submitted/विषहरण प्रस्तुत किया गया",lang),
+          text: getTranslation("The detoxification form has been submitted successfully./विषहरण प्रपत्र सफलतापूर्वक प्रस्तुत कर दिया गया है।",lang),
         });
       } else {
         console.error("Error Response:", result);
@@ -917,8 +917,8 @@ const updateDetoxHandler = async (e) => {
       console.error("No detox_id found for update.");
       Swal.fire({
         icon: "error",
-        title: "Update Failed",
-        text: "No detoxification record selected for update.",
+        title: getTranslation("Update Failed/भार बढ़ाना विफल हुवा",lang),
+        text: getTranslation("No detoxification record selected for update./अद्यतन के लिए कोई विषहरण रिकॉर्ड चयनित नहीं है।",lang),
       });
       return;
     }
@@ -940,8 +940,8 @@ const updateDetoxHandler = async (e) => {
     if (response.ok) {
       Swal.fire({
         icon: "success",
-        title: "Detoxification Updated",
-        text: "The detoxification form has been successfully updated.",
+        title: getTranslation("Detoxification Updated/विषहरण अद्यतन",lang),
+        text: getTranslation("The detoxification form has been successfully updated./विषहरण प्रपत्र को सफलतापूर्वक अद्यतन कर दिया गया है।",lang),
       });
       // Optionally close modal or refresh data here
       setEditDetoxModal(false);
@@ -949,16 +949,16 @@ const updateDetoxHandler = async (e) => {
       console.error("Error Response:", result);
       Swal.fire({
         icon: "error",
-        title: "Update Failed",
-        text: result.message || "There was an error submitting the form.",
+        title: getTranslation("Update Failed/भार बढ़ाना विफल हुवा",lang),
+        text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
       });
     }
   } catch (error) {
     console.error("Fetch Error:", error);
     Swal.fire({
       icon: "error",
-      title: "Network Error",
-      text: "A network or server issue occurred.",
+      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
+      text: getTranslation("A network or server issue occurred./नेटवर्क या सर्वर संबंधी समस्या उत्पन्न हुई.",lang),
     });
   } finally {
     setIsLoading(false);
@@ -982,8 +982,8 @@ const handleDetoxPrefill = async (prefillDetoxID = null) => {
   if (!prefillDetoxID) {
     Swal.fire({
       icon: "warning",
-      title: "Missing Detox ID",
-      text: "Please provide a valid Detox ID before opening the form.",
+      title: getTranslation("Missing Detox ID/डिटॉक्स आईडी गुम",lang),
+      text: getTranslation("Please provide a valid Detox ID before opening the form./कृपया फॉर्म खोलने से पहले एक वैध डिटॉक्स आईडी प्रदान करें।",lang),
     });
     return; // ⛔ stop execution
   }
@@ -1010,8 +1010,8 @@ const handleDetoxPrefill = async (prefillDetoxID = null) => {
     if (!response.ok) {
       Swal.fire({
         icon: "error",
-        title: "Fetch Failed",
-        text: data.message || "Unable to fetch detoxification data for prefill.",
+        title: getTranslation("Fetch Failed/प्राप्त करना विफल",lang),
+        text: data.message || getTranslation("Unable to fetch detoxification data for prefill./प्रीफ़िल के लिए डिटॉक्सिफिकेशन डेटा प्राप्त करने में असमर्थ.",lang),
       });
       return;
     }
@@ -1020,8 +1020,8 @@ const handleDetoxPrefill = async (prefillDetoxID = null) => {
     if (!latestAssessment) {
       Swal.fire({
         icon: "info",
-        title: "No Data Found",
-        text: "No detoxification data available for this ID.",
+        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
+        text: getTranslation("No detoxification data available for this ID./इस आईडी के लिए कोई विषहरण डेटा उपलब्ध नहीं है।",lang),
       });
       return;
     }
@@ -1080,8 +1080,8 @@ const handleDetoxPrefill = async (prefillDetoxID = null) => {
     console.error("Prefill Detox fetch error:", error);
     Swal.fire({
       icon: "error",
-      title: "Network Error",
-      text: "Unable to fetch detoxification data due to a network issue.",
+      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
+      text: getTranslation("Unable to fetch detoxification data due to a network issue./नेटवर्क समस्या के कारण विषहरण डेटा प्राप्त करने में असमर्थ।",lang),
     });
   }
 };
@@ -1121,8 +1121,8 @@ const handleDetoxReadmissionSubmit = async (e) => {
       end_remark: DetoxPrefillData.end_remark || "",
       status:
         DetoxPrefillData.is_detoxified === "yes" && endDate
-          ? "Completed"
-          : "Pending",
+          ? getTranslation("Completed/पुरा होना।",lang)
+          : getTranslation("Pending/लंबित",lang),
     };
 
     console.log("Submitting Detoxification Payload =>", payload);
@@ -1147,15 +1147,15 @@ const handleDetoxReadmissionSubmit = async (e) => {
     if (response.ok) {
       Swal.fire({
         icon: "success",
-        title: "Detoxification Submitted",
-        text: "The detoxification form has been submitted successfully.",
+        title: getTranslation("Detoxification Submitted/विषहरण प्रस्तुत किया गया",lang),
+        text: getTranslation("The detoxification form has been submitted successfully./विषहरण प्रपत्र सफलतापूर्वक प्रस्तुत कर दिया गया है।",lang),
       });
     } else {
       console.error("Error Response:", result);
       Swal.fire({
         icon: "error",
-        title: "Submission Failed",
-        text: result.message || "There was an error submitting the form.",
+        title: getTranslation("Submission Failed/सबमिशन विफल",lang),
+        text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
       });
     }
   } catch (error) {
@@ -1163,7 +1163,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
     Swal.fire({
       icon: "error",
       title: "Error",
-      text: "Network or server issue occurred.",
+      text: getTranslation("Network or server issue occurred./नेटवर्क या सर्वर समस्या उत्पन्न हुई.",lang),
     });
   } finally {
     setIsLoading(false);
@@ -1198,7 +1198,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1220,7 +1220,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1265,7 +1265,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="All Detoxification Patient Lists"
+                      title={getTranslation("All Detoxification Patient Lists/सभी विषहरण रोगी सूचियाँ",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1287,7 +1287,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1323,7 +1323,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
       {/* Create and submit Detoxification from start  */}
       <CommonModal
         isOpen={isopenDetoxCreateForm}
-        title="Create Detoxification Form"
+        title={getTranslation("Create Detoxification Form/डिटॉक्सिफिकेशन फॉर्म बनाएं",lang)}
         toggler={closeAllModal}
         maxWidth="1200px"
       >
@@ -1333,10 +1333,10 @@ const handleDetoxReadmissionSubmit = async (e) => {
             <PatientCommonInfo
               selectedUser={selectedUser}
               labels={{
-                name: "Patient name/प्रयासक का नाम :",
-                sex: "Gender/प्रयासक का लिंग :",
-                age: "Age/प्रयासक का उम्र :",
-                date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+                name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+                sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+                age: getTranslation("Age/प्रयासक का उम्र :",lang),
+                date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
                 ageValue: patientCalAge,
               }}
             />
@@ -1346,7 +1346,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
               <div className="col-md-6">
                 <FormGroup className="form-group row">
                   <Label className="col-sm-12 col-form-label  col-xl-6">
-                    {dateOfAssessment}
+                    {getTranslation(dateOfAssessment,lang)}
                   </Label>
                   <Col xl="5" sm="12">
                     <div className="input-group">
@@ -1364,7 +1364,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
               {/*Date of Admission section/प्रवेश की तिथि :*/}
               {/* Detoxified Yes/No */}
               <div className="mb-3">
-                <label>Is Detoxified?</label>
+                <label>{getTranslation("Is Detoxified?/क्या यह विषमुक्त है?",lang)}</label>
                 <select
                   id="is_detoxified"
                   name="is_detoxified"
@@ -1373,15 +1373,15 @@ const handleDetoxReadmissionSubmit = async (e) => {
                   onChange={handleChange}
                 >
                   <option value="">-- Select --</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
+                  <option value="yes">{getTranslation("Yes/हाँ",lang)}</option>
+                  <option value="no">{getTranslation("No/नहीं",lang)}</option>
                 </select>
               </div>
               {/* If Yes → Show start_date, end_date */}
               {formData.is_detoxified === "yes" && (
                 <>
                   <div className="mb-3">
-                    <label htmlFor="start_date">Start Date</label>
+                    <label htmlFor="start_date">{getTranslation("Start Date/आरंभ करने की तिथि",lang)}</label>
                     <input
                       type="date"
                       id="start_date"
@@ -1393,7 +1393,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                   </div>
 
                   <div className="mb-3">
-                    <label htmlFor="end_date">End Date</label>
+                    <label htmlFor="end_date">{getTranslation("End Date/अंतिम तिथि",lang)}</label>
                     <input
                       type="date"
                       id="end_date"
@@ -1408,7 +1408,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
               {/* If No → Show only end_date */}
               {formData.is_detoxified === "no" && (
                 <div className="mb-3">
-                  <label htmlFor="end_date">End Date</label>
+                  <label htmlFor="end_date">{getTranslation("End Date/अंतिम तिथि",lang)}</label>
                   <input
                     type="date"
                     id="end_date"
@@ -1421,7 +1421,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
               )}
               {/* Start Remark */}
               <div className="mb-3">
-                <label htmlFor="start_remark">Start Remark</label>
+                <label htmlFor="start_remark">{getTranslation("Start Remark/टिप्पणी प्रारंभ करें",lang)}</label>
                 <textarea
                   id="start_remark"
                   name="start_remark"
@@ -1433,7 +1433,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
               </div>
               {/* End Remark */}
               <div className="mb-3">
-                <label htmlFor="end_remark">End Remark</label>
+                <label htmlFor="end_remark">{getTranslation("End Remark/टिप्पणी समाप्त",lang)}</label>
                 <textarea
                   id="end_remark"
                   name="end_remark"
@@ -1449,7 +1449,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                   {isLoading ? (
                     <span className="spinner-border spinner-border-sm"></span>
                   ) : (
-                    "Create Detoxification"
+                    getTranslation("Create Detoxification/विषहरण बनाएँ",lang)
                   )}
                 </Button>
               </div>
@@ -1462,7 +1462,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
       {/* View detoxification data form start */}
       <CommonModal
         isOpen={viewDetoxDataModal}
-        title="View Detoxification"
+        title={getTranslation("View Detoxification/विषहरण देखें",lang)}
         toggler={closeAllModal}
         maxWidth="1200px"
       >
@@ -1476,38 +1476,38 @@ const handleDetoxReadmissionSubmit = async (e) => {
                 padding: "20px 0",
               }}
             >
-              Detoxification Form
+              {getTranslation("Detoxification Form/विषहरण प्रपत्र",lang)}
             </h4>
             {viewDetoxData ? (
               <Table className="table table-bordered table-striped">
                 <thead className="table-light">
                   <tr>
-                    <th>Field</th>
-                    <th>Value</th>
+                    <th>{getTranslation("Field/मैदान",lang)}</th>
+                    <th>{getTranslation("Value/कीमत",lang)}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {Object.entries({
-                    Name: viewDetoxData.name,
-                    Phone: viewDetoxData.phone,
-                    Email: viewDetoxData.email,
-                    Gender: viewDetoxData.gender,
-                    DOB: viewDetoxData.dob,
-                    Address: viewDetoxData.address,
-                    Branch: viewDetoxData.branch_name,
-                    "Ward Name": viewDetoxData.ward_name,
-                    "GKS ID": viewDetoxData.gks_id,
-                    "Custom Code": viewDetoxData.custom_code,
-                    "Admission Date": viewDetoxData.admit_date,
-                    "Visit No": viewDetoxData.visit_no,
-                    "Is Detoxified": viewDetoxData.is_detoxified,
-                    "Start Date": viewDetoxData.start_date,
-                    "End Date": viewDetoxData.end_date,
-                    "Start Remark": viewDetoxData.start_remark,
-                    "End Remark": viewDetoxData.end_remark,
-                    Status: viewDetoxData.status,
-                    "Created At": viewDetoxData.created_at,
-                    "Updated At": viewDetoxData.updated_at,
+                   [getTranslation('Name/नाम', lang)]: viewDetoxData.name,
+                   [getTranslation('Phone/फ़ोन', lang)]: viewDetoxData.phone,
+                   [getTranslation('Email/ईमेल', lang)]: viewDetoxData.email,
+                   [getTranslation('Gender/लिंग', lang)]: viewDetoxData.gender,
+                   [getTranslation('DOB/जन्म तिथि', lang)]: viewDetoxData.dob,
+                   [getTranslation('Address/पता', lang)]: viewDetoxData.address,
+                   [getTranslation('Branch/शाखा', lang)]: viewDetoxData.branch_name,
+                   [getTranslation('Ward Name/वार्ड का नाम', lang)]: viewDetoxData.ward_name,
+                   [getTranslation('GKS ID/जीकेएस आईडी', lang)]: viewDetoxData.gks_id,
+                   [getTranslation('Custom Code/कस्टम कोड', lang)]: viewDetoxData.custom_code,
+                   [getTranslation('Admission Date/प्रवेश तिथि', lang)]: viewDetoxData.admit_date,
+                   [getTranslation('Visit No/विज़िट नं.', lang)]: viewDetoxData.visit_no,
+                   [getTranslation('Is Detoxified/विषमुक्त है', lang)]: viewDetoxData.is_detoxified,
+                   [getTranslation('Start Date/आरंभ करने की तिथि', lang)]: viewDetoxData.start_date,
+                   [getTranslation('End Date/अंतिम तिथि', lang)]: viewDetoxData.end_date,
+                   [getTranslation('Start Remark/टिप्पणी प्रारंभ करें', lang)]: viewDetoxData.start_remark,
+                   [getTranslation('End Remark/टिप्पणी समाप्त', lang)]: viewDetoxData.end_remark,
+                   [getTranslation('Status/स्थिति', lang)]: viewDetoxData.status,
+                   [getTranslation('Created At/बनाया गया', lang)]: viewDetoxData.created_at,
+                   [getTranslation('Updated At/अपडेट किया गया', lang)]: viewDetoxData.updated_at,
                   }).map(([key, value]) => (
                     <tr key={key}>
                       <td className="fw-bold">{key}</td>
@@ -1519,7 +1519,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                 </tbody>
               </Table>
             ) : (
-              <p className="text-center text-danger">No data available.</p>
+              <p className="text-center text-danger">{getTranslation("No data available./कोई डेटा मौजूद नहीं।",lang)}</p>
             )}
           </div>
         )}
@@ -1532,8 +1532,8 @@ const handleDetoxReadmissionSubmit = async (e) => {
             onClick={handleDownloadPDF}
           >
             {pfaDownload
-              ? "Your Detoxification report is being downloaded... / आपका डिटॉक्स रिपोर्ट डाउनलोड हो रहा है..."
-              : "Download Your Detoxification Report / डिटॉक्स रिपोर्ट डाउनलोड करें"}
+              ? getTranslation("Your Detoxification report is being downloaded... / आपका डिटॉक्स रिपोर्ट डाउनलोड हो रहा है...",lang)
+              : getTranslation("Download Your Detoxification Report / डिटॉक्स रिपोर्ट डाउनलोड करें",lang)}
           </button>
         </div>
       </CommonModal>
@@ -1542,7 +1542,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
       {/* Update Detoxification Form Start */}
 <CommonModal
   isOpen={editDetoxModal}
-  title="Update Detoxification Form"
+  title={getTranslation("Update Detoxification Form/डिटॉक्सिफिकेशन फॉर्म अपडेट करें",lang)}
   toggler={closeAllModal}
   maxWidth="1200px"
 >
@@ -1568,7 +1568,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
         <div className="col-md-6">
           <FormGroup className="form-group row">
             <Label className="col-sm-12 col-form-label col-xl-6">
-              {dateOfAssessment}
+              {getTranslation(dateOfAssessment,lang)}
             </Label>
             <Col xl="5" sm="12">
               <div className="input-group">
@@ -1593,7 +1593,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
 
         {/* Detoxified Yes/No */}
         <div className="mb-3">
-          <label>Is Detoxified?</label>
+          <label>{getTranslation("Is Detoxified?/क्या यह विषमुक्त है?",lang)}</label>
           <select
             id="is_detoxified"
             name="is_detoxified"
@@ -1607,8 +1607,8 @@ const handleDetoxReadmissionSubmit = async (e) => {
             }
           >
             <option value="">-- Select --</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
+            <option value="Yes">{getTranslation("Yes/हाँ",lang)}</option>
+            <option value="No">{getTranslation("No/नहीं",lang)}</option>
           </select>
         </div>
 
@@ -1616,7 +1616,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
         {editDetoxData?.is_detoxified === "Yes" && (
           <>
             <div className="mb-3">
-              <label htmlFor="start_date">Start Date</label>
+              <label htmlFor="start_date">{getTranslation("Start Date/आरंभ करने की तिथि",lang)}</label>
               <input
                 type="date"
                 id="start_date"
@@ -1639,7 +1639,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
             </div>
 
             <div className="mb-3">
-              <label htmlFor="end_date">End Date</label>
+              <label htmlFor="end_date">{getTranslation("End Date/अंतिम तिथि",lang)}</label>
               <input
                 type="date"
                 id="end_date"
@@ -1666,7 +1666,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
         {/* If No → Show only end_date */}
         {editDetoxData?.is_detoxified === "No" && (
           <div className="mb-3">
-            <label htmlFor="end_date">End Date</label>
+            <label htmlFor="end_date">{getTranslation("End Date/अंतिम तिथि",lang)}</label>
             <input
               type="date"
               id="end_date"
@@ -1689,7 +1689,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
 
         {/* Start Remark */}
         <div className="mb-3">
-          <label htmlFor="start_remark">Start Remark</label>
+          <label htmlFor="start_remark">{getTranslation("Start Remark/टिप्पणी प्रारंभ करें",lang)}</label>
           <textarea
             id="start_remark"
             name="start_remark"
@@ -1707,7 +1707,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
 
         {/* End Remark */}
         <div className="mb-3">
-          <label htmlFor="end_remark">End Remark</label>
+          <label htmlFor="end_remark">{getTranslation("End Remark/टिप्पणी समाप्त",lang)}</label>
           <textarea
             id="end_remark"
             name="end_remark"
@@ -1729,7 +1729,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
             {isLoading ? (
               <span className="spinner-border spinner-border-sm"></span>
             ) : (
-              "Update Detoxification"
+              getTranslation("Update Detoxification/विषहरण अद्यतन",lang)
             )}
           </Button>
         </div>
@@ -1743,7 +1743,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
 {/* ✅ Readmission Detoxification Form Start */}
 <CommonModal
   isOpen={DetoxPrefillModal}
-  title="Readmission Detoxification Form"
+  title={getTranslation("Readmission Detoxification Form/पुनः प्रवेश विषहरण प्रपत्र",lang)}
   toggler={closeAllModal}
   maxWidth="1200px"
 >
@@ -1764,7 +1764,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
       <div className="container mt-4">
         {/* Detoxified Yes/No */}
         <div className="mb-3">
-          <label>Is Detoxified?</label>
+          <label>{getTranslation("Is Detoxified?/क्या यह विषमुक्त है?",lang)}</label>
           <select
             id="is_detoxified"
             name="is_detoxified"
@@ -1778,8 +1778,8 @@ const handleDetoxReadmissionSubmit = async (e) => {
             }
           >
             <option value="">-- Select --</option>
-            <option value="Yes">Yes</option>
-            <option value="No">No</option>
+            <option value="Yes">{getTranslation("Yes/हाँ",lang)}</option>
+            <option value="No">{getTranslation("No/नहीं",lang)}</option>
           </select>
         </div>
 
@@ -1787,7 +1787,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
         {DetoxPrefillData?.is_detoxified === "Yes" && (
           <>
             <div className="mb-3">
-              <label htmlFor="start_date">Start Date</label>
+              <label htmlFor="start_date">{getTranslation("Start Date/आरंभ करने की तिथि",lang)}</label>
               <input
                 type="date"
                 id="start_date"
@@ -1810,7 +1810,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
             </div>
 
             <div className="mb-3">
-              <label htmlFor="end_date">End Date</label>
+              <label htmlFor="end_date">{getTranslation("End Date/अंतिम तिथि",lang)}</label>
               <input
                 type="date"
                 id="end_date"
@@ -1837,7 +1837,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
         {/* If No → Show only end_date */}
         {DetoxPrefillData?.is_detoxified === "No" && (
           <div className="mb-3">
-            <label htmlFor="end_date">End Date</label>
+            <label htmlFor="end_date">{getTranslation("End Date/अंतिम तिथि",lang)}</label>
             <input
               type="date"
               id="end_date"
@@ -1862,7 +1862,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
 
         {/* Start Remark */}
         <div className="mb-3">
-          <label htmlFor="start_remark">Start Remark</label>
+          <label htmlFor="start_remark">{getTranslation("Start Remark/टिप्पणी प्रारंभ करें",lang)}</label>
           <textarea
             id="start_remark"
             name="start_remark"
@@ -1880,7 +1880,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
 
         {/* End Remark */}
         <div className="mb-3">
-          <label htmlFor="end_remark">End Remark</label>
+          <label htmlFor="end_remark">{getTranslation("End Remark/टिप्पणी समाप्त",lang)}</label>
           <textarea
             id="end_remark"
             name="end_remark"
@@ -1902,7 +1902,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
             {isLoading ? (
               <span className="spinner-border spinner-border-sm"></span>
             ) : (
-              "Readmission Detoxification Form"
+              getTranslation("Readmission Detoxification Form/पुनः प्रवेश विषहरण प्रपत्र",lang)
             )}
           </Button>
         </div>

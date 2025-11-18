@@ -1468,8 +1468,8 @@ const parseDateString = (dateStr) => {
   
       Swal.fire({
         icon: "success",
-        title: "Assessment Updated",
-        text: "The assessment was updated successfully!",
+        title: getTranslation("Assessment Updated/मूल्यांकन अद्यतन",lang),
+        text: getTranslation("The assessment was updated successfully!/मूल्यांकन सफलतापूर्वक अद्यतन किया गया!",lang),
       });
   
       setPFAEditIndividualDataModal(false);
@@ -1477,7 +1477,7 @@ const parseDateString = (dateStr) => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "An error occurred while updating the assessment.",
+        text: getTranslation("An error occurred while updating the assessment./मूल्यांकन अद्यतन करते समय एक त्रुटि हुई.",lang),
       });
     } finally {
       setTimeout(() => setIsLoading(false), 300); // show spinner at least 300ms
@@ -1810,7 +1810,7 @@ const parseDateString = (dateStr) => {
           {/* PFA data form modal */}
           <CommonModal
             isOpen={modal}
-            title={patientFirstAssessment}
+            title={getTranslation(patientFirstAssessment,lang)}
             toggler={closePFAModal}
             maxWidth="1200px"
           >
@@ -1828,10 +1828,10 @@ const parseDateString = (dateStr) => {
                   <PatientCommonInfo
                     selectedUser={selectedUser}
                     labels={{
-                      name: "Patient name/प्रयासक का नाम :",
-                      sex: "Gender/प्रयासक का लिंग :",
-                      age: "Age/प्रयासक का उम्र :",
-                      date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+                      name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+                      sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+                      age: getTranslation("Age/प्रयासक का उम्र :",lang),
+                      date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
                       ageValue: patientCalAge,
                     }}
                   />
@@ -1841,7 +1841,7 @@ const parseDateString = (dateStr) => {
                     <div className="col-md-6">
                       <FormGroup className="form-group row">
                         <Label className="col-sm-12 col-form-label  col-xl-6">
-                          {dateOfAssessment}
+                          {getTranslation(dateOfAssessment,lang)}
                         </Label>
                         <Col xl="5" sm="12">
                           <div className="input-group">
@@ -1886,7 +1886,7 @@ const parseDateString = (dateStr) => {
                     {/*Dependent to section/उपयोगकर्ता :*/}
                     <div className="col-md-12">
                       <FormGroup className="mb-4">
-                        <Label>{dependentTo}</Label>
+                        <Label>{getTranslation(dependentTo,lang)}</Label>
                         <Input
                           type="textarea"
                           className="form-control"
@@ -1900,7 +1900,7 @@ const parseDateString = (dateStr) => {
                     {/*Substance Use Pattern section/उपयोगकर्ता :*/}
                     <div className="col-md-12">
                       <FormGroup className="mb-4 mt-4">
-                        <Label>{substanceUsePattern}</Label>
+                        <Label>{getTranslation(substanceUsePattern,lang)}</Label>
                         <Input
                           type="textarea"
                           className="form-control"
@@ -1914,7 +1914,7 @@ const parseDateString = (dateStr) => {
                     {/*Last 30 Days Quantity section/उपयोगकर्ता :*/}
                     <div className="col-md-12">
                       <FormGroup className="mb-4 mt-4">
-                        <Label>{last30DaysQuantity}</Label>
+                        <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
                         <Input
                           type="textarea"
                           className="form-control"
@@ -1930,41 +1930,41 @@ const parseDateString = (dateStr) => {
                       <Table bordered>
                         <thead>
                           <tr>
-                            <th scope="col">{tableNumber}</th>
-                            <th scope="col">{genralPhysicalExamination}</th>
-                            <th scope="col">{Observation}</th>
+                            <th scope="col">{getTranslation(tableNumber,lang)}</th>
+                            <th scope="col">{getTranslation(genralPhysicalExamination,lang)}</th>
+                            <th scope="col">{getTranslation(Observation,lang)}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {[
                             {
                               id: "5",
-                              question: anyMedicalHistory,
+                              question: getTranslation(anyMedicalHistory,lang),
                               name: "medicalConfirmationData",
                             },
                             {
                               id: "6",
-                              question: anyBloodTransfusionHistory,
+                              question: getTranslation(anyBloodTransfusionHistory,lang),
                               name: "bloodConfirmationData",
                             },
                             {
                               id: "7",
-                              question: Weight,
+                              question: getTranslation(Weight,lang),
                               name: "weight",
                             },
                             {
                               id: "8",
-                              question: PulseRate,
+                              question: getTranslation(PulseRate,lang),
                               name: "pulse_rate",
                             },
                             {
                               id: "9",
-                              question: Bloodpressure,
+                              question: getTranslation(Bloodpressure,lang),
                               name: "blood_pressure",
                             },
                             {
                               id: "10",
-                              question: Temperature,
+                              question: getTranslation(Temperature,lang),
                               name: "temperature",
                             },
                           ].map(({ id, question, name }) => (
@@ -2001,7 +2001,7 @@ const parseDateString = (dateStr) => {
 
                       <div className="col-md-12">
                         <FormGroup className="mb-4 mt-4">
-                          <Label>{mentionIfAny}</Label>
+                          <Label>{getTranslation(mentionIfAny,lang)}</Label>
                           <Input
                             type="textarea"
                             className="form-control"
@@ -2019,26 +2019,26 @@ const parseDateString = (dateStr) => {
                       <Table bordered>
                         <thead>
                           <tr>
-                            <th scope="col">{tableNumber2}</th>
-                            <th scope="col">{complicationDetails}</th>
-                            <th scope="col">{yes1}</th>
-                            <th scope="col">{no1}</th>
+                            <th scope="col">{getTranslation(tableNumber2,lang)}</th>
+                            <th scope="col">{getTranslation(complicationDetails,lang)}</th>
+                            <th scope="col">{getTranslation(yes1,lang)}</th>
+                            <th scope="col">{getTranslation(no1,lang)}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {[
-                            { key: "ulcer", label: ulcers },
+                            { key: "ulcer", label: getTranslation(ulcers,lang) },
                             {
                               key: "respiratory_problem",
-                              label: respiratoryProblem,
+                              label: getTranslation(respiratoryProblem,lang),
                             },
-                            { key: "jaundice", label: jaundice },
-                            { key: "haematemesis", label: Haematemesis },
+                            { key: "jaundice", label: getTranslation(jaundice,lang) },
+                            { key: "haematemesis", label: getTranslation(Haematemesis,lang) },
                             {
                               key: "abdominal_complaints",
-                              label: otherAbdominalComplaints,
+                              label: getTranslation(otherAbdominalComplaints,lang),
                             },
-                            { key: "cardiovascular", label: cardiovascular },
+                            { key: "cardiovascular", label: getTranslation(cardiovascular,lang) },
                           ].map(({ key, label }, index) => (
                             <tr key={key}>
                               <td>{index + 1}</td>
@@ -2081,7 +2081,7 @@ const parseDateString = (dateStr) => {
 
                       <div className="col-md-12">
                         <FormGroup className="mb-4 mt-4">
-                          <Label>{mentionIfAny2}</Label>
+                          <Label>{getTranslation(mentionIfAny2,lang)}</Label>
                           <Input
                             type="textarea"
                             className="form-control"
@@ -2099,17 +2099,17 @@ const parseDateString = (dateStr) => {
                       <Table bordered>
                         <thead>
                           <tr>
-                            <th scope="col">{tableNumber3}</th>
-                            <th scope="col">{neurological}</th>
-                            <th scope="col">{yes1}</th>
-                            <th scope="col">{no1}</th>
+                            <th scope="col">{getTranslation(tableNumber3,lang)}</th>
+                            <th scope="col">{getTranslation(neurological,lang)}</th>
+                            <th scope="col">{getTranslation(yes1,lang)}</th>
+                            <th scope="col">{getTranslation(no1,lang)}</th>
                           </tr>
                         </thead>
                         <tbody>
                           {neurologicalOptions.map((option, index) => (
                             <tr key={option.key}>
                               <td>{index + 1}</td>
-                              <td>{option.label}</td>
+                              <td>{getTranslation(option.label,lang)}</td>
                               {["Yes", "No"].map((value) => {
                                 const inputId = `neuro_${option.key}_${value}`;
                                 return (
@@ -2149,7 +2149,7 @@ const parseDateString = (dateStr) => {
 
                       <div className="col-md-12">
                         <FormGroup className="mb-4 mt-4">
-                          <Label>{mentionIfAny2}</Label>
+                          <Label>{getTranslation(mentionIfAny2,lang)}</Label>
                           <Input
                             type="textarea"
                             className="form-control"
@@ -2165,7 +2165,7 @@ const parseDateString = (dateStr) => {
                     {/* Any Other Findings */}
                     <div className="col-md-12">
                       <FormGroup className="mb-4 mt-4">
-                        <Label>{anyOtherFindings}</Label>
+                        <Label>{getTranslation(anyOtherFindings,lang)}</Label>
                         <Input
                           type="textarea"
                           className="form-control"
@@ -2179,7 +2179,7 @@ const parseDateString = (dateStr) => {
 
                     {/* Nutritional Status / नुट्रिशन स्तिथि */}
                     <div className="col-md-6">
-                      <Label>Nutritional Status / नुट्रिशन स्तिथि</Label>
+                      <Label>{getTranslation("Nutritional Status / नुट्रिशन स्तिथि",lang)}</Label>
                       <div className="radio radio-primary d-flex gap-3">
                         {["Good", "Average", "Poor"].map((Nstatus) => (
                           <div key={Nstatus}>
@@ -2201,7 +2201,7 @@ const parseDateString = (dateStr) => {
 
                     <div className="col-md-12">
                       <FormGroup className="mb-2 mt-4">
-                        <Label>{Lymphadenopathy}</Label>
+                        <Label>{getTranslation(Lymphadenopathy,lang)}</Label>
                         <Input
                           type="textarea"
                           className="form-control"
@@ -2228,14 +2228,14 @@ const parseDateString = (dateStr) => {
                           }
                         />
                         <Label className="text-muted" for="checkbox1">
-                          {consent}
+                          {getTranslation(consent,lang)}
                         </Label>
                       </div>
 
                       <Row>
                         <Col md="4">
                           <FormGroup>
-                            <Label>{name}</Label>
+                            <Label>{getTranslation(name,lang)}</Label>
                             <Input
                               type="text"
                               placeholder="Name"
@@ -2247,7 +2247,7 @@ const parseDateString = (dateStr) => {
                         </Col>
                         <Col md="4">
                           <FormGroup>
-                            <Label>{relationship}</Label>
+                            <Label>{getTranslation(relationship,lang)}</Label>
                             <Input
                               type="text"
                               placeholder="Relationship"
@@ -2259,7 +2259,7 @@ const parseDateString = (dateStr) => {
                         </Col>
                         <Col md="4">
                           <FormGroup>
-                            <Label>{signature}</Label>
+                            <Label>{getTranslation(signature,lang)}</Label>
                             <Input
                               type="text"
                               placeholder="Signature"
@@ -2276,7 +2276,7 @@ const parseDateString = (dateStr) => {
                       {/* Prepared By Section */}
                       <div className="col-md-6 mt-3">
                         <FormGroup>
-                          <Label>{prepared}</Label>
+                          <Label>{getTranslation(prepared,lang)}</Label>
                           <Input
                             type="text"
                             placeholder="Prepared By"
@@ -2303,7 +2303,7 @@ const parseDateString = (dateStr) => {
                           />
                           <Label className="text-muted" for="checkbox2">
                             {
-                              "Varification from parent side before PFA submitting"
+                              getTranslation("Varification from parent side before PFA submitting/पीएफए ​​जमा करने से पहले माता-पिता की ओर से सत्यापन",lang)
                             }
                           </Label>
                         </div>
@@ -2323,7 +2323,7 @@ const parseDateString = (dateStr) => {
                             aria-hidden="true"
                           ></span>
                         ) : (
-                          "Submit Patient First Assessment (PFA) Form"
+                          getTranslation("Submit Patient First Assessment (PFA) Form/रोगी प्रथम मूल्यांकन (पीएफए) फॉर्म जमा करें",lang)
                         )}
                       </Button>
                     </div>
@@ -2343,7 +2343,7 @@ const parseDateString = (dateStr) => {
           <CommonModal
             isOpen={viewModal}
             title={
-              "First Physical Assessment / प्रथम शारीरिक मूल्यांकन Details"
+              getTranslation("View First Physical Assessment / पहला शारीरिक मूल्यांकन देखें",lang)
             }
             toggler={closeUserViewModal}
             maxWidth="1200px"
@@ -2357,7 +2357,7 @@ const parseDateString = (dateStr) => {
                     padding: "20px 0",
                   }}
                 >
-                  First Physical Assessment / प्रथम शारीरिक मूल्यांकन
+                  {getTranslation("First Physical Assessment / प्रथम शारीरिक मूल्यांकन",lang)}
                 </h4>
                 <Table size="sm" className="table-bordered">
                   <tbody style={{ fontSize: "14px" }}>
@@ -2378,7 +2378,7 @@ const parseDateString = (dateStr) => {
                       <>
                         <tr className="fw-bold">
                           <td colSpan="2" className="p-3">
-                            Date of Assessment / मूल्यांकन की तारीख:
+                            {getTranslation("Date of Assessment / मूल्यांकन की तारीख:",lang)}
                           </td>
                           <td colSpan="2" className="p-3">
                             {new Date(
@@ -2388,7 +2388,7 @@ const parseDateString = (dateStr) => {
                         </tr>
                         <tr>
                           <td colSpan="2" className="fw-semibold p-3">
-                            Name of Patient / मरीज का नाम:
+                            {getTranslation("Name of Patient / मरीज का नाम:",lang)}
                           </td>
                           <td colSpan="2" className="p-3">
                             <span colSpan="2" className="fw-normal">
@@ -2398,7 +2398,7 @@ const parseDateString = (dateStr) => {
                         </tr>
                         <tr>
                           <td colSpan="2" className="fw-semibold p-3">
-                            Sex / Age / लिंग / उम्र:
+                            {getTranslation("Age / उम्र:",lang)}
                           </td>
                           <td colSpan="2" className="p-3">
                             <span colSpan="2" className="fw-normal">
@@ -2408,7 +2408,7 @@ const parseDateString = (dateStr) => {
                         </tr>
                         <tr>
                           <td colSpan="2" className="fw-semibold p-3">
-                            Dependent To / निर्भरता का प्रकार:
+                            {getTranslation("Dependent To / निर्भरता का प्रकार:",lang)}
                           </td>
                           <td colSpan="2" className="p-3">
                             <span colSpan="2" className="fw-normal">
@@ -2418,7 +2418,7 @@ const parseDateString = (dateStr) => {
                         </tr>
                         <tr>
                           <td colSpan="2" className="fw-semibold p-3">
-                            Substance Use Pattern / उपयोग का पैटर्न:
+                            {getTranslation("Substance Use Pattern / उपयोग का पैटर्न:",lang)}
                           </td>
                           <td colSpan="2" className="p-3">
                             <span colSpan="2" className="fw-normal">
@@ -2428,7 +2428,7 @@ const parseDateString = (dateStr) => {
                         </tr>
                         <tr>
                           <td colSpan="2" className="fw-semibold p-3">
-                            Last 30 Days Quantity / पिछले 30 दिनों की मात्रा:
+                            {getTranslation("Last 30 Days Quantity / पिछले 30 दिनों की मात्रा:",lang)}
                           </td>
                           <td colSpan="2" className="p-3">
                             <span colSpan="2" className="fw-normal">
@@ -2441,38 +2441,37 @@ const parseDateString = (dateStr) => {
                         <br />
                         <tr className="table-secondary text-center fw-bold">
                           <td colSpan="4" className="p-3">
-                            General Physical Examination / सामान्य शारीरिक
-                            परीक्षण
+                            {getTranslation("General Physical Examination / सामान्य शारीरिक परीक्षण",lang)}
                           </td>
                         </tr>
                         {[
                           {
-                            label: "Weight / वजन",
+                            label: getTranslation("Weight / वजन",lang),
                             value: selectedUser.weight,
                           },
                           {
-                            label: "Pulse Rate / पल्स रेट",
+                            label: getTranslation("Pulse Rate / पल्स रेट",lang),
                             value: selectedUser.pulse_rate,
                           },
                           {
-                            label: "Blood pressure / रक्तचाप",
+                            label: getTranslation("Blood pressure / रक्तचाप",lang),
                             value: selectedUser.blood_pressure,
                           },
                           {
-                            label: "Temperature / तापमान",
+                            label: getTranslation("Temperature / तापमान",lang),
                             value: selectedUser.temperature,
                           },
                           {
-                            label: "Medical History / चिकित्सा इतिहास",
+                            label: getTranslation("Medical History / चिकित्सा इतिहास",lang),
                             value: selectedUser.medical_history,
                           },
                           {
                             label:
-                              "Blood Transfusion History / रक्त संक्रमण इतिहास",
+                              getTranslation("Blood Transfusion History / रक्त संक्रमण इतिहास",lang),
                             value: selectedUser.blood_transfusion_history,
                           },
                           {
-                            label: "Medical or Blood History Details",
+                            label: getTranslation("Medical or Blood History Details / चिकित्सा या रक्त इतिहास विवरण",lang),
                             value:
                               selectedUser.medical_or_blood_history_details,
                           },
@@ -2492,36 +2491,36 @@ const parseDateString = (dateStr) => {
 
                         <tr className="table-secondary text-center fw-bold">
                           <td colSpan="4" className="p-3">
-                            Complication Details / जटिलता विवरण
+                            {getTranslation("Complication Details / जटिलता विवरण",lang)}
                           </td>
                         </tr>
                         {[
                           {
-                            label: "Ulcers / अल्सर",
+                            label: getTranslation("Ulcers / अल्सर",lang),
                             value: selectedUser.ulcer,
                           },
                           {
-                            label: "Respiratory Problem / श्वसन समस्या",
+                            label: getTranslation("Respiratory Problem / श्वसन समस्या",lang),
                             value: selectedUser.respiratory_problem,
                           },
                           {
-                            label: "Jaundice / पीलिया",
+                            label: getTranslation("Jaundice / पीलिया",lang),
                             value: selectedUser.jaundice,
                           },
                           {
-                            label: "Haematemesis / मलैना",
+                            label: getTranslation("Haematemesis / मलैना",lang),
                             value: selectedUser.haematemesis,
                           },
                           {
-                            label: "Abdominal Complaints / पेट की शिकायतें",
+                            label: getTranslation("Abdominal Complaints / पेट की शिकायतें",lang),
                             value: selectedUser.abdominal_complaints,
                           },
                           {
-                            label: "Cardiovascular / हृदय संबंधी",
+                            label: getTranslation("Cardiovascular / हृदय संबंधी",lang),
                             value: selectedUser.cardiovascular,
                           },
                           {
-                            label: "Complication Description",
+                            label: getTranslation("Complication Description / जटिलता विवरण",lang),
                             value: selectedUser.complication_description,
                           },
                         ].map((item, i) => (
@@ -2547,40 +2546,40 @@ const parseDateString = (dateStr) => {
                           }}
                         >
                           <td colSpan="4" className="p-3">
-                            Neurological / न्यूरोलॉजिकल
+                            {getTranslation("Neurological / न्यूरोलॉजिकल",lang)}
                           </td>
                         </tr>
                         {[
                           {
-                            label: "Seizure / फिट्स",
+                            label: getTranslation("Seizure / फिट्स",lang),
                             value: selectedUser.seizure,
                           },
                           {
-                            label: "Epilepsy / मिर्गी",
+                            label: getTranslation("Epilepsy / मिर्गी",lang),
                             value: selectedUser.epilepsy,
                           },
                           {
-                            label: "Delirium / भ्रम",
+                            label: getTranslation("Delirium / भ्रम",lang),
                             value: selectedUser.delirium,
                           },
                           {
-                            label: "Trembling / कांपना",
+                            label: getTranslation("Trembling / कांपना",lang),
                             value: selectedUser.trembling,
                           },
                           {
-                            label: "Memory Loss / स्मृति हानि",
+                            label: getTranslation("Memory Loss / स्मृति हानि",lang),
                             value: selectedUser.memory_loss,
                           },
                           {
-                            label: "Neuropathy / स्नायु रोग",
+                            label: getTranslation("Neuropathy / स्नायु रोग",lang),
                             value: selectedUser.neuropathy,
                           },
                           {
-                            label: "Blackout / बेहोशी",
+                            label: getTranslation("Blackout / बेहोशी",lang),
                             value: selectedUser.blackout,
                           },
                           {
-                            label: "Neuro Description",
+                            label: getTranslation("Neuro Description / न्यूरो विवरण",lang),
                             value: selectedUser.neuro_description,
                           },
                         ].map((item, i) => (
@@ -2606,7 +2605,7 @@ const parseDateString = (dateStr) => {
 
                         <tr>
                           <td colSpan="2" className="fw-semibold p-3">
-                            Nutritional Status / पोषण स्थिति:
+                            {getTranslation("Nutritional Status / पोषण स्थिति:",lang)}
                           </td>
                           <td colSpan="2" className="p-3">
                             {selectedUser.nutritional_status}
@@ -2614,7 +2613,7 @@ const parseDateString = (dateStr) => {
                         </tr>
                         <tr>
                           <td colSpan="2" className="fw-semibold p-3">
-                            Lymphadenopathy (mention):
+                            {getTranslation("Lymphadenopathy (mention): / लिम्फैडेनोपैथी (उल्लेख):",lang)}
                           </td>
                           <td colSpan="2" className="p-3">
                             {selectedUser.lymphadenopathy}
@@ -2622,7 +2621,7 @@ const parseDateString = (dateStr) => {
                         </tr>
                         <tr>
                           <td colSpan="2" className="fw-semibold p-3">
-                            Other Findings / अन्य खोज:
+                            {getTranslation("Other Findings / अन्य खोज:",lang)}
                           </td>
                           <td colSpan="2" className="p-3">
                             {selectedUser.other_findings}
@@ -2630,23 +2629,23 @@ const parseDateString = (dateStr) => {
                         </tr>
                         <tr>
                           <td colSpan="2" className="fw-semibold p-3">
-                            Consent:
+                            {getTranslation("Consent: / सहमति:",lang)}
                           </td>
                           <td colSpan="2" className="p-3">
                             {selectedUser.consent}
                           </td>
                         </tr>
                         <tr>
-                          <td className="fw-semibold p-3">Consent Name:</td>
+                          <td className="fw-semibold p-3">{getTranslation("Consent Name:/सहमति नाम:",lang)}</td>
                           <td className="p-3">{selectedUser.consent_name}</td>
-                          <td className="fw-semibold p-3">Relationship:</td>
+                          <td className="fw-semibold p-3">{getTranslation("Relationship:/संबंध:",lang)}</td>
                           <td className="p-3">
                             {selectedUser.consent_relationship}
                           </td>
                         </tr>
                         <tr className="table-light fw-bold">
                           <td colSpan="1" className="fw-semibold p-3">
-                            Prepared by:{" "}
+                            {getTranslation("Prepared by:/द्वारा तैयार:",lang)}{" "}
                           </td>
                           <td className="p-3" colSpan="3">
                             {selectedUser.prepared_by}
@@ -2656,7 +2655,7 @@ const parseDateString = (dateStr) => {
                     ) : (
                       <tr>
                         <td colSpan="2" className="text-center">
-                          No data available
+                         {getTranslation(" No data available / कोई डेटा मौजूद नहीं",lang)}
                         </td>
                       </tr>
                     )}
@@ -2671,8 +2670,8 @@ const parseDateString = (dateStr) => {
                   onClick={handleDownloadPDF}
                 >
                   {pfaDownload
-                    ? "Your PFA is being downloaded.../ आपका PFA डाउनलोड हो रहा है..."
-                    : "Download Your First Physical Assessment (PFA) / अपना प्रथम शारीरिक मूल्यांकन डाउनलोड करें"}
+                    ? getTranslation("Your PFA is being downloaded.../ आपका PFA डाउनलोड हो रहा है...",lang)
+                    : getTranslation("Download Your First Physical Assessment (PFA) / अपना प्रथम शारीरिक मूल्यांकन डाउनलोड करें",lang)}
                 </button>
               </div>
             </Col>
@@ -2681,7 +2680,7 @@ const parseDateString = (dateStr) => {
           {/* Readmission PFA Edit Modal */}
           <CommonModal
             isOpen={PFAEditModal}
-            title={"Readmission Patient First Assessment (PFA)"}
+            title={getTranslation("Readmission Patient First Assessment (PFA)/पुनः प्रवेश रोगी प्रथम मूल्यांकन (पीएफए)",lang)}
             toggler={closeUserViewModal}
             maxWidth="1200px"
           >
@@ -2721,7 +2720,7 @@ const parseDateString = (dateStr) => {
                   {/* Dependent To */}
                   <div className="col-md-12 pt-3">
                     <FormGroup className="mb-0">
-                      <Label>{dependentTo}</Label>
+                      <Label>{getTranslation(dependentTo,lang)}</Label>
                       <Input
                         type="textarea"
                         rows="3"
@@ -2740,7 +2739,7 @@ const parseDateString = (dateStr) => {
                   {/* Substance Use Pattern */}
                   <div className="col-md-12">
                     <FormGroup className="mb-0">
-                      <Label>{substanceUsePattern}</Label>
+                      <Label>{getTranslation(substanceUsePattern,lang)}</Label>
                       <Input
                         type="textarea"
                         rows="3"
@@ -2759,7 +2758,7 @@ const parseDateString = (dateStr) => {
                   {/* Last 30 Days Quantity */}
                   <div className="col-md-12">
                     <FormGroup className="mb-0">
-                      <Label>{last30DaysQuantity}</Label>
+                      <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
                       <Input
                         type="textarea"
                         rows="3"
@@ -2780,41 +2779,41 @@ const parseDateString = (dateStr) => {
                     <Table bordered>
                       <thead>
                         <tr>
-                          <th>{tableNumber}</th>
-                          <th>{genralPhysicalExamination}</th>
-                          <th>{Observation}</th>
+                          <th>{getTranslation(tableNumber,lang)}</th>
+                          <th>{getTranslation(genralPhysicalExamination,lang)}</th>
+                          <th>{getTranslation(Observation,lang)}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {[
                           {
                             id: "5",
-                            question: anyMedicalHistory,
+                            question: getTranslation(anyMedicalHistory,lang),
                             name: "medical_history",
                           },
                           {
                             id: "6",
-                            question: anyBloodTransfusionHistory,
+                            question: getTranslation(anyBloodTransfusionHistory,lang),
                             name: "blood_transfusion_history",
                           },
                           {
                             id: "7",
-                            question: Weight,
+                            question: getTranslation(Weight,lang),
                             name: "weight",
                           },
                           {
                             id: "8",
-                            question: PulseRate,
+                            question: getTranslation(PulseRate,lang),
                             name: "pulse_rate",
                           },
                           {
                             id: "9",
-                            question: Bloodpressure,
+                            question: getTranslation(Bloodpressure,lang),
                             name: "blood_pressure",
                           },
                           {
                             id: "10",
-                            question: Temperature,
+                            question: getTranslation(Temperature,lang),
                             name: "temperature",
                           },
                         ].map(({ id, question, name }) => (
@@ -2851,7 +2850,7 @@ const parseDateString = (dateStr) => {
 
                     <div className="col-md-12">
                       <FormGroup className="mb-0">
-                        <Label>{mentionIfAny}</Label>
+                        <Label>{getTranslation(mentionIfAny,lang)}</Label>
                         <Input
                           type="textarea"
                           rows="3"
@@ -2873,26 +2872,26 @@ const parseDateString = (dateStr) => {
                     <Table bordered>
                       <thead>
                         <tr>
-                          <th>{tableNumber2}</th>
-                          <th>{complicationDetails}</th>
-                          <th>{yes1}</th>
-                          <th>{no1}</th>
+                          <th>{getTranslation(tableNumber2,lang)}</th>
+                          <th>{getTranslation(complicationDetails,lang)}</th>
+                          <th>{getTranslation(yes1,lang)}</th>
+                          <th>{getTranslation(no1,lang)}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {[
-                          { key: "ulcer", label: ulcers },
+                          { key: "ulcer", label: getTranslation(ulcers,lang) },
                           {
                             key: "respiratory_problem",
-                            label: respiratoryProblem,
+                            label: getTranslation(respiratoryProblem,lang),
                           },
-                          { key: "jaundice", label: jaundice },
-                          { key: "haematemesis", label: Haematemesis },
+                          { key: "jaundice", label: getTranslation(jaundice,lang) },
+                          { key: "haematemesis", label: getTranslation(Haematemesis,lang) },
                           {
                             key: "abdominal_complaints",
-                            label: otherAbdominalComplaints,
+                            label: getTranslation(otherAbdominalComplaints,lang),
                           },
-                          { key: "cardiovascular", label: cardiovascular },
+                          { key: "cardiovascular", label: getTranslation(cardiovascular,lang) },
                         ].map(({ key, label }, index) => (
                           <tr key={key}>
                             <td>{index + 1}</td>
@@ -2950,7 +2949,7 @@ const parseDateString = (dateStr) => {
 
                     <div className="col-md-12">
                       <FormGroup className="mb-0">
-                        <Label>{mentionIfAny2}</Label>
+                        <Label>{getTranslation(mentionIfAny2,lang)}</Label>
                         <Input
                           type="textarea"
                           rows="3"
@@ -2972,17 +2971,17 @@ const parseDateString = (dateStr) => {
                     <Table bordered>
                       <thead>
                         <tr>
-                          <th>{tableNumber3}</th>
-                          <th>{neurological}</th>
-                          <th>{yes1}</th>
-                          <th>{no1}</th>
+                          <th>{getTranslation(tableNumber3,lang)}</th>
+                          <th>{getTranslation(neurological,lang)}</th>
+                          <th>{getTranslation(yes1,lang)}</th>
+                          <th>{getTranslation(no1,lang)}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {neurologicalOptions.map((option, index) => (
                           <tr key={option.key}>
                             <td>{index + 1}</td>
-                            <td>{option.label}</td>
+                            <td>{getTranslation(option.label,lang)}</td>
                             {["Yes", "No"].map((value) => {
                               const inputId = `neuro_${option.key}_${value}`;
                               return (
@@ -3028,7 +3027,7 @@ const parseDateString = (dateStr) => {
 
                     <div className="col-md-12">
                       <FormGroup className="mb-0">
-                        <Label>{mentionIfAny2}</Label>
+                        <Label>{getTranslation(mentionIfAny2,lang)}</Label>
                         <Input
                           type="textarea"
                           rows="3"
@@ -3048,7 +3047,7 @@ const parseDateString = (dateStr) => {
                   {/* Any Other Findings */}
                   <div className="col-md-12">
                     <FormGroup className="mb-0">
-                      <Label>{anyOtherFindings}</Label>
+                      <Label>{getTranslation(anyOtherFindings,lang)}</Label>
                       <Input
                         type="textarea"
                         rows="3"
@@ -3067,7 +3066,7 @@ const parseDateString = (dateStr) => {
                   {/* Lymphadenopathy */}
                   <div className="col-md-12">
                     <FormGroup className="mb-0">
-                      <Label>{Lymphadenopathy}</Label>
+                      <Label>{getTranslation(Lymphadenopathy,lang)}</Label>
                       <Input
                         type="textarea"
                         rows="3"
@@ -3085,7 +3084,7 @@ const parseDateString = (dateStr) => {
 
                   {/* Nutritional Status / नुट्रिशन स्तिथि */}
                   <div className="col-md-6">
-                    <Label>Nutritional Status / नुट्रिशन स्तिथि</Label>
+                    <Label>{getTranslation("Nutritional Status / नुट्रिशन स्तिथि,",lang)}</Label>
                     <div className="radio radio-primary d-flex gap-3">
                       {["Good", "Average", "Poor"].map((Nstatus) => (
                         <div key={Nstatus}>
@@ -3125,14 +3124,14 @@ const parseDateString = (dateStr) => {
                       }
                     />
                     <Label className="text-muted" for="checkbox1">
-                      {consent}
+                      {getTranslation(consent,lang)}
                     </Label>
                   </div>
 
                     <Row>
                       <Col md="4">
                         <FormGroup>
-                          <Label>{name}</Label>
+                          <Label>{getTranslation(name,lang)}</Label>
                           <Input
                             type="text"
                             name="consent_name"
@@ -3149,7 +3148,7 @@ const parseDateString = (dateStr) => {
                       </Col>
                       <Col md="4">
                         <FormGroup>
-                          <Label>{relationship}</Label>
+                          <Label>{getTranslation(relationship,lang)}</Label>
                           <Input
                             type="text"
                             name="consent_relationship"
@@ -3166,7 +3165,7 @@ const parseDateString = (dateStr) => {
                       </Col>
                       <Col md="4">
                         <FormGroup>
-                          <Label>{signature}</Label>
+                          <Label>{getTranslation(signature,lang)}</Label>
                           <Input
                             type="text"
                             name="consent_signature"
@@ -3187,7 +3186,7 @@ const parseDateString = (dateStr) => {
                   {/* Prepared By Section */}
                   <div className="col-md-12 mt-3">
                     <FormGroup>
-                      <Label>{prepared}</Label>
+                      <Label>{getTranslation(prepared,lang)}</Label>
                       <Input
                         type="text"
                         name="prepared_by"
@@ -3234,7 +3233,7 @@ const parseDateString = (dateStr) => {
                           aria-hidden="true"
                         ></span>
                       ) : (
-                        "ReCreate PFA"
+                        getTranslation("Recreate PFA Form / पीएफए ​​को पुनः बनाएँ",lang)
                       )}
                     </Button>
                   </div>
@@ -3248,7 +3247,7 @@ const parseDateString = (dateStr) => {
            {/* Edit individual PFA by user_id modal */}
            <CommonModal
             isOpen={PFAEditIndividualDataModal}
-            title={"Edit Patient First Assessment (PFA)"}
+            title={getTranslation("Edit Patient First Assessment (PFA)/रोगी प्रथम मूल्यांकन (PFA) संपादित करें",lang)}
             toggler={closeUserViewModal}
             maxWidth="1200px"
           >
@@ -3266,7 +3265,7 @@ const parseDateString = (dateStr) => {
             <div className="col-md-6 mt-3">
               <FormGroup className="form-group row">
                 <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {dateOfAssessment}
+                  {getTranslation(dateOfAssessment,lang)}
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
@@ -3289,7 +3288,7 @@ const parseDateString = (dateStr) => {
           {/* Dependent To */}
           <div className="col-md-12 pt-3">
             <FormGroup className="mb-0">
-              <Label>{dependentTo}</Label>
+              <Label>{getTranslation(dependentTo,lang)}</Label>
               <Input
                 type="textarea"
                 rows="3"
@@ -3308,7 +3307,7 @@ const parseDateString = (dateStr) => {
           {/* Substance Use Pattern */}
           <div className="col-md-12">
             <FormGroup className="mb-0">
-              <Label>{substanceUsePattern}</Label>
+              <Label>{getTranslation(substanceUsePattern,lang)}</Label>
               <Input
                 type="textarea"
                 rows="3"
@@ -3327,7 +3326,7 @@ const parseDateString = (dateStr) => {
           {/* Last 30 Days Quantity */}
           <div className="col-md-12">
             <FormGroup className="mb-0">
-              <Label>{last30DaysQuantity}</Label>
+              <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
               <Input
                 type="textarea"
                 rows="3"
@@ -3348,41 +3347,41 @@ const parseDateString = (dateStr) => {
             <Table bordered>
               <thead>
                 <tr>
-                  <th>{tableNumber}</th>
-                  <th>{genralPhysicalExamination}</th>
-                  <th>{Observation}</th>
+                  <th>{getTranslation(tableNumber,lang)}</th>
+                  <th>{getTranslation(genralPhysicalExamination,lang)}</th>
+                  <th>{getTranslation(Observation,lang)}</th>
                 </tr>
               </thead>
               <tbody>
                 {[
                   {
                     id: "5",
-                    question: anyMedicalHistory,
+                    question: getTranslation(anyMedicalHistory,lang),
                     name: "medical_history",
                   },
                   {
                     id: "6",
-                    question: anyBloodTransfusionHistory,
+                    question: getTranslation(anyBloodTransfusionHistory,lang),
                     name: "blood_transfusion_history",
                   },
                   {
                     id: "7",
-                    question: Weight,
+                    question: getTranslation(Weight,lang),
                     name: "weight",
                   },
                   {
                     id: "8",
-                    question: PulseRate,
+                    question: getTranslation(PulseRate,lang),
                     name: "pulse_rate",
                   },
                   {
                     id: "9",
-                    question: Bloodpressure,
+                    question: getTranslation(Bloodpressure,lang),
                     name: "blood_pressure",
                   },
                   {
                     id: "10",
-                    question: Temperature,
+                    question: getTranslation(Temperature,lang),
                     name: "temperature",
                   },
                 ].map(({ id, question, name }) => (
@@ -3419,7 +3418,7 @@ const parseDateString = (dateStr) => {
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{mentionIfAny}</Label>
+                <Label>{getTranslation(mentionIfAny,lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -3441,20 +3440,20 @@ const parseDateString = (dateStr) => {
   <Table bordered>
     <thead>
       <tr>
-        <th>{tableNumber2}</th>
-        <th>{complicationDetails}</th>
-        <th>{yes1}</th>
-        <th>{no1}</th>
+        <th>{getTranslation(tableNumber2,lang)}</th>
+        <th>{getTranslation(complicationDetails,lang)}</th>
+        <th>{getTranslation(yes1,lang)}</th>
+        <th>{getTranslation(no1,lang)}</th>
       </tr>
     </thead>
     <tbody>
       {[
-        { key: "ulcer", label: ulcers },
-        { key: "respiratory_problem", label: respiratoryProblem },
-        { key: "jaundice", label: jaundice },
-        { key: "haematemesis", label: Haematemesis },
-        { key: "abdominal_complaints", label: otherAbdominalComplaints },
-        { key: "cardiovascular", label: cardiovascular },
+        { key: "ulcer", label: getTranslation(ulcers,lang) },
+        { key: "respiratory_problem", label: getTranslation(respiratoryProblem,lang) },
+        { key: "jaundice", label: getTranslation(jaundice,lang) },
+        { key: "haematemesis", label: getTranslation(Haematemesis,lang) },
+        { key: "abdominal_complaints", label: getTranslation(otherAbdominalComplaints,lang) },
+        { key: "cardiovascular", label: getTranslation(cardiovascular,lang) },
       ].map(({ key, label }, index) => (
         <tr key={key}>
           <td>{index + 1}</td>
@@ -3504,7 +3503,7 @@ const parseDateString = (dateStr) => {
 
   <div className="col-md-12">
     <FormGroup className="mb-0">
-      <Label>{mentionIfAny2}</Label>
+      <Label>{getTranslation(mentionIfAny2,lang)}</Label>
       <Input
         type="textarea"
         rows="3"
@@ -3527,17 +3526,17 @@ const parseDateString = (dateStr) => {
   <Table bordered>
     <thead>
       <tr>
-        <th>{tableNumber3}</th>
-        <th>{neurological}</th>
-        <th>{yes1}</th>
-        <th>{no1}</th>
+        <th>{getTranslation(tableNumber3,lang)}</th>
+        <th>{getTranslation(neurological,lang)}</th>
+        <th>{getTranslation(yes1,lang)}</th>
+        <th>{getTranslation(no1,lang)}</th>
       </tr>
     </thead>
     <tbody>
       {neurologicalOptions.map((option, index) => (
         <tr key={option.key}>
           <td>{index + 1}</td>
-          <td>{option.label}</td>
+          <td>{getTranslation(option.label,lang)}</td>
           {["Yes", "No"].map((value) => {
             const inputId = `neuro_${option.key}_${value}`;
             return (
@@ -3578,7 +3577,7 @@ const parseDateString = (dateStr) => {
 
   <div className="col-md-12">
     <FormGroup className="mb-0">
-      <Label>{mentionIfAny2}</Label>
+      <Label>{getTranslation(mentionIfAny2,lang)}</Label>
       <Input
         type="textarea"
         rows="3"
@@ -3599,7 +3598,7 @@ const parseDateString = (dateStr) => {
           {/* Any Other Findings */}
           <div className="col-md-12">
             <FormGroup className="mb-0">
-              <Label>{anyOtherFindings}</Label>
+              <Label>{getTranslation(anyOtherFindings,lang)}</Label>
               <Input
                 type="textarea"
                 rows="3"
@@ -3618,7 +3617,7 @@ const parseDateString = (dateStr) => {
           {/* Lymphadenopathy */}
           <div className="col-md-12">
             <FormGroup className="mb-0">
-              <Label>{Lymphadenopathy}</Label>
+              <Label>{getTranslation(Lymphadenopathy,lang)}</Label>
               <Input
                 type="textarea"
                 rows="3"
@@ -3636,7 +3635,7 @@ const parseDateString = (dateStr) => {
 
           {/* Nutritional Status / नुट्रिशन स्तिथि */}
           <div className="col-md-6">
-            <Label>Nutritional Status / नुट्रिशन स्तिथि</Label>
+            <Label>{getTranslation("Nutritional Status / नुट्रिशन स्तिथि",lang)}</Label>
             <div className="radio radio-primary d-flex gap-3">
               {["Good", "Average", "Poor"].map((Nstatus) => (
                 <div key={Nstatus}>
@@ -3676,14 +3675,14 @@ const parseDateString = (dateStr) => {
               }
             />
             <Label className="text-muted" for="checkbox1">
-              {consent}
+              {getTranslation(consent,lang)}
             </Label>
           </div>
 
             <Row>
               <Col md="4">
                 <FormGroup>
-                  <Label>{name}</Label>
+                  <Label>{getTranslation(name,lang)}</Label>
                   <Input
                     type="text"
                     name="consent_name"
@@ -3700,7 +3699,7 @@ const parseDateString = (dateStr) => {
               </Col>
               <Col md="4">
                 <FormGroup>
-                  <Label>{relationship}</Label>
+                  <Label>{getTranslation(relationship,lang)}</Label>
                   <Input
                     type="text"
                     name="consent_relationship"
@@ -3717,7 +3716,7 @@ const parseDateString = (dateStr) => {
               </Col>
               <Col md="4">
                 <FormGroup>
-                  <Label>{signature}</Label>
+                  <Label>{getTranslation(signature,lang)}</Label>
                   <Input
                     type="text"
                     name="consent_signature"
@@ -3738,7 +3737,7 @@ const parseDateString = (dateStr) => {
           {/* Prepared By Section */}
           <div className="col-md-12 mt-3">
             <FormGroup>
-              <Label>{prepared}</Label>
+              <Label>{getTranslation(prepared,lang)}</Label>
               <Input
                 type="text"
                 name="prepared_by"
@@ -3769,7 +3768,7 @@ const parseDateString = (dateStr) => {
                   />
                   <Label className="text-muted" for="checkbox3">
                     {
-                      "Varification from parent side before PFA submitting"
+                      getTranslation("Varification from parent side before PFA submitting/पीएफए ​​जमा करने से पहले माता-पिता की ओर से सत्यापन",lang)
                     }
                   </Label>
                 </div>
@@ -3785,7 +3784,7 @@ const parseDateString = (dateStr) => {
                   aria-hidden="true"
                 ></span>
               ) : (
-                "Update Patient First Assessment (PFA)"
+                getTranslation("Update Patient First Assessment (PFA)/रोगी प्रथम मूल्यांकन (पीएफए) को अद्यतन करें",lang)
               )}
             </Button>
           </div>

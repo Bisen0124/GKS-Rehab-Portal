@@ -84,48 +84,48 @@ const silentBehaviorOptions = [
 
 const questions = [
   {
-    en: "Do ever use Substance alone?",
-    hi: "क्या अकेले मादक पदार्थ उपयोग करते हैं?",
+    en: "Do ever use Substance alone?/क्या अकेले मादक पदार्थ उपयोग करते हैं?",
+    // hi: "क्या अकेले मादक पदार्थ उपयोग करते हैं?",
   },
   {
-    en: "Moody personality?",
-    hi: "मिज़ाजी स्वभाव?",
+    en: "Moody personality?/मिज़ाजी स्वभाव?",
+    // hi: "मिज़ाजी स्वभाव?",
   },
   {
-    en: "Always worried?",
-    hi: "हमेशा चिंतित रहते हैं?",
+    en: "Always worried?/हमेशा चिंतित रहते हैं?",
+    // hi: "हमेशा चिंतित रहते हैं?",
   },
   {
-    en: "Always Sad?",
-    hi: "हमेशा उदास रहते हैं?",
+    en: "Always Sad?/हमेशा उदास रहते हैं?",
+    // hi: "हमेशा उदास रहते हैं?",
   },
   {
-    en: "Lack of confidence?",
-    hi: "आत्मविश्वास की कमी?",
+    en: "Lack of confidence?/आत्मविश्वास की कमी?",
+    // hi: "आत्मविश्वास की कमी?",
   },
   {
-    en: "Stubborn nature?",
-    hi: "हठी स्वभाव?",
+    en: "Stubborn nature?/हठी स्वभाव?",
+    // hi: "हठी स्वभाव?",
   },
   {
-    en: "Instant and too much aggressive?",
-    hi: "तुरंत और अधिक आक्रामक?",
+    en: "Instant and too much aggressive?/तुरंत और अधिक आक्रामक?",
+    // hi: "तुरंत और अधिक आक्रामक?",
   },
   {
-    en: "Uses Slang language? (Bad words)",
-    hi: "गाली गलौज करता है?",
+    en: "Uses Slang language? (Bad words)/गाली गलौज करता है?",
+    // hi: "गाली गलौज करता है?",
   },
   {
-    en: "Disrespects parents?",
-    hi: "माता-पिता का अनादर करता है?",
+    en: "Disrespects parents?/माता-पिता का अनादर करता है?",
+    // hi: "माता-पिता का अनादर करता है?",
   },
   {
-    en: "Vandalizes the house?",
-    hi: "घर का नुकसान करता है?",
+    en: "Vandalizes the house?/घर का नुकसान करता है?",
+    // hi: "घर का नुकसान करता है?",
   },
   {
-    en: "Does fight at home? (with mother, wife, children, brother, sister)",
-    hi: "घर पर झगड़ा करता है? (माता, पत्नी, बच्चे, भाई, बहन के साथ)",
+    en: "Does fight at home? (with mother, wife, children, brother, sister)/घर पर झगड़ा करता है? (माता, पत्नी, बच्चे, भाई, बहन के साथ)",
+    // hi: "घर पर झगड़ा करता है? (माता, पत्नी, बच्चे, भाई, बहन के साथ)",
   },
   // Add more if needed
 ];
@@ -187,11 +187,11 @@ function PatientBehavior() {
             let isPBCompleted = false;
 
           let userStatus = (
-            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+            <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
           );
           if (admitDate && recentPBDate && admitDate > recentPBDate) {
             isPBCompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -292,7 +292,7 @@ function PatientBehavior() {
               <span
                 onClick={() => handlePatientBehaviourPreFill(row.recent_intake_patient_behavior_id)}
                 style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
+                title={getTranslation("Readmission Patient Behaviour Form/पुनः प्रवेश रोगी व्यवहार प्रपत्र",lang)}
               >
                 ✏️
               </span>
@@ -337,7 +337,7 @@ function PatientBehavior() {
       cursor: row.isPBCompleted ? "not-allowed" : "pointer",
       opacity: row.isPBCompleted ? 0.5 : 1,
     }}
-    title={row.isPBCompleted ? "PB Completed" : "Create PB Form"}
+    title={row.isPBCompleted ? getTranslation("PB Completed/पीबी पूरा हुआ",lang) : getTranslation("Create PB Form/पीबी फॉर्म बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -507,7 +507,7 @@ function PatientBehavior() {
           <span
             onClick={() => viewPBFormData(row.ipb_id)}
             style={{ cursor: "pointer" }}
-            title="View"
+            title={getTranslation("View/देखना",lang)}
           >
             <svg
               style={{ color: "#d56337" }}
@@ -529,7 +529,7 @@ function PatientBehavior() {
           <span
             onClick={() => handlePBIndividualEdit(row.ipb_id)}
             style={{ cursor: "pointer", marginLeft: "10px" }}
-            title="Edit"
+            title={getTranslation("Edit/संपादन करना/संपादन करना",lang)}
           >
             <svg
               style={{ color: "green" }}
@@ -750,8 +750,8 @@ const handlePBFormSubmit = async (e) => {
 
     Swal.fire({
       icon: "success",
-      title: "IRF Created Successfully",
-      text: "The IRF assessment was submitted successfully.",
+      title: getTranslation("IRF Created Successfully/IRF सफलतापूर्वक बनाया गया",lang),
+      text: getTranslation("The IRF assessment was submitted successfully./आईआरएफ मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
     }).then(() => setIsPatientBehaviourModalOpen(false));
 
     console.log("✅ IRF Data:", data);
@@ -761,8 +761,8 @@ const handlePBFormSubmit = async (e) => {
 
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to submit IRF. Check console for error.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to submit Patient Behaviour. Check console for error./रोगी व्यवहार प्रपत्र बनाएँ सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };
@@ -831,17 +831,17 @@ const viewPBFormData = async (pbID) => {
 
 // ✅ Edit Patient Behavior form data handler start
 const questions = [
-  { key: "uses_alone", en: "Do you use substance alone?", hi: "क्या आप अकेले मादक पदार्थ का सेवन करते हैं?" },
-  { key: "moody", en: "Moody personality?", hi: "क्या आप मिज़ाजी स्वभाव के हैं?" },
-  { key: "always_worried", en: "Always worried?", hi: "क्या आप हमेशा चिंतित रहते हैं?" },
-  { key: "always_sad", en: "Always sad?", hi: "क्या आप हमेशा उदास रहते हैं?" },
-  { key: "lack_of_confidence", en: "Lack of confidence?", hi: "क्या आत्मविश्वास की कमी है?" },
-  { key: "stubborn_nature", en: "Stubborn nature?", hi: "क्या जिद्दी स्वभाव है?" },
-  { key: "aggressive", en: "Instant and too much aggressive?", hi: "क्या आप तुरंत और अत्यधिक आक्रामक हो जाते हैं?" },
-  { key: "slang_language", en: "Uses slang language? (Bad words)", hi: "क्या आप गाली-गलौज करते हैं?" },
-  { key: "disrespects_parents", en: "Disrespects parents?", hi: "क्या आप माता-पिता का अनादर करते हैं?" },
-  { key: "vandalizes_house", en: "Vandalizes the house?", hi: "क्या आप घर का नुकसान करते हैं?" },
-  { key: "fights_at_home", en: "Does fight at home? (with mother, wife, children, brother, sister)", hi: "क्या आप घर पर झगड़ा करते हैं? (माता, पत्नी, बच्चे, भाई, बहन के साथ)" }
+  { key: "uses_alone", en: "Do you use substance alone? / क्या आप अकेले मादक पदार्थ का सेवन करते हैं?" },
+  { key: "moody", en: "Moody personality? / क्या आप मिज़ाजी स्वभाव के हैं?" },
+  { key: "always_worried", en: "Always worried? / क्या आप हमेशा चिंतित रहते हैं?" },
+  { key: "always_sad", en: "Always sad? / क्या आप हमेशा उदास रहते हैं?" },
+  { key: "lack_of_confidence", en: "Lack of confidence? / क्या आत्मविश्वास की कमी है?" },
+  { key: "stubborn_nature", en: "Stubborn nature? / क्या जिद्दी स्वभाव है?" },
+  { key: "aggressive", en: "Instant and too much aggressive? / क्या आप तुरंत और अत्यधिक आक्रामक हो जाते हैं?" },
+  { key: "slang_language", en: "Uses slang language? (Bad words) / क्या आप गाली-गलौज करते हैं?" },
+  { key: "disrespects_parents", en: "Disrespects parents? / क्या आप माता-पिता का अनादर करते हैं?" },
+  { key: "vandalizes_house", en: "Vandalizes the house? / क्या आप घर का नुकसान करते हैं?" },
+  { key: "fights_at_home", en: "Does fight at home? (with mother, wife, children, brother, sister) / क्या आप घर पर झगड़ा करते हैं? (माता, पत्नी, बच्चे, भाई, बहन के साथ)" }
 ];
 
 const [PBEditData, setPBEditData] = useState(null);
@@ -1083,8 +1083,8 @@ const handlePBUpdate = async () => {
 
     Swal.fire({
       icon: "success",
-      title: "PB Update Successfully!",
-      text: "Patient Behavior assessment has been updated successfully!",
+      title: getTranslation("PB Update Successfully!/पीबी अद्यतन सफलतापूर्वक!",lang),
+      text: getTranslation("Patient Behavior assessment has been updated successfully!/रोगी व्यवहार मूल्यांकन सफलतापूर्वक अद्यतन किया गया है!",lang),
     }).then(() => {
       setPBEditModal(false); // ✅ Close modal after success
     });
@@ -1094,8 +1094,8 @@ const handlePBUpdate = async () => {
 
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to update Patient Behavior assessment. Check console for details.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to update Patient Behavior assessment. Check console for details./रोगी व्यवहार मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
     });
   }
 };
@@ -1115,8 +1115,8 @@ const handlePatientBehaviourPreFill = async (prefillPBID = null) => {
   if (!prefillPBID) {
     Swal.fire({
       icon: "warning",
-      title: "Missing Patient Behavior ID",
-      text: "No valid Patient Behavior ID was provided for prefill.",
+      title: getTranslation("Missing Patient Behavior ID/रोगी व्यवहार आईडी गुम है",lang),
+      text: getTranslation("No valid Patient Behavior ID was provided for prefill./प्रीफिल के लिए कोई वैध रोगी व्यवहार आईडी प्रदान नहीं की गई थी।",lang),
     });
     return;
   }
@@ -1143,10 +1143,10 @@ const handlePatientBehaviourPreFill = async (prefillPBID = null) => {
     if (!response.ok) {
       Swal.fire({
         icon: "error",
-        title: "Fetch Failed",
+        title: getTranslation("Fetch Failed/प्राप्त करना विफल",lang),
         text:
           data.message ||
-          "Unable to fetch Patient Behavior data for prefill.",
+          getTranslation("Unable to fetch Patient Behavior data for prefill./प्रीफ़िल के लिए रोगी व्यवहार डेटा प्राप्त करने में असमर्थ.",lang),
       });
       return;
     }
@@ -1155,8 +1155,8 @@ const handlePatientBehaviourPreFill = async (prefillPBID = null) => {
     if (!latestAssessment) {
       Swal.fire({
         icon: "info",
-        title: "No Data Found",
-        text: "No Patient Behavior data available for this ID.",
+        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
+        text: getTranslation("No Patient Behavior data available for this ID./इस आईडी के लिए कोई रोगी व्यवहार डेटा उपलब्ध नहीं है।",lang),
       });
       return;
     }
@@ -1272,8 +1272,8 @@ const handlePatientBehaviourPreFill = async (prefillPBID = null) => {
     console.error("Prefill fetch error:", error);
     Swal.fire({
       icon: "error",
-      title: "Network Error",
-      text: "Unable to fetch Patient Behavior data due to a network issue.",
+      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
+      text: getTranslation("Unable to fetch Patient Behavior data due to a network issue./नेटवर्क समस्या के कारण रोगी व्यवहार डेटा प्राप्त करने में असमर्थ।",lang),
     });
   }
 };
@@ -1386,8 +1386,8 @@ const handlePBReadmissionFormSubmit = async (e) => {
 
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to submit Readmission Form. Check console for error.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to submit Readmission Form. Check console for error./पुनः प्रवेश फ़ॉर्म सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };
@@ -1458,7 +1458,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1480,7 +1480,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1523,7 +1523,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All Patient behavior Data List" className="p-0" />
+                    <HeaderCard title={getTranslation("All Patient behavior Data List",lang)} className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -1543,7 +1543,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1579,25 +1579,25 @@ const handlePBReadmissionFormSubmit = async (e) => {
       {/* Patient behaviour create form start */}
       <CommonModal
         isOpen={isPatientBehaviourModalOpen}
-        title="Create Patient behavior  / रोगी का व्यवहार"
+        title={getTranslation("Create Patient behavior form / रोगी व्यवहार प्रपत्र बनाएँ",lang)}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
-            name: "Patient name/प्रयासक का नाम :",
-            sex: "Gender/प्रयासक का लिंग :",
-            age: "Age/प्रयासक का उम्र :",
-            date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+            name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+            sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+            age: getTranslation("Age/प्रयासक का उम्र :",lang),
+            date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
             ageValue: patientCalAge,
           }}
         />
         <div className="row px-3 pt-4 pb-3">
-          <form className="container mt-4 mb-5" onSubmit={handlePBFormSubmit}>
+          <form className="container mt-2 mb-2" onSubmit={handlePBFormSubmit}>
             <div class="col-md-6 mb-3">
               <Label className="col-sm-12 col-form-label  col-xl-6">
-                {dateOfAssessment}
+                {getTranslation(dateOfAssessment,lang)}
               </Label>
               <Col xl="5" sm="12">
                 <div className="input-group">
@@ -1616,7 +1616,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
             <div class="col-md-6">
                 <div className="mb-3">
                   <label htmlFor="mostImportantThingLife" className="form-label">
-                  What is the most important thing in life? / जीवन में सबसे महत्वपूर्ण चीज़ क्या है?
+                 {getTranslation(" What is the most important thing in life? / जीवन में सबसे महत्वपूर्ण चीज़ क्या है?",lang)}
                   </label>
                   <input
                     type="text"
@@ -1631,7 +1631,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
               <div class="col-md-6">
                 <div className="mb-3">
                   <label htmlFor="lifeAim" className="form-label">
-                  Life's Aim / जिंदगी का लक्ष्य 
+                  {getTranslation("Life's Aim / जिंदगी का लक्ष्य",lang)}
                   </label>
                   <input
                     type="text"
@@ -1646,8 +1646,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
               <div class="col-md-6">
                 <div className="mb-3">
                   <label htmlFor="mentalStatus" className="form-label">
-                    Current Mental Status here in center (वर्तमान मानसिक स्थिति
-                    यहाँ केंद्र में)
+                    {getTranslation("Current Mental Status here in center / (वर्तमान मानसिक स्थिति यहाँ केंद्र में)",lang)}
                   </label>
                   <input
                     type="text"
@@ -1663,8 +1662,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
               <div className="col-md-6">
                 <div className="mb-3">
                   <label htmlFor="dischargePlan" className="form-label">
-                    What is planned after discharge from center (डिस्चार्ज के
-                    बाद क्या सोचता है?)
+                   {getTranslation("What is planned after discharge from center / (डिस्चार्ज के बाद क्या सोचता है?)",lang)}
                   </label>
                   <input
                     type="text"
@@ -1680,8 +1678,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
               <div className="col-md-6">
                 <div className="mb-4">
                   <label htmlFor="familyExpectations" className="form-label">
-                    What Expectations do you have for family after discharge?
-                    (छुट्टी के बाद परिवार से आपकी क्या उम्मीदें हैं?)
+                    {getTranslation("What Expectations do you have for family after discharge? / (छुट्टी के बाद परिवार से आपकी क्या उम्मीदें हैं?)",lang)}
                   </label>
                   <input
                     type="text"
@@ -1697,7 +1694,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
 
             <fieldset className="mb-4 border rounded p-3">
               <legend className="fs-5 fw-bold">
-                ATTITUDE DURING INTERVIEW / साक्षात्कार के दौरान रवैया
+                {getTranslation("ATTITUDE DURING INTERVIEW / साक्षात्कार के दौरान रवैया",lang)}
               </legend>
               <div className="row">
                 {attitudeOptions.map((option, idx) => (
@@ -1716,7 +1713,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                         className="form-check-label"
                         htmlFor={`attitude-${idx}`}
                       >
-                        {option}
+                        {getTranslation(option,lang)}
                       </label>
                     </div>
                   </div>
@@ -1726,7 +1723,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
 
             <fieldset className="mb-4 border rounded p-3">
               <legend className="fs-5 fw-bold">
-                Silent Behavior Observations / रोगी मौन का व्यवहार अवलोकन
+               {getTranslation(" Silent Behavior Observations / रोगी मौन का व्यवहार अवलोकन",lang)}
               </legend>
               <div className="row">
                 {silentBehaviorOptions.map((option, idx) => (
@@ -1745,7 +1742,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                         className="form-check-label"
                         htmlFor={`silent-${idx}`}
                       >
-                        {option}
+                        {getTranslation(option,lang)}
                       </label>
                     </div>
                   </div>
@@ -1755,33 +1752,25 @@ const handlePBReadmissionFormSubmit = async (e) => {
 
             <div className="container mt-4">
               <h5 className="mt-4 mb-3">
-                Patient's Mental Stage of Patient as per Interviewer (Tick on
-                Correct) <br />
-                साक्षात्कारकर्ता के अनुसार रोगी की मानसिक अवस्था (सही पर टिक
-                करें)
+                {getTranslation("Patient's Mental Stage of Patient as per Interviewer (Tick on orrect) / साक्षात्कारकर्ता के अनुसार रोगी की मानसिक अवस्था (सही पर टिक करें)",lang)}
               </h5>
               <table className="table table-bordered text-center">
                 <thead className="table-light">
                   <tr>
                     <th>
-                      Pre Contemplation <br />
-                      पूर्वचिंतन
+                     {getTranslation("Pre Contemplation / पूर्वचिंतन",lang)}
                     </th>
                     <th>
-                      Contemplation <br />
-                      चिंतन
+                      {getTranslation("Contemplation / चिंतन",lang)}
                     </th>
                     <th>
-                      Preparation <br />
-                      तैयारी
+                      {getTranslation("Preparation / तैयारी",lang)}
                     </th>
                     <th>
-                      Action <br />
-                      कार्यवाही
+                     {getTranslation("Action / कार्यवाही",lang)}
                     </th>
                     <th>
-                      Maintenance <br />
-                      रखरखाव
+                      {getTranslation("Maintenance /रखरखाव",lang)}
                     </th>
                   </tr>
                 </thead>
@@ -1815,13 +1804,10 @@ const handlePBReadmissionFormSubmit = async (e) => {
                 <thead className="table-light">
                   <tr>
                     <th style={{ width: "70%" }}>
-                      Patient behavior (According to him)
-                      <br />
-                      रोगी का व्यवहार (उनके अनुसार)
+                      {getTranslation("Patient behavior (According to him) / रोगी का व्यवहार (उनके अनुसार)",lang)}
                     </th>
                     <th className="text-center" style={{ width: "30%" }}>
-                      Yes / No <br />
-                      हां / नहीं
+                     {getTranslation("Yes Or No / हां या नहीं",lang)}
                     </th>
                   </tr>
                 </thead>
@@ -1829,7 +1815,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                   {questions.map((q, index) => (
                     <tr key={index}>
                       <td>
-                        <strong>{q.en}</strong>
+                        <strong>{getTranslation(q.en,lang)}</strong>
                         <br />
                         <span className="text-muted">{q.hi}</span>
                       </td>
@@ -1848,7 +1834,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                             className="form-check-label"
                             htmlFor={`q${index}Yes`}
                           >
-                            Yes / हां
+                           {getTranslation("Yes / हां",lang)}
                           </label>
                         </div>
                         <div className="form-check form-check-inline">
@@ -1865,7 +1851,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                             className="form-check-label"
                             htmlFor={`q${index}No`}
                           >
-                            No / नहीं
+                            {getTranslation("No / नहीं",lang)}
                           </label>
                         </div>
                       </td>
@@ -1889,7 +1875,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                   }
                 />
                 <Label className="text-muted" for="checkbox1">
-                  {consent}
+                  {getTranslation(consent,lang)}
                 </Label>
               </div>
             </div>
@@ -1897,7 +1883,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
             {/*Content section start*/}
             <div className="row mt-3 mb-3">
               <div className="col-md-4">
-                <Label>{signature}</Label>
+                <Label>{getTranslation(signature,lang)}</Label>
                 <Input
                   type="text"
                   placeholder="Signature"
@@ -1908,7 +1894,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
               </div>
 
               <div className="col-md-12 mt-3 mb-3">
-                <Label>{prepared}</Label>
+                <Label>{getTranslation(prepared,lang)}</Label>
                 <Input
                   type="text"
                   placeholder="Prepared By"
@@ -1929,7 +1915,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                                aria-hidden="true"
                              ></span>
                            ) : (
-                             "Create Patient Behaviour Form"
+                             getTranslation("Create Patient Behaviour Form/रोगी व्यवहार प्रपत्र बनाएँ",lang)
                            )}
                          </Button>
                        </div>
@@ -1941,7 +1927,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
       {/* View Patient Behaviour data into modal start */}
 <CommonModal
   isOpen={viewPBModal}
-  title={"Patient Behaviour Assessment"}
+  title={getTranslation("Patient Behaviour Assessment Form/रोगी व्यवहार मूल्यांकन प्रपत्र",lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1953,7 +1939,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         padding: "20px 0",
       }}
     >
-      Patient Behaviour / रोगी व्यवहार मूल्यांकन
+      {getTranslation("Patient Behaviour / रोगी व्यवहार मूल्यांकन",lang)}
     </h4>
 
     <Table size="sm" className="table-auto table-bordered">
@@ -1971,23 +1957,23 @@ const handlePBReadmissionFormSubmit = async (e) => {
         ) : viewPBData ? (
           <>
             <tr>
-              <th className="text-start p-3">Name</th>
+              <th className="text-start p-3">{getTranslation("Name/नाम",lang)}</th>
               <td className="border p-3">{viewPBData.name}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Phone</th>
+              <th className="text-start p-3">{getTranslation("Phone/फ़ोन",lang)}</th>
               <td className="border p-3">{viewPBData.phone}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Email</th>
+              <th className="text-start p-3">{getTranslation("Email/ईमेल",lang)}</th>
               <td className="border p-3">{viewPBData.email}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Gender</th>
+              <th className="text-start p-3">{getTranslation("Gender/लिंग",lang)}</th>
               <td className="border p-3">{viewPBData.gender}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">DOB</th>
+              <th className="text-start p-3">{getTranslation("Date Of Birth/जन्म तिथि",lang)}</th>
               <td className="border p-3">
                 {viewPBData.dob
                   ? new Date(viewPBData.dob).toLocaleDateString()
@@ -1995,15 +1981,15 @@ const handlePBReadmissionFormSubmit = async (e) => {
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Branch</th>
+              <th className="text-start p-3">{getTranslation("Branch/शाखा",lang)}</th>
               <td className="border p-3">{viewPBData.branch_name}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Ward</th>
+              <th className="text-start p-3">{getTranslation("Ward/वार्ड",lang)}</th>
               <td className="border p-3">{viewPBData.ward_name}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Assessment Date</th>
+              <th className="text-start p-3">{getTranslation("Assessment Date/मूल्यांकन तिथि",lang)}</th>
               <td className="border p-3">
                 {viewPBData.date_of_assessment
                   ? new Date(viewPBData.date_of_assessment).toLocaleDateString()
@@ -2011,41 +1997,41 @@ const handlePBReadmissionFormSubmit = async (e) => {
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Most Important Thing in Life</th>
+              <th className="text-start p-3">{getTranslation("Most Important Thing in Life/जीवन में सबसे महत्वपूर्ण चीज़",lang)}</th>
               <td className="border p-3">{viewPBData.most_important_thing_life}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Life Aim</th>
+              <th className="text-start p-3">{getTranslation("Life Aim/जीवन का लक्ष्य",lang)}</th>
               <td className="border p-3">{viewPBData.life_aim}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Current Mental Status</th>
+              <th className="text-start p-3">{getTranslation("Current Mental Status/वर्तमान मानसिक स्थिति",lang)}</th>
               <td className="border p-3">{viewPBData.current_mental_status_center}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Planned After Discharge</th>
+              <th className="text-start p-3">{getTranslation("Planned After Discharge/छुट्टी के बाद की योजना",lang)}</th>
               <td className="border p-3">{viewPBData.planned_after_discharge}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Family Expectations After Discharge</th>
+              <th className="text-start p-3">{getTranslation("Family Expectations After Discharge/छुट्टी के बाद परिवार की अपेक्षाएँ",lang)}</th>
               <td className="border p-3">{viewPBData.family_expectations_after_discharge}</td>
             </tr>
 
             {/* Arrays */}
             <tr>
-              <th className="text-start p-3">Attitude During Interview</th>
+              <th className="text-start p-3">{getTranslation("Attitude During Interview/साक्षात्कार के दौरान रवैया",lang)}</th>
               <td className="border p-3">
                 {(viewPBData.attitude_during_interview || []).join(", ")}
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Silent Behaviour Observations</th>
+              <th className="text-start p-3">{getTranslation("Silent Behaviour Observations/मौन व्यवहार अवलोकन",lang)}</th>
               <td className="border p-3">
                 {(viewPBData.silent_behavior_observations || []).join(", ")}
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Patient Mental Stage</th>
+              <th className="text-start p-3">{getTranslation("Patient Mental Stage/रोगी की मानसिक अवस्था",lang)}</th>
               <td className="border p-3">
                 {(viewPBData.patient_mental_stage || []).join(", ")}
               </td>
@@ -2053,48 +2039,48 @@ const handlePBReadmissionFormSubmit = async (e) => {
 
             {/* Yes/No fields */}
             <tr>
-              <th className="text-start p-3">Uses Alone</th>
+              <th className="text-start p-3">{getTranslation("Uses Alone/अकेले उपयोग",lang)}</th>
               <td className="border p-3">{viewPBData.uses_alone}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Moody</th>
+              <th className="text-start p-3">{getTranslation("Moody/तुनकमिज़ाज",lang)}</th>
               <td className="border p-3">{viewPBData.moody}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Always Worried</th>
+              <th className="text-start p-3">{getTranslation("Always Worried/हमेशा चिंतित",lang)}</th>
               <td className="border p-3">{viewPBData.always_worried}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Always Sad</th>
+              <th className="text-start p-3">{getTranslation("Always Sad/हमेशा उदास",lang)}</th>
               <td className="border p-3">{viewPBData.always_sad}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Lack of Confidence</th>
+              <th className="text-start p-3">{getTranslation("Lack of Confidence/आत्मविश्वास की कमी",lang)}</th>
               <td className="border p-3">{viewPBData.lack_of_confidence}</td>
             </tr>
 
             {/* Add all remaining Yes/No boolean style fields */}
             <tr>
-              <th className="text-start p-3">Substance Dependent Think</th>
+              <th className="text-start p-3">{getTranslation("Substance Dependent Think/पदार्थ पर निर्भर सोच",lang)}</th>
               <td className="border p-3">{viewPBData.substance_dependent_think}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Consent</th>
+              <th className="text-start p-3">{getTranslation("Consent/सहमति",lang)}</th>
               <td className="border p-3">{viewPBData.consent}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Prepared By</th>
+              <th className="text-start p-3">{getTranslation("Prepared By/द्वारा तैयार",lang)}</th>
               <td className="border p-3">{viewPBData.prepared_by}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Status</th>
+              <th className="text-start p-3">{getTranslation("Status/स्थिति",lang)}</th>
               <td className="border p-3">{viewPBData.status}</td>
             </tr>
           </>
         ) : (
           <tr>
             <td colSpan="2" className="text-center">
-              No data available
+              {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
             </td>
           </tr>
         )}
@@ -2110,8 +2096,8 @@ const handlePBReadmissionFormSubmit = async (e) => {
       onClick={handleDownloadPDF}
     >
       {pfaDownload
-        ? "Your Patient Behaviour Assessment is being downloaded..."
-        : "Download Patient Behaviour"}
+        ? getTranslation("Your Patient Behaviour Assessment is being downloaded.../आपका रोगी व्यवहार मूल्यांकन डाउनलोड किया जा रहा है...",lang)
+        : getTranslation("Download Patient Behaviour/रोगी व्यवहार डाउनलोड करें",lang)}
     </button>
   </div>
 </CommonModal>
@@ -2120,7 +2106,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
 {/* Patient edit behaviour form start */}
 <CommonModal
   isOpen={PBEditModal}
-  title="Edit Patient behavior / रोगी का व्यवहार / Create Patient behavior / रोगी का व्यवहार"
+  title={getTranslation("Edit Patient behavior / रोगी व्यवहार प्रपत्र संपादित करें",lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -2136,7 +2122,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
   /> */}
 
   <div className="row px-3 pt-4 pb-3">
-    <form className="container mt-4 mb-5" onSubmit={(e)=>{
+    <form className="container mt-2 mb-2" onSubmit={(e)=>{
       e.preventDefault();
       handlePBUpdate();
     }}>
@@ -2144,7 +2130,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
       {/* Assessment Date */}
       <div className="col-md-6 mb-3">
         <Label className="col-sm-12 col-form-label col-xl-6">
-          {dateOfAssessment}
+          {getTranslation(dateOfAssessment,lang)}
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
@@ -2171,7 +2157,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <div className="col-md-6">
           <div className="mb-3">
             <label htmlFor="mostImportantThingLife" className="form-label">
-              What is the most important thing in life? / जीवन में सबसे महत्वपूर्ण चीज़ क्या है?
+              {getTranslation("What is the most important thing in life? / जीवन में सबसे महत्वपूर्ण चीज़ क्या है?",lang)}
             </label>
             <input
               type="text"
@@ -2191,7 +2177,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <div className="col-md-6">
           <div className="mb-3">
             <label htmlFor="lifeAim" className="form-label">
-              Life's Aim / जिंदगी का लक्ष्य
+              {getTranslation("Life's Aim / जिंदगी का लक्ष्य",lang)}
             </label>
             <input
               type="text"
@@ -2211,7 +2197,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <div className="col-md-6">
           <div className="mb-3">
             <label htmlFor="mentalStatus" className="form-label">
-              Current Mental Status here in center (वर्तमान मानसिक स्थिति यहाँ केंद्र में)
+              {getTranslation("Current Mental Status here in center / (वर्तमान मानसिक स्थिति यहाँ केंद्र में)",lang)}
             </label>
             <input
               type="text"
@@ -2231,7 +2217,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <div className="col-md-6">
           <div className="mb-3">
             <label htmlFor="planned_after_discharge" className="form-label">
-              What is planned after discharge from center (डिस्चार्ज के बाद क्या सोचता है?)
+              {getTranslation("What is planned after discharge from center / (डिस्चार्ज के बाद क्या सोचता है?)",lang)}
             </label>
             <input
               type="text"
@@ -2251,7 +2237,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <div className="col-md-6">
           <div className="mb-4">
             <label htmlFor="family_expectations_after_discharge" className="form-label">
-              What Expectations do you have for family after discharge? (छुट्टी के बाद परिवार से आपकी क्या उम्मीदें हैं?)
+              {getTranslation("What Expectations do you have for family after discharge?/ (छुट्टी के बाद परिवार से आपकी क्या उम्मीदें हैं?)",lang)}
             </label>
             <input
               type="text"
@@ -2271,7 +2257,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
 
       {/* ✅ Attitude Checkboxes Prefill */}
       <fieldset className="mb-4 border rounded p-3">
-        <legend className="fs-5 fw-bold">ATTITUDE DURING INTERVIEW / साक्षात्कार के दौरान रवैया</legend>
+        <legend className="fs-5 fw-bold">{getTranslation("ATTITUDE DURING INTERVIEW / साक्षात्कार के दौरान रवैया",lang)}</legend>
         <div className="row">
           {attitudeOptions.map((option, idx) => (
             <div className="col-md-3 col-sm-6 mb-2" key={idx}>
@@ -2305,7 +2291,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                   
                 />
                 <label className="form-check-label" htmlFor={`attitude-${idx}`}>
-                  {option}
+                  {getTranslation(option,lang)}
                 </label>
               </div>
             </div>
@@ -2316,7 +2302,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
       {/* ✅ Silent Behaviour Prefill */}
 <fieldset className="mb-4 border rounded p-3">
   <legend className="fs-5 fw-bold">
-    Silent Behavior Observations / रोगी मौन का व्यवहार अवलोकन
+    {getTranslation("Silent Behavior Observations / रोगी मौन का व्यवहार अवलोकन",lang)}
   </legend>
   <div className="row">
     {silentBehaviorOptions.map((option, idx) => {
@@ -2343,7 +2329,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
               }
             />
             <label className="form-check-label" htmlFor={`silent-${idx}`}>
-              {option}
+              {getTranslation(option,lang)}
             </label>
           </div>
         </div>
@@ -2356,9 +2342,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
       {/* ✅ Mental Stage Prefill */}
       <div className="container mt-4">
         <h5 className="mt-4 mb-3">
-          Patient's Mental Stage of Patient as per Interviewer (Tick on Correct)
-          <br />
-          साक्षात्कारकर्ता के अनुसार रोगी की मानसिक अवस्था (सही पर टिक करें)
+          {getTranslation("Patient's Mental Stage of Patient as per Interviewer (Tick on Correct) / साक्षात्कारकर्ता के अनुसार रोगी की मानसिक अवस्था (सही पर टिक करें)",lang)}
         </h5>
         <table className="table table-bordered text-center">
           <thead className="table-light">
@@ -2401,11 +2385,10 @@ const handlePBReadmissionFormSubmit = async (e) => {
     <thead className="table-light">
       <tr>
         <th style={{ width: "70%" }}>
-          Patient behavior (According to him) <br />
-          रोगी का व्यवहार (उनके अनुसार)
+          {getTranslation("Patient behavior (According to him) / रोगी का व्यवहार (उनके अनुसार)",lang)}
         </th>
         <th className="text-center" style={{ width: "30%" }}>
-          Yes / No <br /> हां / नहीं
+          {getTranslation("Yes Or No / हां या नहीं",lang)}
         </th>
       </tr>
     </thead>
@@ -2413,7 +2396,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
     {questions.map((q, index) => (
   <tr key={index}>
     <td>
-      <strong>{q.en}</strong>
+    <strong>{getTranslation(q.en,lang)}</strong>
       <br />
       <span className="text-muted">{q.hi}</span>
     </td>
@@ -2435,7 +2418,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
           }
         />
         <label className="form-check-label" htmlFor={`${q.key}Yes`}>
-          Yes / हां
+          {getTranslation("Yes / हां",lang)}
         </label>
       </div>
 
@@ -2456,7 +2439,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
           }
         />
         <label className="form-check-label" htmlFor={`${q.key}No`}>
-          No / नहीं
+         {getTranslation(" No / नहीं",lang)}
         </label>
       </div>
     </td>
@@ -2483,14 +2466,14 @@ const handlePBReadmissionFormSubmit = async (e) => {
             }
           />
           <Label className="text-muted" for="checkbox1">
-            {consent}
+            {getTranslation(consent,lang)}
           </Label>
         </div>
       </div>
 
       <div className="row mt-3 mb-3">
         <div className="col-md-4">
-          <Label>{signature}</Label>
+          <Label>{getTranslation(signature,lang)}</Label>
           <Input
             type="text"
             placeholder="Signature"
@@ -2505,7 +2488,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         </div>
 
         <div className="col-md-12 mt-3 mb-3">
-          <Label>{prepared}</Label>
+          <Label>{getTranslation(prepared,lang)}</Label>
           <Input
             type="text"
             placeholder="Prepared By"
@@ -2525,7 +2508,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <Button color="primary" type="submit" disabled={isLoading}>
           {isLoading ? (
             <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-          ) : PBEditData ? "Update Patient Behaviour Form" : "Create Patient Behaviour Form"}
+          ) : PBEditData ? getTranslation("Update Patient Behaviour Form/रोगी व्यवहार प्रपत्र अपडेट करें",lang) : getTranslation("Create Patient Behaviour Form/रोगी व्यवहार प्रपत्र बनाएँ",lang)}
         </Button>
       </div>
     </form>
@@ -2538,7 +2521,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
 {/* Patient readmission behaviour form start */}
 <CommonModal
   isOpen={PBPrefillModal}
-  title="Readmission Patient behavior / रोगी का व्यवहार / Create Patient behavior / रोगी का व्यवहार"
+  title={getTranslation("Readmission Patient behavior / रोगी का व्यवहार",lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -2555,13 +2538,13 @@ const handlePBReadmissionFormSubmit = async (e) => {
 
   <div className="row px-3 pt-4 pb-3">
     <form
-      className="container mt-4 mb-5"
+      className="container mt-2 mb-2"
      onSubmit={handlePBReadmissionFormSubmit}
     >
       {/* Assessment Date */}
       <div className="col-md-6 mb-3">
         <Label className="col-sm-12 col-form-label col-xl-6">
-          {dateOfAssessment}
+          {getTranslation(dateOfAssessment,lang)}
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
@@ -2588,7 +2571,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <div className="col-md-6">
           <div className="mb-3">
             <label htmlFor="mostImportantThingLife" className="form-label">
-              What is the most important thing in life? / जीवन में सबसे महत्वपूर्ण चीज़ क्या है?
+             {getTranslation(" What is the most important thing in life? / जीवन में सबसे महत्वपूर्ण चीज़ क्या है?",lang)}
             </label>
             <input
               type="text"
@@ -2608,7 +2591,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <div className="col-md-6">
           <div className="mb-3">
             <label htmlFor="lifeAim" className="form-label">
-              Life's Aim / जिंदगी का लक्ष्य
+             {getTranslation(" Life's Aim / जिंदगी का लक्ष्य",lang)}
             </label>
             <input
               type="text"
@@ -2628,7 +2611,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <div className="col-md-6">
           <div className="mb-3">
             <label htmlFor="mentalStatus" className="form-label">
-              Current Mental Status here in center (वर्तमान मानसिक स्थिति यहाँ केंद्र में)
+              {getTranslation("Current Mental Status here in center / (वर्तमान मानसिक स्थिति यहाँ केंद्र में)",lang)}
             </label>
             <input
               type="text"
@@ -2648,7 +2631,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <div className="col-md-6">
           <div className="mb-3">
             <label htmlFor="planned_after_discharge" className="form-label">
-              What is planned after discharge from center (डिस्चार्ज के बाद क्या सोचता है?)
+              {getTranslation("What is planned after discharge from center / (डिस्चार्ज के बाद क्या सोचता है?)",lang)}
             </label>
             <input
               type="text"
@@ -2668,7 +2651,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <div className="col-md-6">
           <div className="mb-4">
             <label htmlFor="family_expectations_after_discharge" className="form-label">
-              What Expectations do you have for family after discharge? (छुट्टी के बाद परिवार से आपकी क्या उम्मीदें हैं?)
+              {getTranslation("What Expectations do you have for family after discharge? / (छुट्टी के बाद परिवार से आपकी क्या उम्मीदें हैं?)",lang)}
             </label>
             <input
               type="text"
@@ -2688,7 +2671,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
 
       {/* ✅ Attitude Checkboxes Prefill */}
       <fieldset className="mb-4 border rounded p-3">
-        <legend className="fs-5 fw-bold">ATTITUDE DURING INTERVIEW / साक्षात्कार के दौरान रवैया</legend>
+        <legend className="fs-5 fw-bold">{getTranslation("ATTITUDE DURING INTERVIEW / साक्षात्कार के दौरान रवैया",lang)}</legend>
         <div className="row">
           {attitudeOptions.map((option, idx) => {
             const slug = option
@@ -2717,7 +2700,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                     }
                   />
                   <label className="form-check-label" htmlFor={`attitude-${idx}`}>
-                    {option}
+                    {getTranslation(option,lang)}
                   </label>
                 </div>
               </div>
@@ -2729,7 +2712,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
       {/* ✅ Silent Behaviour Prefill */}
       <fieldset className="mb-4 border rounded p-3">
         <legend className="fs-5 fw-bold">
-          Silent Behavior Observations / रोगी मौन का व्यवहार अवलोकन
+          {getTranslation("Silent Behavior Observations / रोगी मौन का व्यवहार अवलोकन",lang)}
         </legend>
         <div className="row">
           {silentBehaviorOptions.map((option, idx) => {
@@ -2755,7 +2738,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                     }
                   />
                   <label className="form-check-label" htmlFor={`silent-${idx}`}>
-                    {option}
+                    {getTranslation(option,lang)}
                   </label>
                 </div>
               </div>
@@ -2767,9 +2750,9 @@ const handlePBReadmissionFormSubmit = async (e) => {
       {/* ✅ Mental Stage Prefill */}
       <div className="container mt-4">
         <h5 className="mt-4 mb-3">
-          Patient's Mental Stage of Patient as per Interviewer (Tick on Correct)
+          {getTranslation("Patient's Mental Stage of Patient as per Interviewer (Tick on Correct) /साक्षात्कारकर्ता के अनुसार रोगी की मानसिक अवस्था (सही पर टिक करें)",lang)}
           <br />
-          साक्षात्कारकर्ता के अनुसार रोगी की मानसिक अवस्था (सही पर टिक करें)
+          
         </h5>
         <table className="table table-bordered text-center">
           <thead className="table-light">
@@ -2812,11 +2795,10 @@ const handlePBReadmissionFormSubmit = async (e) => {
           <thead className="table-light">
             <tr>
               <th style={{ width: "70%" }}>
-                Patient behavior (According to him) <br />
-                रोगी का व्यवहार (उनके अनुसार)
+                {getTranslation("Patient behavior (According to him) / रोगी का व्यवहार (उनके अनुसार)",lang)}
               </th>
               <th className="text-center" style={{ width: "30%" }}>
-                Yes / No <br /> हां / नहीं
+                {getTranslation("Yes Or No / हां या नहीं",lang)}
               </th>
             </tr>
           </thead>
@@ -2824,7 +2806,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
             {questions.map((q, index) => (
               <tr key={index}>
                 <td>
-                  <strong>{q.en}</strong>
+                <strong>{getTranslation(q.en,lang)}</strong>
                   <br />
                   <span className="text-muted">{q.hi}</span>
                 </td>
@@ -2846,7 +2828,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                       }
                     />
                     <label className="form-check-label" htmlFor={`${q.key}Yes`}>
-                      Yes / हां
+                     {getTranslation(" Yes / हां",lang)}
                     </label>
                   </div>
 
@@ -2867,7 +2849,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                       }
                     />
                     <label className="form-check-label" htmlFor={`${q.key}No`}>
-                      No / नहीं
+                     {getTranslation(" No / नहीं",lang)}
                     </label>
                   </div>
                 </td>
@@ -2892,14 +2874,14 @@ const handlePBReadmissionFormSubmit = async (e) => {
             }
           />
           <Label className="text-muted" for="checkbox1">
-            {consent}
+            {getTranslation(consent,lang)}
           </Label>
         </div>
       </div>
 
       <div className="row mt-3 mb-3">
         <div className="col-md-4">
-          <Label>{signature}</Label>
+          <Label>{getTranslation(signature,lang)}</Label>
           <Input
             type="text"
             placeholder="Signature"
@@ -2914,7 +2896,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         </div>
 
         <div className="col-md-12 mt-3 mb-3">
-          <Label>{prepared}</Label>
+          <Label>{getTranslation(prepared,lang)}</Label>
           <Input
             type="text"
             placeholder="Prepared By"
@@ -2934,7 +2916,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
         <Button color="primary" type="submit" disabled={isLoading}>
           {isLoading ? (
             <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-          ) : PBPrefillData ? "Readmission Patient Behaviour Form" : "Create Patient Behaviour Form"}
+          ) : PBPrefillData ? getTranslation("Readmission Patient Behaviour Form/पुनः प्रवेश रोगी व्यवहार प्रपत्र",lang) : getTranslation("Create Patient Behaviour Form/रोगी व्यवहार प्रपत्र बनाएँ",lang)}
         </Button>
       </div>
     </form>

@@ -222,7 +222,7 @@ const BloodAnalysis = () => {
                 <span
                   onClick={() => handleBAprefill(row.recentBAId)}
                   style={{ cursor: "pointer" }}
-                  title="Readmission FDA Form"
+                  title={getTranslation("Readmission Blood Analysis Form/पुनः प्रवेश रक्त विश्लेषण प्रपत्र",lang)}
                 >
                   ✏️
                 </span>
@@ -269,7 +269,7 @@ const BloodAnalysis = () => {
       cursor: row.isBACompleted ? "not-allowed" : "pointer",
       opacity: row.isBACompleted ? 0.5 : 1,
     }}
-    title={row.isBACompleted ? "BA Completed" : "Create BA"}
+    title={row.isBACompleted ? getTranslation("Blood Analysis Completed/रक्त विश्लेषण पूरा हुआ",lang) : getTranslation("Create Blood Analysis/रक्त विश्लेषण बनाएँ",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -389,7 +389,7 @@ const BloodAnalysis = () => {
   
     const tableColumnsBAList = [
       {
-        name: "Blood Analysis ID/रक्त विश्लेषण आईडी",
+        name: getTranslation("Blood Analysis ID/रक्त विश्लेषण आईडी",lang),
         selector: (row) => row.blood_analysis_id,
         sortable: true,
         center: true,
@@ -739,8 +739,8 @@ const SubmitBAFormHandler = async (e) => {
 
     Swal.fire({
       icon: "success",
-      title: "Blood Analysis Form Created Successfully",
-      text: "The form was submitted successfully.",
+      title: getTranslation("Blood Analysis Form Created Successfully/रक्त विश्लेषण फ़ॉर्म सफलतापूर्वक बनाया गया।",lang),
+      text: getTranslation("The form was submitted successfully./फॉर्म सफलतापूर्वक सबमिट कर दिया गया।",lang),
     }).then(() => closeAllmodal());
 
     console.log("Response Data:", data);
@@ -749,8 +749,8 @@ const SubmitBAFormHandler = async (e) => {
     setIsLoading(false);
     Swal.fire({
       icon: "error",
-      title: "Unexpected Error",
-      text: "Failed to submit. Check console for error.",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+      text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };
@@ -986,23 +986,23 @@ const updateBAHandler = async (e) => {
     if (response.ok) {
       Swal.fire({
         icon: "success",
-        title: "Blood Analysis Updated",
-        text: "The blood analysis form has been successfully updated.",
+        title: getTranslation("Blood Analysis Updated/रक्त विश्लेषण अद्यतन",lang),
+        text: getTranslation("The blood analysis form has been successfully updated./रक्त विश्लेषण प्रपत्र सफलतापूर्वक अद्यतन कर दिया गया है।",lang),
       });
     } else {
       console.error("Error Response:", result);
       Swal.fire({
         icon: "error",
-        title: "Update Failed",
-        text: result.message || "There was an error updating the form.",
+        title: getTranslation("Update Failed/भार बढ़ाना विफल हुवा",lang),
+        text: result.message || getTranslation("There was an error updating the form./फ़ॉर्म को अपडेट करते समय एक त्रुटि हुई.",lang),
       });
     }
   } catch (error) {
     console.error("Fetch Error:", error);
     Swal.fire({
       icon: "error",
-      title: "Network Error",
-      text: "A network or server issue occurred.",
+      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
+      text: getTranslation("A network or server issue occurred./नेटवर्क या सर्वर संबंधी समस्या उत्पन्न हुई.",lang),
     });
   } finally {
     setIsLoading(false);
@@ -1057,7 +1057,7 @@ const handleBAprefill = async (prefillBAID = null) => {
       Swal.fire({
         icon: "error",
         title: "Fetch Failed",
-        text: data.message || "Unable to fetch blood analysis data for prefill.",
+        text: data.message || getTranslation("Unable to fetch blood analysis data for prefill./प्रीफ़िल के लिए रक्त विश्लेषण डेटा प्राप्त करने में असमर्थ.",lang),
       });
       return;
     }
@@ -1066,8 +1066,8 @@ const handleBAprefill = async (prefillBAID = null) => {
     if (!latestAssessment) {
       Swal.fire({
         icon: "info",
-        title: "No Data Found",
-        text: "No blood analysis data available for this ID.",
+        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
+        text: getTranslation("No blood analysis data available for this ID./इस आईडी के लिए कोई रक्त विश्लेषण डेटा उपलब्ध नहीं है।",lang),
       });
       return;
     }
@@ -1135,7 +1135,7 @@ const handleBAprefill = async (prefillBAID = null) => {
     Swal.fire({
       icon: "error",
       title: "Network Error",
-      text: "Unable to fetch blood analysis data due to a network issue.",
+      text: getTranslation("Unable to fetch blood analysis data due to a network issue./नेटवर्क समस्या के कारण रक्त विश्लेषण डेटा प्राप्त करने में असमर्थ।",lang),
     });
   }
 };
@@ -1195,8 +1195,8 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
     Swal.fire({
       icon: "success",
-      title: "Blood Analysis Form Created Successfully",
-      text: "The form was submitted successfully.",
+      title: getTranslation("Blood Analysis Form Created Successfully/रक्त विश्लेषण फ़ॉर्म सफलतापूर्वक बनाया गया",lang),
+      text: getTranslation("The form was submitted successfully./फॉर्म सफलतापूर्वक सबमिट कर दिया गया।",lang),
     }).then(() => closeAllmodal());
 
     console.log("✅ Response Data:", data);
@@ -1206,7 +1206,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
     Swal.fire({
       icon: "error",
       title: "Unexpected Error",
-      text: "Failed to submit. Check console for error.",
+      text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };
@@ -1250,7 +1250,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
         .from(element)
         .save()
         .then(() => {
-          toast.success("Download complete!");
+          toast.success(getTranslation("Download complete!/डाउनलोड पूर्ण!",lang));
           element.classList.remove("pdf-scale");
   
           setTimeout(() => {
@@ -1272,7 +1272,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard
-                      title="Registered Patient List"
+                      title={getTranslation("Registered Patient List/पंजीकृत रोगी सूची",lang)}
                       className="p-0"
                     />
                   </div>
@@ -1294,7 +1294,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1337,7 +1337,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                 {/* <HeaderCard title="User Data Table with Multiple Selection" /> */}
                 <CardBody>
                   <div class="d-flex pb-2 justify-content-between">
-                    <HeaderCard title="All Blood Analysis Data List" className="p-0" />
+                    <HeaderCard title={getTranslation("All Blood Analysis Data List/सभी रक्त विश्लेषण डेटा सूची",lang)} className="p-0" />
                   </div>
                   <div className="row pb-2">
                     <div className="col-md-4">
@@ -1357,7 +1357,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                   </div>
                   {stillLoading ? (
                     <div className="loading-text">
-                      Data is fetching from server. Please wait...
+                      {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा प्राप्त किया जा रहा है। कृपया प्रतीक्षा करें...",lang)}
                     </div>
                   ) : (
                     <DataTable
@@ -1393,17 +1393,17 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 {/* BA create form start */}
 <CommonModal
   isOpen={isBAModalOpen}
-  title="Create Blood Analysis Form"
+  title={getTranslation("Create Blood Analysis Form/रक्त विश्लेषण प्रपत्र बनाएँ",lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
   <PatientCommonInfo
     selectedUser={selectedUser}
     labels={{
-      name: "Patient name/प्रयासक का नाम :",
-      sex: "Gender/प्रयासक का लिंग :",
-      age: "Age/प्रयासक का उम्र :",
-      date_of_admission: "Date of Admission/प्रवेश की तिथि :",
+      name: getTranslation("Patient name/प्रयासक का नाम :",lang),
+      sex: getTranslation("Gender/प्रयासक का लिंग :",lang),
+      age: getTranslation("Age/प्रयासक का उम्र :",lang),
+      date_of_admission: getTranslation("Date of Admission/प्रवेश की तिथि :",lang),
       ageValue: patientCalAge,
     }}
   />
@@ -1414,7 +1414,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
       <div className="col-md-6">
                       <FormGroup className="form-group row">
                         <Label className="col-sm-12 col-form-label  col-xl-6">
-                          {dateOfAssessment}
+                          {getTranslation(dateOfAssessment,lang)}
                         </Label>
                         <Col xl="5" sm="12">
                           <div className="input-group">
@@ -1435,7 +1435,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                     {/*Date of Admission section/प्रवेश की तिथि :*/}
       {/* Package Selection */}
       <div className="mb-3">
-        <label htmlFor="package_type_id">Package Selection</label>
+        <label htmlFor="package_type_id">{getTranslation("Package Selection/पैकेज चयन",lang)}</label>
         <select
           id="package_type_id"
           name="package_type_id"
@@ -1464,13 +1464,13 @@ const SubmitBAReadmissionFormHandler = async (e) => {
           onChange={handleChange}
         />
         <label className="form-check-label" htmlFor="sample_collected">
-          Sample Collected
+         {getTranslation(" Sample Collected/नमूना एकत्र किया गया",lang)}
         </label>
       </div>
 
      {/* Report Upload */}
 <div className="mb-3">
-  <label htmlFor="reportFile">Upload Report (PDF/Image)</label>
+  <label htmlFor="reportFile">{getTranslation("Upload Report (PDF/Image)/रिपोर्ट अपलोड करें (पीडीएफ/छवि)",lang)}</label>
   <input
     type="file"
     id="reportFile"
@@ -1483,7 +1483,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
       {/* Remarks */}
       <div className="mb-3">
-        <label htmlFor="remarks">Remarks</label>
+        <label htmlFor="remarks">{getTranslation("Remarks/टिप्पणी",lang)}</label>
         <input
           type="text"
           id="remarks"
@@ -1497,7 +1497,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
       {/* Severity Selection */}
       <div className="mb-3">
-        <label htmlFor="severity_id">Package Severity</label>
+        <label htmlFor="severity_id">{getTranslation("Package Severity/पैकेज की गंभीरता",lang)}</label>
         <select
           id="severity_id"
           name="severity_id"
@@ -1525,7 +1525,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               aria-hidden="true"
             ></span>
           ) : (
-            "Create Blood Analysis Form"
+            getTranslation("Create Blood Analysis Form/रक्त विश्लेषण प्रपत्र बनाएँ",lang)
           )}
         </Button>
       </div>
@@ -1537,7 +1537,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
  {/* View BA data into modal start */}
 <CommonModal
   isOpen={viewBAModal}
-  title={"View Blood Analysis Assessment"}
+  title={getTranslation("View Blood Analysis Assessment/रक्त विश्लेषण मूल्यांकन देखें",lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1549,7 +1549,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
         padding: "20px 0",
       }}
     >
-      Blood Analysis Report / रक्त विश्लेषण रिपोर्ट
+      {getTranslation("Blood Analysis Report / रक्त विश्लेषण रिपोर्ट",lang)}
     </h4>
 
     <Table size="sm" className="table-auto table-bordered">
@@ -1567,23 +1567,23 @@ const SubmitBAReadmissionFormHandler = async (e) => {
         ) : viewBAData ? (
           <>
             <tr>
-              <th className="text-start p-3">Patient Name</th>
+              <th className="text-start p-3">{getTranslation("Patient Name/रोगी का नाम",lang)}</th>
               <td className="border p-3">{viewBAData.name}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Phone</th>
+              <th className="text-start p-3">{getTranslation("Phone/फ़ोन",lang)}</th>
               <td className="border p-3">{viewBAData.phone}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Email</th>
+              <th className="text-start p-3">{getTranslation("Email/ईमेल",lang)}</th>
               <td className="border p-3">{viewBAData.email}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Gender</th>
+              <th className="text-start p-3">{getTranslation("Gender/लिंग",lang)}</th>
               <td className="border p-3">{viewBAData.gender}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Date of Birth</th>
+              <th className="text-start p-3">{getTranslation("Date of Birth/जन्म तिथि",lang)}</th>
               <td className="border p-3">
                 {viewBAData.dob
                   ? new Date(viewBAData.dob).toLocaleDateString()
@@ -1591,7 +1591,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Assessment Date</th>
+              <th className="text-start p-3">{getTranslation("Assessment Date/मूल्यांकन तिथि",lang)}</th>
               <td className="border p-3">
                 {viewBAData.date_of_assessment
                   ? new Date(viewBAData.date_of_assessment).toLocaleDateString()
@@ -1599,17 +1599,17 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Package</th>
+              <th className="text-start p-3">{getTranslation("Package/पैकेट",lang)}</th>
               <td className="border p-3">
                 {viewBAData.package_name} - {viewBAData.package_description}
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Sample Collected</th>
+              <th className="text-start p-3">{getTranslation("Sample Collected/नमूना एकत्र किया गया",lang)}</th>
               <td className="border p-3">{viewBAData.sample_collected}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Sample Collection Time</th>
+              <th className="text-start p-3">{getTranslation("Sample Collection Time/नमूना संग्रह समय",lang)}</th>
               <td className="border p-3">
                 {viewBAData.sample_collection_time
                   ? new Date(
@@ -1619,22 +1619,22 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Severity</th>
+              <th className="text-start p-3">{getTranslation("Severity/गंभीरता",lang)}</th>
               <td className="border p-3">
                 {viewBAData.severity_name} -{" "}
                 {viewBAData.severity_description || ""}
               </td>
             </tr>
             <tr>
-              <th className="text-start p-3">Remarks</th>
+              <th className="text-start p-3">{getTranslation("Remarks/टिप्पणी",lang)}</th>
               <td className="border p-3">{viewBAData.remarks}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Status</th>
+              <th className="text-start p-3">{getTranslation("Status/स्थिति",lang)}</th>
               <td className="border p-3">{viewBAData.status}</td>
             </tr>
             <tr>
-              <th className="text-start p-3">Report File</th>
+              <th className="text-start p-3">{getTranslation("Report File/रिपोर्ट फ़ाइल",lang)}</th>
               <td className="border p-3">
                 {viewBAData.report_file_path ? (
                   <a
@@ -1645,7 +1645,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                     View Report ({viewBAData.report_file_type})
                   </a>
                 ) : (
-                  "Not Uploaded"
+                  getTranslation("Not Uploaded/अपलोड नहीं किया गया",lang)
                 )}
               </td>
             </tr>
@@ -1653,7 +1653,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
         ) : (
           <tr>
             <td colSpan="2" className="text-center">
-              No data available
+              {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
             </td>
           </tr>
         )}
@@ -1669,8 +1669,8 @@ const SubmitBAReadmissionFormHandler = async (e) => {
       onClick={handleDownloadPDF}
     >
       {pfaDownload
-        ? "Your BA Report is being downloaded... / आपका BA रिपोर्ट डाउनलोड हो रहा है..."
-        : "Download BA Report"}
+        ? getTranslation("Your BA Report is being downloaded... / आपका BA रिपोर्ट डाउनलोड हो रहा है...",lang)
+        : getTranslation("Download Blood Analysis Report/रक्त विश्लेषण रिपोर्ट डाउनलोड करें",lang)}
     </button>
   </div>
 </CommonModal>
@@ -1681,7 +1681,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 {/* BA edit form start */}
 <CommonModal
   isOpen={IsBAEditModal}
-  title="Edit Blood Analysis Form"
+  title={getTranslation("Edit Blood Analysis Form/रक्त विश्लेषण प्रपत्र संपादित करें",lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1702,7 +1702,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
       <div className="col-md-6">
         <FormGroup className="form-group row">
           <Label className="col-sm-12 col-form-label col-xl-6">
-            {dateOfAssessment}
+            {getTranslation(dateOfAssessment,lang)}
           </Label>
           <Col xl="5" sm="12">
             <div className="input-group">
@@ -1728,7 +1728,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
       {/* Package Selection */}
       <div className="mb-3">
-        <label htmlFor="package_type_id">Package Selection</label>
+        <label htmlFor="package_type_id">{getTranslation("Package Selection/पैकेज चयन",lang)}</label>
         <select
           id="package_type_id"
           name="package_type_id"
@@ -1767,7 +1767,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
           }
         />
         <label className="form-check-label" htmlFor="sample_collected">
-          Sample Collected
+          {getTranslation("Sample Collected/नमूना एकत्र किया गया",lang)}
         </label>
       </div>
 
@@ -1775,7 +1775,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
       <div className="col-md-6 mb-3">
         <FormGroup className="form-group row">
           <Label className="col-sm-12 col-form-label col-xl-6">
-            Sample Collection Time
+            {getTranslation("Sample Collection Time/नमूना संग्रह समय",lang)}
           </Label>
           <Col xl="5" sm="12">
             <div className="input-group">
@@ -1803,7 +1803,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
       {/* Report Upload */}
       <div className="mb-3">
-        <label htmlFor="reportFile">Upload Report (PDF/Image)</label>
+        <label htmlFor="reportFile">{getTranslation("Upload Report (PDF/Image)/रिपोर्ट अपलोड करें (पीडीएफ/छवि)",lang)}</label>
         <input
           type="file"
           id="reportFile"
@@ -1821,7 +1821,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
       {/* Remarks */}
       <div className="mb-3">
-        <label htmlFor="remarks">Remarks</label>
+        <label htmlFor="remarks">{getTranslation("Remarks/टिप्पणी",lang)}</label>
         <input
           type="text"
           id="remarks"
@@ -1840,7 +1840,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
       {/* Severity Selection */}
       <div className="mb-3">
-        <label htmlFor="severity_id">Package Severity</label>
+        <label htmlFor="severity_id">{getTranslation("Package Severity/पैकेज की गंभीरता",lang)}</label>
         <select
           id="severity_id"
           name="severity_id"
@@ -1873,7 +1873,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               aria-hidden="true"
             ></span>
           ) : (
-            "Update Blood Analysis Form"
+            getTranslation("Update Blood Analysis Form/रक्त विश्लेषण फ़ॉर्म अपडेट करें",lang)
           )}
         </Button>
       </div>
@@ -1889,7 +1889,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 {/* BA Prefill readmission form start */}
 <CommonModal
   isOpen={BAPrefillModal}
-  title="Readmission Blood Analysis Form"
+  title={getTranslation("Readmission Blood Analysis Form/प्रवेश रक्त विश्लेषण प्रपत्र",lang)}
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
@@ -1910,7 +1910,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
       <div className="col-md-6">
         <FormGroup className="form-group row">
           <Label className="col-sm-12 col-form-label col-xl-6">
-            {dateOfAssessment}
+            {getTranslation(dateOfAssessment,lang)}
           </Label>
           <Col xl="5" sm="12">
             <div className="input-group">
@@ -1936,7 +1936,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
       {/* Package Selection */}
       <div className="mb-3">
-        <label htmlFor="package_type_id">Package Selection</label>
+        <label htmlFor="package_type_id">{getTranslation("Package Selection/पैकेज चयन",lang)}</label>
         <select
           id="package_type_id"
           name="package_type_id"
@@ -1975,7 +1975,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
           }
         />
         <label className="form-check-label" htmlFor="sample_collected">
-          Sample Collected
+         {getTranslation(" Sample Collected/नमूना एकत्र किया गया",lang)}
         </label>
       </div>
 
@@ -1983,7 +1983,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
       <div className="col-md-6 mb-3">
         <FormGroup className="form-group row">
           <Label className="col-sm-12 col-form-label col-xl-6">
-            Sample Collection Time
+            {getTranslation("Sample Collection Time/नमूना संग्रह समय",lang)}
           </Label>
           <Col xl="5" sm="12">
             <div className="input-group">
@@ -2011,7 +2011,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
       {/* Report Upload */}
       <div className="mb-3">
-        <label htmlFor="reportFile">Upload Report (PDF/Image)</label>
+        <label htmlFor="reportFile">{getTranslation("Upload Report (PDF/Image)/रिपोर्ट अपलोड करें (पीडीएफ/छवि)",lang)}</label>
         <input
           type="file"
           id="reportFile"
@@ -2029,7 +2029,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
       {/* Remarks */}
       <div className="mb-3">
-        <label htmlFor="remarks">Remarks</label>
+        <label htmlFor="remarks">{getTranslation("Remarks/टिप्पणी",lang)}</label>
         <input
           type="text"
           id="remarks"
@@ -2048,7 +2048,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 
       {/* Severity Selection */}
       <div className="mb-3">
-        <label htmlFor="severity_id">Package Severity</label>
+        <label htmlFor="severity_id">{getTranslation("Package Severity/पैकेज की गंभीरता",lang)}</label>
         <select
           id="severity_id"
           name="severity_id"
@@ -2081,7 +2081,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               aria-hidden="true"
             ></span>
           ) : (
-            "Readmission Blood Analysis Form"
+            getTranslation("Readmission Blood Analysis Form/पुनः प्रवेश रक्त विश्लेषण प्रपत्र",lang)
           )}
         </Button>
       </div>
