@@ -111,11 +111,11 @@ function SUDBrief() {
             let isSUDBriefCompleted = false;
 
           let userStatus = (
-            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+            <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
           );
           if (admitDate && FDADate && admitDate > FDADate) {
              isSUDBriefCompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -431,7 +431,7 @@ function SUDBrief() {
           <span
             onClick={() => viewSUDBriefFormData(row.intake_sud_id)}
             style={{ cursor: "pointer" }}
-            title="View"
+            title={getTranslation("View/देखना",lang)}
           >
             <svg
               style={{ color: "#d56337" }}
@@ -1110,7 +1110,7 @@ const handleSUDBriefUpdate = async () => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                          placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1173,7 +1173,7 @@ const handleSUDBriefUpdate = async () => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                          placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchTextone}
                           onChange={handleSearchChangeone}
                         />

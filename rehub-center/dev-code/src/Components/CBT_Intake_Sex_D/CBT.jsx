@@ -494,7 +494,7 @@ function CBT() {
                 <span
                   onClick={() => ViewCBTindividualData(row.cbt_id)}
                   style={{ cursor: "pointer" }}
-                  title="View"
+                  title={getTranslation("View/देखना",lang)}
                 >
                   <svg
                     style={{ color: "#d56337" }}
@@ -516,7 +516,7 @@ function CBT() {
                 <span
                   onClick={() => handleEditCBTIndividualData(row.cbt_id)}
                   style={{ cursor: "pointer", marginLeft: "10px" }}
-                  title="Edit"
+                  title={getTranslation("Edit/संपादन करना",lang)}
                 >
                 <svg
                     style={{ color: "green" }}
@@ -1161,7 +1161,7 @@ const token = localStorage.getItem("Authorization");
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                          placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1229,7 +1229,7 @@ const token = localStorage.getItem("Authorization");
                                                 <Input
                                                     className="form-control"
                                                     type="text"
-                                                    placeholder="Search......."
+                                                    placeholder={getTranslation("Search......./खोज.......",lang)}
                                                     value={searchTextSecondTbl}
                                                     onChange={handleSearchSecondTbl}
                                                 />

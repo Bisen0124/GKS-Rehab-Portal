@@ -211,12 +211,12 @@ function PFA() {
         
           let isPFACompleted = false;
           let userStatus = (
-            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+            <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
           );
         
           if (admitDate && pfaDate && admitDate > pfaDate) {
             isPFACompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
         
           const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -412,7 +412,7 @@ function PFA() {
           <span
             onClick={() => handlePreeFillCreateReadmissionPFA(row.recent_pfa_id)}
             style={{ cursor: "pointer" }}
-            title="Readmission PFA"
+            title={getTranslation("Readmission PFA/पुनः प्रवेश पीएफए",lang)}
           >
             ✏️
           </span>
@@ -460,7 +460,7 @@ function PFA() {
       cursor: row.isPFACompleted ? "not-allowed" : "pointer",
       opacity: row.isPFACompleted ? 0.5 : 1,
     }}
-    title={row.isPFACompleted ? "PFA Completed" : "Create PFA"}
+    title={row.isPFACompleted ? getTranslation("PFA Completed/पीएफए ​​पूरा हुआ",lang) : getTranslation("Create PFA/पीएफए ​​बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -529,7 +529,7 @@ const tablePFAPatientListColumns = [
             <span
               onClick={() => viewPFAToggle(row.user_id)}
               style={{ cursor: "pointer" }}
-              title="View"
+              title={getTranslation("View/देखना",lang)}
             >
               <svg
                 style={{ color: "#d56337" }}
@@ -551,7 +551,7 @@ const tablePFAPatientListColumns = [
             <span
               onClick={() => handleAllPFAEditData(row.user_id)}
               style={{ cursor: "pointer", marginLeft: "10px" }}
-              title="Edit"
+              title={getTranslation("Edit/संपादन करना",lang)}
             >
             <svg
                 style={{ color: "green" }}
@@ -823,8 +823,8 @@ const tablePFAPatientListColumns = [
       setIsLoading(false);
       Swal.fire({
         icon: "warning",
-        title: "Missing Fields",
-        text: "Please fill all required fields before submitting.",
+        title: getTranslation("Missing Fields/लापता फ़ील्ड",lang),
+        text: getTranslation("Please fill all required fields before submitting./सबमिट करने से पहले कृपया सभी ज़रूरी फ़ील्ड भरें।",lang),
       });
       return;
     }
@@ -883,8 +883,8 @@ const tablePFAPatientListColumns = [
         setIsLoading(false);
         Swal.fire({
           icon: "error",
-          title: "Submission Failed",
-          text: result.message || "Server error",
+          title: getTranslation("Submission Failed/सबमिशन विफल",lang),
+          text: result.message || getTranslation("Server error/सर्वर त्रुटि",lang),
         }).then(() => {
   // This runs after the user clicks "OK"
   setModal(false);
@@ -895,8 +895,8 @@ const tablePFAPatientListColumns = [
   setIsLoading(false);
   Swal.fire({
     icon: "success",
-    title: "PFA Created Successfully",
-    text: "The PFA assessment was submitted successfully.",
+    title: getTranslation("PFA Created Successfully/PFA सफलतापूर्वक बनाया गया",lang),
+    text: getTranslation("The PFA assessment was submitted successfully./PFA असेसमेंट सक्सेसफुली सबमिट हो गया।",lang),
   }).then(() => {
   // This runs after the user clicks "OK"
   setModal(false);
@@ -905,8 +905,8 @@ const tablePFAPatientListColumns = [
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "PFA failed! Unknown error occurred.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("PFA failed! Unknown error occurred./PFA फेल हो गया! कोई अनजान एरर हुआ।",lang),
       });
     }
   };
@@ -1239,8 +1239,8 @@ const parseDateString = (dateStr) => {
         setIsLoading(false);
         Swal.fire({
           icon: "error",
-          title: "Readmission Submission Failed",
-          text: result.message || "Server error",
+          title: getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल",lang),
+          text: result.message || getTranslation("Server error/सर्वर त्रुटि",lang),
         }).then(() => {
   // This runs after the user clicks "OK"
   setModal(false);
@@ -1251,8 +1251,8 @@ const parseDateString = (dateStr) => {
   setIsLoading(false);
   Swal.fire({
     icon: "success",
-    title: "PFA Readmission Created Successfully",
-    text: "The PFA readmission was submitted successfully.",
+    title: getTranslation("PFA Readmission Created Successfully/PFA रीडमिशन सफलतापूर्वक बनाया गया",lang),
+    text: getTranslation("The PFA readmission was submitted successfully./PFA रीएडमिशन सफलतापूर्वक सबमिट कर दिया गया।",lang),
   }).then(() => {
   // This runs after the user clicks "OK"
   setModal(false);
@@ -1261,8 +1261,8 @@ const parseDateString = (dateStr) => {
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "PFA Readmission failed! Unknown error occurred.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("PFA Readmission failed! Unknown error occurred./PFA रीडमिशन फेल हो गया! कोई अनजान एरर हुआ।",lang),
       });
     }
   };
@@ -1460,8 +1460,8 @@ const parseDateString = (dateStr) => {
       if (!response.ok) {
         Swal.fire({
           icon: "error",
-          title: "Update Failed",
-          text: data.errors?.[0]?.message || "Unknown error occurred.",
+          title: getTranslation("Update Failed/भार बढ़ाना विफल हुवा",lang),
+          text: data.errors?.[0]?.message || getTranslation("Unknown error occurred./अनजान एरर हुआ।",lang),
         });
         return;
       }
@@ -1476,7 +1476,7 @@ const parseDateString = (dateStr) => {
     } catch (error) {
       Swal.fire({
         icon: "error",
-        title: "Error",
+        title: getTranslation("Error/गलती",lang),
         text: getTranslation("An error occurred while updating the assessment./मूल्यांकन अद्यतन करते समय एक त्रुटि हुई.",lang),
       });
     } finally {
@@ -1547,7 +1547,7 @@ const parseDateString = (dateStr) => {
       .from(element)
       .save()
       .then(() => {
-        toast.success("Download complete!");
+        toast.success(getTranslation("Download complete!/डाउनलोड पूर्ण!",lang));
         element.classList.remove("pdf-scale");
 
         setTimeout(() => {
@@ -1574,7 +1574,7 @@ const parseDateString = (dateStr) => {
         },
       })
         .then((response) => {
-          if (!response.ok) throw new Error("Failed to fetch PFA all list user details");
+          if (!response.ok) throw new Error(getTranslation("Failed to fetch PFA all list user details/PFA की सभी लिस्ट के यूज़र डिटेल्स नहीं मिल पाए",lang));
           return response.json();
         })
         .then((res) => {
@@ -1693,7 +1693,7 @@ const parseDateString = (dateStr) => {
                           <Input
                             className="form-control"
                             type="text"
-                            placeholder="Search......."
+                             placeholder={getTranslation("Search......./खोज.......",lang)}
                             value={searchText}
                             onChange={handleSearchChange}
                           />
@@ -1705,7 +1705,7 @@ const parseDateString = (dateStr) => {
                     </div>
                     {stillLoading ? (
                       <div className="loading-text">
-                        Data is fetching from server. Please wait...
+                        {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा लिया जा रहा है। कृपया इंतज़ार करें...",lang)}
                       </div>
                     ) : (
                       <DataTable
@@ -1751,7 +1751,7 @@ const parseDateString = (dateStr) => {
                           <Input
                             className="form-control"
                             type="text"
-                            placeholder="Search......."
+                            placeholder={getTranslation("Search......./खोज.......",lang)}
                             value={PFAallDatasearchText}
                             onChange={handlePFASearchChange}
                           />
@@ -1763,7 +1763,7 @@ const parseDateString = (dateStr) => {
                     </div>
                     {stillLoading ? (
                       <div className="loading-text">
-                        Data is fetching from server. Please wait...
+                        {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा लिया जा रहा है। कृपया इंतज़ार करें...",lang)}
                       </div>
                     ) : (
                       <DataTable
@@ -1990,7 +1990,7 @@ const parseDateString = (dateStr) => {
                                       [name]: e.target.value,
                                     }))
                                   }
-                                  placeholder="Enter details"
+                                  placeholder={getTranslation("Enter details/विवरण दर्ज करें",lang)}
                                   className="form-control"
                                 />
                               </td>
@@ -2043,7 +2043,7 @@ const parseDateString = (dateStr) => {
                             <tr key={key}>
                               <td>{index + 1}</td>
                               <td>{label}</td>
-                              {["Yes", "No"].map((value) => {
+                              {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                                 const inputId = `complication_${key}_${value}`;
                                 return (
                                   <td
@@ -2069,7 +2069,7 @@ const parseDateString = (dateStr) => {
                                       }
                                     />
                                     <Label for={inputId}>
-                                      {value === "Yes" ? "Yes" : "No"}
+                                      {value === getTranslation("Yes/हाँ",lang) ? getTranslation("Yes/हाँ",lang) : getTranslation("No/नहीं",lang)}
                                     </Label>
                                   </td>
                                 );
@@ -2110,7 +2110,7 @@ const parseDateString = (dateStr) => {
                             <tr key={option.key}>
                               <td>{index + 1}</td>
                               <td>{getTranslation(option.label,lang)}</td>
-                              {["Yes", "No"].map((value) => {
+                              {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                                 const inputId = `neuro_${option.key}_${value}`;
                                 return (
                                   <td
@@ -2137,7 +2137,7 @@ const parseDateString = (dateStr) => {
                                       }
                                     />
                                     <Label for={inputId}>
-                                      {value === "Yes" ? "Yes" : "No"}
+                                      {value === getTranslation("Yes/हाँ",lang) ? getTranslation("Yes/हाँ",lang) : getTranslation("No/नहीं",lang)}
                                     </Label>
                                   </td>
                                 );
@@ -2181,7 +2181,7 @@ const parseDateString = (dateStr) => {
                     <div className="col-md-6">
                       <Label>{getTranslation("Nutritional Status / नुट्रिशन स्तिथि",lang)}</Label>
                       <div className="radio radio-primary d-flex gap-3">
-                        {["Good", "Average", "Poor"].map((Nstatus) => (
+                        {[getTranslation("Good/अच्छा",lang), getTranslation("Average/औसत",lang), getTranslation("Poor/गरीब",lang)].map((Nstatus) => (
                           <div key={Nstatus}>
                             <Input
                               type="radio"
@@ -2238,7 +2238,7 @@ const parseDateString = (dateStr) => {
                             <Label>{getTranslation(name,lang)}</Label>
                             <Input
                               type="text"
-                              placeholder="Name"
+                              placeholder={getTranslation("Name/नाम",lang)}
                               name="consent_name"
                               value={formData.consent_name}
                               onChange={handleChange}
@@ -2250,7 +2250,7 @@ const parseDateString = (dateStr) => {
                             <Label>{getTranslation(relationship,lang)}</Label>
                             <Input
                               type="text"
-                              placeholder="Relationship"
+                              placeholder={getTranslation("Relationship/संबंध",lang)}
                               name="consent_relationship"
                               value={formData.consent_relationship}
                               onChange={handleChange}
@@ -2262,7 +2262,7 @@ const parseDateString = (dateStr) => {
                             <Label>{getTranslation(signature,lang)}</Label>
                             <Input
                               type="text"
-                              placeholder="Signature"
+                              placeholder={getTranslation("Signature/हस्ताक्षर",lang)}
                               name="consent_signature"
                               value={formData.consent_signature}
                               onChange={handleChange}
@@ -2279,7 +2279,7 @@ const parseDateString = (dateStr) => {
                           <Label>{getTranslation(prepared,lang)}</Label>
                           <Input
                             type="text"
-                            placeholder="Prepared By"
+                            placeholder={getTranslation("Prepared By/द्वारा तैयार",lang)}
                             name="prepared_by"
                             value={formData.prepared_by}
                             onChange={handleChange}
@@ -2898,7 +2898,7 @@ const parseDateString = (dateStr) => {
                             <td>{label}</td>
                             <td colSpan="2">
                               <div className="radio radio-primary d-flex gap-3">
-                                {["Yes", "No"].map((value) => {
+                                {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                                   const inputId = `complication_${key}_${value}`;
                                   return (
                                     <div
@@ -2982,7 +2982,7 @@ const parseDateString = (dateStr) => {
                           <tr key={option.key}>
                             <td>{index + 1}</td>
                             <td>{getTranslation(option.label,lang)}</td>
-                            {["Yes", "No"].map((value) => {
+                            {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                               const inputId = `neuro_${option.key}_${value}`;
                               return (
                                 <td key={inputId}>
@@ -3086,7 +3086,7 @@ const parseDateString = (dateStr) => {
                   <div className="col-md-6">
                     <Label>{getTranslation("Nutritional Status / नुट्रिशन स्तिथि,",lang)}</Label>
                     <div className="radio radio-primary d-flex gap-3">
-                      {["Good", "Average", "Poor"].map((Nstatus) => (
+                      {[getTranslation("Good/अच्छा",lang), getTranslation("Average/औसत",lang), getTranslation("Poor/गरीब",lang)].map((Nstatus) => (
                         <div key={Nstatus}>
                           <Input
                             type="radio"
@@ -3135,7 +3135,7 @@ const parseDateString = (dateStr) => {
                           <Input
                             type="text"
                             name="consent_name"
-                            placeholder="Name"
+                            placeholder={getTranslation("Name/नाम",lang)}
                             value={PFAeditData.consent_name}
                             onChange={(e) =>
                               setPFAeditData({
@@ -3152,7 +3152,7 @@ const parseDateString = (dateStr) => {
                           <Input
                             type="text"
                             name="consent_relationship"
-                            placeholder="Relationship"
+                            placeholder={getTranslation("Relationship/संबंध",lang)}
                             value={PFAeditData.consent_relationship}
                             onChange={(e) =>
                               setPFAeditData({
@@ -3169,7 +3169,7 @@ const parseDateString = (dateStr) => {
                           <Input
                             type="text"
                             name="consent_signature"
-                            placeholder="Signature"
+                            placeholder={getTranslation("Signature/हस्ताक्षर",lang)}
                             value={PFAeditData.consent_signature}
                             onChange={(e) =>
                               setPFAeditData({
@@ -3190,7 +3190,7 @@ const parseDateString = (dateStr) => {
                       <Input
                         type="text"
                         name="prepared_by"
-                        placeholder="Prepared By"
+                        placeholder={getTranslation("Prepared By/द्वारा तैयार",lang)}
                         value={PFAeditData.prepared_by}
                         onChange={(e) =>
                           setPFAeditData({
@@ -3217,7 +3217,7 @@ const parseDateString = (dateStr) => {
                           />
                           <Label className="text-muted" for="checkbox3">
                             {
-                              "Varification from parent side before PFA submitting"
+                              getTranslation("Varification from parent side before PFA submitting/PFA सबमिट करने से पहले माता-पिता की तरफ से वेरिफिकेशन",lang)
                             }
                           </Label>
                         </div>
@@ -3417,7 +3417,7 @@ const parseDateString = (dateStr) => {
             </Table>
 
             <div className="col-md-12">
-              <FormGroup className="mb-0">
+              <FormGroup className="mb-0 mt-4 mb-4">
                 <Label>{getTranslation(mentionIfAny,lang)}</Label>
                 <Input
                   type="textarea"
@@ -3460,7 +3460,7 @@ const parseDateString = (dateStr) => {
           <td>{label}</td>
           <td colSpan="2">
             <div className="radio radio-primary d-flex gap-3">
-              {["Yes", "No"].map((value) => {
+              {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                 const inputId = `complication_${key}_${value}`;
                 return (
                   <div
@@ -3502,7 +3502,7 @@ const parseDateString = (dateStr) => {
   </Table>
 
   <div className="col-md-12">
-    <FormGroup className="mb-0">
+    <FormGroup className="mb-0 mt-4 mb-4">
       <Label>{getTranslation(mentionIfAny2,lang)}</Label>
       <Input
         type="textarea"
@@ -3537,7 +3537,7 @@ const parseDateString = (dateStr) => {
         <tr key={option.key}>
           <td>{index + 1}</td>
           <td>{getTranslation(option.label,lang)}</td>
-          {["Yes", "No"].map((value) => {
+          {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
             const inputId = `neuro_${option.key}_${value}`;
             return (
               <td key={inputId}>
@@ -3576,7 +3576,7 @@ const parseDateString = (dateStr) => {
   </Table>
 
   <div className="col-md-12">
-    <FormGroup className="mb-0">
+    <FormGroup className="mb-0 mt-4 mb-4">
       <Label>{getTranslation(mentionIfAny2,lang)}</Label>
       <Input
         type="textarea"
@@ -3637,7 +3637,7 @@ const parseDateString = (dateStr) => {
           <div className="col-md-6">
             <Label>{getTranslation("Nutritional Status / नुट्रिशन स्तिथि",lang)}</Label>
             <div className="radio radio-primary d-flex gap-3">
-              {["Good", "Average", "Poor"].map((Nstatus) => (
+              {[getTranslation("Good/अच्छा",lang), getTranslation("Average/औसत",lang), getTranslation("Poor/गरीब",lang)].map((Nstatus) => (
                 <div key={Nstatus}>
                   <Input
                     type="radio"
@@ -3686,7 +3686,7 @@ const parseDateString = (dateStr) => {
                   <Input
                     type="text"
                     name="consent_name"
-                    placeholder="Name"
+                    placeholder={getTranslation("Name/नाम",lang)}
                     value={PFAeditData?.consent_name}
                     onChange={(e) =>
                       setPFAeditData({
@@ -3703,7 +3703,7 @@ const parseDateString = (dateStr) => {
                   <Input
                     type="text"
                     name="consent_relationship"
-                    placeholder="Relationship"
+                    placeholder={getTranslation("Relationship/संबंध",lang)}
                     value={PFAeditData?.consent_relationship}
                     onChange={(e) =>
                       setPFAeditData({
@@ -3720,7 +3720,7 @@ const parseDateString = (dateStr) => {
                   <Input
                     type="text"
                     name="consent_signature"
-                    placeholder="Signature"
+                    placeholder={getTranslation("Signature/हस्ताक्षर",lang)}
                     value={PFAeditData?.consent_signature}
                     onChange={(e) =>
                       setPFAeditData({
@@ -3741,7 +3741,7 @@ const parseDateString = (dateStr) => {
               <Input
                 type="text"
                 name="prepared_by"
-                placeholder="Prepared By"
+                placeholder={getTranslation("Prepared By/द्वारा तैयार",lang)}
                 value={PFAeditData?.prepared_by}
                 onChange={(e) =>
                   setPFAeditData({

@@ -440,7 +440,7 @@ const BloodAnalysis = () => {
             <span
               onClick={() => viewBAFormData(row.blood_analysis_id)}
               style={{ cursor: "pointer" }}
-              title="View"
+              title="View/देखना"
             >
               <svg
                 style={{ color: "#d56337" }}
@@ -462,7 +462,7 @@ const BloodAnalysis = () => {
             <span
               onClick={() => handleBAindividualEdit(row.blood_analysis_id)}
               style={{ cursor: "pointer", marginLeft: "10px" }}
-              title="Edit"
+              title="Edit/संपादन करना"
             >
               <svg
                 style={{ color: "green" }}
@@ -801,7 +801,7 @@ const viewBAFormData = async (bloodAnalysisId) => {
     console.log("Extracted BA Data Entry:", ViewBADataEntry);
 
     if (!ViewBADataEntry) {
-      console.warn("No Blood Analysis assessment data found.");
+      console.warn("No Blood Analysis assessment data found./कोई ब्लड एनालिसिस असेसमेंट डेटा नहीं मिला।");
       return;
     }
 
@@ -866,7 +866,7 @@ const handleBAindividualEdit = async (editBAID = null) => {
     const latestAssessment = data.data || null;
 
     if (!latestAssessment) {
-      console.warn("No BA assessment found for this ID.");
+      console.warn("No BA assessment found for this ID./इस ID के लिए कोई BA असेसमेंट नहीं मिला।");
       return;
     }
 
@@ -1028,8 +1028,8 @@ const handleBAprefill = async (prefillBAID = null) => {
   if (!prefillBAID) {
     Swal.fire({
       icon: "warning",
-      title: "Missing Blood Analysis ID",
-      text: "Please provide a valid Blood Analysis ID before opening the form.",
+      title: getTranslation("Missing Blood Analysis ID/गुम रक्त विश्लेषण आईडी",lang),
+      text: getTranslation("Please provide a valid Blood Analysis ID before opening the form./कृपया फ़ॉर्म खोलने से पहले एक वैलिड ब्लड एनालिसिस ID दें।",lang),
     });
     return; // ⛔ stop execution
   }
@@ -1282,7 +1282,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                           placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1345,7 +1345,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                           placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchTextone}
                           onChange={handleSearchChangeone}
                         />

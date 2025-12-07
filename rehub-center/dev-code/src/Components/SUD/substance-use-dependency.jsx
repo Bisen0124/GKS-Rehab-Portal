@@ -398,7 +398,7 @@ function SUD() {
                     <span
                     onClick={() => handleSUDEdit(row.sda_id)}
                     style={{ cursor: "pointer", marginLeft: "10px" }}
-                    title="Edit"
+                    title={getTranslation("Edit/संपादन करना",lang)}
                   >
                   <svg
                       style={{ color: "green" }}
@@ -994,7 +994,7 @@ function SUD() {
                                                 <Input
                                                     className="form-control"
                                                     type="text"
-                                                    placeholder="Search......."
+                                                   placeholder={getTranslation("Search......./खोज.......",lang)}
                                                     value={searchText}
                                                     onChange={handleSearchChange}
                                                 />
@@ -1061,7 +1061,7 @@ function SUD() {
                                                 <Input
                                                     className="form-control"
                                                     type="text"
-                                                    placeholder="Search......."
+                                                    placeholder={getTranslation("Search......./खोज.......",lang)}
                                                     value={searchTextSecondTbl}
                                                     onChange={handleSearchSecondTbl}
                                                 />
@@ -1546,7 +1546,7 @@ function SUD() {
     ) : (
       <tr>
         <td colSpan="2" className="text-center">
-         {getTranslation(" No data available/कोई डेटा मौजूद नहीं",lang)}
+         {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
         </td>
       </tr>
     )}

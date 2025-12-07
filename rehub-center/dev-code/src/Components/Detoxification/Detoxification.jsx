@@ -143,7 +143,7 @@ const Detoxification = () => {
       .from(element)
       .save()
       .then(() => {
-        toast.success("Download complete!");
+        toast.success(getTranslation("Download complete!/डाउनलोड पूर्ण!",lang));
         element.classList.remove("pdf-scale");
 
         setTimeout(() => {
@@ -218,11 +218,11 @@ const Detoxification = () => {
 
             let isDetoxCompleted = false;
           let userStatus = (
-            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+            <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
           );
           if (admitDate && DetoxRecentDate && admitDate > DetoxRecentDate) {
              isDetoxCompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           // const dischargeStatusText = user.discharge_status_text || "Unknown";
@@ -456,10 +456,10 @@ const Detoxification = () => {
 
           // ✅ Status Badge
           let userStatus = (
-            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+            <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
           );
           if (entry.status === "Completed") {
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           return {
@@ -568,7 +568,7 @@ const Detoxification = () => {
             <span
               onClick={() => ViewDetoxindividualData(row.detox_id)}
               style={{ cursor: "pointer" }}
-              title="View"
+              title={getTranslation("View/देखना",lang)}
             >
               <svg
                 style={{ color: "#d56337" }}
@@ -713,8 +713,8 @@ const Detoxification = () => {
         end_remark: formData.end_remark || "",
         status:
           formData.is_detoxified === "yes" && formData.end_date
-            ? "Completed"
-            : "Pending",
+            ? getTranslation("Completed/पुरा होना।",lang)
+            : getTranslation("Pending/लंबित",lang),
       };
 
       console.log("Submitting Detoxification Payload =>", payload);
@@ -747,8 +747,8 @@ const Detoxification = () => {
         console.error("Error Response:", result);
         Swal.fire({
           icon: "error",
-          title: "Submission Failed",
-          text: result.message || "There was an error submitting the form.",
+          title: getTranslation("Submission Failed/सबमिशन विफल",lang),
+          text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
         });
       }
     } catch (error) {
@@ -756,7 +756,7 @@ const Detoxification = () => {
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Network or server issue occurred.",
+        text: getTranslation("Network or server issue occurred./नेटवर्क या सर्वर में समस्या हुई।",lang),
       });
     } finally {
       setIsLoading(false);
@@ -1208,7 +1208,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                         placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1275,7 +1275,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                         placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchTextSecondTbl}
                           onChange={handleSearchSecondTbl}
                         />

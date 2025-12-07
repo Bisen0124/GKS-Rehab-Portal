@@ -678,7 +678,7 @@ function GenFamily() {
       cursor: row.isGenFamCompleted ? "not-allowed" : "pointer",
       opacity: row.isGenFamCompleted ? 0.5 : 1,
     }}
-    title={row.isGenFamCompleted ? "Create Gen Family Form" : "Create Gen Family Form"}
+    title={row.isGenFamCompleted ? getTranslation("Create Gen Family Form/जनरल फैमिली फॉर्म बनाएं",lang) : getTranslation("Create Gen Family Form/जनरल फैमिली फॉर्म बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -743,7 +743,7 @@ function GenFamily() {
             <span
               onClick={() => createGenFamilyToggle(row.id)}
               style={{ cursor: "pointer" }}
-              title="Create PFA"
+              title={getTranslation("Create PFA/पीएफए ​​बनाएं",lang)}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -767,7 +767,7 @@ function GenFamily() {
               <span
                 onClick={() => viewGenFamily(row.user_id)}
                 style={{ cursor: "pointer" }}
-                title="View"
+                title={getTranslation("View/देखना",lang)}
               >
                 <svg
                   style={{ color: "#d56337" }}
@@ -790,7 +790,7 @@ function GenFamily() {
               <span
                 onClick={() => handleGenFamilyData(row.user_id)}
                 style={{ cursor: "pointer", marginLeft: "10px" }}
-                title="Edit"
+                title={getTranslation("Edit/संपादन करना",lang)}
               >
                 <svg
                   style={{ color: "green" }}
@@ -853,10 +853,10 @@ function GenFamily() {
 
             let isGenFamCompleted = false;
 
-          let userStatus = <p className="badge bg-warning text-dark p-2">{"Pending"}</p>;
+          let userStatus = <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>;
           if (admitDate && genfamilyDate && admitDate > genfamilyDate) {
             isGenFamCompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -1780,8 +1780,8 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
         setIsLoading(false);
         Swal.fire({
           icon: "error",
-          title: "Submission Failed",
-          text: result.message || "Server error",
+          title: getTranslation("Submission Failed/सबमिशन विफल",lang),
+          text: result.message || getTranslation("Server error/सर्वर त्रुटि",lang),
         });
         return;
       }
@@ -1791,7 +1791,7 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
 
       Swal.fire({
         icon: "success",
-        title: "Assessment Submitted",
+        title: getTranslation("Assessment Submitted/मूल्यांकन प्रस्तुत किया गया",lang),
       }).then(() => {
         setgetFamilyModal(false);
       });
@@ -1832,8 +1832,8 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
             const userStatus =
               assessmentData?.genFamilyDetails?.consent_info?.status ===
                 "Completed"
-                ? "Completed"
-                : "Pending";
+                ? getTranslation("Completed/पुरा होना।",lang)
+                : getTranslation("Pending/लंबित",lang);
 
             console.log("userStatus:", userStatus);
 
@@ -1862,8 +1862,8 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "PFA failed! Unknown error occurred.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Gen Family failed! Unknown error occurred./जनरल फ़ैमिली फ़ेल हो गई! अनजान एरर हुआ",lang),
       });
     }
   };
@@ -2403,8 +2403,8 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
         setIsLoading(false);
         Swal.fire({
           icon: "error",
-          title: "Readmission Submission Failed",
-          text: result.message || "Server error",
+          title: getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल",lang),
+          text: result.message || getTranslation("Server error/सर्वर त्रुटि",lang),
         }).then(() => {
           // This runs after the user clicks "OK"
           // setModal(false);
@@ -2415,8 +2415,8 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       setIsLoading(false);
       Swal.fire({
         icon: "success",
-        title: "Gen Familt Readmission Created Successfully",
-        text: "The Gen Family readmission was submitted successfully.",
+        title: getTranslation("Gen Familt Readmission Created Successfully/Gen Familt रीडमिशन सफलतापूर्वक बनाया गया",lang),
+        text: getTranslation("The Gen Family readmission was submitted successfully./जेन फैमिली का रीडमिशन सफलतापूर्वक सबमिट कर दिया गया।",lang),
       }).then(() => {
         // This runs after the user clicks "OK"
         // setModal(false);
@@ -2425,8 +2425,8 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Gen Family Readmission failed! Unknown error occurred.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Gen Family Readmission failed! Unknown error occurred./Gen Family Readmission फेल हो गया! कोई अनजान एरर हुआ।",lang),
       });
     }
   }
@@ -2855,8 +2855,8 @@ console.log(latestGenFamilyData.substance_use_dependency)
         setIsLoading(false);
         Swal.fire({
           icon: "error",
-          title: "Readmission Submission Failed",
-          text: result.message || "Server error",
+          title: getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल",lang),
+          text: result.message || getTranslation("Server error/सर्वर त्रुटि",lang),
         }).then(() => {
           // This runs after the user clicks "OK"
           setEditIndividualmodal(false);
@@ -2868,8 +2868,8 @@ console.log(latestGenFamilyData.substance_use_dependency)
       
       Swal.fire({
         icon: "success",
-        title: "Gen Familt Readmission Created Successfully",
-        text: "The Gen Family readmission was submitted successfully.",
+        title: getTranslation("Gen Familt Readmission Created Successfully/Gen Familt रीडमिशन सफलतापूर्वक बनाया गया",lang),
+        text: getTranslation("The Gen Family readmission was submitted successfully./जेन फैमिली का रीडमिशन सफलतापूर्वक सबमिट कर दिया गया।",lang),
       }).then(() => {
         // This runs after the user clicks "OK"
         setEditIndividualmodal(false);
@@ -2878,8 +2878,8 @@ console.log(latestGenFamilyData.substance_use_dependency)
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Gen Family Readmission failed! Unknown error occurred.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Gen Family Readmission failed! Unknown error occurred./Gen Family Readmission फेल हो गया! कोई अनजान एरर हुआ।",lang),
       });
     }
   }
@@ -2984,7 +2984,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <Input
                   type="text"
                   className="form-control mt-2"
-                  placeholder="Enter your occupational status"
+                  // placeholder="Enter your occupational status/"
                   name="occupational_status"
                   value={formData.occupational_status}
                   onChange={onChangeEventHandler}
@@ -2997,7 +2997,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <Input
                   type="text"
                   className="form-control mt-2"
-                  placeholder="Enter your marital status"
+                  // placeholder="Enter your marital status"
                   name="marital_status"
                   value={formData.marital_status}
                   onChange={onChangeEventHandler}
@@ -3010,7 +3010,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <Input
                   type="text"
                   className="form-control mt-2"
-                  placeholder="Enter your living situation"
+                  // placeholder="Enter your living situation"
                   name="living_situation"
                   value={formData.living_situation}
                   onChange={onChangeEventHandler}
@@ -3022,7 +3022,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <Input
                   type="text"
                   className="form-control mt-2"
-                  placeholder="Enter your your religion"
+                  // placeholder="Enter your your religion"
                   name="your_religion"
                   value={formData.your_religion}
                   onChange={onChangeEventHandler}
@@ -3044,7 +3044,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="duration_of_use"
                   value={formData.duration_of_use}
                   onChange={onChangeEventHandler}
-                  placeholder="e.g., 2 years, 6 months"
+                  // placeholder="e.g., 2 years, 6 months"
                 />
               </div>
               {/*Daily Spent? / दिनमा कितना पदार्थ उपयोग कर रहे हैं? */}
@@ -3058,7 +3058,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   step="0.01"
                   value={formData.daily_spent_amount}
                   onChange={onChangeEventHandler}
-                  placeholder="Enter amount"
+                  // placeholder="Enter amount"
                 />
               </div>
               {/*Patient Monthly Income? / महीने में कितना आय हैं? */}
@@ -3072,7 +3072,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   step="100"
                   value={formData.patient_monthly_income}
                   onChange={onChangeEventHandler}
-                  placeholder="Enter amount"
+                  // placeholder="Enter amount"
                 />
               </div>
               {/*Family Monthly Income? / महीने में कितना आय हैं? */}
@@ -3084,7 +3084,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="family_monthly_income"
                   min="0"
                   step="100"
-                  placeholder="Enter amount"
+                  // placeholder="Enter amount"
                   value={formData.family_monthly_income}
                   onChange={onChangeEventHandler}
                 />
@@ -3275,7 +3275,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                             onChange={(e) =>
                               handleTreatmentInputChange(index, e)
                             }
-                            placeholder="Year"
+                            // placeholder="Year"
                           />
                         </td>
                         <td>
@@ -3286,7 +3286,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                             onChange={(e) =>
                               handleTreatmentInputChange(index, e)
                             }
-                            placeholder="Place"
+                            // placeholder="Place"
                           />
                         </td>
                         <td>
@@ -3297,7 +3297,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                             onChange={(e) =>
                               handleTreatmentInputChange(index, e)
                             }
-                            placeholder="Duration"
+                            // placeholder="Duration"
                           />
                         </td>
                         <td>
@@ -3308,7 +3308,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                             onChange={(e) =>
                               handleTreatmentInputChange(index, e)
                             }
-                            placeholder="Sobriety Days"
+                            // placeholder="Sobriety Days"
                           />
                         </td>
                         <td>
@@ -3318,7 +3318,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               className="btn btn-danger"
                               onClick={() => removeTreatmentRow(index)}
                             >
-                              Remove
+                             {getTranslation(" Remove/निकालना",lang)}
                             </Button>
                           )}
                         </td>
@@ -3328,7 +3328,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </Table>
 
                 <Button type="button" className="btn btn-secondary mt-3 mb-3" onClick={addTreatmentRow}>
-                  + Add More
+                {getTranslation("+ Add More/ + अधिक जोड़ें",lang)}
                 </Button>
               </div>
             </div>
@@ -3601,7 +3601,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               onChange={(e) =>
                                 handleMemberInputChange(index, e)
                               }
-                              placeholder="Name / नाम "
+                              // placeholder="Name / नाम "
                             />
                           </td>
                           <td>
@@ -3612,7 +3612,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               onChange={(e) =>
                                 handleMemberInputChange(index, e)
                               }
-                              placeholder="Relation / संबंध "
+                              // placeholder="Relation / संबंध "
                             />
                           </td>
                           <td>
@@ -3623,7 +3623,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               onChange={(e) =>
                                 handleMemberInputChange(index, e)
                               }
-                              placeholder="age / आयु "
+                              // placeholder="age / आयु "
                             />
                           </td>
                           <td>
@@ -3634,7 +3634,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               onChange={(e) =>
                                 handleMemberInputChange(index, e)
                               }
-                              placeholder="Living Status / रहने की स्तिथि"
+                              // placeholder="Living Status / रहने की स्तिथि"
                             />
                           </td>
                           <td>
@@ -3645,7 +3645,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                               onChange={(e) =>
                                 handleMemberInputChange(index, e)
                               }
-                              placeholder="ny physical Disorder & disease कोई भी शारीरिक विकार एवं रोग"
+                              // placeholder="ny physical Disorder & disease कोई भी शारीरिक विकार एवं रोग"
                             />
                           </td>
                           <td>
@@ -3654,7 +3654,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                                 type="button"
                                 className="btn btn-danger" onClick={() => removeInterferenceRow(index)}
                               >
-                                Remove
+                                {getTranslation(" Remove/निकालना",lang)}
                               </Button>
                             )}
                           </td>
@@ -3664,7 +3664,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </Table>
 
                   <Button type="button" className="btn btn-secondary mt-4 mb-3" onClick={addInterferenceRow}>
-                    + Add More
+                  {getTranslation("+ Add More/ + अधिक जोड़ें",lang)}
                   </Button>
                 </div>
 
@@ -4266,7 +4266,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         <td colSpan={3}>
                           <Input
                             type="text"
-                            placeholder="If any from mother side"
+                            // placeholder="If any from mother side"
                             name="mother_side_if_any"
                             value={
                               formData.family_history_data.mother_side
@@ -4291,7 +4291,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         <td colSpan={3}>
                           <Input
                             type="text"
-                            placeholder="If any from father side"
+                            // placeholder="If any from father side"
                             name="father_side_if_any"
                             value={
                               formData.family_history_data.father_side
@@ -4477,7 +4477,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="sociality_living"
                   value={formData.childhood_history.sociality_living}
                   onChange={childhoodHandleChange}
-                  placeholder="Enter birth place..."
+                  // placeholder="Enter birth place..."
                 />
 
                 <br />
@@ -4488,7 +4488,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="high_risk_behavior"
                   value={formData.childhood_history.high_risk_behavior}
                   onChange={childhoodHandleChange}
-                  placeholder="Enter current location..."
+                  // placeholder="Enter current location..."
                 />
               </div>
 
@@ -4927,7 +4927,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         <tr key={key}>
                           <td>{index + 1}</td>
                           <td className="w-75">{getTranslation(label,lang)}</td>
-                          {["Yes", "No"].map((value) => {
+                          {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                             const inputId = `patientBehavior_${key}_${value}`;
                             return (
                               <td key={inputId} className="radio radio-primary">
@@ -4984,7 +4984,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   <Label>{getTranslation(name,lang)}</Label>
                   <Input
                     type="text"
-                    placeholder="Name"
+                    // placeholder="Name"
                     name="consent_name"
                     value={formData.consent_name}
                     onChange={onChangeEventHandler}
@@ -4994,7 +4994,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   <Label>{getTranslation(relationship,lang)}</Label>
                   <Input
                     type="text"
-                    placeholder="Relationship"
+                    // placeholder="Relationship"
                     name="relationship"
                     value={formData.relationship}
                     onChange={onChangeEventHandler}
@@ -5004,7 +5004,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   <Label>{getTranslation(signature,lang)}</Label>
                   <Input
                     type="text"
-                    placeholder="Signature"
+                    // placeholder="Signature"
                     name="signature"
                     value={formData.signature}
                     onChange={onChangeEventHandler}
@@ -5014,7 +5014,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   <Label>{getTranslation(prepared,lang)}</Label>
                   <Input
                     type="text"
-                    placeholder="Prepared By"
+                    // placeholder="Prepared By"
                     name="prepared_by"
                     value={formData.prepared_by}
                     onChange={onChangeEventHandler}
@@ -5058,7 +5058,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                           placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -5122,7 +5122,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                          placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchgenText}
                           onChange={handleSearchGenFamily}
                         />
@@ -5377,7 +5377,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 ) : (
                   <tr>
                   <td colSpan="2" className="text-center">
-                    No data available
+                   {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
                   </td>
                 </tr>
                 )}
@@ -6301,7 +6301,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             className="btn btn-danger"
             onClick={() => removeInterferenceRow(index)}
           >
-            Remove
+            {getTranslation(" Remove/निकालना",lang)}
           </Button>
         )}
       </td>
@@ -7755,7 +7755,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         <tr key={key}>
                           <td>{index + 1}</td>
                           <td className="w-75">{getTranslation(label,lang)}</td>
-                          {["Yes", "No"].map((value) => {
+                          {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                             const inputId = `patientBehavior_${key}_${value}`;
                             return (
                               <td key={inputId} className="radio radio-primary">
@@ -10184,7 +10184,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         <tr key={key}>
                           <td>{index + 1}</td>
                           <td className="w-75">{getTranslation(label,lang)}</td>
-                          {["Yes", "No"].map((value) => {
+                          {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                             const inputId = `patientBehavior_${key}_${value}`;
                             return (
                               <td key={inputId} className="radio radio-primary">
@@ -10319,7 +10319,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             </div>
           </form>
         ) : (
-          <p className="text-center p-4">Loading data...</p>
+          <p className="text-center p-4">{getTranslation("Loading data.../डेटा लोड हो रहा है...",lang)}</p>
         )}
       </CommonModal>
 

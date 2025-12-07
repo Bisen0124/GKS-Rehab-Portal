@@ -240,7 +240,7 @@ function FDA() {
           <span
             onClick={() => viewFDAFamily(row.fda_id)}
             style={{ cursor: "pointer" }}
-            title="View"
+            title={getTranslation("View/देखना",lang)}
           >
             <svg
               style={{ color: "#d56337" }}
@@ -262,7 +262,7 @@ function FDA() {
           <span
               onClick={() => handleFDAindividualEdit(row.fda_id)}
               style={{ cursor: "pointer", marginLeft: "10px" }}
-              title="Edit"
+              title={getTranslation("Edit/संपादन करना",lang)}
             >
             <svg
                 style={{ color: "green" }}
@@ -583,8 +583,8 @@ function FDA() {
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
-        text: "Failed to submit. Check console for error.",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
+        text: getTranslation("Failed to submit. Check console for error./सबमिट नहीं हो सका. कंसोल में एरर चेक करें.",lang),
       });
     }
   };
@@ -1009,7 +1009,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                          placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1077,7 +1077,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                         placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchTextone}
                           onChange={handleSearchChangeone}
                         />
@@ -1331,7 +1331,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   <tr key={key}>
                     <td>{index + 1}</td>
                     <td>{getTranslation(label,lang)}</td>
-                    {["Yes", "No"].map((value) => {
+                    {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                       const inputId = `addiction_${key}_${value}`;
                       const currentValue = FDAEditData?.addictionSeverity?.[key] || "";
 
@@ -1365,7 +1365,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
 
           <div className="col-md-12">
             <FormGroup className="mb-4 mt-4">
-              <Label>Remarks</Label>
+              <Label>{getTranslation("Remarks/टिप्पणी",lang)}</Label>
               <Input
                 type="text"
                 className="form-control"

@@ -1670,7 +1670,7 @@ export const patientBehaviorFormattedList = [
   { key: "disrespects_parents", label: "Disrespects parents? (does not agree to anything) / माता -पिता का अनादर करता है?" },
   { key: "fights_argue", label: "Have fight argue with everyone? / क्या हर किसी से झगड़ा बहस होती है?" },
   { key: "vandalizes", label: "Vandalizes the house? / घर में तोड़फोड़ करते  है?" },
-  { key: "fights_at_home", label: "Does fight at home? (with mother, father, wife, children, brother, sister) क्या घर पर झगड़ते हैं?" },
+  { key: "fights_at_home", label: "Does fight at home? (with mother, father, wife, children, brother, sister)/क्या घर में लड़ाई होती है? (माँ, पिता, पत्नी, बच्चों, भाई, बहन के साथ)" },
   { key: "tells_lies", label: "Tells lies? / क्या झूठ बोलते हैं ? " },
   { key: "too_expensive", label: "Is it too expensive? (not value money) / क्या बहुत खर्चीले हैं?" },
   { key: "theft", label: "Steals Theft? / क्या चोरी की है?" },
@@ -1681,7 +1681,7 @@ export const patientBehaviorFormattedList = [
   { key: "irresponsible", label: "There is no sense of responsibility? / क्या जिम्मेदारी का कोई अहसास नहीं है?" },
   { key: "selfish", label: "Selfish in nature? / स्वभाव से स्वार्थी?" },
   { key: "has_empathy", label: "Do Compassion and sympathy for anyone? / किसी के प्रति दया और सहानुभूति है?" },
-  { key: "lazy", label: "Are lazy/slacker/careless? / क्या आप आलसी/सुस्त/लापरवाह हैं?" },
+  { key: "lazy", label: "Are lazy or slacker or careless?/क्या आप आलसी, कामचोर या लापरवाह हैं?" },
   { key: "nervous_anxiety_symptoms", label: "Can you get nervous & anxiety without getting drugs? / क्या आपको बिना नशे के घबराहट, चिड़चिड़ापन होता है?" },
   { key: "emotional_post_use", label: "Do patients become very emotional after taking substance abuse? / क्या मादक पदार्थ के सेवन के बाद मरीज़ भावुक हो जाते हैं?" },
   { key: "prioritizes_substance", label: "Do patient put the purchase of Substance ahead of his financial Responsibility? / क्या मरीज़ मादक पदार्थ की खरीद को अपनी वित्तीय जिम्मेदारी से आगे रखते हैं?" },
@@ -1902,7 +1902,7 @@ export const NutritionalStatus ="Nutritional Status / नुट्रिशन �
 export const good = "#  Good/अच्छी ";
 export const average = "# Average/औसत";
 export const poor = "# Poor/खराब";
-export const Lymphadenopathy ="Lymphadenopathy सूजे/बढ़े हुए लिम्फ (Mention उल्लेख करें )";
+export const Lymphadenopathy ="Lymphadenopathy (Mention)/ सूजे बढ़े हुए लिम्फ (उल्लेख करें )";
 
 //Cognitive Behavioral Test/ संज्ञानात्मक व्यवहार परीक्षण
 export const CognitiveTitle ="Cognitive Behavioral Test/ संज्ञानात्मक व्यवहार परीक्षण";

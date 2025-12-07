@@ -88,11 +88,11 @@ function Register() {
   const [passwordError, setPasswordError] = useState("");
   const validatePassword = (password) => {
     if (password.length < 6) {
-      setPasswordError("Password must be at least 6 characters long");
+      setPasswordError(getTranslation("Password must be at least 6 characters long/पासवर्ड कम से कम 6 अक्षरों का होना चाहिए",lang));
     } else if (!/\d/.test(password)) {
-      setPasswordError("Password must contain at least one number");
+      setPasswordError(getTranslation("Password must contain at least one number/सांकेतिक शब्द में कम से कम एक संख्या शामिल होना चाहिए",lang));
     } else if (!/[A-Z]/.test(password)) {
-      setPasswordError("Password must contain at least one uppercase letter");
+      setPasswordError(getTranslation("Password must contain at least one uppercase letter/पासवर्ड में कम से कम एक बड़ा अक्षर होना चाहिए",lang));
     } else {
       setPasswordError("");
     }
@@ -174,8 +174,8 @@ function Register() {
       if (isEmpty) {
         Swal.fire({
           icon: "warning",
-          title: `Missing ${key.replace(/_/g, " ")}" field.`,
-          text: `Please fill out the "${key.replace(/_/g, " ")}" field.`,
+          title: getTranslation('Field should not be empty!/फ़ील्ड खाली नहीं होना चाहिए!',lang),
+          // text: `Please fill out the "${key.replace(/_/g, " ")}" field.`,
         });
         return;
       }
@@ -225,22 +225,22 @@ function Register() {
         if (result.error === "Email already exists") {
           Swal.fire({
             icon: "warning",
-            title: "Email is already exists",
-            text: "This email is already registered. Please use a different one.",
+            title: getTranslation("Email is already exists/ईमेल पहले से मौजूद है",lang),
+            text: getTranslation("This email is already registered. Please use a different one./यह ईमेल पहले से पंजीकृत है। कृपया कोई दूसरा ईमेल इस्तेमाल करें।",lang),
           });
-        } else if (result.error === "Phone number already exists") {
+        } else if (result.error === getTranslation("Phone number already exists/फ़ोन नंबर पहले से मौजूद है",lang)) {
           Swal.fire({
             icon: "warning",
-            title: "Phone is already exist",
-            text: "This phone is already registered. Please use a different one.",
+            title: getTranslation("Phone is already exist/फ़ोन पहले से मौजूद है",lang),
+            text: getTranslation("This phone is already registered. Please use a different one./यह फ़ोन पहले से पंजीकृत है। कृपया कोई दूसरा फ़ोन इस्तेमाल करें।",lang),
           });
         }
       } else {
         Swal.fire({
-          title: "Good job!",
-          text: "Registration successful!",
+          title: getTranslation("Good job!/अच्छा काम!",lang),
+          text: getTranslation("Registration successful!/सफल पंजीकरण!",lang),
           icon: "success",
-          confirmButtonText: "OK",
+          confirmButtonText: getTranslation("OK/ठीक है",lang),
         }).then(() => {
           setModal(false);
           setFormData({
@@ -261,7 +261,7 @@ function Register() {
       }
     } catch (error) {
       console.error("Fetch Error:", error);
-      alert("Registration failed! Unknown error.");
+      alert(getTranslation("Registration failed! Unknown error./पंजीकरण विफल! अज्ञात त्रुटि.",lang));
     } finally {
       setIsLoading(false);
     }
@@ -348,8 +348,8 @@ function Register() {
       if (result.isConfirmed) {
         // Show loading message while deletion is happening
         Swal.fire({
-          title: "Deleting...",
-          text: "This might take some time.",
+          title: getTranslation("Deleting.../हटा रहा है...",lang),
+          text: getTranslation("This might take some time./इसमें कुछ समय लग सकता है.",lang),
           icon: "info",
           showConfirmButton: false,
           allowOutsideClick: false,
@@ -377,7 +377,7 @@ function Register() {
 
           if (response.ok) {
             // Successfully deleted
-            Swal.fire("Deleted!", "The user has been deleted.", "success");
+            Swal.fire(getTranslation("The user has been deleted succesfully!/उपयोगकर्ता को सफलतापूर्वक हटा दिया गया है!",lang));
 
             // Remove user from local data state
             setData((prev) => prev.filter((user) => user.id !== userId));
@@ -387,16 +387,16 @@ function Register() {
           } else {
             // Error during deletion
             Swal.fire(
-              "Failed!",
-              result.message || "Failed to delete user.",
+              getTranslation("Failed!/असफल",lang),
+              result.message || getTranslation("Failed to delete user./उपयोगकर्ता को हटाने में विफल.",lang),
               "error"
             );
           }
         } catch (error) {
           console.error("Delete error:", error);
           Swal.fire(
-            "Error!",
-            "An error occurred while deleting the user.",
+            getTranslation("Error!/गलती!",lang),
+            getTranslation("An error occurred while deleting the user./उपयोगकर्ता को हटाते समय एक त्रुटि हुई.",lang),
             "error"
           );
         }
@@ -461,21 +461,21 @@ function Register() {
 
       if (response.ok) {
         await Swal.fire({
-          title: "Success!",
-          text: "Re-Registration successful!",
+          title: getTranslation("Success!/सफलता!",lang),
+          text: getTranslation("Re-Registration has been successful!/पुनः पंजीकरण सफल रहा!",lang),
           icon: "success",
-          confirmButtonText: "OK",
+          confirmButtonText: getTranslation("OK/ठीक है",lang),
         });
         setreregisterModal(false); // Close modal only after success
       } else if (
         result.error ===
-        "User is not eligible for readmission. Please check discharge status and dates."
+       getTranslation( "User is not eligible for readmission. Please check discharge status and dates./उपयोगकर्ता पुनः प्रवेश के लिए पात्र नहीं है। कृपया डिस्चार्ज स्थिति और तिथियाँ जाँच लें।",lang)
       ) {
         await Swal.fire({
-          title: "User Not Eligible",
-          text: "User is not eligible for re-admission. Please check the discharge status and dates.",
+          title: getTranslation("User Not Eligible/उपयोगकर्ता योग्य नहीं है",lang),
+          text: getTranslation("User is not eligible for re-admission. Please check the discharge status and dates./उपयोगकर्ता पुनः प्रवेश के लिए पात्र नहीं है। कृपया डिस्चार्ज स्थिति और तिथियाँ जाँच लें।",lang),
           icon: "warning",
-          confirmButtonText: "OK",
+          confirmButtonText: getTranslation("OK/ठीक है",lang),
         });
         setreregisterModal(false); // Keep modal open
       } else {
@@ -572,9 +572,9 @@ function Register() {
       console.error("Error fetching user details:", error);
       Swal.fire({
         title: "Error!",
-        text: "Failed to load user data for editing.",
+        text: getTranslation("Failed to load user data for editing./एडिटिंग के लिए यूज़र डेटा लोड नहीं हो सका।",lang),
         icon: "error",
-        confirmButtonText: "OK",
+        confirmButtonText: getTranslation("OK/ठीक है",lang),
       });
     }
   };
@@ -631,10 +631,10 @@ function Register() {
         const errorData = await response.json();
         // Show error SweetAlert
         Swal.fire({
-          title: "Failed to update user",
+          title: getTranslation("Failed to update user/उपयोगकर्ता अपडेट करने में विफल",lang),
           text: errorData.message || "Unknown error occurred",
           icon: "error",
-          confirmButtonText: "OK",
+          confirmButtonText: getTranslation("OK/ठीक है",lang),
         });
       }
     } catch (err) {
@@ -642,9 +642,9 @@ function Register() {
       // Handle error with SweetAlert
       Swal.fire({
         title: "Error!",
-        text: "An unexpected error occurred while updating the user.",
+        text: getTranslation("An unexpected error occurred while updating the user./यूज़र को अपडेट करते समय एक अनचाही एरर आई।",lang),
         icon: "error",
-        confirmButtonText: "OK",
+        confirmButtonText: getTranslation("OK/ठीक है",lang),
       });
     } finally {
       setIsLoading(false); // Set loading to false after the request is complete
@@ -762,7 +762,7 @@ function Register() {
           <span
             onClick={() => userViewToggle(row.id)}
             style={{ cursor: "pointer" }}
-            title="View"
+            title={getTranslation("View/देखना",lang)}
           >
             <svg
               style={{ color: "#d56337" }}
@@ -786,7 +786,7 @@ function Register() {
           <span
             onClick={() => handleEdit(row.id)}
             style={{ cursor: "pointer" }}
-            title="Edit"
+            title={getTranslation("Edit/संपादन करना",lang)}
           >
             {/* Edit/Pencil icon */}
             <svg
@@ -811,7 +811,7 @@ function Register() {
           <span
             onClick={() => handleDelete(row.id)}
             style={{ cursor: "pointer" }}
-            title="Delete"
+            title={getTranslation("Delete/मिटाना",lang)}
           >
             <svg
               style={{ color: "red" }}
@@ -839,7 +839,7 @@ function Register() {
             <span
               onClick={() => handleReregisterUserID(row.id)}
               style={{ cursor: "pointer" }}
-              title="Re-register"
+              title={getTranslation("Re-register/पुन: पंजीकृत",lang)}
             >
               {/* Re-register SVG */}
               <svg
@@ -861,7 +861,7 @@ function Register() {
               </svg>
             </span>
           ) : (
-            <span title="User not discharged">
+            <span title={getTranslation("User not discharged/उपयोगकर्ता को छुट्टी नहीं दी गई",lang)}>
               {/* Disabled or info-only icon */}
               <svg
                 style={{ color: "gray", opacity: 0.5 }}
@@ -1135,7 +1135,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
         .from(element)
         .save()
         .then(() => {
-          toast.success("Download complete!");
+          toast.success(getTranslation("Download complete!/डाउनलोड पूर्ण!",lang));
           element.classList.remove("pdf-scale");
   
           setTimeout(() => {
@@ -1173,7 +1173,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <Input
                         className="form-control"
                         type="text"
-                        placeholder="Search......."
+                        placeholder={getTranslation("Search......./खोज.......",lang)}
                         value={IPDsearchText}
                         onChange={handleLatestSearchChange}
                       />
@@ -1224,7 +1224,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <Input
                         className="form-control"
                         type="text"
-                        placeholder="Search......."
+                        placeholder={getTranslation("Search......./खोज.......",lang)}
                         value={searchText}
                         onChange={handleIPDSearchChange}
                       />
@@ -1236,7 +1236,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
                 {stillLoading ? (
                   <div className="loading-text">
-                    Data is fetching from server. Please wait...
+                    {getTranslation("Data is fetching from server. Please wait.../सर्वर से डेटा लिया जा रहा है। कृपया इंतज़ार करें...",lang)}
                   </div>
                 ) : (
                   <DataTable
@@ -1317,7 +1317,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         name="patientName"
                         value={formData.patientName}
                         onChange={handleChange}
-                        placeholder="Patient Name"
+                        placeholder={getTranslation("Patient Name/मरीज़ का नाम",lang)}
                       />
                     </Col>
                   </FormGroup>
@@ -1338,7 +1338,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         name="patientRelativeName"
                         value={formData.patientRelativeName}
                         onChange={handleChange}
-                        placeholder="Patient Relative Name"
+                        placeholder={getTranslation("Patient Relative Name/मरीज़ का नाम",lang)}
                       />
                     </Col>
                   </FormGroup>
@@ -1412,13 +1412,13 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                               setFormData({ ...formData, phone: value });
                             }
                           }}
-                          placeholder="Phone Number"
+                          placeholder={getTranslation("Phone Number/फ़ोन नंबर",lang)}
                           maxLength={10}
                         />
                         {formData.phone.length > 0 &&
                           formData.phone.length !== 10 && (
                             <small className="text-danger">
-                              Phone number must be 10 digits.
+                              {getTranslation("Phone number must be 10 digits./फ़ोन नंबर 10 अंकों का होना चाहिए।",lang)}
                             </small>
                           )}
                       </Col>
@@ -1438,7 +1438,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         checked={formData.isWhatsApp}
                         onChange={handleWhatsAppToggle}
                       />
-                      <Label for="whatsappYes">Yes</Label>
+                      <Label for="whatsappYes">{getTranslation("Yes/हाँ",lang)}</Label>
 
                       <Input
                         type="radio"
@@ -1448,7 +1448,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         checked={!formData.isWhatsApp}
                         onChange={handleWhatsAppToggle}
                       />
-                      <Label for="whatsappNo">No</Label>
+                      <Label for="whatsappNo">{getTranslation("No/नहीं",lang)}</Label>
                     </div>
                   </div>
 
@@ -1466,7 +1466,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                             name="whatsapp_no"
                             value={formData.whatsapp_no}
                             onChange={handleChange}
-                            placeholder="Enter WhatsApp Number"
+                            placeholder={getTranslation("Enter WhatsApp Number/WhatsApp नंबर डालें",lang)}
                           />
                         </Col>
                       </FormGroup>
@@ -1497,7 +1497,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                                 : ""
                             );
                           }}
-                          placeholder="Enter Email"
+                          placeholder={getTranslation("Enter Email/ईमेल दर्ज करें",lang)}
                         />
                         {emailError && (
                           <small className="text-danger">{emailError}</small>
@@ -1515,7 +1515,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       </Label>
                       <Col xl="5" sm="12">
                         <div className="d-flex justify-content-between align-items-center mb-2">
-                          <label htmlFor="password">Password</label>
+                          <label htmlFor="password">{getTranslation("Password/पासवर्ड",lang)}</label>
                           <svg
                             className="pe-auto d-block"
                             onClick={() => {
@@ -1557,7 +1557,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                               setFormData({ ...formData, password: value });
                               validatePassword(value);
                             }}
-                            placeholder="Enter Password"
+                            placeholder={getTranslation("Enter Password/पास वर्ड दर्ज करें",lang)}
                           />
                           <span
                             onClick={() => setShowPassword(!showPassword)}
@@ -1608,11 +1608,11 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         })
                       }
                     >
-                      <option value="">Select a role</option>
+                      <option value="">{getTranslation("Select a role/एक भूमिका चुनें",lang)}</option>
                       {/* <option value="1">SuperAdmin</option>
                       <option value="2">BranchAdmin</option>
                       <option value="3">BranchOperator</option> */}
-                      <option value="4">Patient</option>
+                      <option value="4">{getTranslation("Patient/मरीज़",lang)}</option>
                     </select>
                     </div>
                     </div>
@@ -1787,7 +1787,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
           ) : (
             <tr>
               <td colSpan="2" className="text-center">
-                No data available
+                {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
               </td>
             </tr>
           )}
@@ -1832,7 +1832,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <Label>{getTranslation("Patient Name/रोगी का नाम",lang)}</Label>
                       <Input
                         type="text"
-                        placeholder="Name"
+                        placeholder={getTranslation("Name/नाम",lang)}
                         value={editData.name}
                         onChange={(e) =>
                           setEditData({ ...editData, name: e.target.value })
@@ -1843,7 +1843,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <Label>{getTranslation("Patient Relative Name/रोगी का संबंधी का नाम",lang)}</Label>
                       <Input
                         type="text"
-                        placeholder="Relative Name"
+                        placeholder={getTranslation("Relative Name/रिश्तेदार का नाम",lang)}
                         value={editData.patientRelativeName}
                         onChange={(e) =>
                           setEditData({
@@ -1886,7 +1886,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <Label>{getTranslation("Patient Phone/मरीज़ का फ़ोन",lang)}</Label>
                       <Input
                         type="text"
-                        placeholder="Phone"
+                        placeholder={getTranslation("Phone/फ़ोन",lang)}
                         value={editData.phone}
                         onChange={(e) => {
                           const newPhone = e.target.value;
@@ -1922,7 +1922,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <Label>{getTranslation("Patient WhatsApp No./मरीज़ का व्हाट्सएप नंबर",lang)}</Label>
                       <Input
                         type="text"
-                        placeholder="WhatsApp No."
+                        placeholder={getTranslation("WhatsApp No./व्हाट्सएप नंबर.",lang)}
                         value={editData.whatsapp_no}
                         onChange={(e) =>
                           setEditData({
@@ -1941,7 +1941,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <Label>{getTranslation("Patient Email/रोगी का ईमेल",lang)}</Label>
                       <Input
                         type="email"
-                        placeholder="Email"
+                        placeholder={getTranslation("Email/ईमेल",lang)}
                         value={editData.email}
                         onChange={(e) =>
                           setEditData({ ...editData, email: e.target.value })
@@ -1968,7 +1968,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   <Input
                     type="textarea"
                     rows="3"
-                    placeholder="Address"
+                    placeholder={getTranslation("Address/पता",lang)}
                     value={editData.address}
                     onChange={(e) =>
                       setEditData({ ...editData, address: e.target.value })
@@ -2027,7 +2027,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
       {/* Readmission/Re-register modal pass ward name and type to backend for re-enter user registration field */}
       <CommonModal
         isOpen={reregisterModal}
-        title={"Re-Registeration User"}
+        title={getTranslation("Re-Registeration User/पुनः पंजीकरण उपयोगकर्ता",lang)}
         toggler={closeUserViewModal}
         maxWidth="500px"
       >
@@ -2072,7 +2072,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     aria-hidden="true"
                   ></span>
                 ) : (
-                  "Re-Admission"
+                  getTranslation("Re-Admission/पुन: प्रवेश",lang)
                 )}
               </Button>
             </div>

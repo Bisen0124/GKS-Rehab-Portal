@@ -68,6 +68,41 @@ const { selectedBranch } = useBranch();
 //Pring vide data in pdf format
 const pdfRef = useRef();
 
+//PDf view download pdf code handler
+    const [pfaDownload, setpfaDownload] = useState(false);
+    const handleDownloadPDF = () => {
+      const element = pdfRef.current;
+      setpfaDownload(true);
+  
+      // Add a temporary class to scale fonts if needed
+      element.classList.add("pdf-scale");
+  
+      const opt = {
+        margin: [10, 10, 10, 10], // top, left, bottom, right
+        filename: `user_data_${viewFEData?.name}_${viewFEData?.user_id}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          scrollY: 0,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+  
+      html2pdf()
+        .set(opt)
+        .from(element)
+        .save()
+        .then(() => {
+          toast.success(getTranslation("Download complete!/डाउनलोड पूर्ण!",lang));
+          element.classList.remove("pdf-scale");
+  
+          setTimeout(() => {
+            setpfaDownload(false);
+          }, 2000);
+        });
+    };
+
 //This React hook calculates a user's age based on their date of birth (dob) and returns the age on PFA form by create.
 const [selectedUser, setSelectedUser] = useState(null); // User data
 const dob = selectedUser?.dob;
@@ -111,11 +146,11 @@ useEffect(() => {
 
         let isFECompleted = false;
         let userStatus = (
-          <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+          <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
         );
         if (admitDate && FEDate && admitDate > FEDate) {
           isFECompleted = true;
-          userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+          userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
         }
 
         const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -216,7 +251,7 @@ const tableColumns = [
             <span
               onClick={() => handleFEprefill(row.recent_first_eval_id)}
               style={{ cursor: "pointer" }}
-              title="Readmission FDA Form"
+              title={getTranslation("Readmission First Examination Form/पुनः प्रवेश प्रथम परीक्षा फॉर्म",lang)}
             >
               ✏️
             </span>
@@ -264,7 +299,7 @@ const tableColumns = [
       cursor: row.isFECompleted ? "not-allowed" : "pointer",
       opacity: row.isFECompleted ? 0.5 : 1,
     }}
-    title={row.isFECompleted ? "FE Completed" : "Create FE"}
+    title={row.isFECompleted ? getTranslation("FE Completed/एफई पूरा हुआ",lang) : getTranslation("Create FE/FE बनाएँ",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -435,7 +470,7 @@ const tableColumnsFDAList = [
         <span
           onClick={() => viewFEFormData(row.first_eval_id)}
           style={{ cursor: "pointer" }}
-          title="View"
+          title={getTranslation("View/देखना",lang)}
         >
           <svg
             style={{ color: "#d56337" }}
@@ -457,7 +492,7 @@ const tableColumnsFDAList = [
         <span
           onClick={() => handleFEindividualEdit(row.first_eval_id)}
           style={{ cursor: "pointer", marginLeft: "10px" }}
-          title="Edit"
+          title={getTranslation("Edit/संपादन करना",lang)}
         >
           <svg
             style={{ color: "green" }}
@@ -896,8 +931,8 @@ const handleFEprefill = async (prefillFEID = null) => {
   if (!prefillFEID) {
     Swal.fire({
       icon: "warning",
-      title: getTranslation("Missing Evaluation ID",lang),
-      text: getTranslation("No valid First Evaluation ID was provided for prefill.",lang),
+      title: getTranslation("Missing Evaluation ID/मूल्यांकन आईडी गुम है",lang),
+      text: getTranslation("No valid First Evaluation ID was provided for prefill./प्रीफ़िल के लिए कोई वैलिड फर्स्ट इवैल्यूएशन ID नहीं दी गई।",lang),
     });
     return;
   }
@@ -925,7 +960,7 @@ const handleFEprefill = async (prefillFEID = null) => {
       Swal.fire({
         icon: "error",
         title: "Fetch Failed",
-        text: data.message || getTranslation("Unable to fetch evaluation data for prefill.",lang),
+        text: data.message || getTranslation("Unable to fetch evaluation data for prefill./प्रीफ़िल के लिए इवैल्यूएशन डेटा नहीं मिल पा रहा है।",lang),
       });
       return;
     }
@@ -935,7 +970,7 @@ const handleFEprefill = async (prefillFEID = null) => {
       Swal.fire({
         icon: "info",
         title: "No Data Found",
-        text: getTranslation("No assessment data available for this evaluation ID.",lang),
+        text: getTranslation("No assessment data available for this evaluation ID./इस इवैल्यूएशन ID के लिए कोई असेसमेंट डेटा उपलब्ध नहीं है।",lang),
       });
       return;
     }
@@ -981,7 +1016,7 @@ const handleFEprefill = async (prefillFEID = null) => {
     Swal.fire({
       icon: "error",
       title: "Network Error",
-      text: getTranslation("Unable to fetch evaluation data due to a network issue.",lang),
+      text: getTranslation("Unable to fetch evaluation data due to a network issue./नेटवर्क की समस्या के कारण मूल्यांकन डेटा नहीं मिल पा रहा है।",lang),
     });
   }
 };
@@ -1038,8 +1073,8 @@ const handleReadmissionSubmit = async (e) => {
 
     Swal.fire({
       icon: "success",
-      title: getTranslation("Readmission FE Created",lang),
-      text: getTranslation("The first examination assessment was submitted successfully.",LangProvider),
+      title: getTranslation("Readmission FE Created/रीडमिशन FE बनाया गया",lang),
+      text: getTranslation("The first examination assessment was submitted successfully./पहला एग्जामिनेशन असेसमेंट सक्सेसफुली सबमिट हो गया।",lang),
     }).then(() => setFEPrefillModal(false)); // close modal
 
     console.log("✅ Submitted Data:", data);
@@ -1050,7 +1085,7 @@ const handleReadmissionSubmit = async (e) => {
     Swal.fire({
       icon: "error",
       title: "Unexpected Error",
-      text: getTranslation("Failed to submit. Check console for error.",lang),
+      text: getTranslation("Failed to submit. Check console for error./सबमिट नहीं हो सका. कंसोल में एरर चेक करें.",lang),
     });
   }
 };
@@ -1104,7 +1139,7 @@ const parseDateString = (dateStr) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                           placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1167,7 +1202,7 @@ const parseDateString = (dateStr) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                           placeholder={getTranslation("Search......./खोज.......",lang)}s
                           value={searchTextone}
                           onChange={handleSearchChangeone}
                         />
@@ -1473,6 +1508,18 @@ const parseDateString = (dateStr) => {
     </tbody>
   </Table>
 </div>
+ <div style={{ margin: "0 20px 20px 20px" }}>
+                <button
+                  disabled={pfaDownload}
+                  id="download-btn"
+                  className="btn btn-primary"
+                  onClick={handleDownloadPDF}
+                >
+                  {pfaDownload
+                    ? getTranslation( "Your First Exam Form is being downloaded.../ आपका प्रथम परीक्षा फॉर्म  डाउनलोड हो रहा है...",lang)
+                    : getTranslation("Download Your First Exam Form(FE) / अपना प्रथम परीक्षा फॉर्म डाउनलोड करें",lang)}
+                </button>
+              </div>
 
         </CommonModal>
  {/*FE view form end */}

@@ -7,6 +7,8 @@ import { useBranch } from '../../../contexts/BranchContext';
 
 import LanguageSwitcher from '../../../Components/LanguageSwitcher';
 
+import ApiTranslated from '../../../Components/ApiTranslated';
+
 const Rightbar = () => {
   const { sidebarResponsive } = useContext(CustomizerContext);
 
@@ -47,7 +49,9 @@ const Rightbar = () => {
          
          <LanguageSwitcher/>
 
-          <h6 style={{ marginBottom: '0px' }}>{userName}</h6>
+         <h6 style={{ marginBottom: "0px" }}>
+  <ApiTranslated text={userName} />
+</h6>
 
           <div
             className="alert alert-info py-2 px-3 mb-0 d-inline-block"
