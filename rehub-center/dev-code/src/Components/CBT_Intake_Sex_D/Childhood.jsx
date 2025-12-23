@@ -112,6 +112,10 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
+
+import { useReactToPrint } from "react-to-print";
+
 
 function Childhood() {
 
@@ -157,7 +161,7 @@ function Childhood() {
       }
     )
       .then((response) => {
-        if (!response.ok) throw new Error("Failed to fetch FDA user details");
+        if (!response.ok) throw new Error(getTranslation("Failed to fetch childhood user details/बचपन के यूज़र की जानकारी नहीं मिल पाई",lang));
         return response.json();
       })
       .then((res) => {
@@ -174,11 +178,11 @@ function Childhood() {
             let isChildhoodCompleted = false;
 
           let userStatus = (
-            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+            <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
           );
           if (admitDate && RecentChildhoodDate && RecentChildhoodDate > RecentChildhoodDate) {
              isChildhoodCompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -204,7 +208,7 @@ function Childhood() {
         }, 1000); // optional delay
       })
       .catch((error) => {
-        console.error("Error fetching FDA user data:", error);
+        console.error("Error fetching childhood user data:", error);
         setstillLoading(true);
       });
   }, [selectedBranch]);
@@ -1192,6 +1196,17 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       });
   };
 
+   //Print viewable form data handler
+                 const handlePrint = useReactToPrint({
+                      content: () => pdfRef.current,
+                      pageStyle: `
+                        @page { size: A4; margin: 12mm; }
+                        @media print {
+                          body { margin: 0; }
+                        }
+                      `,
+                    });
+
   return (
     <Fragment>
       {/* register user data into data table format start */}
@@ -1215,7 +1230,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                          placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1278,7 +1293,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                         placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchTextone}
                           onChange={handleSearchChangeone}
                         />
@@ -1365,14 +1380,52 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Parenting History / पालन-पोषण का इतिहास",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="parenting_history"
                   value={formData.parenting_history || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="parenting_history"
+  value={formData.parenting_history || ""}
+  onChange={handleChange}
+/> */}
+
+<select
+  className="form-control"
+  name="parenting_history"
+  value={formData.parenting_history || ""}
+  onChange={handleChange}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="With Mother Father">
+    {getTranslation("With Mother Father / माँ-बाप के साथ", lang)}
+  </option>
+
+  <option value="With Grand Parent">
+    {getTranslation("With Grand Parent / दादा-दादी के साथ", lang)}
+  </option>
+
+  <option value="In Hostel">
+    {getTranslation("In Hostel / हॉस्टल में", lang)}
+  </option>
+
+  <option value="With Relatives">
+    {getTranslation("With Relatives / रिश्तेदारों के साथ", lang)}
+  </option>
+
+  <option value="With Single Parent">
+    {getTranslation("With Single Parent / सिंगल पेरेंट के साथ", lang)}
+  </option>
+</select>
+
               </FormGroup>
             </div>
 
@@ -1382,14 +1435,23 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <Label>
                  {getTranslation(" If there was a dispute in the family in childhood describe? / बचपन में परिवार में कोई विवाद हुआ हो तो उसका वर्णन करें?",lang)}
                 </Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="family_dispute_childhood"
                   value={formData.family_dispute_childhood || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="family_dispute_childhood"
+  value={formData.family_dispute_childhood || ""}
+  onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
@@ -1398,23 +1460,68 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               <Label>
                 {getTranslation("Sociality (where born & living?) / सामाजिकता (जहां पैदा हुआ और रहा?)",lang)}
               </Label>
-              <Input
+              {/* <Input
                 type="textarea"
                 name="sociality_born_living"
                 value={formData.sociality_born_living || ""}
                 onChange={handleChange}
                 placeholder="Enter sociality details..."
-              />
+              /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="sociality_born_living"
+  value={formData.sociality_born_living || ""}
+  onChange={handleChange}
+  placeholder="Enter sociality details..."
+/> */}
+
+<select
+  className="form-control"
+  name="sociality_born_living"
+  value={formData.sociality_born_living || ""}
+  onChange={handleChange}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Sociality">
+    {getTranslation("Sociality / सामाजिकता", lang)}
+  </option>
+
+  <option value="Addict Surrounding">
+    {getTranslation("Addict Surrounding / आस-पास की लत", lang)}
+  </option>
+
+  <option value="Social Atmosphere">
+    {getTranslation("Social Atmosphere / सामाजिक माहौल", lang)}
+  </option>
+
+  <option value="Anti Social Locality">
+    {getTranslation("Anti Social Locality / असामाजिक इलाका", lang)}
+  </option>
+</select>
+
 
               <br />
               <Label>{getTranslation("High Risk Behavior / उच्च जोखिम व्यवहार",lang)}</Label>
-              <Input
+              {/* <Input
                 type="textarea"
                 name="high_risk_behavior"
                 value={formData.high_risk_behavior || ""}
                 onChange={handleChange}
                 placeholder="Enter high risk behavior..."
-              />
+              /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="high_risk_behavior"
+  value={formData.high_risk_behavior || ""}
+  onChange={handleChange}
+  placeholder="Enter high risk behavior..."
+/>
+
             </div>
 
             {/* Impact of Movies */}
@@ -1423,14 +1530,23 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <Label>
                   {getTranslation("What was impact of movies? / फिल्मों का क्या प्रभाव पड़ा?",lang)}
                 </Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="impact_substance_movies"
                   value={formData.impact_substance_movies || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="impact_substance_movies"
+  value={formData.impact_substance_movies || ""}
+  onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
@@ -1440,14 +1556,23 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <Label>
                   {getTranslation("Has anyone ever abused you? 1.Emotionally? 2.Physically? 3.Sexually? / क्या कभी किसी ने आपके साथ दुर्व्यवहार किया है? 1. भावनात्मक रूप से? 2. शारीरिक रूप से? 3. यौन रूप से?",lang)}
                 </Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="abuse_history_description"
                   value={formData.abuse_history_description || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="abuse_history_description"
+  value={formData.abuse_history_description || ""}
+  onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
@@ -1459,26 +1584,120 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
 
               <div className="col-md-6">
                 <Label>{getTranslation("Education Status / शैक्षणिक स्थिति",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="education_status"
                   value={formData.education_status || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="education_status"
+  value={formData.education_status || ""}
+  onChange={handleChange}
+/> */}
+
+<select
+  className="form-control"
+  name="education_status"
+  value={formData.education_status || ""}
+  onChange={handleChange}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Illiterate">
+    {getTranslation("Illiterate / अनपढ़", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="5th">
+    {getTranslation("5th / 5वीं", lang)}
+  </option>
+
+  <option value="10th">
+    {getTranslation("10th / 10वीं", lang)}
+  </option>
+
+  <option value="12th">
+    {getTranslation("12th / 12वीं", lang)}
+  </option>
+
+  <option value="Graduate">
+    {getTranslation("Graduate / ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Post Graduate">
+    {getTranslation("Post Graduate / पोस्ट ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+</select>
+
+
               </div>
 
               <div className="col-md-6">
                 <Label>{getTranslation("Occupational Status / कार्य की स्थिति",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="occupational_status"
                   value={formData.occupational_status || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="occupational_status"
+   value={formData.occupational_status || ""}
+   onChange={handleChange}
+/> */}
+
+<select
+  className="form-control"
+  name="occupational_status"
+  value={formData.occupational_status || ""}
+  onChange={handleChange}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Working">
+    {getTranslation("Working / काम कर रहा है", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="Expelled due to addiction">
+    {getTranslation("Expelled due to addiction / लत की वजह से निकाला गया", lang)}
+  </option>
+
+  <option value="Switched due to addiction">
+    {getTranslation("Switched due to addiction / लत की वजह से स्विच किया गया", lang)}
+  </option>
+
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+</select>
+
+
               </div>
             </div>
 
@@ -1488,29 +1707,93 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <Label>
                   {getTranslation("If dropout what is the reason? / यदि ड्रॉपआउट हुआ तो क्या कारण है?",lang)}
                 </Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="dropout_reason"
                   value={formData.dropout_reason || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="dropout_reason"
+   value={formData.dropout_reason || ""}
+   onChange={handleChange}
+/> */}
+
+<select
+  className="form-control"
+  name="dropout_reason"
+  value={formData.dropout_reason || ""}
+  onChange={handleChange}
+>
+<option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+<option value="Addiction">
+  {getTranslation("Addiction / लत", lang)}
+</option>
+
+<option value="Personal">
+  {getTranslation("Personal / पर्सनल", lang)}
+</option>
+
+<option value="NA">
+  {getTranslation("NA", lang)}
+</option>
+
+</select>
+
+
               </FormGroup>
             </div>
 
             {/* Study/Work Details */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation("Study or Work Details / अध्ययन / कार्य विवरण",lang)}</Label>
-                <Input
+                <Label>{getTranslation("Study or Work Details/अध्ययन या कार्य विवरण",lang)}</Label>
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="study_work_details"
                   value={formData.study_work_details || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="study_work_details"
+   value={formData.study_work_details || ""}
+   onChange={handleChange}
+/> */}
+<select
+  className="form-control"
+  name="study_work_details"
+  value={formData.study_work_details || ""}
+  onChange={handleChange}
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+
+  <option value="Average">
+    {getTranslation("Average / औसत", lang)}
+  </option>
+
+  <option value="Below average">
+    {getTranslation("Below average / औसत से नीचे", lang)}
+  </option>
+
+  <option value="Above average">
+    {getTranslation("Above average / औसत से ऊपर", lang)}
+  </option>
+</select>
+
+
               </FormGroup>
             </div>
 
@@ -1518,14 +1801,23 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Hobbies / शौक",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="hobbies"
                   value={formData.hobbies || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+    className="form-control"
+    rows="3"
+    name="hobbies"
+    value={formData.hobbies || ""}
+    onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
@@ -1533,14 +1825,23 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Extra Skills / अतिरिक्त कौशल",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="extra_skills"
                   value={formData.extra_skills || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="extra_skills"
+  value={formData.extra_skills || ""}
+  onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
@@ -1548,14 +1849,23 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Achievement in life / जीवन में उपलब्धियां",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="achievement_life"
                   value={formData.achievement_life || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="achievement_life"
+   value={formData.achievement_life || ""}
+   onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
@@ -1563,14 +1873,23 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Why are you here? / आप यहाँ क्यों हैं?",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="why_here"
                   value={formData.why_here || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+    className="form-control"
+    rows="3"
+    name="why_here"
+    value={formData.why_here || ""}
+    onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
@@ -1578,14 +1897,23 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Why family sent? / परिवार ने क्यों भेजा?",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="why_family_sent"
                   value={formData.why_family_sent || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="why_family_sent"
+   value={formData.why_family_sent || ""}
+   onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
@@ -1783,6 +2111,14 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               ? getTranslation("Your Childhood form is being downloaded.../ आपका बचपन फॉर्म डाउनलोड हो रहा है...",lang)
               : getTranslation("Download Childhood / बचपन फॉर्म",lang)}
           </button>
+
+<button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
+
         </div>
       </CommonModal>
       {/* View Childhood data into modal end */}
@@ -1827,7 +2163,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Parenting History / पालन-पोषण का इतिहास",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="parenting_history"
@@ -1838,7 +2174,56 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       parenting_history: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="parenting_history"
+   value={ChildhoodEditData?.parenting_history || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       parenting_history: e.target.value,
+     }))
+   }
+/> */}
+
+<select
+  className="form-control"
+  name="parenting_history"
+  value={ChildhoodEditData?.parenting_history || ""}
+  onChange={(e) =>
+    setChildhoodEditData((prev) => ({
+      ...prev,
+      parenting_history: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="With Mother Father">
+    {getTranslation("With Mother Father / माँ-बाप के साथ", lang)}
+  </option>
+
+  <option value="With Grand Parent">
+    {getTranslation("With Grand Parent / दादा-दादी के साथ", lang)}
+  </option>
+
+  <option value="In Hostel">
+    {getTranslation("In Hostel / हॉस्टल में", lang)}
+  </option>
+
+  <option value="With Relatives">
+    {getTranslation("With Relatives / रिश्तेदारों के साथ", lang)}
+  </option>
+
+  <option value="With Single Parent">
+    {getTranslation("With Single Parent / सिंगल पेरेंट के साथ", lang)}
+  </option>
+</select>
+
+
               </FormGroup>
             </div>
 
@@ -1848,7 +2233,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <Label>
                   {getTranslation("If there was a dispute in the family in childhood describe? / बचपन में परिवार में कोई विवाद हुआ हो तो उसका वर्णन करें?",lang)}
                 </Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="family_dispute_childhood"
@@ -1859,7 +2244,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       family_dispute_childhood: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+                  name="family_dispute_childhood"
+                  value={ChildhoodEditData?.family_dispute_childhood || ""}
+                  onChange={(e) =>
+                    setChildhoodEditData((prev) => ({
+                      ...prev,
+                      family_dispute_childhood: e.target.value,
+                    }))
+                  }
+/>
+
               </FormGroup>
             </div>
 
@@ -1868,7 +2267,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               <Label>
                 {getTranslation("Sociality (where born & living?) / सामाजिकता (जहां पैदा हुआ और रहा?)",lang)}
               </Label>
-              <Input
+              {/* <Input
                 type="textarea"
                 name="sociality_born_living"
                 value={ChildhoodEditData?.sociality_born_living || ""}
@@ -1878,11 +2277,54 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                     sociality_born_living: e.target.value,
                   }))
                 }
-              />
+              /> */}
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="sociality_born_living"
+   value={ChildhoodEditData?.sociality_born_living || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       sociality_born_living: e.target.value,
+     }))
+   }
+/> */}
+
+<select
+  className="form-control"
+  name="sociality_born_living"
+  value={ChildhoodEditData?.sociality_born_living || ""}
+  onChange={(e) =>
+    setChildhoodEditData((prev) => ({
+      ...prev,
+      sociality_born_living: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Sociality">
+    {getTranslation("Sociality / सामाजिकता", lang)}
+  </option>
+
+  <option value="Addict Surrounding">
+    {getTranslation("Addict Surrounding / आस-पास की लत", lang)}
+  </option>
+
+  <option value="Social Atmosphere">
+    {getTranslation("Social Atmosphere / सामाजिक माहौल", lang)}
+  </option>
+
+  <option value="Anti Social Locality">
+    {getTranslation("Anti Social Locality / असामाजिक इलाका", lang)}
+  </option>
+</select>
+
 
               <br />
               <Label>{getTranslation("High Risk Behavior / उच्च जोखिम व्यवहार",lang)}</Label>
-              <Input
+              {/* <Input
                 type="textarea"
                 name="high_risk_behavior"
                 value={ChildhoodEditData?.high_risk_behavior || ""}
@@ -1892,7 +2334,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                     high_risk_behavior: e.target.value,
                   }))
                 }
-              />
+              /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="high_risk_behavior"
+   value={ChildhoodEditData?.high_risk_behavior || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       high_risk_behavior: e.target.value,
+     }))
+   }
+/>
+
             </div>
 
             {/* Impact of Movies */}
@@ -1901,7 +2357,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <Label>
                  {getTranslation(" What was impact of movies? / फिल्मों का क्या प्रभाव पड़ा?",lang)}
                 </Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="impact_substance_movies"
@@ -1912,7 +2368,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       impact_substance_movies: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="impact_substance_movies"
+   value={ChildhoodEditData?.impact_substance_movies || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       impact_substance_movies: e.target.value,
+     }))
+   }
+/>
+
               </FormGroup>
             </div>
 
@@ -1922,7 +2392,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <Label>
                   {getTranslation("Has anyone ever abused you? 1.Emotionally? 2.Physically? 3.Sexually? / क्या कभी किसी ने आपके साथ दुर्व्यवहार किया है? 1. भावनात्मक रूप से? 2. शारीरिक रूप से? 3. यौन रूप से?",lang)}
                 </Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="abuse_history_description"
@@ -1933,7 +2403,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       abuse_history_description: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="abuse_history_description"
+   value={ChildhoodEditData?.abuse_history_description || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       abuse_history_description: e.target.value,
+     }))
+   }
+/>
+
               </FormGroup>
             </div>
 
@@ -1945,7 +2429,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
 
               <div className="col-md-6">
                 <Label>{getTranslation("Education Status / शैक्षणिक स्थिति",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="education_status"
@@ -1956,12 +2440,72 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       education_status: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="education_status"
+   value={ChildhoodEditData?.education_status || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       education_status: e.target.value,
+     }))
+   }
+/> */}
+<select
+  className="form-control"
+  name="education_status"
+  value={ChildhoodEditData?.education_status || ""}
+  onChange={(e) =>
+    setChildhoodEditData((prev) => ({
+      ...prev,
+      education_status: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Illiterate">
+    {getTranslation("Illiterate / अनपढ़", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="5th">
+    {getTranslation("5th / 5वीं", lang)}
+  </option>
+
+  <option value="10th">
+    {getTranslation("10th / 10वीं", lang)}
+  </option>
+
+  <option value="12th">
+    {getTranslation("12th / 12वीं", lang)}
+  </option>
+
+  <option value="Graduate">
+    {getTranslation("Graduate / ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Post Graduate">
+    {getTranslation("Post Graduate / पोस्ट ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+</select>
+
+
               </div>
 
               <div className="col-md-6">
                 <Label>{getTranslation("Occupational Status / कार्य की स्थिति",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="occupational_status"
@@ -1972,7 +2516,68 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       occupational_status: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="education_status"
+   value={ChildhoodEditData?.education_status || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       education_status: e.target.value,
+     }))
+   }
+/>       
+          */}
+
+<select
+  className="form-control"
+  name="education_status"
+  value={ChildhoodEditData?.education_status || ""}
+  onChange={(e) =>
+    setChildhoodEditData((prev) => ({
+      ...prev,
+      education_status: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Illiterate">
+    {getTranslation("Illiterate / अनपढ़", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="5th">
+    {getTranslation("5th / 5वीं", lang)}
+  </option>
+
+  <option value="10th">
+    {getTranslation("10th / 10वीं", lang)}
+  </option>
+
+  <option value="12th">
+    {getTranslation("12th / 12वीं", lang)}
+  </option>
+
+  <option value="Graduate">
+    {getTranslation("Graduate / ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Post Graduate">
+    {getTranslation("Post Graduate / पोस्ट ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+</select>
+
               </div>
             </div>
 
@@ -1982,7 +2587,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <Label>
                  {getTranslation(" If dropout what is the reason? / यदि ड्रॉपआउट हुआ तो क्या कारण है?",lang)}
                 </Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="dropout_reason"
@@ -1993,15 +2598,57 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       dropout_reason: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="dropout_reason"
+                  value={ChildhoodEditData?.dropout_reason || ""}
+                  onChange={(e) =>
+                    setChildhoodEditData((prev) => ({
+                      ...prev,
+                      dropout_reason: e.target.value,
+                    }))
+                  }
+/>  */}
+
+<select
+  className="form-control"
+  name="dropout_reason"
+  value={ChildhoodEditData?.dropout_reason || ""}
+  onChange={(e) =>
+    setChildhoodEditData((prev) => ({
+      ...prev,
+      dropout_reason: e.target.value,
+    }))
+  }
+>
+<option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+<option value="Addiction">
+  {getTranslation("Addiction / लत", lang)}
+</option>
+
+<option value="Personal">
+  {getTranslation("Personal / पर्सनल", lang)}
+</option>
+
+<option value="NA">
+  {getTranslation("NA", lang)}
+</option>
+
+</select>
+
+
               </FormGroup>
             </div>
 
             {/* Study/Work Details */}
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation("Study/Work Details / अध्ययन / कार्य विवरण",lang)}</Label>
-                <Input
+              <Label>{getTranslation("Study or Work Details/अध्ययन या कार्य विवरण",lang)}</Label>
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="study_work_details"
@@ -2012,7 +2659,49 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       study_work_details: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="study_work_details"
+   value={ChildhoodEditData?.study_work_details || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       study_work_details: e.target.value,
+     }))
+   }
+/>  */}
+
+<select
+  className="form-control"
+  name="study_work_details"
+  value={ChildhoodEditData?.study_work_details || ""}
+  onChange={(e) =>
+    setChildhoodEditData((prev) => ({
+      ...prev,
+      study_work_details: e.target.value,
+    }))
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+
+  <option value="Average">
+    {getTranslation("Average / औसत", lang)}
+  </option>
+
+  <option value="Below average">
+    {getTranslation("Below average / औसत से नीचे", lang)}
+  </option>
+
+  <option value="Above average">
+    {getTranslation("Above average / औसत से ऊपर", lang)}
+  </option>
+</select>
+
               </FormGroup>
             </div>
 
@@ -2020,7 +2709,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Hobbies / शौक",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="hobbies"
@@ -2031,7 +2720,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       hobbies: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="hobbies"
+                  value={ChildhoodEditData?.hobbies || ""}
+                  onChange={(e) =>
+                    setChildhoodEditData((prev) => ({
+                      ...prev,
+                      hobbies: e.target.value,
+                    }))
+                  }
+/> 
+
               </FormGroup>
             </div>
 
@@ -2039,7 +2742,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Extra Skills / अतिरिक्त कौशल",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="extra_skills"
@@ -2050,7 +2753,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       extra_skills: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="extra_skills"
+   value={ChildhoodEditData?.extra_skills || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       extra_skills: e.target.value,
+     }))
+   }
+/> 
+
               </FormGroup>
             </div>
 
@@ -2058,7 +2775,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Achievement in life / जीवन में उपलब्धियां",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="achievement_life"
@@ -2069,7 +2786,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       achievement_life: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="achievement_life"
+   value={ChildhoodEditData?.achievement_life || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       achievement_life: e.target.value,
+     }))
+   }
+/> 
+
               </FormGroup>
             </div>
 
@@ -2077,7 +2808,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Why are you here? / आप यहाँ क्यों हैं?",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="why_here"
@@ -2088,7 +2819,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       why_here: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="why_here"
+                  value={ChildhoodEditData?.why_here || ""}
+                  onChange={(e) =>
+                    setChildhoodEditData((prev) => ({
+                      ...prev,
+                      why_here: e.target.value,
+                    }))
+                  }
+/> 
+
               </FormGroup>
             </div>
 
@@ -2096,7 +2841,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation("Why family sent? / परिवार ने क्यों भेजा?",lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   rows="3"
                   name="why_family_sent"
@@ -2107,7 +2852,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       why_family_sent: e.target.value,
                     }))
                   }
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="why_family_sent"
+   value={ChildhoodEditData?.why_family_sent || ""}
+   onChange={(e) =>
+     setChildhoodEditData((prev) => ({
+       ...prev,
+       why_family_sent: e.target.value,
+     }))
+   }
+/> 
+
               </FormGroup>
             </div>
 
@@ -2163,7 +2922,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation("Parenting History / पालन-पोषण का इतिहास",lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="parenting_history"
@@ -2174,7 +2933,56 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 parenting_history: e.target.value,
               }))
             }
-          />
+          /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="parenting_history"
+            value={ChildhoodPrefillData?.parenting_history || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                parenting_history: e.target.value,
+              }))
+            }
+/>  */}
+
+<select
+  className="form-control"
+  name="parenting_history"
+  value={ChildhoodPrefillData?.parenting_history || ""}
+  onChange={(e) =>
+    setChildhoodPrefillData((prev) => ({
+      ...prev,
+      parenting_history: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="With Mother Father">
+    {getTranslation("With Mother Father / माँ-बाप के साथ", lang)}
+  </option>
+
+  <option value="With Grand Parent">
+    {getTranslation("With Grand Parent / दादा-दादी के साथ", lang)}
+  </option>
+
+  <option value="In Hostel">
+    {getTranslation("In Hostel / हॉस्टल में", lang)}
+  </option>
+
+  <option value="With Relatives">
+    {getTranslation("With Relatives / रिश्तेदारों के साथ", lang)}
+  </option>
+
+  <option value="With Single Parent">
+    {getTranslation("With Single Parent / सिंगल पेरेंट के साथ", lang)}
+  </option>
+</select>
+
+
         </FormGroup>
       </div>
 
@@ -2184,7 +2992,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
           <Label>
             {getTranslation("If there was a dispute in the family in childhood describe? / बचपन में परिवार में कोई विवाद हुआ हो तो उसका वर्णन करें?",lang)}
           </Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="family_dispute_childhood"
@@ -2195,7 +3003,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 family_dispute_childhood: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="family_dispute_childhood"
+            value={ChildhoodPrefillData?.family_dispute_childhood || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                family_dispute_childhood: e.target.value,
+              }))
+            }
+/> 
+
         </FormGroup>
       </div>
 
@@ -2204,7 +3026,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
         <Label>
           {getTranslation("Sociality (where born & living?) / सामाजिकता (जहां पैदा हुआ और रहा?)",lang)}
         </Label>
-        <Input
+        {/* <Input
           type="textarea"
           name="sociality_born_living"
           value={ChildhoodPrefillData?.sociality_born_living || ""}
@@ -2214,11 +3036,54 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               sociality_born_living: e.target.value,
             }))
           }
-        />
+        /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="sociality_born_living"
+   value={ChildhoodPrefillData?.sociality_born_living || ""}
+   onChange={(e) =>
+     setChildhoodPrefillData((prev) => ({
+       ...prev,
+       sociality_born_living: e.target.value,
+     }))
+   }
+/>  */}
+<select
+  className="form-control"
+  name="sociality_born_living"
+  value={ChildhoodPrefillData?.sociality_born_living || ""}
+  onChange={(e) =>
+    setChildhoodPrefillData((prev) => ({
+      ...prev,
+      sociality_born_living: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Sociality">
+    {getTranslation("Sociality / सामाजिकता", lang)}
+  </option>
+
+  <option value="Addict Surrounding">
+    {getTranslation("Addict Surrounding / आस-पास की लत", lang)}
+  </option>
+
+  <option value="Social Atmosphere">
+    {getTranslation("Social Atmosphere / सामाजिक माहौल", lang)}
+  </option>
+
+  <option value="Anti Social Locality">
+    {getTranslation("Anti Social Locality / असामाजिक इलाका", lang)}
+  </option>
+</select>
+
 
         <br />
         <Label>{getTranslation("High Risk Behavior / उच्च जोखिम व्यवहार",lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           name="high_risk_behavior"
           value={ChildhoodPrefillData?.high_risk_behavior || ""}
@@ -2228,14 +3093,28 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               high_risk_behavior: e.target.value,
             }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="high_risk_behavior"
+          value={ChildhoodPrefillData?.high_risk_behavior || ""}
+          onChange={(e) =>
+            setChildhoodPrefillData((prev) => ({
+              ...prev,
+              high_risk_behavior: e.target.value,
+            }))
+          }
+/> 
+
       </div>
 
       {/* Impact of Movies */}
       <div className="col-md-12 mt-3 mb-3">
         <FormGroup className="mb-0">
           <Label>{getTranslation("What was impact of movies? / फिल्मों का क्या प्रभाव पड़ा?",lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="impact_substance_movies"
@@ -2246,7 +3125,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 impact_substance_movies: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="impact_substance_movies"
+   value={ChildhoodPrefillData?.impact_substance_movies || ""}
+   onChange={(e) =>
+     setChildhoodPrefillData((prev) => ({
+       ...prev,
+       impact_substance_movies: e.target.value,
+     }))
+   }
+/> 
+
         </FormGroup>
       </div>
 
@@ -2256,7 +3149,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
           <Label>
             {getTranslation("Has anyone ever abused you? 1.Emotionally? 2.Physically? 3.Sexually? / क्या कभी किसी ने आपके साथ दुर्व्यवहार किया है? 1. भावनात्मक रूप से? 2. शारीरिक रूप से? 3. यौन रूप से?",lang)}
           </Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="abuse_history_description"
@@ -2267,7 +3160,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 abuse_history_description: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="abuse_history_description"
+   value={ChildhoodPrefillData?.abuse_history_description || ""}
+   onChange={(e) =>
+     setChildhoodPrefillData((prev) => ({
+       ...prev,
+       abuse_history_description: e.target.value,
+     }))
+   }
+/> 
+
         </FormGroup>
       </div>
 
@@ -2279,7 +3186,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
 
         <div className="col-md-6">
           <Label>{getTranslation("Education Status / शैक्षणिक स्थिति",lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="education_status"
@@ -2290,12 +3197,72 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 education_status: e.target.value,
               }))
             }
-          />
+          /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="education_status"
+            value={ChildhoodPrefillData?.education_status || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                education_status: e.target.value,
+              }))
+            }
+/>  */}
+<select
+  className="form-control"
+  name="education_status"
+  value={ChildhoodPrefillData?.education_status || ""}
+  onChange={(e) =>
+    setChildhoodPrefillData((prev) => ({
+      ...prev,
+      education_status: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Illiterate">
+    {getTranslation("Illiterate / अनपढ़", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="5th">
+    {getTranslation("5th / 5वीं", lang)}
+  </option>
+
+  <option value="10th">
+    {getTranslation("10th / 10वीं", lang)}
+  </option>
+
+  <option value="12th">
+    {getTranslation("12th / 12वीं", lang)}
+  </option>
+
+  <option value="Graduate">
+    {getTranslation("Graduate / ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Post Graduate">
+    {getTranslation("Post Graduate / पोस्ट ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+</select>
+
+
         </div>
 
         <div className="col-md-6">
           <Label>{getTranslation("Occupational Status / कार्य की स्थिति",lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="occupational_status"
@@ -2306,7 +3273,66 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 occupational_status: e.target.value,
               }))
             }
-          />
+          /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="occupational_status"
+   value={ChildhoodPrefillData?.occupational_status || ""}
+   onChange={(e) =>
+     setChildhoodPrefillData((prev) => ({
+       ...prev,
+       occupational_status: e.target.value,
+     }))
+   }
+/>  */}
+
+<select
+  className="form-control"
+  name="occupational_status"
+  value={ChildhoodPrefillData?.occupational_status || ""}
+  onChange={(e) =>
+    setChildhoodPrefillData((prev) => ({
+      ...prev,
+      occupational_status: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Working">
+    {getTranslation("Working / काम कर रहा है", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="Expelled due to addiction">
+    {getTranslation(
+      "Expelled due to addiction / लत की वजह से निकाला गया",
+      lang
+    )}
+  </option>
+
+  <option value="Switched due to addiction">
+    {getTranslation(
+      "Switched due to addiction / लत की वजह से स्विच किया गया",
+      lang
+    )}
+  </option>
+
+  <option value="NA">
+    {getTranslation("NA", lang)}
+  </option>
+</select>
+
+
         </div>
       </div>
 
@@ -2316,7 +3342,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
           <Label>
             {getTranslation("If dropout what is the reason? / यदि ड्रॉपआउट हुआ तो क्या कारण है?",lang)}
           </Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="dropout_reason"
@@ -2327,7 +3353,49 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 dropout_reason: e.target.value,
               }))
             }
-          />
+          /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="dropout_reason"
+   value={ChildhoodPrefillData?.dropout_reason || ""}
+   onChange={(e) =>
+     setChildhoodPrefillData((prev) => ({
+       ...prev,
+       dropout_reason: e.target.value,
+     }))
+   }
+/>  */}
+
+<select
+  className="form-control"
+  name="dropout_reason"
+  value={ChildhoodPrefillData?.dropout_reason || ""}
+  onChange={(e) =>
+    setChildhoodPrefillData((prev) => ({
+      ...prev,
+      dropout_reason: e.target.value,
+    }))
+  }
+>
+<option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+<option value="Addiction">
+  {getTranslation("Addiction / लत", lang)}
+</option>
+
+<option value="Personal">
+  {getTranslation("Personal / पर्सनल", lang)}
+</option>
+
+<option value="NA">
+  {getTranslation("NA", lang)}
+</option>
+
+</select>
+
+
         </FormGroup>
       </div>
 
@@ -2335,7 +3403,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation("Study/Work Details / अध्ययन / कार्य विवरण",lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="study_work_details"
@@ -2346,7 +3414,49 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 study_work_details: e.target.value,
               }))
             }
-          />
+          /> */}
+
+{/* <VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="study_work_details"
+   value={ChildhoodPrefillData?.study_work_details || ""}
+   onChange={(e) =>
+     setChildhoodPrefillData((prev) => ({
+       ...prev,
+       study_work_details: e.target.value,
+     }))
+   }
+/>  */}
+<select
+  className="form-control"
+  name="study_work_details"
+  value={ChildhoodPrefillData?.study_work_details || ""}
+  onChange={(e) =>
+    setChildhoodPrefillData((prev) => ({
+      ...prev,
+      study_work_details: e.target.value,
+    }))
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+
+  <option value="Average">
+    {getTranslation("Average / औसत", lang)}
+  </option>
+
+  <option value="Below average">
+    {getTranslation("Below average / औसत से नीचे", lang)}
+  </option>
+
+  <option value="Above average">
+    {getTranslation("Above average / औसत से ऊपर", lang)}
+  </option>
+</select>
+
+
         </FormGroup>
       </div>
 
@@ -2354,7 +3464,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation("Hobbies / शौक",lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="hobbies"
@@ -2365,7 +3475,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 hobbies: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="hobbies"
+   value={ChildhoodPrefillData?.hobbies || ""}
+   onChange={(e) =>
+     setChildhoodPrefillData((prev) => ({
+       ...prev,
+       hobbies: e.target.value,
+     }))
+   }
+/> 
+
         </FormGroup>
       </div>
 
@@ -2373,7 +3497,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation("Extra Skills / अतिरिक्त कौशल",lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="extra_skills"
@@ -2384,7 +3508,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 extra_skills: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="extra_skills"
+            value={ChildhoodPrefillData?.extra_skills || ""}
+            onChange={(e) =>
+              setChildhoodPrefillData((prev) => ({
+                ...prev,
+                extra_skills: e.target.value,
+              }))
+            }
+/> 
+
         </FormGroup>
       </div>
 
@@ -2392,7 +3530,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation("Achievement in life / जीवन में उपलब्धियां",lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="achievement_life"
@@ -2403,7 +3541,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 achievement_life: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="achievement_life"
+   value={ChildhoodPrefillData?.achievement_life || ""}
+   onChange={(e) =>
+     setChildhoodPrefillData((prev) => ({
+       ...prev,
+       achievement_life: e.target.value,
+     }))
+   }
+/> 
+
         </FormGroup>
       </div>
 
@@ -2411,7 +3563,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation("Why are you here? / आप यहाँ क्यों हैं?",lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="why_here"
@@ -2422,7 +3574,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 why_here: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="why_here"
+   value={ChildhoodPrefillData?.why_here || ""}
+   onChange={(e) =>
+     setChildhoodPrefillData((prev) => ({
+       ...prev,
+       why_here: e.target.value,
+     }))
+   }
+/> 
+
         </FormGroup>
       </div>
 
@@ -2430,7 +3596,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation("Why family sent? / परिवार ने क्यों भेजा?",lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="why_family_sent"
@@ -2441,7 +3607,21 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 why_family_sent: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="why_family_sent"
+   value={ChildhoodPrefillData?.why_family_sent || ""}
+   onChange={(e) =>
+     setChildhoodPrefillData((prev) => ({
+       ...prev,
+       why_family_sent: e.target.value,
+     }))
+   }
+/> 
+          
         </FormGroup>
       </div>
 

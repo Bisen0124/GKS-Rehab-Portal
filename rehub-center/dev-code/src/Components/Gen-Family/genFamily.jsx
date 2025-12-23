@@ -177,6 +177,10 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
+
+import { useReactToPrint } from "react-to-print";
+
 function GenFamily() {
 
     const { lang } = useLang(); // get current language from context
@@ -2883,6 +2887,17 @@ console.log(latestGenFamilyData.substance_use_dependency)
       });
     }
   }
+
+ //Print viewable form data handler
+     const handlePrint = useReactToPrint({
+        content: () => pdfRef.current,
+        pageStyle: `
+          @page { size: A4; margin: 12mm; }
+          @media print {
+            body { margin: 0; }
+          }
+        `,
+      });
   
 
   return (
@@ -2980,41 +2995,104 @@ console.log(latestGenFamilyData.substance_use_dependency)
             {/*Occupation Status*/}
             <div className="row pt-3 pb-3">
               <div className="col-md-3">
-                <Label>{getTranslation(relation,lang)}</Label>
-                <Input
+                <Label>{getTranslation(occupation,lang)}</Label>
+                {/* <Input
                   type="text"
                   className="form-control mt-2"
                   // placeholder="Enter your occupational status/"
                   name="occupational_status"
                   value={formData.occupational_status}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+                <select
+  className="form-control mt-2"
+  name="occupational_status"
+  value={formData.occupational_status}
+  onChange={onChangeEventHandler}
+>
+  <option value="">{getTranslation("Select / चुनें",lang)}</option>
+  <option value="Business">{getTranslation("Business/व्यापार",lang)}</option>
+  <option value="Student">{getTranslation("Student/विद्यार्थी",lang)}</option>
+  <option value="Family Business">{getTranslation("Family Business/पारिवारिक व्यवसाय",lang)}</option>
+  <option value="Farming">{getTranslation("Farming/खेती",lang)}</option>
+  <option value="Not Working">{getTranslation("Not Working/काम नहीं कर",lang)}</option>
+  <option value="NA">{getTranslation("NA/ना",lang)}</option>
+</select>
+
               </div>
 
               {/*Marital Status*/}
               <div className="col-md-3">
                 <Label>{getTranslation(marital,lang)}</Label>
-                <Input
+                {/* <Input
                   type="text"
                   className="form-control mt-2"
                   // placeholder="Enter your marital status"
                   name="marital_status"
                   value={formData.marital_status}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+                <select
+  className="form-control mt-2"
+  name="marital_status"
+  value={formData.marital_status}
+  onChange={onChangeEventHandler}
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+  <option value="Single">
+    {getTranslation("Single / अकेला", lang)}
+  </option>
+  <option value="Married">
+    {getTranslation("Married / विवाहित", lang)}
+  </option>
+  <option value="Separated">
+    {getTranslation("Separated / अलग किए", lang)}
+  </option>
+  <option value="Separated due to addiction">
+    {getTranslation("Separated due to addiction / नशे की लत के कारण अलग हो गए", lang)}
+  </option>
+  <option value="Widower">
+    {getTranslation("Widower / विधुर", lang)}
+  </option>
+</select>
+
               </div>
 
               {/*Living Situation*/}
               <div className="col-md-3">
                 <Label>{getTranslation(living,lang)}</Label>
-                <Input
+                {/* <Input
                   type="text"
                   className="form-control mt-2"
                   // placeholder="Enter your living situation"
                   name="living_situation"
                   value={formData.living_situation}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<select
+  className="form-control mt-2"
+  name="living_situation"
+  value={formData.living_situation}
+  onChange={onChangeEventHandler}
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+  <option value="With Family">
+    {getTranslation("With Family / परिवार के साथ", lang)}
+  </option>
+  <option value="Single for Job">
+    {getTranslation("Single for Job / नौकरी के लिए सिंगल", lang)}
+  </option>
+  <option value="Single for Study">
+    {getTranslation("Single for Study / पढ़ाई के लिए सिंगल", lang)}
+  </option>
+</select>
+
+
               </div>
               {/*Religion*/}
               <div className="col-md-3">
@@ -3108,14 +3186,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                   {source.id === "source_any_other" &&
                     formData[source.id] === "Yes" && (
-                      <textarea
-                        className="form-control mt-2"
-                        rows="3"
-                        placeholder="Please specify"
-                        name="source_other_text"
-                        value={formData.source_other_text || ""}
-                        onChange={onChangeEventHandler}
-                      />
+                      // <textarea
+                      //   className="form-control mt-2"
+                      //   rows="3"
+                      //   placeholder="Please specify"
+                      //   name="source_other_text"
+                      //   value={formData.source_other_text || ""}
+                      //   onChange={onChangeEventHandler}
+                      // />
+                      <VoiceTextarea
+                      className="form-control mt-2"
+                      // label={<Translated text={pateintAddress} />}
+                      placeholder="Please specify"
+                      name="source_other_text"
+                      value={formData.source_other_text || ""}
+                      onChange={onChangeEventHandler}
+                    />
                     )}
                 </div>
               ))}
@@ -3126,20 +3212,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <div className="row">
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(Ifarrange,lang)}</Label>
-                  <Input
+                  {/* <Label>{getTranslation(Ifarrange,lang)}</Label> */}
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="family_reaction"
                     value={formData.family_reaction}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(Ifarrange,lang)} />}
+  name="family_reaction"
+  value={formData.family_reaction}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(mentionYear,lang)}</Label>
+                  {/* <Label>{getTranslation(mentionYear,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3147,12 +3241,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="first_action_when_known"
                     value={formData.first_action_when_known}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(mentionYear,lang)} />}
+  name="first_action_when_known"
+  value={formData.first_action_when_known}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(action,lang)}</Label>
+                  {/* <Label>{getTranslation(action,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3160,12 +3262,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="pattern_of_use"
                     value={formData.pattern_of_use}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(action,lang)} />}
+  name="pattern_of_use"
+  value={formData.pattern_of_use}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(Residence,lang)}</Label>
+                  {/* <Label>{getTranslation(Residence,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3173,12 +3283,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="residence_status_during_use"
                     value={formData.residence_status_during_use}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(Residence,lang)} />}
+  name="residence_status_during_use"
+  value={formData.residence_status_during_use}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(experiencedTrauma,lang)}</Label>
+                  {/* <Label>{getTranslation(experiencedTrauma,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3186,12 +3304,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="trauma_experience"
                     value={formData.trauma_experience}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(experiencedTrauma,lang)} />}
+  name="trauma_experience"
+  value={formData.trauma_experience}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(occurredPatientBehavior,lang)}</Label>
+                  {/* <Label>{getTranslation(occurredPatientBehavior,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3199,12 +3325,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="behavior_change"
                     value={formData.behavior_change}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(occurredPatientBehavior,lang)} />}
+  name="behavior_change"
+  value={formData.behavior_change}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(sociality,lang)}</Label>
+                  {/* <Label>{getTranslation(sociality,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3212,12 +3346,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="social_circle_change"
                     value={formData.social_circle_change}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(sociality,lang)} />}
+  name="social_circle_change"
+  value={formData.social_circle_change}
+  onChange={onChangeEventHandler}
+/>
+
+
                 </FormGroup>
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(effectOfSubstance,lang)}</Label>
+                  {/* <Label>{getTranslation(effectOfSubstance,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3225,13 +3368,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="life_effect"
                     value={formData.life_effect}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(effectOfSubstance,lang)} />}
+  name="life_effect"
+  value={formData.life_effect}
+  onChange={onChangeEventHandler}
+/>
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(ChiefComplaint,lang)}</Label>
+                  {/* <Label>{getTranslation(ChiefComplaint,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3239,7 +3389,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="chief_complaints"
                     value={formData.chief_complaints}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(ChiefComplaint,lang)} />}
+  className="form-control"
+  name="chief_complaints"
+  value={formData.chief_complaints}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
             </div>
@@ -3335,7 +3494,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(absuingSubstance,lang)}</Label>
+                {/* <Label>{getTranslation(absuingSubstance,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3343,13 +3502,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="asked_to_stop"
                   value={formData.asked_to_stop}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(absuingSubstance,lang)} />}
+  className="form-control"
+  name="asked_to_stop"
+  value={formData.asked_to_stop}
+  onChange={onChangeEventHandler}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(influenceStop,lang)}</Label>
+                {/* <Label>{getTranslation(influenceStop,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3357,13 +3525,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="reason_to_stop"
                   value={formData.reason_to_stop}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(influenceStop,lang)} />}
+  className="form-control"
+  name="reason_to_stop"
+  value={formData.reason_to_stop}
+  onChange={onChangeEventHandler}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(whenStopUsing,lang)}</Label>
+                {/* <Label>{getTranslation(whenStopUsing,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3371,13 +3548,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="work_after_stop"
                   value={formData.work_after_stop}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(whenStopUsing,lang)} />}
+  className="form-control"
+  name="work_after_stop"
+  value={formData.work_after_stop}
+  onChange={onChangeEventHandler}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(itReplaceWhenWhom,lang)}</Label>
+                {/* <Label>{getTranslation(itReplaceWhenWhom,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3385,13 +3571,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="relapse_details"
                   value={formData.relapse_details}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(itReplaceWhenWhom,lang)} />}
+  className="form-control"
+  name="relapse_details"
+  value={formData.relapse_details}
+  onChange={onChangeEventHandler}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(afterRelapse,lang)}</Label>
+                {/* <Label>{getTranslation(afterRelapse,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3399,13 +3594,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="post_relapse_change"
                   value={formData.post_relapse_change}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(afterRelapse,lang)} />}
+  className="form-control"
+  name="post_relapse_change"
+  value={formData.post_relapse_change}
+  onChange={onChangeEventHandler}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(haveDisorder,lang)}</Label>
+                {/* <Label>{getTranslation(haveDisorder,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3413,13 +3617,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="mental_physical_issues"
                   value={formData.mental_physical_issues}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(haveDisorder,lang)} />}
+  className="form-control"
+  name="mental_physical_issues"
+  value={formData.mental_physical_issues}
+  onChange={onChangeEventHandler}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(isProblmeOrInjury,lang)}</Label>
+                {/* <Label>{getTranslation(isProblmeOrInjury,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3427,13 +3640,23 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="injuries_due_to_substance"
                   value={formData.injuries_due_to_substance}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(isProblmeOrInjury,lang)} />}
+  className="form-control"
+  name="injuries_due_to_substance"
+  value={formData.injuries_due_to_substance}
+  onChange={onChangeEventHandler}
+/>
+
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(DiagnosedOnTreatment,lang)}</Label>
+                {/* <Label>{getTranslation(DiagnosedOnTreatment,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3441,13 +3664,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="diagnosis_treatment"
                   value={formData.diagnosis_treatment}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(DiagnosedOnTreatment,lang)} />}
+  className="form-control"
+  name="diagnosis_treatment"
+  value={formData.diagnosis_treatment}
+  onChange={onChangeEventHandler}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(DoctorPlaceDuration,lang)}</Label>
+                {/* <Label>{getTranslation(DoctorPlaceDuration,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3455,13 +3687,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="doctor_info"
                   value={formData.doctor_info}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(DoctorPlaceDuration,lang)} />}
+  className="form-control"
+  name="doctor_info"
+  value={formData.doctor_info}
+  onChange={onChangeEventHandler}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(ifGone,lang)}</Label>
+                {/* <Label>{getTranslation(ifGone,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3469,13 +3710,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="traditional_treatment"
                   value={formData.traditional_treatment}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(ifGone,lang)} />}
+  className="form-control"
+  name="traditional_treatment"
+  value={formData.traditional_treatment}
+  onChange={onChangeEventHandler}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
-                <Label>{getTranslation(YouFamiliar,lang)}</Label>
+                {/* <Label>{getTranslation(YouFamiliar,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -3483,7 +3733,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="effect_of_treatment"
                   value={formData.effect_of_treatment}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(YouFamiliar,lang)} />}
+  className="form-control"
+  name="effect_of_treatment"
+  value={formData.effect_of_treatment}
+  onChange={onChangeEventHandler}
+/>
+
               </FormGroup>
             </div>
 
@@ -3492,14 +3751,56 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <H5 className="mt-3 mb-3">{getTranslation(relationshipFamilyStatus,lang)}</H5>
               <div className="col-md-6">
                 <Label htmlFor="marital_status">{getTranslation(relationshipStatus,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="relationship_status"
                   value={formData.relationship_status}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+                <select
+  className="form-control"
+  name="relationship_status"
+  value={formData.relationship_status}
+  onChange={onChangeEventHandler}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Single">
+    {getTranslation("Single / सिंगल", lang)}
+  </option>
+
+  <option value="Married">
+    {getTranslation("Married / शादीशुदा", lang)}
+  </option>
+
+  <option value="Separated">
+    {getTranslation("Separated / अलग", lang)}
+  </option>
+
+  <option value="Widower">
+    {getTranslation("Widower / विधवा", lang)}
+  </option>
+
+  <option value="Committed">
+    {getTranslation("Committed / कमिटेड", lang)}
+  </option>
+
+  <option value="Broke up">
+    {getTranslation("Broke up / ब्रेक अप", lang)}
+  </option>
+</select>
+
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(relationshipStatus,lang)} />}
+  className="form-control"
+  name="relationship_status"
+  value={formData.relationship_status}
+  onChange={onChangeEventHandler}
+/> */}
+
                 {/* <Input
                   id="marital_status"
                   name="select"
@@ -3536,21 +3837,55 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <div className="col-md-6">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(MarriageArrangement,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="marriage_arrangement"
                     value={formData.marriage_arrangement}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+                  <select
+  className="form-control"
+  name="marriage_arrangement"
+  value={formData.marriage_arrangement}
+  onChange={onChangeEventHandler}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="NA">
+    {getTranslation("NA / लागू नहीं", lang)}
+  </option>
+
+  <option value="Arrange">
+    {getTranslation("Arrange / व्यवस्था", lang)}
+  </option>
+
+  <option value="Love">
+    {getTranslation("Love / प्यार", lang)}
+  </option>
+
+  <option value="Love Cum Arrange">
+    {getTranslation("Love Cum Arrange / प्यार सह व्यवस्था", lang)}
+  </option>
+</select>
+
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(MarriageArrangement,lang)} />}
+  className="form-control"
+  name="marriage_arrangement"
+  value={formData.marriage_arrangement}
+  onChange={onChangeEventHandler}
+/> */}
+
                 </FormGroup>
               </div>
 
               {/*After marriage life or relationship Status*/}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(afterMerriageLife,lang)}</Label>
+                  {/* <Label>{getTranslation(afterMerriageLife,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3558,14 +3893,23 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="post_marriage_status"
                     value={formData.post_marriage_status}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(afterMerriageLife,lang)} />}
+  className="form-control"
+  name="post_marriage_status"
+  value={formData.post_marriage_status}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
 
               {/*Is there interference of wife's family or any relative in the internal matters of your family. If yes than whom & in which affairs*/}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(isThereInterference,lang)}</Label>
+                  {/* <Label>{getTranslation(isThereInterference,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3573,7 +3917,17 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="relatives_interference"
                     value={formData.relatives_interference}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(isThereInterference,lang)} />}
+  className="form-control"
+  name="relatives_interference"
+  value={formData.relatives_interference}
+  onChange={onChangeEventHandler}
+/>
+
+
                 </FormGroup>
               </div>
 
@@ -3669,7 +4023,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </div>
 
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
+                  {/* <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -3677,7 +4031,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="disorder_desc"
                     value={formData.disorder_desc}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(ifAnyDisorder,lang)} />}
+  className="form-control"
+  name="disorder_desc"
+  value={formData.disorder_desc}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
 
@@ -4319,7 +4682,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               {/*Current Status? वर्तमान स्थिति?*/}
               <div className="col-md-12 mt-3">
-                <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
+                {/* <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
                 <Input
                   type="textarea"
                   className="form-control"
@@ -4327,7 +4690,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   name="psych_problem_desc"
                   value={formData.psych_problem_desc}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(anyOtherPlsMention1,lang)} />}
+  className="form-control"
+  name="psych_problem_desc"
+  value={formData.psych_problem_desc}
+  onChange={onChangeEventHandler}
+/>
+
               </div>
 
               {/*Current Status? वर्तमान स्थिति?*/}
@@ -4357,18 +4729,47 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     onChange={(e) => setcustomeCurrentStatus(e.target.value)}
                   />
                 )} */}
-                <Input
+                {/* <Input
                   type="text"
                   name="current_status"
                   className="form-control"
                   value={formData.current_status}
                   onChange={onChangeEventHandler}
-                />
+                /> */}
+                <select
+  name="current_status"
+  className="form-control"
+  value={formData.current_status}
+  onChange={onChangeEventHandler}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Active">
+    {getTranslation("Active / एक्टिव", lang)}
+  </option>
+
+  <option value="Non Active">
+    {getTranslation("Non Active / नॉन एक्टिव", lang)}
+  </option>
+
+  <option value="Passed Away">
+    {getTranslation("Passed Away / निधन हो गया", lang)}
+  </option>
+
+  <option value="Seprated">
+    {getTranslation("Seprated / अलग हो गया", lang)}
+  </option>
+
+  <option value="Others">
+    {getTranslation("Others / अन्य", lang)}
+  </option>
+</select>
+
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(howWasBonding,lang)}</Label>
+                  {/* <Label>{getTranslation(howWasBonding,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4376,13 +4777,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="relationship_with_user"
                     value={formData.relationship_with_user}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(howWasBonding,lang)} />}
+  className="form-control"
+  name="relationship_with_user"
+  value={formData.relationship_with_user}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
+                  {/* <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4390,13 +4800,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="family_behavior"
                     value={formData.family_behavior}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(familyBehaviorPatient,lang)} />}
+  className="form-control"
+  name="family_behavior"
+  value={formData.family_behavior}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(monitoringFamily,lang)}</Label>
+                  {/* <Label>{getTranslation(monitoringFamily,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4404,13 +4823,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="head_of_family"
                     value={formData.head_of_family}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(monitoringFamily,lang)} />}
+  className="form-control"
+  name="head_of_family"
+  value={formData.head_of_family}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
+                  {/* <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4418,7 +4846,17 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="relationships_with_family"
                     value={formData.relationships_with_family}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(ralationshipFamilyMember,lang)} />}
+  className="form-control"
+  name="relationships_with_family"
+  value={formData.relationships_with_family}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
 
@@ -4428,34 +4866,93 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(birthConditions,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="birth_conditions"
                     value={formData.childhood_history.birth_conditions}
                     onChange={childhoodHandleChange}
-                  />
+                  /> */}
+                  <select
+  className="form-control"
+  name="birth_conditions"
+  value={formData.childhood_history.birth_conditions}
+  onChange={childhoodHandleChange}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Normal">{getTranslation("Normal / नॉर्मल", lang)}</option>
+  <option value="Cesarean">{getTranslation("Cesarean / सिजेरियन", lang)}</option>
+  <option value="Pre Mature">{getTranslation("Pre Mature / प्रीमैच्योर", lang)}</option>
+</select>
+
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(birthConditions,lang)} />}
+  className="form-control"
+  name="birth_conditions"
+  value={formData.childhood_history.birth_conditions}
+  onChange={childhoodHandleChange}
+/> */}
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(parentingHistory,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="parenting_history"
                     value={formData.childhood_history.parenting_history}
                     onChange={childhoodHandleChange}
-                  />
+                  /> */}
+<select
+  className="form-control"
+  name="parenting_history"
+  value={formData.childhood_history.parenting_history}
+  onChange={childhoodHandleChange}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="With Mother Father">
+    {getTranslation("With Mother Father / माँ-बाप के साथ", lang)}
+  </option>
+
+  <option value="With Grandparent">
+    {getTranslation("With Grandparent / दादा-दादी के साथ", lang)}
+  </option>
+
+  <option value="In Hostel">
+    {getTranslation("In Hostel / हॉस्टल में", lang)}
+  </option>
+
+  <option value="With Relatives">
+    {getTranslation("With Relatives / रिश्तेदारों के साथ", lang)}
+  </option>
+
+  <option value="With Single Parent">
+    {getTranslation("With Single Parent / सिंगल पेरेंट के साथ", lang)}
+  </option>
+</select>
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(parentingHistory,lang)} />}
+  className="form-control"
+  name="parenting_history"
+  value={formData.childhood_history.parenting_history}
+  onChange={childhoodHandleChange}
+/> */}
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(wasThereAnyConflict,lang)}</Label>
+                  {/* <Label>{getTranslation(wasThereAnyConflict,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4463,7 +4960,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="family_conflict"
                     value={formData.childhood_history.family_conflict}
                     onChange={childhoodHandleChange}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(wasThereAnyConflict,lang)} />}
+  className="form-control"
+  name="family_conflict"
+  value={formData.childhood_history.family_conflict}
+  onChange={childhoodHandleChange}
+/>
+
                 </FormGroup>
               </div>
 
@@ -4471,14 +4977,36 @@ console.log(latestGenFamilyData.substance_use_dependency)
 सामाजिकता जहां पैदा हुआ और रहा  है?*/}
               <div className="col-md-12">
                 <Label htmlFor="birthPlace">{getTranslation(socialityWhere,lang)}</Label>
-                <Input
+                {/* <Input
                   type="text"
                   id="birthPlace"
                   name="sociality_living"
                   value={formData.childhood_history.sociality_living}
                   onChange={childhoodHandleChange}
                   // placeholder="Enter birth place..."
-                />
+                /> */}
+                <select
+  className="form-control"
+  id="birthPlace"
+  name="sociality_living"
+  value={formData.childhood_history.sociality_living}
+  onChange={childhoodHandleChange}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Addict Surrounding">
+    {getTranslation("Addict Surrounding / नशेड़ी आस-पास", lang)}
+  </option>
+
+  <option value="Social Atmosphere">
+    {getTranslation("Social Atmosphere / सामाजिक माहौल", lang)}
+  </option>
+
+  <option value="Anti Social Locality">
+    {getTranslation("Anti Social Locality / असामाजिक इलाका", lang)}
+  </option>
+</select>
+
 
                 <br />
                 <Label htmlFor="birthPlace">{getTranslation(highRiskBehavior,lang)}</Label>
@@ -4494,7 +5022,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12 mt-3 mb-3">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(whatWasImpect,lang)}</Label>
+                  {/* <Label>{getTranslation(whatWasImpect,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4502,13 +5030,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="impact_of_movies"
                     value={formData.childhood_history.impact_of_movies}
                     onChange={childhoodHandleChange}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(whatWasImpect,lang)} />}
+  className="form-control"
+  name="impact_of_movies"
+  value={formData.childhood_history.impact_of_movies}
+  onChange={childhoodHandleChange}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(hasAnyoneEverAbused,lang)}</Label>
+                  {/* <Label>{getTranslation(hasAnyoneEverAbused,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4516,7 +5053,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="abuse_history"
                     value={formData.childhood_history.abuse_history}
                     onChange={childhoodHandleChange}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(hasAnyoneEverAbused,lang)} />}
+  className="form-control"
+  name="abuse_history"
+  value={formData.childhood_history.abuse_history}
+  onChange={childhoodHandleChange}
+/>
+
                 </FormGroup>
               </div>
 
@@ -4555,14 +5101,63 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                 )} */}
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="education_status"
                   value={formData.education_employment.education_status}
                   onChange={academicOccupationHandler}
-                />
+                /> */}
+                {/* <VoiceTextarea
+  label={<Translated text={getTranslation(EducationStatus,lang)} />}
+  className="form-control"
+  name="education_status"
+  value={formData.education_employment.education_status}
+  onChange={academicOccupationHandler}
+/> */}
+
+<select
+  className="form-control"
+  name="education_status"
+  value={formData.education_employment.education_status}
+  onChange={academicOccupationHandler}
+>
+  <option value="">{getTranslation("Select Education Status: / चुनें शिक्षा की स्थिति:", lang)}</option>
+
+  <option value="Illiterate">
+    {getTranslation("Illiterate / अनपढ़", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="5th">
+    {getTranslation("5th / 5वीं", lang)}
+  </option>
+
+  <option value="10th">
+    {getTranslation("10th / 10वीं", lang)}
+  </option>
+
+  <option value="12th">
+    {getTranslation("12th / 12वीं", lang)}
+  </option>
+
+  <option value="Graduate">
+    {getTranslation("Graduate / ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Post Graduate">
+    {getTranslation("Post Graduate / पोस्ट ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+</select>
+
               </div>
 
               {/*Occupational status? कार्य की स्थिति?*/}
@@ -4597,35 +5192,109 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                 )} */}
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="occupation_status"
                   value={formData.education_employment.occupation_status}
                   onChange={academicOccupationHandler}
-                />
+                /> */}
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(OcuStatus,lang)} />}
+  className="form-control"
+  name="occupation_status"
+  value={formData.education_employment.occupation_status}
+  onChange={academicOccupationHandler}
+/> */}
+                
+                <select
+  className="form-control"
+  name="occupation_status"
+  value={formData.education_employment.occupation_status}
+  onChange={academicOccupationHandler}
+>
+<option value="">{getTranslation("Select Occupational status? / चुनें कार्य की स्थिति?", lang)}</option>
+
+  <option value="Working">
+    {getTranslation("Working / काम कर रहा है", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="Expelled due to addiction">
+    {getTranslation("Expelled due to addiction / लत की वजह से निकाला गया", lang)}
+  </option>
+
+  <option value="Switched due to addiction">
+    {getTranslation("Switched due to addiction / लत की वजह से स्विच किया गया", lang)}
+  </option>
+
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+</select>
+
+
               </div>
 
               {/*If dropout what is the reason यदि ड्रॉपआउट हुआ तो क्या कारण है?*/}
               <div className="col-md-12 mt-3">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(ifDropout,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="dropout_reason"
                     value={formData.education_employment.dropout_reason}
                     onChange={academicOccupationHandler}
-                  />
+                  /> */}
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(ifDropout,lang)} />}
+  className="form-control"
+  name="dropout_reason"
+  value={formData.education_employment.dropout_reason}
+  onChange={academicOccupationHandler}
+/> */}
+
+<select
+  className="form-control"
+  name="dropout_reason"
+  value={formData.education_employment.dropout_reason}
+  onChange={academicOccupationHandler}
+>
+<option value="">{getTranslation("Select If dropout what is the reason / / चुनें यदि ड्रॉपआउट हुआ तो क्या कारण है?", lang)}</option>
+
+  <option value="Addiction">
+    {getTranslation("Addiction / लत", lang)}
+  </option>
+
+  <option value="Personal">
+    {getTranslation("Personal / पर्सनल", lang)}
+  </option>
+
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+</select>
+
+
                 </FormGroup>
               </div>
 
               {/*Study/Work Details: (what was job frequency)  /अध्ययन/कार्य विवरण: (नौकरी की फ्रीक्वेंसी क्या थी?)*/}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(studyWorkDetails,lang)}</Label>
+                  {/* <Label>{getTranslation(studyWorkDetails,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4633,14 +5302,23 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="work_details"
                     value={formData.education_employment.work_details}
                     onChange={academicOccupationHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(studyWorkDetails,lang)} />}
+  className="form-control"
+  name="work_details"
+  value={formData.education_employment.work_details}
+  onChange={academicOccupationHandler}
+/>
+
                 </FormGroup>
               </div>
 
               {/*Hobbies : शौक:*/}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(Hobbies1,lang)}</Label>
+                  {/* <Label>{getTranslation(Hobbies1,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4648,14 +5326,23 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="hobbies"
                     value={formData.education_employment.hobbies}
                     onChange={academicOccupationHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(Hobbies1,lang)} />}
+  className="form-control"
+  name="hobbies"
+  value={formData.education_employment.hobbies}
+  onChange={academicOccupationHandler}
+/>
+
                 </FormGroup>
               </div>
 
               {/*Extra skills if any: अतिरिक्त कौशल कोई हो:*/}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(extraSkills,lang)}</Label>
+                  {/* <Label>{getTranslation(extraSkills,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4663,7 +5350,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="skills"
                     value={formData.education_employment.skills}
                     onChange={academicOccupationHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(extraSkills,lang)} />}
+  className="form-control"
+  name="skills"
+  value={formData.education_employment.skills}
+  onChange={academicOccupationHandler}
+/>
+
                 </FormGroup>
               </div>
 
@@ -4671,7 +5367,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                */}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(achievemntInLife,lang)}</Label>
+                  {/* <Label>{getTranslation(achievemntInLife,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4679,7 +5375,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="achievements"
                     value={formData.education_employment.achievements}
                     onChange={academicOccupationHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(achievemntInLife,lang)} />}
+  className="form-control"
+  name="achievements"
+  value={formData.education_employment.achievements}
+  onChange={academicOccupationHandler}
+/>
+
                 </FormGroup>
               </div>
 
@@ -4691,28 +5396,89 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(socialBehavior1,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="social_behavior"
                     value={formData.social_behavior.social_behavior}
                     onChange={socialBehaviorHandler}
-                  />
+                  /> */}
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(socialBehavior1,lang)} />}
+  className="form-control"
+  name="social_behavior"
+  value={formData.social_behavior.social_behavior}
+  onChange={socialBehaviorHandler}
+/> */}
+
+<select
+  className="form-control"
+  name="social_behavior"
+  value={formData.social_behavior.social_behavior}
+  onChange={socialBehaviorHandler}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Social">
+    {getTranslation("Social / सामाजिक", lang)}
+  </option>
+
+  <option value="Anti Social">
+    {getTranslation("Anti Social / असामाजिक", lang)}
+  </option>
+</select>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="with_whom_spend_time"
                     value={formData.social_behavior.with_whom_spend_time}
                     onChange={socialBehaviorHandler}
-                  />
+                  /> */}
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(withWhomSpendFreeTime,lang)} />}
+  className="form-control"
+  name="with_whom_spend_time"
+  value={formData.social_behavior.with_whom_spend_time}
+  onChange={socialBehaviorHandler}
+/> */}
+
+<select
+  className="form-control"
+  name="with_whom_spend_time"
+  value={formData.social_behavior.with_whom_spend_time}
+  onChange={socialBehaviorHandler}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Alone">
+    {getTranslation("Alone / अकेले", lang)}
+  </option>
+
+  <option value="With Family">
+    {getTranslation("With Family / परिवार के साथ", lang)}
+  </option>
+
+  <option value="In addict Community">
+    {getTranslation("In addict Community / नशेड़ी समुदाय में", lang)}
+  </option>
+
+  <option value="With Friends">
+    {getTranslation("With Friends / दोस्तों के साथ", lang)}
+  </option>
+</select>
+
+
                 </FormGroup>
               </div>
 
@@ -4727,12 +5493,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     value={formData.social_behavior.number_of_friends}
                     onChange={socialBehaviorHandler}
                   />
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(howManyFriends,lang)} />}
+  className="form-control"
+  name="number_of_friends"
+  value={formData.social_behavior.number_of_friends}
+  onChange={socialBehaviorHandler}
+/> */}
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(friendSocialStatus,lang)}</Label>
+                  {/* <Label>{getTranslation(friendSocialStatus,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4740,13 +5515,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="friends_social_status"
                     value={formData.social_behavior.friends_social_status}
                     onChange={socialBehaviorHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(friendSocialStatus,lang)} />}
+  className="form-control"
+  name="friends_social_status"
+  value={formData.social_behavior.friends_social_status}
+  onChange={socialBehaviorHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(howMuchDependent,lang)}</Label>
+                  {/* <Label>{getTranslation(howMuchDependent,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4754,13 +5538,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="substance_dependent_friends"
                     value={formData.social_behavior.substance_dependent_friends}
                     onChange={socialBehaviorHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(howMuchDependent,lang)} />}
+  className="form-control"
+  name="substance_dependent_friends"
+  value={formData.social_behavior.substance_dependent_friends}
+  onChange={socialBehaviorHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
+                  {/* <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4768,7 +5561,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="well_wisher_person"
                     value={formData.social_behavior.well_wisher_person}
                     onChange={socialBehaviorHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(whoClosedWellWisher,lang)} />}
+  className="form-control"
+  name="well_wisher_person"
+  value={formData.social_behavior.well_wisher_person}
+  onChange={socialBehaviorHandler}
+/>
+
                 </FormGroup>
               </div>
 
@@ -4779,7 +5581,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <H5 className="mt-3 mb-3">{getTranslation(legalHistory,lang)}</H5>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(domesticViolence,lang)}</Label>
+                  {/* <Label>{getTranslation(domesticViolence,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4787,13 +5589,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="domestic_violence"
                     value={formData.legal_history.domestic_violence}
                     onChange={legalHistoryHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(domesticViolence,lang)} />}
+  className="form-control"
+  name="domestic_violence"
+  value={formData.legal_history.domestic_violence}
+  onChange={legalHistoryHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
+                  {/* <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4801,13 +5612,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="violence_reason"
                     value={formData.legal_history.violence_reason}
                     onChange={legalHistoryHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(reasonBehindDomesticViolence,lang)} />}
+  className="form-control"
+  name="violence_reason"
+  value={formData.legal_history.violence_reason}
+  onChange={legalHistoryHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(drugStatus,lang)}</Label>
+                  {/* <Label>{getTranslation(drugStatus,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4815,13 +5635,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="drug_status_qty"
                     value={formData.legal_history.drug_status_qty}
                     onChange={legalHistoryHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(drugStatus,lang)} />}
+  className="form-control"
+  name="drug_status_qty"
+  value={formData.legal_history.drug_status_qty}
+  onChange={legalHistoryHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
+                  {/* <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4829,13 +5658,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="criminal_case"
                     value={formData.legal_history.criminal_case}
                     onChange={legalHistoryHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(ifThereIsAnyCriminalCase,lang)} />}
+  className="form-control"
+  name="criminal_case"
+  value={formData.legal_history.criminal_case}
+  onChange={legalHistoryHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(specificCaseDetails,lang)}</Label>
+                  {/* <Label>{getTranslation(specificCaseDetails,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4843,13 +5681,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="case_details"
                     value={formData.legal_history.case_details}
                     onChange={legalHistoryHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(specificCaseDetails,lang)} />}
+  className="form-control"
+  name="case_details"
+  value={formData.legal_history.case_details}
+  onChange={legalHistoryHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(currentCaseStatus,lang)}</Label>
+                  {/* <Label>{getTranslation(currentCaseStatus,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4857,13 +5704,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="case_status"
                     value={formData.legal_history.case_status}
                     onChange={legalHistoryHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(currentCaseStatus,lang)} />}
+  className="form-control"
+  name="case_status"
+  value={formData.legal_history.case_status}
+  onChange={legalHistoryHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(ifWentToJail,lang)}</Label>
+                  {/* <Label>{getTranslation(ifWentToJail,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4871,7 +5727,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="jail_duration"
                     value={formData.legal_history.jail_duration}
                     onChange={legalHistoryHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(ifWentToJail,lang)} />}
+  className="form-control"
+  name="jail_duration"
+  value={formData.legal_history.jail_duration}
+  onChange={legalHistoryHandler}
+/>
+
                 </FormGroup>
               </div>
 
@@ -4884,7 +5749,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(whatIsTheMostImportantThing,lang)}</Label>
+                  {/* <Label>{getTranslation(whatIsTheMostImportantThing,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4892,13 +5757,22 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="life_priority"
                     value={formData.patient_behavior.life_priority}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(whatIsTheMostImportantThing,lang)} />}
+  className="form-control"
+  name="life_priority"
+  value={formData.patient_behavior.life_priority}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(lifeAim,lang)}</Label>
+                  {/* <Label>{getTranslation(lifeAim,lang)}</Label>
                   <Input
                     type="textarea"
                     className="form-control"
@@ -4906,7 +5780,17 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     name="life_aim"
                     value={formData.patient_behavior.life_aim}
                     onChange={onChangeEventHandler}
-                  />
+                  /> */}
+
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(lifeAim,lang)} />}
+  className="form-control"
+  name="life_aim"
+  value={formData.patient_behavior.life_aim}
+  onChange={onChangeEventHandler}
+/>
+
                 </FormGroup>
               </div>
 
@@ -5171,235 +6055,227 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
       {/* View Gen Family Data Modal start */}
       <CommonModal
-        isOpen={viewGenFamilyModel}
-        title={getTranslation(patientPersonalInformation,lang)}
-        toggler={closeGenFamily}
-        maxWidth="1200px"
-      >
-        <div className="genFamily__wrapper container p-4" ref={pdfRef}>
-          <h4 style={{
-                    textAlign: "center",
-                    textDecoration: "underline",
-                    padding: "20px 0",
-                  }}>{getTranslation(patientPersonalInformation,lang)}</h4>
-          
-         
-            <div className="table-responsive">
-              <Table className="table table-bordered table-striped table-sm">
-                <tbody style={{ fontSize: "14px" }}>
-                  {isLoading ? (
-                                  <tr>
-                                    <td colSpan="2" className="text-center">
-                                      <div className="loader-box">
-                                        <Spinner
-                                          className={
-                                            selectedSpinner?.spinnerClass ||
-                                            "spinner-border"
-                                          }
-                                        />
-                                      </div>
-                                    </td>
-                                  </tr>
+  isOpen={viewGenFamilyModel}
+  title={getTranslation(patientPersonalInformation, lang)}
+  toggler={closeGenFamily}
+  maxWidth="1200px"
+>
+  <div className="genFamily__wrapper container p-4" ref={pdfRef}>
 
-              ) : viewgenData ? (
-                  <>
-                 {Object.entries(viewgenData).map(([key, value]) => {
-  let displayValue = value;
+    {/* MAIN TITLE */}
+    <h4
+      style={{
+        textAlign: "center",
+        textDecoration: "underline",
+        padding: "20px 0",
+      }}
+    >
+      {getTranslation(patientPersonalInformation, lang)}
+    </h4>
 
-  try {
-    let parsed = value;
+    {/* CONTENT */}
+    {isLoading ? (
+      <div className="text-center py-5">
+        <Spinner className={selectedSpinner?.spinnerClass || "spinner-border"} />
+      </div>
+    ) : viewgenData ? (
+      <div className="genFamily__content">
 
-    // Parse JSON strings safely
-    if (typeof value === "string" && (value.startsWith("{") || value.startsWith("["))) {
-      parsed = JSON.parse(value);
-    }
+        {Object.entries(viewgenData).map(([key, value]) => {
+          let parsed = value;
 
-    // MEMBERS TABLE
-    if (key === "members" && Array.isArray(parsed)) {
-      const allKeys = Array.from(new Set(parsed.flatMap((m) => Object.keys(m))));
-      displayValue = (
-        <div className="table-responsive">
-          <table className="table table-bordered table-sm">
-            <thead className="table-light">
-              <tr>
-                <th>#</th>
-                {allKeys.map((colKey) => (
-                  <th key={colKey}>{colKey.replace(/_/g, " ")}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {parsed.map((member, idx) => (
-                <tr key={idx}>
-                  <td>{idx + 1}</td>
-                  {allKeys.map((colKey) => (
-                    <td key={colKey}>{member[colKey] || "—"}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
+          try {
+            if (
+              typeof value === "string" &&
+              (value.startsWith("{") || value.startsWith("["))
+            ) {
+              parsed = JSON.parse(value);
+            }
+          } catch {}
 
-    // FAMILY HISTORY TABLE
-    else if (key === "family_history_data" && typeof parsed === "object" && parsed !== null) {
-      displayValue = Object.entries(parsed).map(([side, members]) => (
-        <div key={side} className="mb-4">
-          <h6 className="text-capitalize fw-bold mb-3">{side.replace(/_/g, " ")}</h6>
-          <div className="table-responsive">
-            <table className="table table-bordered table-sm">
-              <thead className="table-light">
-                <tr>
-                  <th>Role/भूमिका</th>
-                  <th>Details/विवरण</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(members).map(([role, details]) => {
-                  if (typeof details !== "object") {
-                    return (
-                      <tr key={role}>
-                        <td className="text-capitalize">{role.replace(/_/g, " ")}</td>
-                        <td>{details}</td>
-                      </tr>
-                    );
-                  }
-                  return (
-                    <tr key={role}>
-                      <td className="text-capitalize">{role.replace(/_/g, " ")}</td>
-                      <td>
-                        <table className="table table-sm mb-0">
-                          <tbody>
-                            {Object.entries(details).map(([k, v]) => (
-                              <tr key={k}>
-                                <td><strong>{k.replace(/_/g, " ")}:</strong></td>
-                                <td>{v}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </td>
+          return (
+            <div key={key} className="print-section mb-4">
+
+              {/* SECTION TITLE */}
+              <h5 className="fw-bold text-capitalize mb-3">
+                {key.replace(/_/g, " ")}
+              </h5>
+
+              {/* ================= FAMILY MEMBERS ================= */}
+              {key === "family_members" && parsed?.members && (
+                <table className="table table-bordered table-sm">
+                  <thead className="table-light">
+                    <tr>
+                      <th>#</th>
+                      <th>Name</th>
+                      <th>Relation</th>
+                      <th>Age</th>
+                      <th>Living Status</th>
+                      <th>Physical Disorder</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ));
-    }
+                  </thead>
+                  <tbody>
+                    {parsed.members.map((m, i) => (
+                      <tr key={i}>
+                        <td>{i + 1}</td>
+                        <td>{m.name || "-"}</td>
+                        <td>{m.relation || "-"}</td>
+                        <td>{m.age || "-"}</td>
+                        <td>{m.living_status || "-"}</td>
+                        <td>{m.physical_disorder || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
 
-    // TREATMENT RECORDS TABLE
-    else if (key === "treatment_records" && Array.isArray(parsed)) {
-      displayValue = (
-        <div className="table-responsive">
-          <table className="table table-bordered table-sm">
-            <thead className="table-light">
-              <tr>
-                <th className="p-3">Treatment Year/उपचार वर्ष</th>
-                <th className="p-3">Treatment Place/उपचार स्थान</th>
-                <th className="p-3">Treatment Duration/उपचार अवधि</th>
-                <th className="p-3">Days of Sobriety/संयम के दिन</th>
-              </tr>
-            </thead>
-            <tbody>
-              {parsed.map((record, index) => (
-                <tr key={index}>
-                  <td className="p-3">{record.treatment_year || "-"}</td>
-                  <td className="p-3">{record.treatment_place || "-"}</td>
-                  <td className="p-3">{record.treatment_duration || "-"}</td>
-                  <td className="p-3">{record.days_of_sobriety || "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
+              {/* ================= FAMILY HISTORY ================= */}
+              {key === "family_members" && parsed?.family_history_data && (
+                Object.entries(parsed.family_history_data).map(([side, members]) => (
+                  <div key={side} className="mb-4">
+                    <h6 className="fw-bold text-capitalize mb-2">
+                      {side.replace(/_/g, " ")}
+                    </h6>
 
-    // GENERIC ARRAY HANDLING (show as table)
-    else if (Array.isArray(parsed)) {
-      displayValue = (
-        <div className="table-responsive">
-          <table className="table table-bordered table-sm">
-            <tbody>
-              {parsed.map((item, i) => (
-                <tr key={i}>
-                  <td>{typeof item === "object" ? JSON.stringify(item) : item}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
+                    <table className="table table-bordered table-sm">
+                      <tbody>
+                        {Object.entries(members).map(([role, details]) => (
+                          <tr key={role}>
+                            <td className="fw-bold text-capitalize" style={{ width: "30%" }}>
+                              {role.replace(/_/g, " ")}
+                            </td>
+                            <td>
+                              {typeof details === "object"
+                                ? Object.entries(details).map(([k, v]) => (
+                                    <div key={k}>
+                                      <strong>{k}:</strong> {v}
+                                    </div>
+                                  ))
+                                : details}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))
+              )}
 
-    // GENERIC OBJECT HANDLING (key-value table)
-    else if (typeof parsed === "object" && parsed !== null) {
-      displayValue = (
-        <div className="table-responsive">
-          <table className="table table-bordered table-sm">
-            <tbody>
-              {Object.entries(parsed).map(([k, v]) => (
-                <tr key={k}>
-                  <td className="fw-bold text-capitalize">{k.replace(/_/g, " ")}</td>
-                  <td>{typeof v === "object" ? JSON.stringify(v) : v}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      );
-    }
+              {/* ================= TREATMENT HISTORY ================= */}
+              {key === "treatment_history" && (
+                <>
+                  {/* Treatment History Details */}
+                  <table className="table table-bordered table-sm mb-3">
+                    <tbody>
+                      {Object.entries(parsed).map(([k, v]) =>
+                        k !== "treatment_records" ? (
+                          <tr key={k}>
+                            <td
+                              className="fw-bold text-capitalize"
+                              style={{ width: "30%" }}
+                            >
+                              {k.replace(/_/g, " ")}
+                            </td>
+                            <td>{v && v !== "null" ? v : "-"}</td>
+                          </tr>
+                        ) : null
+                      )}
+                    </tbody>
+                  </table>
 
-    // Keep primitive values as they are
-    else {
-      displayValue = parsed;
-    }
-  } catch (err) {
-    displayValue = value; // fallback to raw value
-  }
+                  {/* Treatment Records */}
+                  {Array.isArray(parsed.treatment_records) && (
+                    <table className="table table-bordered table-sm">
+                      <thead className="table-light">
+                        <tr>
+                          <th>Treatment Year</th>
+                          <th>Treatment Place</th>
+                          <th>Duration</th>
+                          <th>Days of Sobriety</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {parsed.treatment_records.map((r, i) => (
+                          <tr key={i}>
+                            <td>{r.treatment_year || "-"}</td>
+                            <td>{r.treatment_place || "-"}</td>
+                            <td>{r.treatment_duration || "-"}</td>
+                            <td>{r.days_of_sobriety || "-"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
 
-  return (
-    <tr key={key}>
-      <th className="text-capitalize p-3" style={{ whiteSpace: "nowrap", width: "30%" }}>
-        {key.replace(/_/g, " ")}
-      </th>
-      <td className="p-3">{displayValue || "—"}</td>
-    </tr>
-  );
-})}
-
-
-                  </>
-                ) : (
-                  <tr>
-                  <td colSpan="2" className="text-center">
-                   {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
-                  </td>
-                </tr>
+              {/* ================= GENERIC OBJECT ================= */}
+              {typeof parsed === "object" &&
+                !Array.isArray(parsed) &&
+                key !== "family_members" &&
+                key !== "treatment_history" && (
+                  <table className="table table-bordered table-sm">
+                    <tbody>
+                      {Object.entries(parsed).map(([k, v]) => (
+                        <tr key={k}>
+                          <td
+                            className="fw-bold text-capitalize"
+                            style={{ width: "30%" }}
+                          >
+                            {k.replace(/_/g, " ")}
+                          </td>
+                          <td>{v && v !== "null" ? v : "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 )}
 
-                </tbody>
-              </Table>
+              {/* ================= SIMPLE TEXT ================= */}
+              {typeof parsed !== "object" && (
+                <p className="mb-0">{parsed || "-"}</p>
+              )}
+
             </div>
-         
-        </div>
-        <div style={{ margin: "0 20px 20px 20px" }}>
-                <button
-                  disabled={pfaDownload}
-                  id="download-btn"
-                  className="btn btn-primary"
-                  onClick={handleDownloadPDF}
-                >
-                  {pfaDownload
-                    ? getTranslation( "Your Patient Personal Information is being downloaded.../ आपका PPI डाउनलोड हो रहा है...",lang)
-                    : getTranslation("Download Your Patient Personal Information (PPI) / अपना प्रथम व्यक्तिगत जानकारी डाउनलोड करें",lang)}
-                </button>
-              </div>
-      </CommonModal>
+          );
+        })}
+
+      </div>
+    ) : (
+      <p className="text-center">
+        {getTranslation("No data available/कोई डेटा मौजूद नहीं", lang)}
+      </p>
+    )}
+  </div>
+
+  {/* ACTION BUTTONS */}
+  <div style={{ margin: "0 20px 20px 20px" }}>
+    <button
+      disabled={pfaDownload}
+      className="btn btn-primary"
+      onClick={handleDownloadPDF}
+    >
+      {pfaDownload
+        ? getTranslation(
+            "Your Patient Personal Information is being downloaded.../ आपका PPI डाउनलोड हो रहा है...",
+            lang
+          )
+        : getTranslation(
+            "Download Your Patient Personal Information (PPI) / अपना प्रथम व्यक्तिगत जानकारी डाउनलोड करें",
+            lang
+          )}
+    </button>
+
+    <button
+      className="btn btn-primary mx-3"
+      onClick={handlePrint}
+    >
+      {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+    </button>
+  </div>
+</CommonModal>
+
+
 
       {/* View Gen Family Data Modal End */}
 
@@ -5471,7 +6347,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <div className="row pt-3 pb-3">
               <div className="col-md-3">
                 <Label>{getTranslation(relation,lang)}</Label>
-                <Input
+                {/* <Input
                   type="text"
                   className="form-control mt-2"
                   placeholder="Enter your occupational status"
@@ -5483,13 +6359,47 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       occupational_status: e.target.value,
                     })
                   }
-                />
+                /> */}
+                <select
+  className="form-control mt-2"
+  name="occupational_status"
+  value={GenfamiltEditData.occupational_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      occupational_status: e.target.value,
+    })
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+  <option value="Business">
+    {getTranslation("Business/व्यापार", lang)}
+  </option>
+  <option value="Student">
+    {getTranslation("Student/विद्यार्थी", lang)}
+  </option>
+  <option value="Family Business">
+    {getTranslation("Family Business/पारिवारिक व्यवसाय", lang)}
+  </option>
+  <option value="Farming">
+    {getTranslation("Farming/खेती", lang)}
+  </option>
+  <option value="Not Working">
+    {getTranslation("Not Working/काम नहीं कर", lang)}
+  </option>
+  <option value="NA">
+    {getTranslation("NA/ना", lang)}
+  </option>
+</select>
+
               </div>
 
               {/* Marital Status */}
               <div className="col-md-3">
                 <Label>{getTranslation(marital,lang)}</Label>
-                <Input
+                {/* <Input
                   type="text"
                   className="form-control mt-2"
                   placeholder="Enter your marital status"
@@ -5501,13 +6411,44 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       marital_status: e.target.value,
                     })
                   }
-                />
+                /> */}
+                <select
+  className="form-control mt-2"
+  name="marital_status"
+  value={GenfamiltEditData.marital_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      marital_status: e.target.value,
+    })
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+  <option value="Single">
+    {getTranslation("Single / अकेला", lang)}
+  </option>
+  <option value="Married">
+    {getTranslation("Married / विवाहित", lang)}
+  </option>
+  <option value="Separated">
+    {getTranslation("Separated / अलग किए", lang)}
+  </option>
+  <option value="Separated due to addiction">
+    {getTranslation("Separated due to addiction / नशे की लत के कारण अलग हो गए", lang)}
+  </option>
+  <option value="Widower">
+    {getTranslation("Widower / विधुर", lang)}
+  </option>
+</select>
+
               </div>
 
               {/* Living Situation */}
               <div className="col-md-3">
                 <Label>{getTranslation(living,lang)}</Label>
-                <Input
+                {/* <Input
                   type="text"
                   className="form-control mt-2"
                   placeholder="Enter your living situation"
@@ -5519,7 +6460,34 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       living_situation: e.target.value,
                     })
                   }
-                />
+                /> */}
+
+<select
+  className="form-control mt-2"
+  name="living_situation"
+  value={GenfamiltEditData.living_situation}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      living_situation: e.target.value,
+    })
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+  <option value="With Family">
+    {getTranslation("With Family / परिवार के साथ", lang)}
+  </option>
+  <option value="Single for Job">
+    {getTranslation("Single for Job / नौकरी के लिए सिंगल", lang)}
+  </option>
+  <option value="Single for Study">
+    {getTranslation("Single for Study / पढ़ाई के लिए सिंगल", lang)}
+  </option>
+</select>
+
+
               </div>
 
               {/* Religion */}
@@ -5639,20 +6607,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                     {source.id === "source_any_other" &&
                       GenfamiltEditData[source.id] === "Yes" && (
-                        <textarea
-                          className="form-control mt-2"
-                          rows="3"
-                          placeholder="Please specify"
-                          name="source_other_text"
-                          value={GenfamiltEditData.source_other_text || ""}
-                          onChange={(e) =>
-                            setGenfamilyEditData((prev) => ({
-                              ...prev,
-                              source_other_text: e.target.value,
-                            }))
-                          }
-                        />
+                        <VoiceTextarea
+                        className="form-control mt-2"
+                        name="source_other_text"
+                        value={GenfamiltEditData.source_other_text || ""}
+                        onChange={(e) =>
+                          setGenfamilyEditData((prev) => ({
+                            ...prev,
+                            source_other_text: e.target.value,
+                          }))
+                        }
+                      />
                       )}
+
+                      
                   </div>
                 ))}
 
@@ -5664,7 +6632,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <div className="row">
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{getTranslation(Ifarrange,lang)}</Label>
+                    {/* <Label>{getTranslation(Ifarrange,lang)}</Label>
                     <Input
                       type="textarea"
                       className="form-control"
@@ -5677,13 +6645,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           family_reaction: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+                    <VoiceTextarea
+  label={<Translated text={getTranslation(Ifarrange,lang)} />}
+  className="form-control"
+  name="family_reaction"
+  value={GenfamiltEditData.family_reaction}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      family_reaction: e.target.value,
+    })
+  }
+/>
+
+
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(mentionYear,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -5695,13 +6678,26 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           first_action_when_known: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="first_action_when_known"
+                      value={GenfamiltEditData.first_action_when_known}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          first_action_when_known: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(action,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -5713,13 +6709,26 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           pattern_of_use: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="pattern_of_use"
+  value={GenfamiltEditData.pattern_of_use}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      pattern_of_use: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(Residence,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -5731,13 +6740,25 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           residence_status_during_use: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="residence_status_during_use"
+  value={GenfamiltEditData.residence_status_during_use}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      residence_status_during_use: e.target.value,
+    })
+  }
+/>
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(experiencedTrauma,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -5749,13 +6770,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           trauma_experience: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+
+<VoiceTextarea
+  className="form-control"
+  name="trauma_experience"
+  value={GenfamiltEditData.trauma_experience}
+  onChange={(e) =>
+  setGenfamilyEditData({
+  ...GenfamiltEditData,
+  trauma_experience: e.target.value,
+  })
+  }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(occurredPatientBehavior,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -5767,13 +6802,26 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           behavior_change: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="behavior_change"
+  value={GenfamiltEditData.behavior_change}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      behavior_change: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(sociality,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -5785,13 +6833,26 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           social_circle_change: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="social_circle_change"
+  value={GenfamiltEditData.social_circle_change}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      social_circle_change: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(effectOfSubstance,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -5803,14 +6864,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           life_effect: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="life_effect"
+  value={GenfamiltEditData.life_effect}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      life_effect: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ChiefComplaint,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -5822,7 +6896,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           chief_complaints: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="chief_complaints"
+  value={GenfamiltEditData.chief_complaints}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      chief_complaints: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
               </div>
@@ -5917,7 +7004,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(absuingSubstance,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -5929,14 +7016,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         asked_to_stop: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="asked_to_stop"
+  value={GenfamiltEditData.asked_to_stop}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      asked_to_stop: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(influenceStop,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -5948,14 +7048,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         reason_to_stop: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="reason_to_stop"
+  value={GenfamiltEditData.reason_to_stop}
+  onChange={(e) =>
+  setGenfamilyEditData({
+  ...GenfamiltEditData,
+  reason_to_stop: e.target.value,
+})
+}
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(whenStopUsing,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -5967,14 +7080,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         work_after_stop: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="work_after_stop"
+                    value={GenfamiltEditData.work_after_stop}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        work_after_stop: e.target.value,
+                      })
+                    }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(itReplaceWhenWhom,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -5986,14 +7112,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         relapse_details: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="relapse_details"
+  value={GenfamiltEditData.relapse_details}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      relapse_details: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(afterRelapse,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -6005,14 +7144,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         post_relapse_change: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="post_relapse_change"
+  value={GenfamiltEditData.post_relapse_change}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      post_relapse_change: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(haveDisorder,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -6024,14 +7176,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         mental_physical_issues: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+
+<VoiceTextarea
+  className="form-control"
+  name="mental_physical_issues"
+                    value={GenfamiltEditData.mental_physical_issues}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        mental_physical_issues: e.target.value,
+                      })
+                    }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(isProblmeOrInjury,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -6043,14 +7209,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         injuries_due_to_substance: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="injuries_due_to_substance"
+  value={GenfamiltEditData.injuries_due_to_substance}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      injuries_due_to_substance: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(DiagnosedOnTreatment,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -6062,14 +7241,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         diagnosis_treatment: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="diagnosis_treatment"
+  value={GenfamiltEditData.diagnosis_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      diagnosis_treatment: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(DoctorPlaceDuration,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -6081,14 +7273,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         doctor_info: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="doctor_info"
+                    value={GenfamiltEditData.doctor_info}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        doctor_info: e.target.value,
+                      })
+                    }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(ifGone,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -6100,14 +7305,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         traditional_treatment: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="traditional_treatment"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(YouFamiliar,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -6119,7 +7337,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         traditional_treatment: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="effect_of_treatment"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
@@ -6128,7 +7359,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <H5 className="mt-3 mb-3">{getTranslation(relationshipFamilyStatus,lang)}</H5>
                 <div className="col-md-6">
                   <Label htmlFor="marital_status">{getTranslation(relationshipStatus,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -6140,7 +7371,58 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         traditional_treatment: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+                  <select
+  className="form-control"
+  name="relationship_status"
+  value={GenfamiltEditData.relationship_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      relationship_status: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Single">
+    {getTranslation("Single / सिंगल", lang)}
+  </option>
+
+  <option value="Married">
+    {getTranslation("Married / शादीशुदा", lang)}
+  </option>
+
+  <option value="Separated">
+    {getTranslation("Separated / अलग", lang)}
+  </option>
+
+  <option value="Widower">
+    {getTranslation("Widower / विधवा", lang)}
+  </option>
+
+  <option value="Committed">
+    {getTranslation("Committed / कमिटेड", lang)}
+  </option>
+
+  <option value="Broke up">
+    {getTranslation("Broke up / ब्रेक अप", lang)}
+  </option>
+</select>
+
+
+{/* <VoiceTextarea
+  className="form-control"
+  name="effect_of_treatment"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+/> */}
+
                   {/* <Input
                   id="marital_status"
                   name="select"
@@ -6177,7 +7459,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-6">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(MarriageArrangement,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -6189,7 +7471,50 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           traditional_treatment: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+                    <select
+  className="form-control"
+  name="marriage_arrangement"
+  value={GenfamiltEditData.marriage_arrangement}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      marriage_arrangement: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="NA">
+    {getTranslation("NA / लागू नहीं", lang)}
+  </option>
+
+  <option value="Arrange">
+    {getTranslation("Arrange / व्यवस्था", lang)}
+  </option>
+
+  <option value="Love">
+    {getTranslation("Love / प्यार", lang)}
+  </option>
+
+  <option value="Love Cum Arrange">
+    {getTranslation("Love Cum Arrange / प्यार सह व्यवस्था", lang)}
+  </option>
+</select>
+
+
+{/* <VoiceTextarea
+  className="form-control"
+  name="marriage_arrangement"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+/> */}
+
                   </FormGroup>
                 </div>
 
@@ -6197,7 +7522,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(afterMerriageLife,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -6209,7 +7534,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           traditional_treatment: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="post_marriage_status"
+                      value={GenfamiltEditData.traditional_treatment}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          traditional_treatment: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -6217,7 +7555,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(isThereInterference,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -6229,7 +7567,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           traditional_treatment: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="relatives_interference"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -6385,7 +7736,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -6397,7 +7748,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           disorder_desc: e.target.value,
                         }))
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="disorder_desc"
+                      value={GenfamiltEditData.disorder_desc}
+                      onChange={(e) =>
+                        setGenfamilyEditData((prev) => ({
+                          ...prev,
+                          disorder_desc: e.target.value,
+                        }))
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -6976,7 +8340,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Current Status? वर्तमान स्थिति?*/}
                 <div className="col-md-12 mt-3">
                   <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -6988,7 +8352,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         psych_problem_desc: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="psych_problem_desc"
+  value={GenfamiltEditData.psych_problem_desc}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      psych_problem_desc: e.target.value,
+    })
+  }
+/>
+
                 </div>
 
                 {/*Current Status? वर्तमान स्थिति?*/}
@@ -7018,7 +8395,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     onChange={(e) => setcustomeCurrentStatus(e.target.value)}
                   />
                 )} */}
-                  <Input
+                  {/* <Input
                     type="text"
                     name="current_status"
                     className="form-control"
@@ -7029,13 +8406,47 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         current_status: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+                  <select
+  name="current_status"
+  className="form-control"
+  value={GenfamiltEditData.current_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      current_status: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Active">
+    {getTranslation("Active / एक्टिव", lang)}
+  </option>
+
+  <option value="Non Active">
+    {getTranslation("Non Active / नॉन एक्टिव", lang)}
+  </option>
+
+  <option value="Passed Away">
+    {getTranslation("Passed Away / निधन हो गया", lang)}
+  </option>
+
+  <option value="Seprated">
+    {getTranslation("Seprated / अलग हो गया", lang)}
+  </option>
+
+  <option value="Others">
+    {getTranslation("Others / अन्य", lang)}
+  </option>
+</select>
+
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(howWasBonding,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7047,14 +8458,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           relationship_with_user: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="relationship_with_user"
+                      value={GenfamiltEditData.relationship_with_user}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          relationship_with_user: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7066,14 +8490,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           family_behavior: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="family_behavior"
+  value={GenfamiltEditData.family_behavior}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      family_behavior: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(monitoringFamily,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7085,14 +8522,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           head_of_family: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="head_of_family"
+  value={GenfamiltEditData.head_of_family}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      head_of_family: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7104,7 +8554,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           relationships_with_family: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="relationships_with_family"
+  value={GenfamiltEditData.relationships_with_family}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      relationships_with_family: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -7114,7 +8577,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(birthConditions,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7126,14 +8589,45 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           birth_conditions: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+                    <select
+  className="form-control"
+  name="birth_conditions"
+  value={GenfamiltEditData.birth_conditions}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      birth_conditions: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Normal">{getTranslation("Normal / नॉर्मल", lang)}</option>
+  <option value="Cesarean">{getTranslation("Cesarean / सिजेरियन", lang)}</option>
+  <option value="Pre Mature">{getTranslation("Pre Mature / प्रीमैच्योर", lang)}</option>
+</select>
+
+
+{/* <VoiceTextarea
+  className="form-control"
+  name="birth_conditions"
+  value={GenfamiltEditData.birth_conditions}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      birth_conditions: e.target.value,
+    })
+  }
+/> */}
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(parentingHistory,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7145,14 +8639,61 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           parenting_history: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+                    <select
+  className="form-control"
+  name="parenting_history"
+  value={GenfamiltEditData.parenting_history}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      parenting_history: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="With Mother Father">
+    {getTranslation("With Mother Father / माँ-बाप के साथ", lang)}
+  </option>
+
+  <option value="With Grandparent">
+    {getTranslation("With Grandparent / दादा-दादी के साथ", lang)}
+  </option>
+
+  <option value="In Hostel">
+    {getTranslation("In Hostel / हॉस्टल में", lang)}
+  </option>
+
+  <option value="With Relatives">
+    {getTranslation("With Relatives / रिश्तेदारों के साथ", lang)}
+  </option>
+
+  <option value="With Single Parent">
+    {getTranslation("With Single Parent / सिंगल पेरेंट के साथ", lang)}
+  </option>
+</select>
+
+
+{/* <VoiceTextarea
+  className="form-control"
+  name="parenting_history"
+  value={GenfamiltEditData.parenting_history}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      parenting_history: e.target.value,
+    })
+  }
+/> */}
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(wasThereAnyConflict,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7164,7 +8705,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           family_conflict: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="family_conflict"
+  value={GenfamiltEditData.family_conflict}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      family_conflict: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -7172,7 +8726,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 सामाजिकता जहां पैदा हुआ और रहा  है?*/}
                 <div className="col-md-12">
                   <Label htmlFor="birthPlace">{getTranslation(socialityWhere,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="text"
                     id="birthPlace"
                     name="sociality_living"
@@ -7183,7 +8737,35 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         sociality_living: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<select
+  className="form-control"
+  id="birthPlace"
+  name="sociality_living"
+  value={GenfamiltEditData.sociality_living}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      sociality_living: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Addict Surrounding">
+    {getTranslation("Addict Surrounding / नशेड़ी आस-पास", lang)}
+  </option>
+
+  <option value="Social Atmosphere">
+    {getTranslation("Social Atmosphere / सामाजिक माहौल", lang)}
+  </option>
+
+  <option value="Anti Social Locality">
+    {getTranslation("Anti Social Locality / असामाजिक इलाका", lang)}
+  </option>
+</select>
+
 
                   <br />
                   <Label htmlFor="birthPlace">{getTranslation(highRiskBehavior,lang)}</Label>
@@ -7204,7 +8786,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12 mt-3 mb-3">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(whatWasImpect,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7216,14 +8798,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           impact_of_movies: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="impact_of_movies"
+                      value={GenfamiltEditData.impact_of_movies}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          impact_of_movies: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(hasAnyoneEverAbused,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7235,7 +8830,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           abuse_history: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="abuse_history"
+  value={GenfamiltEditData.abuse_history}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      abuse_history: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -7274,7 +8882,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                 )} */}
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -7286,7 +8894,66 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         education_status: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  name="education_status"
+  value={GenfamiltEditData.education_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      education_status: e.target.value,
+    })
+  }
+/> */}
+<select
+  className="form-control"
+  name="education_status"
+  value={GenfamiltEditData.education_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      education_status: e.target.value,
+    })
+  }
+>
+<option value="">{getTranslation("Select Education Status: / चुनें शिक्षा की स्थिति:", lang)}</option>
+
+  <option value="Illiterate">
+    {getTranslation("Illiterate / अनपढ़", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="5th">
+    {getTranslation("5th / 5वीं", lang)}
+  </option>
+
+  <option value="10th">
+    {getTranslation("10th / 10वीं", lang)}
+  </option>
+
+  <option value="12th">
+    {getTranslation("12th / 12वीं", lang)}
+  </option>
+
+  <option value="Graduate">
+    {getTranslation("Graduate / ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Post Graduate">
+    {getTranslation("Post Graduate / पोस्ट ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+</select>
+
+
                 </div>
 
                 {/*Occupational status? कार्य की स्थिति?*/}
@@ -7321,7 +8988,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                 )} */}
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -7333,14 +9000,66 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         occupation_status: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  name="occupation_status"
+  value={GenfamiltEditData.occupation_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      occupation_status: e.target.value,
+    })
+  }
+/> */}
+
+<select
+  className="form-control"
+  name="occupation_status"
+  value={GenfamiltEditData.occupation_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      occupation_status: e.target.value,
+    })
+  }
+>
+<option value="">{getTranslation("Select Occupational status? / चुनें कार्य की स्थिति?", lang)}</option>
+
+  <option value="Working">
+    {getTranslation("Working / काम कर रहा है", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="Expelled due to addiction">
+    {getTranslation("Expelled due to addiction / लत की वजह से निकाला गया", lang)}
+  </option>
+
+  <option value="Switched due to addiction">
+    {getTranslation("Switched due to addiction / लत की वजह से स्विच किया गया", lang)}
+  </option>
+
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+</select>
+
+
                 </div>
 
                 {/*If dropout what is the reason यदि ड्रॉपआउट हुआ तो क्या कारण है?*/}
                 <div className="col-md-12 mt-3">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ifDropout,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7352,7 +9071,46 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           dropout_reason: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  name="dropout_reason"
+  value={GenfamiltEditData.dropout_reason}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      dropout_reason: e.target.value,
+    })
+  }
+/> */}
+<select
+  className="form-control"
+  name="dropout_reason"
+  value={GenfamiltEditData.dropout_reason}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      dropout_reason: e.target.value,
+    })
+  }
+>
+<option value="">{getTranslation("Select If dropout what is the reason / / चुनें यदि ड्रॉपआउट हुआ तो क्या कारण है?", lang)}</option>
+
+  <option value="Addiction">
+    {getTranslation("Addiction / लत", lang)}
+  </option>
+
+  <option value="Personal">
+    {getTranslation("Personal / पर्सनल", lang)}
+  </option>
+
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+</select>
+
+
                   </FormGroup>
                 </div>
 
@@ -7360,7 +9118,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(studyWorkDetails,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7372,7 +9130,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           work_details: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="work_details"
+  value={GenfamiltEditData.work_details}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      work_details: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -7380,7 +9151,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(Hobbies1,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7392,7 +9163,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           hobbies: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="hobbies"
+  value={GenfamiltEditData.hobbies}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      hobbies: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -7400,7 +9184,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(extraSkills,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7412,7 +9196,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           skills: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="skills"
+                      value={GenfamiltEditData.skills}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          skills: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -7421,7 +9218,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(achievemntInLife,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7433,7 +9230,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           achievements: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="achievements"
+  value={GenfamiltEditData.achievements}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      achievements: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -7445,7 +9255,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(socialBehavior1,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7457,14 +9267,50 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           social_behavior: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  name="social_behavior"
+  value={GenfamiltEditData.social_behavior}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      social_behavior: e.target.value,
+    })
+  }
+/> */}
+
+<select
+  className="form-control"
+  name="social_behavior"
+  value={GenfamiltEditData.social_behavior}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      social_behavior: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Social">
+    {getTranslation("Social / सामाजिक", lang)}
+  </option>
+
+  <option value="Anti Social">
+    {getTranslation("Anti Social / असामाजिक", lang)}
+  </option>
+</select>
+
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7476,14 +9322,58 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           with_whom_spend_time: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+{/* 
+<VoiceTextarea
+  className="form-control"
+  name="with_whom_spend_time"
+  value={GenfamiltEditData.with_whom_spend_time}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      with_whom_spend_time: e.target.value,
+    })
+  }
+/> */}
+
+<select
+  className="form-control"
+  name="with_whom_spend_time"
+  value={GenfamiltEditData.with_whom_spend_time}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      with_whom_spend_time: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Alone">
+    {getTranslation("Alone / अकेले", lang)}
+  </option>
+
+  <option value="With Family">
+    {getTranslation("With Family / परिवार के साथ", lang)}
+  </option>
+
+  <option value="In addict Community">
+    {getTranslation("In addict Community / नशेड़ी समुदाय में", lang)}
+  </option>
+
+  <option value="With Friends">
+    {getTranslation("With Friends / दोस्तों के साथ", lang)}
+  </option>
+</select>
+
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(howManyFriends,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7495,14 +9385,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           number_of_friends: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="number_of_friends"
+  value={GenfamiltEditData.number_of_friends}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      number_of_friends: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(friendSocialStatus,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7514,14 +9417,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           friends_social_status: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="friends_social_status"
+  value={GenfamiltEditData.friends_social_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      friends_social_status: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(howMuchDependent,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7533,14 +9449,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           substance_dependent_friends: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="substance_dependent_friends"
+  value={GenfamiltEditData.substance_dependent_friends}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      substance_dependent_friends: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7552,7 +9481,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           well_wisher_person: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="well_wisher_person"
+  value={GenfamiltEditData.well_wisher_person}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      well_wisher_person: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -7564,7 +9506,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(domesticViolence,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7576,14 +9518,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           domestic_violence: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="domestic_violence"
+  value={GenfamiltEditData.domestic_violence}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      domestic_violence: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7595,14 +9550,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           violence_reason: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="violence_reason"
+  value={GenfamiltEditData.violence_reason}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      violence_reason: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(drugStatus,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7614,14 +9582,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           drug_status_qty: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+
+<VoiceTextarea
+  className="form-control"
+  name="drug_status_qty"
+                      value={GenfamiltEditData.drug_status_qty}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          drug_status_qty: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7633,14 +9615,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           criminal_case: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="criminal_case"
+  value={GenfamiltEditData.criminal_case}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      criminal_case: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(specificCaseDetails,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7652,14 +9647,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           case_details: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  name="case_details"
+  value={GenfamiltEditData.case_details}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      case_details: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(currentCaseStatus,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7671,14 +9679,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           case_status: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="case_status"
+  value={GenfamiltEditData.case_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      case_status: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ifWentToJail,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7690,7 +9712,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           jail_duration: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="jail_duration"
+  value={GenfamiltEditData.jail_duration}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      jail_duration: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -7704,7 +9740,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(whatIsTheMostImportantThing,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7716,14 +9752,29 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           life_priority: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="life_priority"
+  value={GenfamiltEditData.life_priority}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      life_priority: e.target.value,
+    })
+  }
+/>
+
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(lifeAim,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -7735,7 +9786,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           life_aim: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="life_aim"
+  value={GenfamiltEditData.life_aim}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      life_aim: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -7964,7 +10029,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             <div className="row pt-3 pb-3">
               <div className="col-md-3">
                 <Label>{getTranslation(relation,lang)}</Label>
-                <Input
+                {/* <Input
                   type="text"
                   className="form-control mt-2"
                   placeholder="Enter your occupational status"
@@ -7976,13 +10041,47 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       occupational_status: e.target.value,
                     })
                   }
-                />
+                /> */}
+                <select
+  className="form-control mt-2"
+  name="occupational_status"
+  value={GenfamiltEditData.occupational_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      occupational_status: e.target.value,
+    })
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+  <option value="Business">
+    {getTranslation("Business / व्यापार", lang)}
+  </option>
+  <option value="Student">
+    {getTranslation("Student / विद्यार्थी", lang)}
+  </option>
+  <option value="Family Business">
+    {getTranslation("Family Business / पारिवारिक व्यवसाय", lang)}
+  </option>
+  <option value="Farming">
+    {getTranslation("Farming / खेती", lang)}
+  </option>
+  <option value="Not Working">
+    {getTranslation("Not Working / काम नहीं कर", lang)}
+  </option>
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+</select>
+
               </div>
 
               {/* Marital Status */}
               <div className="col-md-3">
                 <Label>{getTranslation(marital,lang)}</Label>
-                <Input
+                {/* <Input
                   type="text"
                   className="form-control mt-2"
                   placeholder="Enter your marital status"
@@ -7994,13 +10093,44 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       marital_status: e.target.value,
                     })
                   }
-                />
+                /> */}
+                <select
+  className="form-control mt-2"
+  name="marital_status"
+  value={GenfamiltEditData.marital_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      marital_status: e.target.value,
+    })
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+  <option value="Single">
+    {getTranslation("Single / अकेला", lang)}
+  </option>
+  <option value="Married">
+    {getTranslation("Married / विवाहित", lang)}
+  </option>
+  <option value="Separated">
+    {getTranslation("Separated / अलग किए", lang)}
+  </option>
+  <option value="Separated due to addiction">
+    {getTranslation("Separated due to addiction / नशे की लत के कारण अलग हो गए", lang)}
+  </option>
+  <option value="Widower">
+    {getTranslation("Widower / विधुर", lang)}
+  </option>
+</select>
+
               </div>
 
               {/* Living Situation */}
               <div className="col-md-3">
                 <Label>{getTranslation(living,lang)}</Label>
-                <Input
+                {/* <Input
                   type="text"
                   className="form-control mt-2"
                   placeholder="Enter your living situation"
@@ -8012,7 +10142,32 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       living_situation: e.target.value,
                     })
                   }
-                />
+                /> */}
+                <select
+  className="form-control mt-2"
+  name="living_situation"
+  value={GenfamiltEditData.living_situation}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      living_situation: e.target.value,
+    })
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+  <option value="With Family">
+    {getTranslation("With Family / परिवार के साथ", lang)}
+  </option>
+  <option value="Single for Job">
+    {getTranslation("Single for Job / नौकरी के लिए सिंगल", lang)}
+  </option>
+  <option value="Single for Study">
+    {getTranslation("Single for Study / पढ़ाई के लिए सिंगल", lang)}
+  </option>
+</select>
+
               </div>
 
               {/* Religion */}
@@ -8132,19 +10287,35 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                     {source.id === "source_any_other" &&
                       GenfamiltEditData[source.id] === "Yes" && (
-                        <textarea
-                          className="form-control mt-2"
-                          rows="3"
-                          placeholder="Please specify"
-                          name="source_other_text"
-                          value={GenfamiltEditData.source_other_text || ""}
-                          onChange={(e) =>
-                            setGenfamilyEditData((prev) => ({
-                              ...prev,
-                              source_other_text: e.target.value,
-                            }))
-                          }
-                        />
+                        // <textarea
+                        //   className="form-control mt-2"
+                        //   rows="3"
+                        //   placeholder="Please specify"
+                        //   name="source_other_text"
+                        //   value={GenfamiltEditData.source_other_text || ""}
+                        //   onChange={(e) =>
+                        //     setGenfamilyEditData((prev) => ({
+                        //       ...prev,
+                        //       source_other_text: e.target.value,
+                        //     }))
+                        //   }
+                        // />
+                        <VoiceTextarea
+  className="form-control mt-2"
+  rows="3"
+  placeholder="Please specify"
+  name="source_other_text"
+  value={GenfamiltEditData.source_other_text || ""}
+  onChange={(e) =>
+    setGenfamilyEditData((prev) => ({
+      ...prev,
+      source_other_text: e.target.value,
+    }))
+  }
+/>
+
+                        
+
                       )}
                   </div>
                 ))}
@@ -8158,7 +10329,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(Ifarrange,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8170,13 +10341,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           family_reaction: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="family_reaction"
+  value={GenfamiltEditData.family_reaction}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      family_reaction: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(mentionYear,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8188,13 +10373,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           first_action_when_known: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="first_action_when_known"
+  value={GenfamiltEditData.first_action_when_known}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      first_action_when_known: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(action,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8206,13 +10405,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           pattern_of_use: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="pattern_of_use"
+                      value={GenfamiltEditData.pattern_of_use}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          pattern_of_use: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(Residence,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8224,13 +10438,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           residence_status_during_use: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="residence_status_during_use"
+  value={GenfamiltEditData.residence_status_during_use}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      residence_status_during_use: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(experiencedTrauma,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8242,13 +10470,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           trauma_experience: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="trauma_experience"
+  value={GenfamiltEditData.trauma_experience}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      trauma_experience: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(occurredPatientBehavior,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8260,13 +10502,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           behavior_change: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="behavior_change"
+  value={GenfamiltEditData.behavior_change}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      behavior_change: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(sociality,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8278,13 +10534,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           social_circle_change: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="social_circle_change"
+                      value={GenfamiltEditData.social_circle_change}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          social_circle_change: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(effectOfSubstance,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8296,14 +10566,29 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           life_effect: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="life_effect"
+  value={GenfamiltEditData.life_effect}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      life_effect: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ChiefComplaint,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8315,7 +10600,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           chief_complaints: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="chief_complaints"
+  value={GenfamiltEditData.chief_complaints}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      chief_complaints: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
               </div>
@@ -8409,7 +10708,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(absuingSubstance,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8421,14 +10720,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         asked_to_stop: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="asked_to_stop"
+  value={GenfamiltEditData.asked_to_stop}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      asked_to_stop: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(influenceStop,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8440,14 +10753,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         reason_to_stop: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="reason_to_stop"
+                    value={GenfamiltEditData.reason_to_stop}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        reason_to_stop: e.target.value,
+                      })
+                    }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(whenStopUsing,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8459,14 +10786,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         work_after_stop: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="work_after_stop"
+  value={GenfamiltEditData.work_after_stop}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      work_after_stop: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(itReplaceWhenWhom,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8478,14 +10819,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         relapse_details: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="relapse_details"
+  value={GenfamiltEditData.relapse_details}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      relapse_details: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(afterRelapse,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8497,14 +10852,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         post_relapse_change: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="post_relapse_change"
+  value={GenfamiltEditData.post_relapse_change}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      post_relapse_change: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(haveDisorder,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8516,14 +10885,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         mental_physical_issues: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="mental_physical_issues"
+  value={GenfamiltEditData.mental_physical_issues}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      mental_physical_issues: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(isProblmeOrInjury,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8535,14 +10918,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         injuries_due_to_substance: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="injuries_due_to_substance"
+                    value={GenfamiltEditData.injuries_due_to_substance}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        injuries_due_to_substance: e.target.value,
+                      })
+                    }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(DiagnosedOnTreatment,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8554,14 +10951,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         diagnosis_treatment: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="diagnosis_treatment"
+  value={GenfamiltEditData.diagnosis_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      diagnosis_treatment: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(DoctorPlaceDuration,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8573,14 +10984,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         doctor_info: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="doctor_info"
+  value={GenfamiltEditData.doctor_info}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      doctor_info: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(ifGone,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8592,14 +11017,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         traditional_treatment: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="traditional_treatment"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+/>
+
                 </FormGroup>
               </div>
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(YouFamiliar,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8611,7 +11050,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         traditional_treatment: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="effect_of_treatment"
+                    value={GenfamiltEditData.traditional_treatment}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        traditional_treatment: e.target.value,
+                      })
+                    }
+/>
+
                 </FormGroup>
               </div>
 
@@ -8620,7 +11073,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <H5 className="mt-3 mb-3">{getTranslation(relationshipFamilyStatus,lang)}</H5>
                 <div className="col-md-6">
                   <Label htmlFor="marital_status">{getTranslation(relationshipStatus,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -8632,7 +11085,55 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         traditional_treatment: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+                  <select
+  className="form-control"
+  name="traditional_treatment"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+  <option value="Single">
+    {getTranslation("Single / सिंगल", lang)}
+  </option>
+  <option value="Married">
+    {getTranslation("Married / शादीशुदा", lang)}
+  </option>
+  <option value="Separated">
+    {getTranslation("Separated / अलग", lang)}
+  </option>
+  <option value="Widower">
+    {getTranslation("Widower / विधवा", lang)}
+  </option>
+  <option value="Committed">
+    {getTranslation("Committed / कमिटेड", lang)}
+  </option>
+  <option value="Broke up">
+    {getTranslation("Broke up / ब्रेक अप", lang)}
+  </option>
+</select>
+
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="relationship_status"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+/> */}
+
                   {/* <Input
                   id="marital_status"
                   name="select"
@@ -8669,7 +11170,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-6">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(relationshipStatus,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8681,7 +11182,55 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           traditional_treatment: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+                    <select
+  className="form-control"
+  name="marriage_arrangement"
+  value={GenfamiltEditData.marriage_arrangement}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      marriage_arrangement: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Love Marriage">
+    {getTranslation("Love Marriage / लव मैरिज", lang)}
+  </option>
+
+  <option value="Arrange Marriage">
+    {getTranslation("Arrange Marriage / अरेंज मैरिज", lang)}
+  </option>
+
+  <option value="Not Married">
+    {getTranslation("Not Married / अविवाहित", lang)}
+  </option>
+
+  <option value="Separated">
+    {getTranslation("Separated / अलग", lang)}
+  </option>
+
+  <option value="Widower">
+    {getTranslation("Widower / विधवा", lang)}
+  </option>
+</select>
+
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="marriage_arrangement"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+/> */}
+
                   </FormGroup>
                 </div>
 
@@ -8689,7 +11238,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(afterMerriageLife,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8701,7 +11250,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           traditional_treatment: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="post_marriage_status"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -8709,7 +11272,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(isThereInterference,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -8721,7 +11284,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           traditional_treatment: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="relatives_interference"
+  value={GenfamiltEditData.traditional_treatment}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      traditional_treatment: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -9405,7 +11982,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 {/*Current Status? वर्तमान स्थिति?*/}
                 <div className="col-md-12 mt-3">
                   <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -9417,7 +11994,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         psych_problem_desc: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="psych_problem_desc"
+                    value={GenfamiltEditData.psych_problem_desc}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        psych_problem_desc: e.target.value,
+                      })
+                    }
+/>
+
                 </div>
 
                 {/*Current Status? वर्तमान स्थिति?*/}
@@ -9447,7 +12038,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     onChange={(e) => setcustomeCurrentStatus(e.target.value)}
                   />
                 )} */}
-                  <Input
+                  {/* <Input
                     type="text"
                     name="current_status"
                     className="form-control"
@@ -9458,13 +12049,47 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         current_status: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+                  <select
+  name="current_status"
+  className="form-control"
+  value={GenfamiltEditData.current_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      current_status: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Active">
+    {getTranslation("Active / एक्टिव", lang)}
+  </option>
+
+  <option value="Non Active">
+    {getTranslation("Non Active / नॉन एक्टिव", lang)}
+  </option>
+
+  <option value="Passed Away">
+    {getTranslation("Passed Away / निधन हो गया", lang)}
+  </option>
+
+  <option value="Seprated">
+    {getTranslation("Seprated / अलग हो गया", lang)}
+  </option>
+
+  <option value="Others">
+    {getTranslation("Others / अन्य", lang)}
+  </option>
+</select>
+
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(howWasBonding,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9476,14 +12101,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           relationship_with_user: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="relationship_with_user"
+                      value={GenfamiltEditData.relationship_with_user}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          relationship_with_user: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9495,14 +12134,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           family_behavior: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="family_behavior"
+                      value={GenfamiltEditData.family_behavior}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          family_behavior: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(monitoringFamily,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9514,14 +12167,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           head_of_family: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="head_of_family"
+  value={GenfamiltEditData.head_of_family}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      head_of_family: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9533,7 +12200,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           relationships_with_family: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="relationships_with_family"
+  value={GenfamiltEditData.relationships_with_family}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      relationships_with_family: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -9543,7 +12224,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(birthConditions,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9555,14 +12236,46 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           birth_conditions: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+                    <select
+  className="form-control"
+  name="birth_conditions"
+  value={GenfamiltEditData.birth_conditions}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      birth_conditions: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Normal">{getTranslation("Normal / नॉर्मल", lang)}</option>
+  <option value="Cesarean">{getTranslation("Cesarean / सिजेरियन", lang)}</option>
+  <option value="Pre Mature">{getTranslation("Pre Mature / प्रीमैच्योर", lang)}</option>
+</select>
+
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="birth_conditions"
+                      value={GenfamiltEditData.birth_conditions}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          birth_conditions: e.target.value,
+                        })
+                      }
+/> */}
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(parentingHistory,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9574,14 +12287,63 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           parenting_history: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<select
+  className="form-control"
+  name="parenting_history"
+  value={GenfamiltEditData.parenting_history}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      parenting_history: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="With Mother Father">
+    {getTranslation("With Mother Father / माँ-बाप के साथ", lang)}
+  </option>
+
+  <option value="With Grandparent">
+    {getTranslation("With Grandparent / दादा-दादी के साथ", lang)}
+  </option>
+
+  <option value="In Hostel">
+    {getTranslation("In Hostel / हॉस्टल में", lang)}
+  </option>
+
+  <option value="With Relatives">
+    {getTranslation("With Relatives / रिश्तेदारों के साथ", lang)}
+  </option>
+
+  <option value="With Single Parent">
+    {getTranslation("With Single Parent / सिंगल पेरेंट के साथ", lang)}
+  </option>
+</select>
+
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="parenting_history"
+                      value={GenfamiltEditData.parenting_history}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          parenting_history: e.target.value,
+                        })
+                      }
+/> */}
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(wasThereAnyConflict,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9593,7 +12355,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           family_conflict: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="family_conflict"
+                      value={GenfamiltEditData.family_conflict}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          family_conflict: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -9601,7 +12377,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 सामाजिकता जहां पैदा हुआ और रहा  है?*/}
                 <div className="col-md-12">
                   <Label htmlFor="birthPlace">{getTranslation(socialityWhere,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="text"
                     id="birthPlace"
                     name="sociality_living"
@@ -9612,7 +12388,34 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         sociality_living: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+                  <select
+  className="form-control"
+  id="birthPlace"
+  name="sociality_living"
+  value={GenfamiltEditData.sociality_living}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      sociality_living: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Addict Surrounding">
+    {getTranslation("Addict Surrounding / नशेड़ी आस-पास", lang)}
+  </option>
+
+  <option value="Social Atmosphere">
+    {getTranslation("Social Atmosphere / सामाजिक माहौल", lang)}
+  </option>
+
+  <option value="Anti Social Locality">
+    {getTranslation("Anti Social Locality / असामाजिक इलाका", lang)}
+  </option>
+</select>
+
 
                   <br />
                   <Label htmlFor="birthPlace">{getTranslation(highRiskBehavior,lang)}</Label>
@@ -9633,7 +12436,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12 mt-3 mb-3">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(whatWasImpect,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9645,14 +12448,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           impact_of_movies: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="impact_of_movies"
+                      value={GenfamiltEditData.impact_of_movies}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          impact_of_movies: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(hasAnyoneEverAbused,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9664,7 +12481,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           abuse_history: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="abuse_history"
+  value={GenfamiltEditData.abuse_history}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      abuse_history: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -9703,7 +12534,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                 )} */}
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -9715,7 +12546,68 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         education_status: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="education_status"
+  value={GenfamiltEditData.education_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      education_status: e.target.value,
+    })
+  }
+/> */}
+
+<select
+  className="form-control"
+  name="education_status"
+  value={GenfamiltEditData.education_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      education_status: e.target.value,
+    })
+  }
+>
+<option value="">{getTranslation("Select Education Status: / चुनें शिक्षा की स्थिति:", lang)}</option>
+
+  <option value="Illiterate">
+    {getTranslation("Illiterate / अनपढ़", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="5th">
+    {getTranslation("5th / 5वीं", lang)}
+  </option>
+
+  <option value="10th">
+    {getTranslation("10th / 10वीं", lang)}
+  </option>
+
+  <option value="12th">
+    {getTranslation("12th / 12वीं", lang)}
+  </option>
+
+  <option value="Graduate">
+    {getTranslation("Graduate / ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Post Graduate">
+    {getTranslation("Post Graduate / पोस्ट ग्रेजुएट", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+</select>
+
+
                 </div>
 
                 {/*Occupational status? कार्य की स्थिति?*/}
@@ -9750,7 +12642,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     />
                   </div>
                 )} */}
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
@@ -9762,14 +12654,67 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         occupation_status: e.target.value,
                       })
                     }
-                  />
+                  /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="occupation_status"
+  value={GenfamiltEditData.occupation_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      occupation_status: e.target.value,
+    })
+  }
+/> */}
+
+<select
+  className="form-control"
+  name="occupation_status"
+  value={GenfamiltEditData.occupation_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      occupation_status: e.target.value,
+    })
+  }
+>
+<option value="">{getTranslation("Select Occupational status? / चुनें कार्य की स्थिति?", lang)}</option>
+
+  <option value="Working">
+    {getTranslation("Working / काम कर रहा है", lang)}
+  </option>
+
+  <option value="Dropout">
+    {getTranslation("Dropout / ड्रॉपआउट", lang)}
+  </option>
+
+  <option value="Student">
+    {getTranslation("Student / स्टूडेंट", lang)}
+  </option>
+
+  <option value="Expelled due to addiction">
+    {getTranslation("Expelled due to addiction / लत की वजह से निकाला गया", lang)}
+  </option>
+
+  <option value="Switched due to addiction">
+    {getTranslation("Switched due to addiction / लत की वजह से स्विच किया गया", lang)}
+  </option>
+
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+</select>
+
+
                 </div>
 
                 {/*If dropout what is the reason यदि ड्रॉपआउट हुआ तो क्या कारण है?*/}
                 <div className="col-md-12 mt-3">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ifDropout,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9781,7 +12726,47 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           dropout_reason: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="dropout_reason"
+  value={GenfamiltEditData.dropout_reason}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      dropout_reason: e.target.value,
+    })
+  }
+/> */}
+
+<select
+  className="form-control"
+  name="dropout_reason"
+  value={GenfamiltEditData.dropout_reason}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      dropout_reason: e.target.value,
+    })
+  }
+>
+<option value="">{getTranslation("Select If dropout what is the reason / / चुनें यदि ड्रॉपआउट हुआ तो क्या कारण है?", lang)}</option>
+
+  <option value="Addiction">
+    {getTranslation("Addiction / लत", lang)}
+  </option>
+
+  <option value="Personal">
+    {getTranslation("Personal / पर्सनल", lang)}
+  </option>
+
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+</select>
+
                   </FormGroup>
                 </div>
 
@@ -9789,7 +12774,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(studyWorkDetails,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9801,7 +12786,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           work_details: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="work_details"
+                      value={GenfamiltEditData.work_details}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          work_details: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -9809,7 +12808,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(Hobbies1,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9821,7 +12820,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           hobbies: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="hobbies"
+  value={GenfamiltEditData.hobbies}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      hobbies: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -9829,7 +12842,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(extraSkills,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9841,7 +12854,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           skills: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="skills"
+                      value={GenfamiltEditData.skills}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          skills: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -9850,7 +12877,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(achievemntInLife,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9862,7 +12889,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           achievements: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="achievements"
+  value={GenfamiltEditData.achievements}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      achievements: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -9874,7 +12915,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(socialBehavior1,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9886,14 +12927,51 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           social_behavior: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="social_behavior"
+  value={GenfamiltEditData.social_behavior}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      social_behavior: e.target.value,
+    })
+  }
+/> */}
+
+<select
+  className="form-control"
+  name="social_behavior"
+  value={GenfamiltEditData.social_behavior}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      social_behavior: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Social">
+    {getTranslation("Social / सामाजिक", lang)}
+  </option>
+
+  <option value="Anti Social">
+    {getTranslation("Anti Social / असामाजिक", lang)}
+  </option>
+</select>
+
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9905,14 +12983,59 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           with_whom_spend_time: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="with_whom_spend_time"
+  value={GenfamiltEditData.with_whom_spend_time}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      with_whom_spend_time: e.target.value,
+    })
+  }
+/> */}
+
+<select
+  className="form-control"
+  name="with_whom_spend_time"
+  value={GenfamiltEditData.with_whom_spend_time}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      with_whom_spend_time: e.target.value,
+    })
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Alone">
+    {getTranslation("Alone / अकेले", lang)}
+  </option>
+
+  <option value="With Family">
+    {getTranslation("With Family / परिवार के साथ", lang)}
+  </option>
+
+  <option value="In addict Community">
+    {getTranslation("In addict Community / नशेड़ी समुदाय में", lang)}
+  </option>
+
+  <option value="With Friends">
+    {getTranslation("With Friends / दोस्तों के साथ", lang)}
+  </option>
+</select>
+
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(howManyFriends,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9924,14 +13047,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           number_of_friends: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="number_of_friends"
+                      value={GenfamiltEditData.number_of_friends}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          number_of_friends: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(friendSocialStatus,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9943,14 +13080,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           friends_social_status: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="friends_social_status"
+                      value={GenfamiltEditData.friends_social_status}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          friends_social_status: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(howMuchDependent,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9962,14 +13113,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           substance_dependent_friends: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="substance_dependent_friends"
+                      value={GenfamiltEditData.substance_dependent_friends}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          substance_dependent_friends: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -9981,7 +13146,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           well_wisher_person: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="well_wisher_person"
+  value={GenfamiltEditData.well_wisher_person}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      well_wisher_person: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -9993,7 +13172,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(domesticViolence,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -10005,14 +13184,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           domestic_violence: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="domestic_violence"
+  value={GenfamiltEditData.domestic_violence}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      domestic_violence: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -10024,14 +13217,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           violence_reason: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="violence_reason"
+                      value={GenfamiltEditData.violence_reason}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          violence_reason: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(drugStatus,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -10043,14 +13250,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           drug_status_qty: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="drug_status_qty"
+  value={GenfamiltEditData.drug_status_qty}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      drug_status_qty: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -10062,14 +13283,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           criminal_case: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="criminal_case"
+                      value={GenfamiltEditData.criminal_case}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          criminal_case: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(specificCaseDetails,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -10081,14 +13316,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           case_details: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="case_details"
+                      value={GenfamiltEditData.case_details}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          case_details: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(currentCaseStatus,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -10100,14 +13349,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           case_status: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="case_status"
+  value={GenfamiltEditData.case_status}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      case_status: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(ifWentToJail,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -10119,7 +13382,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           jail_duration: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="jail_duration"
+  value={GenfamiltEditData.jail_duration}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      jail_duration: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 
@@ -10133,7 +13410,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(whatIsTheMostImportantThing,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -10145,14 +13422,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           life_priority: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="life_priority"
+                      value={GenfamiltEditData.life_priority}
+                      onChange={(e) =>
+                        setGenfamilyEditData({
+                          ...GenfamiltEditData,
+                          life_priority: e.target.value,
+                        })
+                      }
+/>
+
                   </FormGroup>
                 </div>
 
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
                     <Label>{getTranslation(lifeAim,lang)}</Label>
-                    <Input
+                    {/* <Input
                       type="textarea"
                       className="form-control"
                       rows="3"
@@ -10164,7 +13455,21 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           life_aim: e.target.value,
                         })
                       }
-                    />
+                    /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="life_aim"
+  value={GenfamiltEditData.life_aim}
+  onChange={(e) =>
+    setGenfamilyEditData({
+      ...GenfamiltEditData,
+      life_aim: e.target.value,
+    })
+  }
+/>
+
                   </FormGroup>
                 </div>
 

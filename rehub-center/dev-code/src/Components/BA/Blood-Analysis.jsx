@@ -58,6 +58,8 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import { useReactToPrint } from "react-to-print";
+
 const BloodAnalysis = () => {
 
      const { lang } = useLang(); // get current language from context
@@ -1259,6 +1261,18 @@ const SubmitBAReadmissionFormHandler = async (e) => {
         });
     };
 
+
+     //Print viewable form data handler
+       const handlePrint = useReactToPrint({
+            content: () => pdfRef.current,
+            pageStyle: `
+              @page { size: A4; margin: 12mm; }
+              @media print {
+                body { margin: 0; }
+              }
+            `,
+          });
+
   return (
    <frameElement>
      {/* register user data into data table format start */}
@@ -1672,6 +1686,12 @@ const SubmitBAReadmissionFormHandler = async (e) => {
         ? getTranslation("Your BA Report is being downloaded... / आपका BA रिपोर्ट डाउनलोड हो रहा है...",lang)
         : getTranslation("Download Blood Analysis Report/रक्त विश्लेषण रिपोर्ट डाउनलोड करें",lang)}
     </button>
+    <button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
   </div>
 </CommonModal>
 {/* View BA data into modal end */}

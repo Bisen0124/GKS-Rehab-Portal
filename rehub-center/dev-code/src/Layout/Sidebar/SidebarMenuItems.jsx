@@ -5,7 +5,18 @@ import { LI, UL, H6 } from '../../AbstractElements';
 import { MENUITEMS } from './Menu';
 import { Label } from 'reactstrap';
 
+// import Translated from "../Translated";
+// import { useLang } from "../../contexts/LangContext";
+// import { getTranslation } from "../../utils/translator";
+
+import Translated from '../../Components/Translated';
+import { useLang } from '../../contexts/LangContext';
+import { getTranslation } from '../../utils/translator';
+
 const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
+
+  const { lang } = useLang(); // get current language from context
+
   const { t } = useTranslation();
 
   const toggletNavActive = (item) => {
@@ -59,7 +70,7 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                       event.preventDefault(); setNavActive(menuItem);
                     }} >
                     {menuItem.icon !== undefined && <menuItem.icon />}
-                    <span>{t(menuItem.title)}</span>
+                    <span>{t(getTranslation(menuItem.title,lang))}</span>
                     <div className="according-menu">
                       {menuItem.active ? (
                         <i className="fa fa-angle-down"></i>
@@ -79,7 +90,7 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                   >
                     {menuItem.icon !== undefined && <menuItem.icon />}
 
-                    <span>{t(menuItem.title)}</span>
+                    <span>{t(getTranslation(menuItem.title,lang))}</span>
 
                     {menuItem.badge && (
                       <Label className={menuItem.badge}>
@@ -112,7 +123,7 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                                   event.preventDefault();
                                   toggletNavActive(childrenItem);
                                 }}>
-                                {t(childrenItem.title)}
+                                {t(getTranslation(childrenItem.title,lang))}
                                 <div className="according-menu">
                                   {childrenItem.active ? (<i className="fa fa-caret-down"></i>) : (<i className="fa fa-caret-right"></i>)} </div>
                               </a>
@@ -121,7 +132,7 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                               <Link
                                 to={childrenItem.path} className={`${childrenItem.active ? 'active' : ''}`}
                                 onClick={() => toggletNavActive(childrenItem)} >
-                                {t(childrenItem.title)}
+                                {t(getTranslation(childrenItem.title,lang))}
                               </Link>
                             )}
                             {childrenItem.children && (

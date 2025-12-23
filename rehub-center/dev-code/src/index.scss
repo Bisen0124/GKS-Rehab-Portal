@@ -115,3 +115,57 @@ span.Discharge {
 .bEqbyz{
   justify-content: center !important;
 }
+
+
+.section-title {
+  border-bottom: 2px solid #000;
+  padding-bottom: 6px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.print-section {
+  page-break-inside: avoid;
+}
+
+@media print {
+  table {
+    page-break-inside: avoid;
+  }
+}
+
+/* PRINT FIX */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-area {
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    border: 1px solid #000 !important;
+    font-size: 12px !important;
+    padding: 6px !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+}

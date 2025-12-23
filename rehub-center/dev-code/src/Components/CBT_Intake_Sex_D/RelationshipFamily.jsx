@@ -110,6 +110,10 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
+
+import { useReactToPrint } from "react-to-print";
+
 function RelationshipFamily() {
 
    const { lang } = useLang(); // get current language from context
@@ -170,11 +174,11 @@ function RelationshipFamily() {
 
             let isIRFCompleted = false;
           let userStatus = (
-            <p className="badge bg-warning text-dark p-2">{"Pending"}</p>
+            <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित",lang)}</p>
           );
           if (admitDate && IRFDate && admitDate > IRFDate) {
              isIRFCompleted = true;
-            userStatus = <p className="badge bg-success p-2">{"Completed"}</p>;
+            userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।",lang)}</p>;
           }
 
           const dischargeStatus = user.discharge_status_text || "Unknown";
@@ -1427,7 +1431,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
       .from(element)
       .save()
       .then(() => {
-        toast.success("Download complete!");
+        toast.success(getTranslation("Download complete!/डाउनलोड पूर्ण!",lang));
         element.classList.remove("pdf-scale");
 
         setTimeout(() => {
@@ -1435,6 +1439,17 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         }, 2000);
       });
   };
+
+ //Print viewable form data handler
+               const handlePrint = useReactToPrint({
+                    content: () => pdfRef.current,
+                    pageStyle: `
+                      @page { size: A4; margin: 12mm; }
+                      @media print {
+                        body { margin: 0; }
+                      }
+                    `,
+                  });
 
   //Submit IRF from handler end
   return (
@@ -1460,7 +1475,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                          placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1523,7 +1538,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                          placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchTextone}
                           onChange={handleSearchChangeone}
                         />
@@ -1608,28 +1623,106 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               {/* Relationship Status */}
               <div className="col-md-6">
                 <Label htmlFor="marital_status">{getTranslation(relationshipStatus,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="relationship_status"
                   value={formData.relationship_status}
                   onChange={handleChange}
-                />
+                /> */}
+
+{/* <VoiceTextarea
+    className="form-control"
+    rows="3"
+    name="relationship_status"
+    value={formData.relationship_status}
+    onChange={handleChange}
+/> */}
+
+<select
+  className="form-control"
+  name="relationship_status"
+  value={formData.relationship_status}
+  onChange={handleChange}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Single">
+    {getTranslation("Single / सिंगल", lang)}
+  </option>
+
+  <option value="Married">
+    {getTranslation("Married / शादीशुदा", lang)}
+  </option>
+
+  <option value="Seprated">
+    {getTranslation("Seprated / अलग", lang)}
+  </option>
+
+  <option value="Widower">
+    {getTranslation("Widower / विधवा", lang)}
+  </option>
+
+  <option value="Commited">
+    {getTranslation("Commited / कमिटेड", lang)}
+  </option>
+
+  <option value="Broked up">
+    {getTranslation("Broked up / ब्रेक अप", lang)}
+  </option>
+</select>
+
+
               </div>
 
               {/* Marriage Arrangement */}
               <div className="col-md-6">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(MarriageArrangement,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="marriage_arrangement"
                     value={formData.marriage_arrangement}
                     onChange={handleChange}
-                  />
+                  /> */}
+
+{/* <VoiceTextarea
+    className="form-control"
+    rows="3"
+    name="relationship_status"
+    value={formData.relationship_status}
+    onChange={handleChange}
+/> */}
+
+<select
+  className="form-control"
+  name="relationship_status"
+  value={formData.relationship_status}
+  onChange={handleChange}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+
+  <option value="Arrange">
+    {getTranslation("Arrange / व्यवस्था", lang)}
+  </option>
+
+  <option value="Love">
+    {getTranslation("Love / प्यार", lang)}
+  </option>
+
+  <option value="Love Cum Arrange">
+    {getTranslation("Love Cum Arrange / प्यार सह व्यवस्था", lang)}
+  </option>
+</select>
+
+
                 </FormGroup>
               </div>
 
@@ -1637,14 +1730,23 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(afterMerriageLife,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="after_marriage_status"
                     value={formData.after_marriage_status}
                     onChange={handleChange}
-                  />
+                  /> */}
+
+<VoiceTextarea
+    className="form-control"
+    rows="3"
+    name="after_marriage_status"
+    value={formData.after_marriage_status}
+    onChange={handleChange}
+/>
+
                 </FormGroup>
               </div>
 
@@ -1747,14 +1849,23 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="disorder_desc"
                     value={formData.disorder_desc}
                     onChange={handleChange}
-                  />
+                  /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="disorder_desc"
+   value={formData.disorder_desc}
+   onChange={handleChange}
+/>
+
                 </FormGroup>
               </div>
 
@@ -2394,40 +2505,87 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               {/* Psychological Problem */}
               <div className="col-md-12 mt-3">
                 <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="psych_problem_desc"
                   value={formData.psych_problem_desc}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+    className="form-control"
+    rows="3"
+    name="psych_problem_desc"
+    value={formData.psych_problem_desc}
+    onChange={handleChange}
+/>
+
               </div>
 
               {/* Current Status */}
               <div className="col-md-12 mt-3 mb-3">
                 <Label>{getTranslation(currentStatus,lang)}</Label>
-                <Input
+                {/* <Input
                   type="text"
                   name="current_status"
                   className="form-control"
                   value={formData.current_status}
                   onChange={handleChange}
-                />
+                /> */}
+                <select
+  className="form-control"
+  name="current_status"
+  value={formData.current_status}
+  onChange={handleChange}
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Active">
+    {getTranslation("Active / एक्टिव", lang)}
+  </option>
+
+  <option value="Non Active">
+    {getTranslation("Non Active / नॉन एक्टिव", lang)}
+  </option>
+
+  <option value="Passed Away">
+    {getTranslation("Passed Away / निधन हो गया", lang)}
+  </option>
+
+  <option value="Seprated">
+    {getTranslation("Seprated / अलग हो गया", lang)}
+  </option>
+
+  <option value="Others">
+    {getTranslation("Others / अन्य", lang)}
+  </option>
+</select>
+
               </div>
 
               {/* Relationship with User */}
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(howWasBonding,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="bonding_relation_with_user"
                     value={formData.bonding_relation_with_user}
                     onChange={handleChange}
-                  />
+                  /> */}
+
+<VoiceTextarea
+     className="form-control"
+     rows="3"
+     name="bonding_relation_with_user"
+     value={formData.bonding_relation_with_user}
+     onChange={handleChange}
+/>
+
                 </FormGroup>
               </div>
 
@@ -2435,14 +2593,23 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="family_behavior_with_patient"
                     value={formData.family_behavior_with_patient}
                     onChange={handleChange}
-                  />
+                  /> */}
+
+<VoiceTextarea
+       className="form-control"
+       rows="3"
+       name="family_behavior_with_patient"
+       value={formData.family_behavior_with_patient}
+       onChange={handleChange}
+/>
+
                 </FormGroup>
               </div>
 
@@ -2450,14 +2617,24 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(monitoringFamily,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="head_of_family"
                     value={formData.head_of_family}
                     onChange={handleChange}
-                  />
+                  /> */}
+
+
+<VoiceTextarea
+      className="form-control"
+      rows="3"
+      name="head_of_family"
+      value={formData.head_of_family}
+      onChange={handleChange}
+/>
+
                 </FormGroup>
               </div>
 
@@ -2465,14 +2642,23 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     name="family_relationships"
                     value={formData.family_relationships}
                     onChange={handleChange}
-                  />
+                  /> */}
+
+<VoiceTextarea
+     className="form-control"
+     rows="3"
+     name="family_relationships"
+     value={formData.family_relationships}
+     onChange={handleChange}
+/>
+
                 </FormGroup>
               </div>
 
@@ -2807,6 +2993,14 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               ? getTranslation("Your IRF Report is being downloaded.../ आपका IRF डाउनलोड हो रहा है...",lang)
               : getTranslation("Download IRF Report/आईआरएफ रिपोर्ट डाउनलोड करें",lang)}
           </button>
+
+<button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
+
         </div>
       </CommonModal>
       {/* View IRF form data end */}
@@ -2846,7 +3040,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Relationship Status */}
     <div className="col-md-6">
       <Label>{getTranslation(relationshipStatus,lang)}</Label>
-      <Input
+      {/* <Input
         type="textarea"
         rows="3"
         value={IRFEditData?.relationship_status || ""}
@@ -2856,14 +3050,65 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
             relationship_status: e.target.value,
           }))
         }
-      />
+      /> */}
+
+{/* <VoiceTextarea
+      rows="3"
+      value={IRFEditData?.relationship_status || ""}
+      onChange={(e) =>
+        setIRFEditData((prev) => ({
+          ...prev,
+          relationship_status: e.target.value,
+        }))
+      }
+/> */}
+
+<select
+  className="form-control"
+  name="relationship_status"
+  value={IRFEditData?.relationship_status || ""}
+  onChange={(e) =>
+    setIRFEditData((prev) => ({
+      ...prev,
+      relationship_status: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Single">
+    {getTranslation("Single / सिंगल", lang)}
+  </option>
+
+  <option value="Married">
+    {getTranslation("Married / शादीशुदा", lang)}
+  </option>
+
+  <option value="Seprated">
+    {getTranslation("Seprated / अलग", lang)}
+  </option>
+
+  <option value="Widower">
+    {getTranslation("Widower / विधवा", lang)}
+  </option>
+
+  <option value="Commited">
+    {getTranslation("Commited / कमिटेड", lang)}
+  </option>
+
+  <option value="Broked up">
+    {getTranslation("Broked up / ब्रेक अप", lang)}
+  </option>
+</select>
+
+
     </div>
 
     {/* Marriage Arrangement */}
     <div className="col-md-6">
       <FormGroup className="mb-0">
         <Label>{getTranslation(MarriageArrangement,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFEditData?.marriage_arrangement || ""}
@@ -2873,7 +3118,50 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               marriage_arrangement: e.target.value,
             }))
           }
-        />
+        /> */}
+
+{/* <VoiceTextarea
+     rows="3"
+     value={IRFEditData?.marriage_arrangement || ""}
+     onChange={(e) =>
+       setIRFEditData((prev) => ({
+         ...prev,
+         marriage_arrangement: e.target.value,
+       }))
+     }
+/> */}
+
+<select
+  className="form-control"
+  name="marriage_arrangement"
+  value={IRFEditData?.marriage_arrangement || ""}
+  onChange={(e) =>
+    setIRFEditData((prev) => ({
+      ...prev,
+      marriage_arrangement: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+
+  <option value="Arrange">
+    {getTranslation("Arrange / व्यवस्था", lang)}
+  </option>
+
+  <option value="Love">
+    {getTranslation("Love / प्यार", lang)}
+  </option>
+
+  <option value="Love Cum Arrange">
+    {getTranslation("Love Cum Arrange / प्यार सह व्यवस्था", lang)}
+  </option>
+</select>
+
+
       </FormGroup>
     </div>
 
@@ -2881,7 +3169,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(afterMerriageLife,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFEditData?.after_marriage_status || ""}
@@ -2891,7 +3179,19 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               after_marriage_status: e.target.value,
             }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+    rows="3"
+    value={IRFEditData?.after_marriage_status || ""}
+    onChange={(e) =>
+      setIRFEditData((prev) => ({
+        ...prev,
+        after_marriage_status: e.target.value,
+      }))
+    }
+/>
+
       </FormGroup>
     </div>
 
@@ -2968,14 +3268,23 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
 
       <FormGroup className="mb-0">
       <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFEditData?.disorder_desc || ""}
           onChange={(e) =>
             setIRFEditData((prev) => ({ ...prev, disorder_desc: e.target.value }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+  rows="3"
+  value={IRFEditData?.disorder_desc || ""}
+  onChange={(e) =>
+    setIRFEditData((prev) => ({ ...prev, disorder_desc: e.target.value }))
+  }
+/>
+
       </FormGroup>
     </div>
 
@@ -3097,33 +3406,76 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     {/* Psychological Problem */}
     <div className="col-md-12 mt-3">
       <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
-      <Input
+      {/* <Input
         type="textarea"
         rows="3"
         value={IRFEditData?.psych_problem_desc || ""}
         onChange={(e) =>
           setIRFEditData((prev) => ({ ...prev, psych_problem_desc: e.target.value }))
         }
-      />
+      /> */}
+
+<VoiceTextarea
+   rows="3"
+   value={IRFEditData?.psych_problem_desc || ""}
+   onChange={(e) =>
+     setIRFEditData((prev) => ({ ...prev, psych_problem_desc: e.target.value }))
+   }
+/>
+
     </div>
 
     {/* Current Status */}
     <div className="col-md-12 mt-3 mb-3">
       <Label>{getTranslation(currentStatus,lang)}</Label>
-      <Input
+      {/* <Input
         type="text"
         value={IRFEditData?.current_status || ""}
         onChange={(e) =>
           setIRFEditData((prev) => ({ ...prev, current_status: e.target.value }))
         }
-      />
+      /> */}
+      <select
+  className="form-control"
+  name="current_status"
+  value={IRFEditData?.current_status || ""}
+  onChange={(e) =>
+    setIRFEditData((prev) => ({
+      ...prev,
+      current_status: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Active">
+    {getTranslation("Active / एक्टिव", lang)}
+  </option>
+
+  <option value="Non Active">
+    {getTranslation("Non Active / नॉन एक्टिव", lang)}
+  </option>
+
+  <option value="Passed Away">
+    {getTranslation("Passed Away / निधन हो गया", lang)}
+  </option>
+
+  <option value="Seprated">
+    {getTranslation("Seprated / अलग हो गया", lang)}
+  </option>
+
+  <option value="Others">
+    {getTranslation("Others / अन्य", lang)}
+  </option>
+</select>
+
     </div>
 
     {/* Relationship with User */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(howWasBonding,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFEditData?.bonding_relation_with_user || ""}
@@ -3133,7 +3485,19 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               bonding_relation_with_user: e.target.value,
             }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+     rows="3"
+     value={IRFEditData?.bonding_relation_with_user || ""}
+     onChange={(e) =>
+       setIRFEditData((prev) => ({
+         ...prev,
+         bonding_relation_with_user: e.target.value,
+       }))
+     }
+/>
+
       </FormGroup>
     </div>
 
@@ -3141,7 +3505,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFEditData?.family_behavior_with_patient || ""}
@@ -3151,7 +3515,19 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               family_behavior_with_patient: e.target.value,
             }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+    rows="3"
+    value={IRFEditData?.family_behavior_with_patient || ""}
+    onChange={(e) =>
+      setIRFEditData((prev) => ({
+        ...prev,
+        family_behavior_with_patient: e.target.value,
+      }))
+    }
+/>
+
       </FormGroup>
     </div>
 
@@ -3159,14 +3535,23 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(monitoringFamily,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFEditData?.head_of_family || ""}
           onChange={(e) =>
             setIRFEditData((prev) => ({ ...prev, head_of_family: e.target.value }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+   rows="3"
+   value={IRFEditData?.head_of_family || ""}
+   onChange={(e) =>
+     setIRFEditData((prev) => ({ ...prev, head_of_family: e.target.value }))
+   }
+/>
+
       </FormGroup>
     </div>
 
@@ -3174,7 +3559,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFEditData?.family_relationships || ""}
@@ -3184,7 +3569,19 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               family_relationships: e.target.value,
             }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+     rows="3"
+     value={IRFEditData?.family_relationships || ""}
+     onChange={(e) =>
+       setIRFEditData((prev) => ({
+         ...prev,
+         family_relationships: e.target.value,
+       }))
+     }
+/>
+
       </FormGroup>
     </div>
 
@@ -3245,7 +3642,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         {/* Relationship Status */}
         <div className="col-md-6">
           <Label>{getTranslation(relationshipStatus,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             value={IRFPrefillData?.relationship_status || ""}
@@ -3255,14 +3652,65 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                 relationship_status: e.target.value,
               }))
             }
-          />
+          /> */}
+
+{/* <VoiceTextarea
+      rows="3"
+      value={IRFPrefillData?.relationship_status || ""}
+      onChange={(e) =>
+        setIRFPrefillData((prev) => ({
+          ...prev,
+          relationship_status: e.target.value,
+        }))
+      }
+/> */}
+
+<select
+  className="form-control"
+  name="relationship_status"
+  value={IRFPrefillData?.relationship_status || ""}
+  onChange={(e) =>
+    setIRFPrefillData((prev) => ({
+      ...prev,
+      relationship_status: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Single">
+    {getTranslation("Single / सिंगल", lang)}
+  </option>
+
+  <option value="Married">
+    {getTranslation("Married / शादीशुदा", lang)}
+  </option>
+
+  <option value="Seprated">
+    {getTranslation("Seprated / अलग", lang)}
+  </option>
+
+  <option value="Widower">
+    {getTranslation("Widower / विधवा", lang)}
+  </option>
+
+  <option value="Commited">
+    {getTranslation("Commited / कमिटेड", lang)}
+  </option>
+
+  <option value="Broked up">
+    {getTranslation("Broked up / ब्रेक अप", lang)}
+  </option>
+</select>
+
+
         </div>
 
         {/* Marriage Arrangement */}
         <div className="col-md-6">
           <FormGroup className="mb-0">
             <Label>{getTranslation(MarriageArrangement,lang)}</Label>
-            <Input
+            {/* <Input
               type="textarea"
               rows="3"
               value={IRFPrefillData?.marriage_arrangement || ""}
@@ -3272,7 +3720,50 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   marriage_arrangement: e.target.value,
                 }))
               }
-            />
+            /> */}
+
+{/* <VoiceTextarea
+     rows="3"
+     value={IRFPrefillData?.marriage_arrangement || ""}
+     onChange={(e) =>
+       setIRFPrefillData((prev) => ({
+         ...prev,
+         marriage_arrangement: e.target.value,
+       }))
+     }
+/> */}
+
+<select
+  className="form-control"
+  name="marriage_arrangement"
+  value={IRFPrefillData?.marriage_arrangement || ""}
+  onChange={(e) =>
+    setIRFPrefillData((prev) => ({
+      ...prev,
+      marriage_arrangement: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="NA">
+    {getTranslation("NA / ना", lang)}
+  </option>
+
+  <option value="Arrange">
+    {getTranslation("Arrange / व्यवस्था", lang)}
+  </option>
+
+  <option value="Love">
+    {getTranslation("Love / प्यार", lang)}
+  </option>
+
+  <option value="Love Cum Arrange">
+    {getTranslation("Love Cum Arrange / प्यार सह व्यवस्था", lang)}
+  </option>
+</select>
+
+
           </FormGroup>
         </div>
 
@@ -3280,7 +3771,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         <div className="col-md-12">
           <FormGroup className="mb-0">
             <Label>{getTranslation(afterMerriageLife,lang)}</Label>
-            <Input
+            {/* <Input
               type="textarea"
               rows="3"
               value={IRFPrefillData?.after_marriage_status || ""}
@@ -3290,7 +3781,19 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   after_marriage_status: e.target.value,
                 }))
               }
-            />
+            /> */}
+
+<VoiceTextarea
+     rows="3"
+     value={IRFPrefillData?.after_marriage_status || ""}
+     onChange={(e) =>
+       setIRFPrefillData((prev) => ({
+         ...prev,
+         after_marriage_status: e.target.value,
+       }))
+     }
+/>
+
           </FormGroup>
         </div>
 
@@ -3386,14 +3889,23 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         {/* ...apply same pattern for rest of fields... */}
         <FormGroup className="mb-0">
         <Label>{getTranslation(ifAnyDisorder,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFPrefillData?.disorder_desc || ""}
           onChange={(e) =>
             setIRFPrefillData((prev) => ({ ...prev, disorder_desc: e.target.value }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+   rows="3"
+   value={IRFPrefillData?.disorder_desc || ""}
+   onChange={(e) =>
+     setIRFPrefillData((prev) => ({ ...prev, disorder_desc: e.target.value }))
+   }
+/>
+
       </FormGroup>
 
 
@@ -3517,33 +4029,76 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
      {/* Psychological Problem */}
      <div className="col-md-12 mt-3">
       <Label>{getTranslation(anyOtherPlsMention1,lang)}</Label>
-      <Input
+      {/* <Input
         type="textarea"
         rows="3"
         value={IRFPrefillData?.psych_problem_desc || ""}
         onChange={(e) =>
           setIRFPrefillData((prev) => ({ ...prev, psych_problem_desc: e.target.value }))
         }
-      />
+      /> */}
+
+<VoiceTextarea
+    rows="3"
+    value={IRFPrefillData?.psych_problem_desc || ""}
+    onChange={(e) =>
+      setIRFPrefillData((prev) => ({ ...prev, psych_problem_desc: e.target.value }))
+    }
+/>
+
     </div>
 
     {/* Current Status */}
     <div className="col-md-12 mt-3 mb-3">
       <Label>{getTranslation(currentStatus,lang)}</Label>
-      <Input
+      {/* <Input
         type="text"
         value={IRFPrefillData?.current_status || ""}
         onChange={(e) =>
           setIRFPrefillData((prev) => ({ ...prev, current_status: e.target.value }))
         }
-      />
+      /> */}
+      <select
+  className="form-control"
+  name="current_status"
+  value={IRFPrefillData?.current_status || ""}
+  onChange={(e) =>
+    setIRFPrefillData((prev) => ({
+      ...prev,
+      current_status: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+
+  <option value="Active">
+    {getTranslation("Active / एक्टिव", lang)}
+  </option>
+
+  <option value="Non Active">
+    {getTranslation("Non Active / नॉन एक्टिव", lang)}
+  </option>
+
+  <option value="Passed Away">
+    {getTranslation("Passed Away / निधन हो गया", lang)}
+  </option>
+
+  <option value="Seprated">
+    {getTranslation("Seprated / अलग हो गया", lang)}
+  </option>
+
+  <option value="Others">
+    {getTranslation("Others / अन्य", lang)}
+  </option>
+</select>
+
     </div>
 
     {/* Relationship with User */}
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(howWasBonding,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFPrefillData?.bonding_relation_with_user || ""}
@@ -3553,7 +4108,19 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               bonding_relation_with_user: e.target.value,
             }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+     rows="3"
+     value={IRFPrefillData?.bonding_relation_with_user || ""}
+     onChange={(e) =>
+       setIRFPrefillData((prev) => ({
+         ...prev,
+         bonding_relation_with_user: e.target.value,
+       }))
+     }
+/>
+
       </FormGroup>
     </div>
 
@@ -3561,7 +4128,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(familyBehaviorPatient,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFPrefillData?.family_behavior_with_patient || ""}
@@ -3571,7 +4138,19 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               family_behavior_with_patient: e.target.value,
             }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+    rows="3"
+    value={IRFPrefillData?.family_behavior_with_patient || ""}
+    onChange={(e) =>
+      setIRFPrefillData((prev) => ({
+        ...prev,
+        family_behavior_with_patient: e.target.value,
+      }))
+    }
+/>
+
       </FormGroup>
     </div>
 
@@ -3579,14 +4158,23 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(monitoringFamily,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFPrefillData?.head_of_family || ""}
           onChange={(e) =>
             setIRFPrefillData((prev) => ({ ...prev, head_of_family: e.target.value }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+    rows="3"
+    value={IRFPrefillData?.head_of_family || ""}
+    onChange={(e) =>
+      setIRFPrefillData((prev) => ({ ...prev, head_of_family: e.target.value }))
+    }
+/>
+
       </FormGroup>
     </div>
 
@@ -3594,7 +4182,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(ralationshipFamilyMember,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           rows="3"
           value={IRFPrefillData?.family_relationships || ""}
@@ -3604,7 +4192,19 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
               family_relationships: e.target.value,
             }))
           }
-        />
+        /> */}
+
+<VoiceTextarea
+      rows="3"
+      value={IRFPrefillData?.family_relationships || ""}
+      onChange={(e) =>
+        setIRFPrefillData((prev) => ({
+          ...prev,
+          family_relationships: e.target.value,
+        }))
+      }
+/>
+
       </FormGroup>
     </div>
 

@@ -110,6 +110,8 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import { useReactToPrint } from "react-to-print";
+
 function SexualDesire() {
 
     const { lang } = useLang(); // get current language from context
@@ -1110,6 +1112,17 @@ function SexualDesire() {
       setIsLoading(false);
     }
   };
+
+   //Print viewable form data handler
+                             const handlePrint = useReactToPrint({
+                                  content: () => pdfRef.current,
+                                  pageStyle: `
+                                    @page { size: A4; margin: 12mm; }
+                                    @media print {
+                                      body { margin: 0; }
+                                    }
+                                  `,
+                                });
   
   
 
@@ -1635,6 +1648,14 @@ function SexualDesire() {
                   ? getTranslation("Your Sexual Desire is being downloaded.../ आपकी यौन इच्छा डाउनलोड की जा रही है...",lang)
                   : getTranslation("Download Your View Sexual History / यौन इतिहास डाउनलोड करें",lang)}
               </button>
+
+<button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
+
             </div>
 
 

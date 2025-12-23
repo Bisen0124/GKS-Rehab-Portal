@@ -6,7 +6,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Dashboard",
+        "title": "Dashboard/डैशबोर्ड",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/Dashboard/Home`
@@ -18,7 +18,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Registration",
+        "title": "Registration/पंजीकरण",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/registeration/register`
@@ -42,7 +42,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Patient First Assessment (PFA)",
+        "title": "Patient First Assessment (PFA)/रोगी प्रथम मूल्यांकन (पीएफए)",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/PFA-Menu/pfa`
@@ -53,7 +53,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Gen_Family",
+        "title": "Gen Family/जनरल परिवार",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/Gen-Family/gen-family`
@@ -75,7 +75,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "FE",
+        "title": "First Examination/पहली परीक्षा",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/FE/First-Examination`
@@ -86,7 +86,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "BA",
+        "title": "Blood Analysis/रक्त विश्लेषण",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/BA/Blood-Analysis`
@@ -97,7 +97,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Detoxification",
+        "title": "Detoxification/डिटॉक्सिफिकेशन",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/Detoxification/Detoxification`
@@ -108,7 +108,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "First Dependency Assessment (FDA)",
+        "title": "First Dependency Assessment/पहला निर्भरता मूल्यांकन",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/FDA/first-dependency-assessment`
@@ -119,7 +119,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Substance Use Dependency (SUD)",
+        "title": "Substance Use Dependency/पदार्थ के उपयोग पर निर्भरता",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/SUD/substance-use-dependency`
@@ -130,20 +130,20 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "CBT & Intake & Sex_D",
+        "title": "CBT & Intake & Sex Desire/सीबीटी और सेवन और यौन इच्छा",
         "icon": "icon-class",
         "type": "sub",
         "path": `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/CbtIntakeSexD`,
         children: [
-          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/CBT`, title: "CBT", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/PersonalDetails`, title: "Personal Details", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/SUDBrief`, title: "SUD Brief", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/RelationshipFamily`, title: "Relationship & Family", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/Childhood`, title: "Childhood", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/SocialBehavior`, title: "Social Behavior", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/Legal`, title: "Legal", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/PatientBehavior`, title: "Patient Behavior", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/SexualDesire`, title: "Sexual Desire ", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/CBT`, title: "Cognitive Behavioral Test (CBT)/संज्ञानात्मक व्यवहार परीक्षण (सीबीटी)", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/PersonalDetails`, title: "Personal Details/व्यक्तिगत विवरण", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/SUDBrief`, title: "SUD Brief/एसयूडी संक्षिप्त", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/RelationshipFamily`, title: "Relationship & Family/रिश्ते और परिवार", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/Childhood`, title: "Childhood/बचपन", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/SocialBehavior`, title: "Social Behavior/सामाजिक व्यवहार", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/Legal`, title: "Legal/कानूनी", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/PatientBehavior`, title: "Patient Behavior/रोगी का व्यवहार", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/CBT_Intake_Sex_D/SexualDesire`, title: "Sexual Desire/यौन इच्छा", type: "link" },
         ],
       }
     ]
@@ -152,7 +152,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Brief Intervantion",
+        "title": "Brief Intervantion/संक्षिप्त हस्तक्षेप",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/Brief_Intervation/BriefIntervation`
@@ -163,7 +163,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Discharge follow up",
+        "title": "Discharge follow up/डिस्चार्ज फॉलो अप",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/Discharge_followup/DischargeFollowUp`,
@@ -174,12 +174,12 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Reports",
+        "title": "Reports/रिपोर्टों",
         "icon": "icon-class",
         "type": "sub",
         "path": `${process.env.PUBLIC_URL}/Reports/CbtIntakeSexD`,
         children: [
-          { path: `${process.env.PUBLIC_URL}/Reports/PFA-Report`, title: "PFA Report", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/Reports/PFA-Report`, title: "PFA Report/पीएफए ​​रिपोर्ट", type: "link" },
         ],
       }
     ]

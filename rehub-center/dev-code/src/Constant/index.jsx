@@ -1855,13 +1855,17 @@ export const occupationOptions = [
 //Patient Registration Form
 
 export const patientRegisterTitle = "Patient Registration Form/रोगी पंजीकरण फॉर्म";
-export const patientRelativePhoneNumber = "Patient Phone Number/रोगी फोन नंबर";
+export const patientRelativePhoneNumber = "Patient Primary Phone Number/मरीज़ का प्राथमिक फ़ोन नंबर";
+export const patientRelativesecPhoneNumber = "Patient Secondary Phone Number (Optional)/मरीज़ का दूसरा फ़ोन नंबर (वैकल्पिकP)";
 export const patientRelativeEmailAddr = "Patient Relative Email Address/रोगी के संबंधी का ईमेल पता";
 export const patientDateOfBirth = "Patient Date of Birth/रोगी की जन्म तिथि";
-export const pateintAddress = "Patient Relative Address / रोगी संबंधी का पता";
+export const pateintRelativeAddress = "Patient Relative Address / रोगी संबंधी का पता";
+export const pateintAddress = "Patient Address / रोगी का पता";
 export const registerYourDetail = "New Patient Registration/नया रोगी पंजीकरण";
 export const IspatientWhatsappNo = "Is Patient Phone Number/क्या मरीज़ का फ़ोन नंबर";
 export const whatsAppNo = "WhatsApp Number/व्हाट्सएप नंबर";
+
+export const tertiaryPhonenumber = "Add other relative mobile number (optional)/दूसरे रिश्तेदार का मोबाइल नंबर जोड़ें (ऑप्शनल)"
 
 
 
@@ -1967,7 +1971,7 @@ export const SexuaQuesData = [
   { key: "premature_ejaculation_substance", en: "Have you experienced premature ejaculation due to substance abuse?/क्या आपने नशीली दवाओं के दुरुपयोग के कारण शीघ्रपतन का अनुभव किया है?" },
   { key: "alcohol_drugs_ejaculation_effect", en: "Have alcohol, drugs, or the use of a condom affected your ejaculation?/क्या शराब, नशीली दवाओं या कंडोम के उपयोग ने आपके स्खलन को प्रभावित किया है?" },
   { key: "frequency_comparison_past", en: "How does this compare with your frequency in the past?/यह आपकी पिछली आवृत्ति की तुलना में कैसा है?" },
-  { key: "heterosexual_homosexual_activity", en: "Heterosexual activity/homosexual activity/विषमलैंगिक गतिविधि/समलैंगिक गतिविधि" }
+  { key: "heterosexual_homosexual_activity", en: "Heterosexual activity homosexual activity/विषमलैंगिक गतिविधि समलैंगिक गतिविधि" }
 ];
 
 

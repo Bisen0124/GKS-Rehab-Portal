@@ -112,6 +112,10 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
+
+import { useReactToPrint } from "react-to-print";
+
 function CBT() {
 
    const { lang } = useLang(); // get current language from context
@@ -1134,6 +1138,19 @@ const token = localStorage.getItem("Authorization");
     setIsLoading(false);
   }
 };
+
+
+   //Print viewable form data handler
+             const handlePrint = useReactToPrint({
+                  content: () => pdfRef.current,
+                  pageStyle: `
+                    @page { size: A4; margin: 12mm; }
+                    @media print {
+                      body { margin: 0; }
+                    }
+                  `,
+                });
+
   return (
 
 
@@ -1362,25 +1379,41 @@ const token = localStorage.getItem("Authorization");
               <div className="col-md-12 mt-4">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(Spaceforwork,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     value={spaceForWork}
                     onChange={(e) => setSpaceForWork(e.target.value)}
-                  />
+                  /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   value={spaceForWork}
+   onChange={(e) => setSpaceForWork(e.target.value)}
+/>
+
                 </FormGroup>
               </div>
               <div className="col-md-12">
                 <FormGroup className="mb-0">
                   <Label>{getTranslation(Remarks,lang)}</Label>
-                  <Input
+                  {/* <Input
                     type="textarea"
                     className="form-control"
                     rows="3"
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
-                  />
+                  /> */}
+
+<VoiceTextarea
+ className="form-control"
+ rows="3"
+ value={remarks}
+ onChange={(e) => setRemarks(e.target.value)}
+/>
+
                 </FormGroup>
               </div>
               <div className="col-md-12">
@@ -1536,7 +1569,7 @@ const token = localStorage.getItem("Authorization");
     <div className="col-md-12 mt-4">
       <FormGroup className="mb-0">
         <Label>{getTranslation(Spaceforwork,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           className="form-control"
           rows="3"
@@ -1547,13 +1580,26 @@ const token = localStorage.getItem("Authorization");
               space_for_work: e.target.value,
             })
           }
-        />
+        /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   value={CBTpreefillData?.space_for_work || ""}
+   onChange={(e) =>
+     setCBTpreefillData({
+       ...CBTpreefillData,
+       space_for_work: e.target.value,
+     })
+   }
+/>
+
       </FormGroup>
     </div>
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(Remarks,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           className="form-control"
           rows="3"
@@ -1564,7 +1610,20 @@ const token = localStorage.getItem("Authorization");
               remarks: e.target.value,
             })
           }
-        />
+        /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   value={CBTpreefillData?.remarks || ""}
+   onChange={(e) =>
+     setCBTpreefillData({
+       ...CBTpreefillData,
+       remarks: e.target.value,
+     })
+   }
+/>
+
       </FormGroup>
     </div>
     <div className="col-md-12">
@@ -1728,6 +1787,14 @@ const token = localStorage.getItem("Authorization");
                     ? getTranslation("Your CBT is being downloaded.../ आपका CBT डाउनलोड हो रहा है...",lang)
                     : getTranslation("Download Your Cognitive Behavioral Test/ संज्ञानात्मक व्यवहार परीक्षण डाउनलोड करें",lang)}
                 </button>
+
+<button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
+
               </div>
  
  </Col>
@@ -1860,7 +1927,7 @@ const token = localStorage.getItem("Authorization");
     <div className="col-md-12 mt-4">
       <FormGroup className="mb-0">
         <Label>{getTranslation(Spaceforwork,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           className="form-control"
           rows="3"
@@ -1871,13 +1938,27 @@ const token = localStorage.getItem("Authorization");
               space_for_work: e.target.value,
             })
           }
-        />
+        /> */}
+
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   value={CBTindividuallUpdateData?.space_for_work || ""}
+   onChange={(e) =>
+     setCBTindividuallUpdateData({
+       ...CBTindividuallUpdateData,
+       space_for_work: e.target.value,
+     })
+   }
+/>
+
       </FormGroup>
     </div>
     <div className="col-md-12">
       <FormGroup className="mb-0">
         <Label>{getTranslation(Remarks,lang)}</Label>
-        <Input
+        {/* <Input
           type="textarea"
           className="form-control"
           rows="3"
@@ -1888,7 +1969,20 @@ const token = localStorage.getItem("Authorization");
               remarks: e.target.value,
             })
           }
-        />
+        /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  value={CBTindividuallUpdateData?.remarks || ""}
+  onChange={(e) =>
+    setCBTindividuallUpdateData({
+      ...CBTindividuallUpdateData,
+      remarks: e.target.value,
+    })
+  }
+/>
+
       </FormGroup>
     </div>
     <div className="col-md-12">

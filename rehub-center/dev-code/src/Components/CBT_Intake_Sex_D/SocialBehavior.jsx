@@ -111,6 +111,10 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
+
+import { useReactToPrint } from "react-to-print";
+
 function SocialBehavior() {
 
     const { lang } = useLang(); // get current language from context
@@ -1112,6 +1116,18 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
         });
     };
 
+
+     //Print viewable form data handler
+                     const handlePrint = useReactToPrint({
+                          content: () => pdfRef.current,
+                          pageStyle: `
+                            @page { size: A4; margin: 12mm; }
+                            @media print {
+                              body { margin: 0; }
+                            }
+                          `,
+                        });
+
   return (
     <Fragment>
       {/* register user data into data table format start */}
@@ -1135,7 +1151,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                            placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1198,7 +1214,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                           placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchTextone}
                           onChange={handleSearchChangeone}
                         />
@@ -1284,84 +1300,187 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(socialBehavior1,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="social_behavior"
                   value={formData.social_behavior || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+{/* <VoiceTextarea
+    className="form-control"
+    rows="3"
+    name="social_behavior"
+    value={formData.social_behavior || ""}
+    onChange={handleChange}
+/> */}
+
+<select
+  className="form-control"
+  name="social_behavior"
+  value={formData.social_behavior || ""}
+  onChange={handleChange}
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+
+  <option value="Social">
+    {getTranslation("Social / सामाजिक", lang)}
+  </option>
+
+  <option value="Anti Social">
+    {getTranslation("Anti Social / असामाजिक", lang)}
+  </option>
+</select>
+
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="with_whom_spend_time"
                   value={formData.with_whom_spend_time || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+{/* <VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="with_whom_spend_time"
+  value={formData.with_whom_spend_time || ""}
+  onChange={handleChange}
+/> */}
+
+<select
+  className="form-control"
+  name="with_whom_spend_time"
+  value={formData.with_whom_spend_time || ""}
+  onChange={handleChange}
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+
+  <option value="Alone">
+    {getTranslation("Alone / अकेले", lang)}
+  </option>
+
+  <option value="With Family">
+    {getTranslation("With Family / परिवार के साथ", lang)}
+  </option>
+
+  <option value="In addict Community">
+    {getTranslation("In addict Community / नशेड़ी समुदाय में", lang)}
+  </option>
+
+  <option value="With Friends">
+    {getTranslation("With Friends / दोस्तों के साथ", lang)}
+  </option>
+</select>
+
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(howManyFriends,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="how_many_friends" // ✅ corrected
                   value={formData.how_many_friends || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="how_many_friends" // ✅ corrected
+   value={formData.how_many_friends || ""}
+   onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(friendSocialStatus,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="their_social_status" // ✅ corrected
                   value={formData.their_social_status || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="their_social_status" // ✅ corrected
+  value={formData.their_social_status || ""}
+  onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(howMuchDependent,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="substance_dependent_friends_count" // ✅ corrected
                   value={formData.substance_dependent_friends_count || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="substance_dependent_friends_count" // ✅ corrected
+   value={formData.substance_dependent_friends_count || ""}
+   onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="well_wisher_person"
                   value={formData.well_wisher_person || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+ className="form-control"
+ rows="3"
+ name="well_wisher_person"
+ value={formData.well_wisher_person || ""}
+ onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
@@ -1493,6 +1612,14 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
         ? getTranslation("Your Social Behavior is being downloaded... / आपका सामाजिक व्यवहार डाउनलोड हो रहा है...",lang)
         : getTranslation("Download Social Behavior/सामाजिक व्यवहार डाउनलोड करें",lang)}
     </button>
+
+<button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
+
   </div>
 </CommonModal>
 {/* View Social Behavior data into modal end */}
@@ -1550,7 +1677,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(socialBehavior1,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="social_behavior"
@@ -1561,7 +1688,45 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 social_behavior: e.target.value,
               }))
             }
-          />
+          /> */}
+
+{/* <VoiceTextarea
+      rows="3"
+      name="social_behavior"
+      value={socialBehaviorEditData?.social_behavior || ""}
+      onChange={(e) =>
+        setSocialBehaviorEditData((prev) => ({
+          ...prev,
+          social_behavior: e.target.value,
+        }))
+      }
+/> */}
+
+<select
+  className="form-control"
+  name="social_behavior"
+  value={socialBehaviorEditData?.social_behavior || ""}
+  onChange={(e) =>
+    setSocialBehaviorEditData((prev) => ({
+      ...prev,
+      social_behavior: e.target.value,
+    }))
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+
+  <option value="Social">
+    {getTranslation("Social / सामाजिक", lang)}
+  </option>
+
+  <option value="Anti Social">
+    {getTranslation("Anti Social / असामाजिक", lang)}
+  </option>
+</select>
+
+
         </FormGroup>
       </div>
 
@@ -1569,7 +1734,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="with_whom_spend_time"
@@ -1580,7 +1745,38 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 with_whom_spend_time: e.target.value,
               }))
             }
-          />
+          /> */}
+
+{/* <VoiceTextarea
+     rows="3"
+     name="with_whom_spend_time"
+     value={socialBehaviorEditData?.with_whom_spend_time || ""}
+     onChange={(e) =>
+       setSocialBehaviorEditData((prev) => ({
+         ...prev,
+         with_whom_spend_time: e.target.value,
+       }))
+     }
+/> */}
+
+<select
+  className="form-control"
+  name="with_whom_spend_time"
+  value={socialBehaviorEditData?.with_whom_spend_time || ""}
+  onChange={(e) =>
+    setSocialBehaviorEditData((prev) => ({
+      ...prev,
+      with_whom_spend_time: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+  <option value="Alone">{getTranslation("Alone / अकेले", lang)}</option>
+  <option value="With Family">{getTranslation("With Family / परिवार के साथ", lang)}</option>
+  <option value="In addict Community">{getTranslation("In addict Community / नशेड़ी समुदाय में", lang)}</option>
+  <option value="With Friends">{getTranslation("With Friends / दोस्तों के साथ", lang)}</option>
+</select>
+
         </FormGroup>
       </div>
 
@@ -1588,7 +1784,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(howManyFriends,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="how_many_friends"
@@ -1599,7 +1795,20 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 how_many_friends: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+     rows="3"
+     name="how_many_friends"
+     value={socialBehaviorEditData?.how_many_friends || ""}
+     onChange={(e) =>
+       setSocialBehaviorEditData((prev) => ({
+         ...prev,
+         how_many_friends: e.target.value,
+       }))
+     }
+/>
+
         </FormGroup>
       </div>
 
@@ -1607,7 +1816,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(friendSocialStatus,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="their_social_status"
@@ -1618,7 +1827,20 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 their_social_status: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+      rows="3"
+      name="their_social_status"
+      value={socialBehaviorEditData?.their_social_status || ""}
+      onChange={(e) =>
+        setSocialBehaviorEditData((prev) => ({
+          ...prev,
+          their_social_status: e.target.value,
+        }))
+      }
+/>
+
         </FormGroup>
       </div>
 
@@ -1626,7 +1848,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(howMuchDependent,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="substance_dependent_friends_count"
@@ -1637,7 +1859,20 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 substance_dependent_friends_count: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+      rows="3"
+      name="substance_dependent_friends_count"
+      value={socialBehaviorEditData?.substance_dependent_friends_count || ""}
+      onChange={(e) =>
+        setSocialBehaviorEditData((prev) => ({
+          ...prev,
+          substance_dependent_friends_count: e.target.value,
+        }))
+      }
+/>
+
         </FormGroup>
       </div>
 
@@ -1645,7 +1880,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="well_wisher_person"
@@ -1656,7 +1891,20 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 well_wisher_person: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+       rows="3"
+       name="well_wisher_person"
+       value={socialBehaviorEditData?.well_wisher_person || ""}
+       onChange={(e) =>
+         setSocialBehaviorEditData((prev) => ({
+           ...prev,
+           well_wisher_person: e.target.value,
+         }))
+       }
+/>
+
         </FormGroup>
       </div>
 
@@ -1732,7 +1980,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(socialBehavior1,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="social_behavior"
@@ -1743,7 +1991,44 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 social_behavior: e.target.value,
               }))
             }
-          />
+          /> */}
+
+{/* <VoiceTextarea
+      rows="3"
+      name="social_behavior"
+      value={SBPrefillData?.social_behavior || ""}
+      onChange={(e) =>
+        setSBPrefillData((prev) => ({
+          ...prev,
+          social_behavior: e.target.value,
+        }))
+      }
+/> */}
+<select
+  className="form-control"
+  name="social_behavior"
+  value={SBPrefillData?.social_behavior || ""}
+  onChange={(e) =>
+    setSBPrefillData((prev) => ({
+      ...prev,
+      social_behavior: e.target.value,
+    }))
+  }
+>
+  <option value="">
+    {getTranslation("Select / चुनें", lang)}
+  </option>
+
+  <option value="Social">
+    {getTranslation("Social / सामाजिक", lang)}
+  </option>
+
+  <option value="Anti Social">
+    {getTranslation("Anti Social / असामाजिक", lang)}
+  </option>
+</select>
+
+
         </FormGroup>
       </div>
 
@@ -1751,7 +2036,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="with_whom_spend_time"
@@ -1762,7 +2047,38 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 with_whom_spend_time: e.target.value,
               }))
             }
-          />
+          /> */}
+
+{/* <VoiceTextarea
+    rows="3"
+    name="with_whom_spend_time"
+    value={SBPrefillData?.with_whom_spend_time || ""}
+    onChange={(e) =>
+      setSBPrefillData((prev) => ({
+        ...prev,
+        with_whom_spend_time: e.target.value,
+      }))
+    }
+/> */}
+<select
+  className="form-control"
+  name="with_whom_spend_time"
+  value={SBPrefillData?.with_whom_spend_time || ""}
+  onChange={(e) =>
+    setSBPrefillData((prev) => ({
+      ...prev,
+      with_whom_spend_time: e.target.value,
+    }))
+  }
+>
+  <option value="">{getTranslation("Select / चुनें", lang)}</option>
+  <option value="Alone">{getTranslation("Alone / अकेले", lang)}</option>
+  <option value="With Family">{getTranslation("With Family / परिवार के साथ", lang)}</option>
+  <option value="In addict Community">{getTranslation("In addict Community / नशेड़ी समुदाय में", lang)}</option>
+  <option value="With Friends">{getTranslation("With Friends / दोस्तों के साथ", lang)}</option>
+</select>
+
+
         </FormGroup>
       </div>
 
@@ -1770,7 +2086,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(howManyFriends,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="how_many_friends"
@@ -1781,7 +2097,20 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 how_many_friends: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+    rows="3"
+    name="how_many_friends"
+    value={SBPrefillData?.how_many_friends || ""}
+    onChange={(e) =>
+      setSBPrefillData((prev) => ({
+        ...prev,
+        how_many_friends: e.target.value,
+      }))
+    }
+/>
+
         </FormGroup>
       </div>
 
@@ -1789,7 +2118,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(friendSocialStatus,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="their_social_status"
@@ -1800,7 +2129,20 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 their_social_status: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+      rows="3"
+      name="their_social_status"
+      value={SBPrefillData?.their_social_status || ""}
+      onChange={(e) =>
+        setSBPrefillData((prev) => ({
+          ...prev,
+          their_social_status: e.target.value,
+        }))
+      }
+/>
+
         </FormGroup>
       </div>
 
@@ -1808,7 +2150,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(howMuchDependent,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="substance_dependent_friends_count"
@@ -1819,7 +2161,20 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 substance_dependent_friends_count: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+    rows="3"
+    name="substance_dependent_friends_count"
+    value={SBPrefillData?.substance_dependent_friends_count || ""}
+    onChange={(e) =>
+      setSBPrefillData((prev) => ({
+        ...prev,
+        substance_dependent_friends_count: e.target.value,
+      }))
+    }
+/>
+
         </FormGroup>
       </div>
 
@@ -1827,7 +2182,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(whoClosedWellWisher,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             rows="3"
             name="well_wisher_person"
@@ -1838,7 +2193,20 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 well_wisher_person: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+    rows="3"
+    name="well_wisher_person"
+    value={SBPrefillData?.well_wisher_person || ""}
+    onChange={(e) =>
+      setSBPrefillData((prev) => ({
+        ...prev,
+        well_wisher_person: e.target.value,
+      }))
+    }
+/>
+
         </FormGroup>
       </div>
 

@@ -60,6 +60,8 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import { useReactToPrint } from "react-to-print";
+
 function FDA() {
 
    const { lang } = useLang(); // get current language from context
@@ -536,6 +538,25 @@ function FDA() {
   };
   
 
+
+  //WHO code useState
+  const [selectedCodes, setSelectedCodes] = useState([]);
+  const handleCheckboxChange = (code) => {
+    setSelectedCodes((prev) =>
+      prev.includes(code)
+        ? prev.filter((c) => c !== code)
+        : [...prev, code]
+    );
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedCodes(mentalBehavioursData.map((item) => item.code));
+    } else {
+      setSelectedCodes([]);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true); // Start loader
@@ -986,6 +1007,18 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
     }
 
 
+      //Print viewable form data handler
+             const handlePrint = useReactToPrint({
+                  content: () => pdfRef.current,
+                  pageStyle: `
+                    @page { size: A4; margin: 12mm; }
+                    @media print {
+                      body { margin: 0; }
+                    }
+                  `,
+                });
+
+
   return (
     <Fragment>
       {/* register user data into data table format start */}
@@ -1169,29 +1202,114 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
 
           </div>
 
-          <div className="col-md-12 p-3 table-responsive">
+          {/* <div className="col-md-12 p-3 table-responsive">
             <Table bordered>
               <thead>
                 <tr>
                   <th>{getTranslation(tableNumber,lang)}</th>
-                  <th style={{ width: "10%" }}>{getTranslation("Code/कोड",lang)}</th>
+                  <th style={{ width: "10%" }}>{getTranslation("WHO Code/डब्ल्यूएचओ कोड",lang)}</th>
                   <th>{getTranslation(mentalBehaviour,lang)}</th>
+                  <th>
+            <input
+              type="checkbox"
+              checked={
+                selectedCodes.length === mentalBehavioursData.length &&
+                mentalBehavioursData.length > 0
+              }
+              onChange={handleSelectAll}
+            />
+          </th>
                 </tr>
               </thead>
               <tbody>
-                {mentalBehavioursData.map(({ code, english, hindi, index }) => (
-                  <tr key={code}>
-                    <td>{index}</td>
-                    <td>{code}</td>
-                    <td>
-                      <div>{getTranslation(english,lang)}</div>
-                      <div className="text-muted">{getTranslation(hindi,lang)}</div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+        {mentalBehavioursData.map(({ code, english, hindi, index }) => (
+          <tr key={code}>
+            <td>
+              <input
+                type="checkbox"
+                checked={selectedCodes.includes(code)}
+                onChange={() => handleCheckboxChange(code)}
+              />
+            </td>
+            <td>{index}</td>
+            <td>{code}</td>
+            <td>
+              <div>{getTranslation(english, lang)}</div>
+              <div className="text-muted">
+                {getTranslation(hindi, lang)}
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
             </Table>
-          </div>
+          </div> */}
+          <div className="col-md-12 p-3 table-responsive">
+  <Table bordered>
+    <thead>
+      <tr>
+        {/* SR No */}
+        <th>{getTranslation(tableNumber, lang)}</th>
+
+        {/* WHO Code */}
+        <th style={{ width: "15%" }}>
+          {getTranslation("WHO Code/डब्ल्यूएचओ कोड", lang)}
+        </th>
+
+        {/* Mental & Behavioral Disorders */}
+        <th>
+          {getTranslation(
+            "Mental and behavioral disorders due to psychoactive substance use",
+            lang
+          )}
+        </th>
+
+        {/* Select All Checkbox */}
+        <th style={{ width: "8%", textAlign: "center" }}>
+          <input
+            type="checkbox"
+            checked={
+              selectedCodes.length === mentalBehavioursData.length &&
+              mentalBehavioursData.length > 0
+            }
+            onChange={handleSelectAll}
+          />
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {mentalBehavioursData.map(({ code, english, hindi, index }) => (
+        <tr key={code}>
+          {/* SR No */}
+          <td>{index}</td>
+
+          {/* WHO Code */}
+          <td>{code}</td>
+
+          {/* Description */}
+          <td>
+            <div>{getTranslation(english, lang)}</div>
+            <div className="text-muted">
+              {getTranslation(hindi, lang)}
+            </div>
+          </td>
+
+          {/* Checkbox */}
+          <td style={{ textAlign: "center" }}>
+            <input
+              type="checkbox"
+              checked={selectedCodes.includes(code)}
+              onChange={() => handleCheckboxChange(code)}
+            
+            />
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </Table>
+</div>
+
 
 
 
@@ -1500,6 +1618,14 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                     ? getTranslation("Your FDA is being downloaded.../ आपका FDA डाउनलोड हो रहा है...",lang)
                     : getTranslation("Download Your First Dependency Assessment / प्रथम निर्भरता मूल्यांकन डाउनलोड करें",lang)}
                 </button>
+
+<button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
+
               </div>
       </CommonModal>
       {/* View FDA data into modal end */}

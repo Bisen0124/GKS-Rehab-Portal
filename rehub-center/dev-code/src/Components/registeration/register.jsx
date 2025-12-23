@@ -17,6 +17,9 @@ import {
   IspatientWhatsappNo,
   whatsAppNo,
   h4Text,
+  patientRelativesecPhoneNumber,
+  tertiaryPhonenumber,
+  pateintRelativeAddress,
 } from "../../Constant";
 import {
   Form,
@@ -52,6 +55,10 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
+
+import { useReactToPrint } from "react-to-print";
+
 function Register() {
 
   const { lang } = useLang(); // get current language from context
@@ -66,6 +73,57 @@ function Register() {
   const selectedSpinner = Data.find(
     (item) => item.spinnerClass === "loader-37"
   );
+
+  //Patient file upload 
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [error, setError] = useState("");
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    // File type validation
+    if (!file.type.startsWith("image/")) {
+      setError("Only image files are allowed");
+      return;
+    }
+
+    // File size validation (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setError("Image size must be less than 2MB");
+      return;
+    }
+
+    setError("");
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
+  };
+
+  const handleUpload = async () => {
+    if (!image) {
+      alert("Please select an image first");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("profile_image", image);
+
+    try {
+      const response = await fetch("YOUR_API_URL_HERE", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+      alert("Profile picture uploaded successfully!");
+      console.log(result);
+    } catch (err) {
+      console.error(err);
+      alert("Upload failed");
+    }
+  };
 
   //Show hide password of register password filed.
   const [showPassword, setShowPassword] = useState(false);
@@ -1144,6 +1202,24 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
         });
     };
 
+  //Print Data handler
+  // const handlePrint = () => {
+  //   window.print();
+  //   // setviweFormPrint(false); // modal will close correctly
+  // };
+
+  //Print viewable form data handler
+  const handlePrint = useReactToPrint({
+    content: () => pdfRef.current,
+    pageStyle: `
+      @page { size: A4; margin: 12mm; }
+      @media print {
+        body { margin: 0; }
+      }
+    `,
+  });
+  
+
 
   return (
     <Fragment>
@@ -1425,6 +1501,51 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     </FormGroup>
                   </div>
 
+
+{/* Patient relative secondary mobile number */}
+                  <div className="col-md-12">
+                    <FormGroup className="form-group row">
+                      <Label className="col-sm-12 col-form-label col-xl-6">
+                        {/* {patientRelativePhoneNumber} */}
+                        <Translated text={patientRelativesecPhoneNumber} />
+                      </Label>
+                      <Col xl="5" sm="12">
+                        <Input
+                          type="text"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Allow only numbers and max 10 digits
+                            if (/^\d{0,10}$/.test(value)) {
+                              setFormData({ ...formData, phone: value });
+                            }
+                          }}
+                          placeholder={getTranslation("Phone Number/फ़ोन नंबर",lang)}
+                          maxLength={10}
+                        />
+                        {formData.phone.length > 0 &&
+                          formData.phone.length !== 10 && (
+                            <small className="text-danger">
+                              {getTranslation("Phone number must be 10 digits./फ़ोन नंबर 10 अंकों का होना चाहिए।",lang)}
+                            </small>
+                          )}
+                      </Col>
+                    </FormGroup>
+                  </div>
+
+
+
+{/* Patient relative tertiary (optional) mobile number */}
+                  <div className="col-md-12">
+                  <VoiceTextarea
+  label={<Translated text={tertiaryPhonenumber} />}
+  name="address"
+  value={formData.address}
+  onChange={handleChange}
+/>
+</div>
+
                   {/* WhatsApp Option */}
                   <div className="col-md-12">
                   <Translated text={IspatientWhatsappNo} />
@@ -1627,6 +1748,8 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
+
+<div className="row">
               {/* Wards details */}
               <div className="col-md-6">
                 {/* <Label>{wardDetails}</Label> */}
@@ -1656,11 +1779,46 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
-              {/* Address */}
-              <div className="col-md-12">
-                <FormGroup>
+              {/* Patient photo upload */}
+              <div className="col-md-6">
+              {getTranslation("Upload patient image/मरीज़ की छवि अपलोड करें",lang)}
+              <div className="profile-upload">
+      {preview && (
+        <img
+          src={preview}
+          alt="Preview"
+          style={{
+            width: "120px",
+            height: "120px",
+            borderRadius: "50%",
+            objectFit: "cover",
+            marginBottom: "10px",
+          }}
+        />
+      )}
+
+      <Input
+        type="file"
+        accept="image/*"
+        onChange={handleImageChange}
+        className="form-control"
+      />
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      <button className="btn btn-primary mt-2" onClick={handleUpload}>
+        {getTranslation("Upload/अपलोड करें",lang)}
+      </button>
+    </div>
+              </div>
+              </div>
+
+<div className="row">
+              {/* Patient Relative Address */}
+              <div className="col-md-6">
+                {/* <FormGroup>
                 <Translated text={pateintAddress} />
-                  {/* <Label>{pateintAddress}</Label> */}
+                  <Label>{pateintAddress}</Label>
                   <Input
                     type="textarea"
                     rows="3"
@@ -1668,7 +1826,37 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     value={formData.address}
                     onChange={handleChange}
                   />
-                </FormGroup>
+                </FormGroup> */}
+                <VoiceTextarea
+  label={<Translated text={pateintRelativeAddress} />}
+  name="address"
+  value={formData.address}
+  onChange={handleChange}
+/>
+
+              </div>
+
+               {/* Patient Address */}
+               <div className="col-md-6">
+                {/* <FormGroup>
+                <Translated text={pateintAddress} />
+                  <Label>{pateintAddress}</Label>
+                  <Input
+                    type="textarea"
+                    rows="3"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                  />
+                </FormGroup> */}
+                <VoiceTextarea
+  label={<Translated text={pateintAddress} />}
+  name="address"
+  value={formData.address}
+  onChange={handleChange}
+/>
+
+              </div>
               </div>
 
               {/* Submit */}
@@ -1699,7 +1887,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
         toggler={closeUserViewModal}
         maxWidth="1200px"
       >
-    <div className="table-responsive p-4" ref={pdfRef}>
+    <div className="table-responsive p-4 print-area" ref={pdfRef}>
       <h4
         style={{
           textAlign: "center",
@@ -1805,6 +1993,14 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
       {pfaDownload
         ? getTranslation("Your patient report is being downloaded... / आपका patient रिपोर्ट डाउनलोड हो रहा है...", lang)
         : getTranslation("Download patient registered report/रोगी पंजीकृत रिपोर्ट डाउनलोड करें",lang)}
+    </button>
+
+    <button
+      id="download-btn"
+      className="btn btn-primary mx-3"
+      onClick={handlePrint}
+    >
+       {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
     </button>
   </div>
 
@@ -1964,8 +2160,8 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     </div>
                   </div>
                   <br />
-                  <Label>{getTranslation("Patient Address/रोगी का पता",lang)}</Label>
-                  <Input
+                  {/* <Label>{getTranslation("Patient Address/रोगी का पता",lang)}</Label> */}
+                  {/* <Input
                     type="textarea"
                     rows="3"
                     placeholder={getTranslation("Address/पता",lang)}
@@ -1973,7 +2169,19 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     onChange={(e) =>
                       setEditData({ ...editData, address: e.target.value })
                     }
-                  ></Input>
+
+                    
+
+                  ></Input> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation("Patient Address/रोगी का पता",lang)} />}
+  // name="address"
+  value={editData.address}
+  onChange={(e) =>
+    setEditData({ ...editData, address: e.target.value })
+  }
+/>
 
                   {/* Optional: role dropdown if editable */}
                   {/* <Label className="mt-4 mb-2">Role</Label>

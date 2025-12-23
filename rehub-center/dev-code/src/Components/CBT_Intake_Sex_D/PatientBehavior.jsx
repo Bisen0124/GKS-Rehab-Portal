@@ -40,6 +40,8 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import { useReactToPrint } from "react-to-print";
+
 const attitudeOptions = [
   "Cooperative / सहयोगी",
   "Confident / आत्मविश्वासी",
@@ -1445,6 +1447,20 @@ const handlePBReadmissionFormSubmit = async (e) => {
     const date = new Date(dateStr);
     return isNaN(date.getTime()) ? null : date;
   };
+
+
+
+         //Print viewable form data handler
+                           const handlePrint = useReactToPrint({
+                                content: () => pdfRef.current,
+                                pageStyle: `
+                                  @page { size: A4; margin: 12mm; }
+                                  @media print {
+                                    body { margin: 0; }
+                                  }
+                                `,
+                              });
+
   return (
     <Fragment>
       {/* register user data into data table format start */}
@@ -1468,7 +1484,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                         placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1531,7 +1547,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                          placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchTextone}
                           onChange={handleSearchChangeone}
                         />
@@ -2099,6 +2115,14 @@ const handlePBReadmissionFormSubmit = async (e) => {
         ? getTranslation("Your Patient Behaviour Assessment is being downloaded.../आपका रोगी व्यवहार मूल्यांकन डाउनलोड किया जा रहा है...",lang)
         : getTranslation("Download Patient Behaviour/रोगी व्यवहार डाउनलोड करें",lang)}
     </button>
+
+<button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
+
   </div>
 </CommonModal>
 {/* View Patient Behaviour data into modal end */}

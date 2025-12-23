@@ -3,8 +3,15 @@ import React, { Fragment, useState, useEffect, useContext } from 'react';
 import { Card, CardBody, CardHeader } from 'reactstrap';
 import { Link } from 'react-router-dom';
 
+import Translated from '../../Translated';
+import { useLang } from '../../../contexts/LangContext';
+import { getTranslation } from '../../../utils/translator';
+
 
 const ProfileGreeting = () => {
+
+    const { lang } = useLang(); // get current language from context
+
       const [userName, setUserName] = useState('');
 
        useEffect(() => {
@@ -17,7 +24,10 @@ const ProfileGreeting = () => {
             <Card className="">
                 {/* <CardHeader className="pb-0"></CardHeader> */}
                 <CardBody className="text-center p-4">
-                    <H3 attrH3={{ className: 'font-bold' }} >Wellcome Back, {userName}</H3>
+                <H3 attrH3={{ className: 'font-bold' }}>
+  {getTranslation("Welcome Back/वापसी पर स्वागत है", lang)}, {userName}
+</H3>
+
                     {/* <P>Welcome to the viho Family!we are glad that you are visite this dashboard.we will be happy to help you grow your business.</P> */}
                     {/* <Link to={`${process.env.PUBLIC_URL}/app/users/userProfile`} ><Btn attrBtn={{ as: Card.Header, className: 'btn btn-light mt-3', color: 'default' }} >Check Profile</Btn></Link> */}
 

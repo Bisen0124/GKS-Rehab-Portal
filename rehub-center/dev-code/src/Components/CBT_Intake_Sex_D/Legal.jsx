@@ -111,7 +111,12 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
+
+import { useReactToPrint } from "react-to-print";
+
 function Legal() {
+  
 
     const { lang } = useLang(); // get current language from context
 
@@ -1092,6 +1097,56 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
     }));
   };
 
+
+
+
+ //PDf view download pdf code handler
+    const [pfaDownload, setpfaDownload] = useState(false);
+    const handleDownloadPDF = () => {
+      const element = pdfRef.current;
+      setpfaDownload(true);
+  
+      // Add a temporary class to scale fonts if needed
+      element.classList.add("pdf-scale");
+  
+      const opt = {
+        margin: [10, 10, 10, 10], // top, left, bottom, right
+        filename: `user_data_${viewLegalData?.name}_${viewLegalData?.user_id}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          scrollY: 0,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+  
+      html2pdf()
+        .set(opt)
+        .from(element)
+        .save()
+        .then(() => {
+          toast.success("Download complete!");
+          element.classList.remove("pdf-scale");
+  
+          setTimeout(() => {
+            setpfaDownload(false);
+          }, 2000);
+        });
+    };
+
+       //Print viewable form data handler
+                         const handlePrint = useReactToPrint({
+                              content: () => pdfRef.current,
+                              pageStyle: `
+                                @page { size: A4; margin: 12mm; }
+                                @media print {
+                                  body { margin: 0; }
+                                }
+                              `,
+                            });
+
+
   return (
     <Fragment>
       {/* register user data into data table format start */}
@@ -1115,7 +1170,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                         placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1178,7 +1233,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                         <Input
                           className="form-control"
                           type="text"
-                          placeholder="Search......."
+                         placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchTextone}
                           onChange={handleSearchChangeone}
                         />
@@ -1263,112 +1318,184 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(domesticViolence,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="domestic_violence_case"
                   value={formData.domestic_violence_case || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+   className="form-control"
+   rows="3"
+   name="domestic_violence_case"
+   value={formData.domestic_violence_case || ""}
+   onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="reason_behind_domestic_violence"
                   value={formData.reason_behind_domestic_violence || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+className="form-control"
+rows="3"
+name="reason_behind_domestic_violence"
+value={formData.reason_behind_domestic_violence || ""}
+onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(drugStatus,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="drug_status_quantity_at_time"
                   value={formData.drug_status_quantity_at_time || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+ className="form-control"
+ rows="3"
+ name="drug_status_quantity_at_time"
+ value={formData.drug_status_quantity_at_time || ""}
+ onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="any_criminal_case"
                   value={formData.any_criminal_case || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="any_criminal_case"
+  value={formData.any_criminal_case || ""}
+  onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(specificCaseDetails,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="case_details_specify"
                   value={formData.case_details_specify || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+  className="form-control"
+  rows="3"
+  name="case_details_specify"
+  value={formData.case_details_specify || ""}
+  onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(currentCaseStatus,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="current_case_status"
                   value={formData.current_case_status || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+         className="form-control"
+         rows="3"
+         name="current_case_status"
+         value={formData.current_case_status || ""}
+         onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(drugStatus,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="drug_status_quantity_current"
                   value={formData.drug_status_quantity_current || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+       className="form-control"
+       rows="3"
+       name="drug_status_quantity_current"
+       value={formData.drug_status_quantity_current || ""}
+       onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
 
             <div className="col-md-12">
               <FormGroup className="mb-0">
                 <Label>{getTranslation(ifWentToJail,lang)}</Label>
-                <Input
+                {/* <Input
                   type="textarea"
                   className="form-control"
                   rows="3"
                   name="jail_period_duration"
                   value={formData.jail_period_duration || ""}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+     className="form-control"
+     rows="3"
+     name="jail_period_duration"
+     value={formData.jail_period_duration || ""}
+     onChange={handleChange}
+/>
+
               </FormGroup>
             </div>
             {/* Legal History End */}
@@ -1400,7 +1527,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
-  <div className="table-responsive p-4">
+  <div className="table-responsive p-4" ref={pdfRef}>
     <h4
       style={{
         textAlign: "center",
@@ -1492,6 +1619,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
       </tbody>
     </Table>
   </div>
+
+<div style={{ margin: "0 20px 20px 20px" }}>
+    <button
+      disabled={pfaDownload}
+      id="download-btn"
+      className="btn btn-primary"
+      onClick={handleDownloadPDF}
+    >
+      {pfaDownload
+        ? getTranslation("Your Logal form data is being downloaded... / आपका Logal फ़ॉर्म डेटा डाउनलोड किया जा रहा है...",lang)
+        : getTranslation("Download Legal Form / कानूनी फॉर्म डाउनलोड करें",lang)}
+    </button>
+
+<button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
+
+  </div>
+
 </CommonModal>
 {/* View Legal History data into modal end */}
 
@@ -1547,7 +1696,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(domesticViolence,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1559,14 +1708,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 domestic_violence_case: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+        className="form-control"
+        rows="3"
+        name="domestic_violence_case"
+        value={LegalEditData?.domestic_violence_case || ""}
+        onChange={(e) =>
+          setLegalEditData((prev) => ({
+            ...prev,
+            domestic_violence_case: e.target.value,
+          }))
+        }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1578,14 +1741,27 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 reason_behind_domestic_violence: e.target.value,
               }))
             }
-          />
+          /> */}
+          <VoiceTextarea
+      className="form-control"
+      rows="3"
+      name="reason_behind_domestic_violence"
+      value={LegalEditData?.reason_behind_domestic_violence || ""}
+      onChange={(e) =>
+        setLegalEditData((prev) => ({
+          ...prev,
+          reason_behind_domestic_violence: e.target.value,
+        }))
+      }
+/>
+          
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(drugStatus,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1597,14 +1773,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 drug_status_quantity_at_time: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+      className="form-control"
+      rows="3"
+      name="drug_status_quantity_at_time"
+      value={LegalEditData?.drug_status_quantity_at_time || ""}
+      onChange={(e) =>
+        setLegalEditData((prev) => ({
+          ...prev,
+          drug_status_quantity_at_time: e.target.value,
+        }))
+      }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1616,14 +1806,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 any_criminal_case: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+       className="form-control"
+       rows="3"
+       name="any_criminal_case"
+       value={LegalEditData?.any_criminal_case || ""}
+       onChange={(e) =>
+         setLegalEditData((prev) => ({
+           ...prev,
+           any_criminal_case: e.target.value,
+         }))
+       }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(specificCaseDetails,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1635,14 +1839,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 case_details_specify: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+    className="form-control"
+    rows="3"
+    name="case_details_specify"
+    value={LegalEditData?.case_details_specify || ""}
+    onChange={(e) =>
+      setLegalEditData((prev) => ({
+        ...prev,
+        case_details_specify: e.target.value,
+      }))
+    }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(currentCaseStatus,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1654,14 +1872,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 current_case_status: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+ className="form-control"
+ rows="3"
+ name="current_case_status"
+ value={LegalEditData?.current_case_status || ""}
+ onChange={(e) =>
+   setLegalEditData((prev) => ({
+     ...prev,
+     current_case_status: e.target.value,
+   }))
+ }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(drugStatus,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1673,14 +1905,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 drug_status_quantity_current: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+       className="form-control"
+       rows="3"
+       name="drug_status_quantity_current"
+       value={LegalEditData?.drug_status_quantity_current || ""}
+       onChange={(e) =>
+         setLegalEditData((prev) => ({
+           ...prev,
+           drug_status_quantity_current: e.target.value,
+         }))
+       }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(ifWentToJail,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1692,7 +1938,21 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 jail_period_duration: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+        className="form-control"
+        rows="3"
+        name="jail_period_duration"
+        value={LegalEditData?.jail_period_duration || ""}
+        onChange={(e) =>
+          setLegalEditData((prev) => ({
+            ...prev,
+            jail_period_duration: e.target.value,
+          }))
+        }
+/>
+
         </FormGroup>
       </div>
       {/* Legal History End */}
@@ -1770,7 +2030,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(domesticViolence,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1782,14 +2042,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 domestic_violence_case: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+      className="form-control"
+      rows="3"
+      name="domestic_violence_case"
+      value={LegalPrefillData?.domestic_violence_case || ""}
+      onChange={(e) =>
+        setLegalPrefillData((prev) => ({
+          ...prev,
+          domestic_violence_case: e.target.value,
+        }))
+      }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(reasonBehindDomesticViolence,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1801,14 +2075,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 reason_behind_domestic_violence: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+     className="form-control"
+     rows="3"
+     name="reason_behind_domestic_violence"
+     value={LegalPrefillData?.reason_behind_domestic_violence || ""}
+     onChange={(e) =>
+       setLegalPrefillData((prev) => ({
+         ...prev,
+         reason_behind_domestic_violence: e.target.value,
+       }))
+     }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(drugStatus,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1820,14 +2108,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 drug_status_quantity_at_time: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+       className="form-control"
+       rows="3"
+       name="drug_status_quantity_at_time"
+       value={LegalPrefillData?.drug_status_quantity_at_time || ""}
+       onChange={(e) =>
+         setLegalPrefillData((prev) => ({
+           ...prev,
+           drug_status_quantity_at_time: e.target.value,
+         }))
+       }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(ifThereIsAnyCriminalCase,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1839,14 +2141,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 any_criminal_case: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+        className="form-control"
+        rows="3"
+        name="any_criminal_case"
+        value={LegalPrefillData?.any_criminal_case || ""}
+        onChange={(e) =>
+          setLegalPrefillData((prev) => ({
+            ...prev,
+            any_criminal_case: e.target.value,
+          }))
+        }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(specificCaseDetails,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1858,14 +2174,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 case_details_specify: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+             className="form-control"
+             rows="3"
+             name="case_details_specify"
+             value={LegalPrefillData?.case_details_specify || ""}
+             onChange={(e) =>
+               setLegalPrefillData((prev) => ({
+                 ...prev,
+                 case_details_specify: e.target.value,
+               }))
+             }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(currentCaseStatus,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1877,14 +2207,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 current_case_status: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+       className="form-control"
+       rows="3"
+       name="current_case_status"
+       value={LegalPrefillData?.current_case_status || ""}
+       onChange={(e) =>
+         setLegalPrefillData((prev) => ({
+           ...prev,
+           current_case_status: e.target.value,
+         }))
+       }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(drugStatus,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1896,14 +2240,28 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 drug_status_quantity_current: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+      className="form-control"
+      rows="3"
+      name="drug_status_quantity_current"
+      value={LegalPrefillData?.drug_status_quantity_current || ""}
+      onChange={(e) =>
+        setLegalPrefillData((prev) => ({
+          ...prev,
+          drug_status_quantity_current: e.target.value,
+        }))
+      }
+/>
+
         </FormGroup>
       </div>
 
       <div className="col-md-12">
         <FormGroup className="mb-0">
           <Label>{getTranslation(ifWentToJail,lang)}</Label>
-          <Input
+          {/* <Input
             type="textarea"
             className="form-control"
             rows="3"
@@ -1915,7 +2273,21 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
                 jail_period_duration: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+      className="form-control"
+      rows="3"
+      name="jail_period_duration"
+      value={LegalPrefillData?.jail_period_duration || ""}
+      onChange={(e) =>
+        setLegalPrefillData((prev) => ({
+          ...prev,
+          jail_period_duration: e.target.value,
+        }))
+      }
+/>
+
         </FormGroup>
       </div>
       {/* Legal History End */}

@@ -95,6 +95,10 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
+
+import { useReactToPrint } from "react-to-print";
+
 function PFA() {
   const { lang } = useLang(); // get current language from context
 
@@ -1665,6 +1669,24 @@ const parseDateString = (dateStr) => {
     
 
 
+      //Print Data handler
+  //Print Data handler
+  // const handlePrint = () => {
+  //   window.print();
+  //   // setviweFormPrint(false); // modal will close correctly
+  // };
+
+   //Print viewable form data handler
+    const handlePrint = useReactToPrint({
+      content: () => pdfRef.current,
+      pageStyle: `
+        @page { size: A4; margin: 12mm; }
+        @media print {
+          body { margin: 0; }
+        }
+      `,
+    });
+
 
   return (
     <Fragment>
@@ -1887,34 +1909,97 @@ const parseDateString = (dateStr) => {
                     <div className="col-md-12">
                       <FormGroup className="mb-4">
                         <Label>{getTranslation(dependentTo,lang)}</Label>
-                        <Input
+                        {/* <Input
                           type="textarea"
                           className="form-control"
                           rows="3"
                           name="dependentToData"
                           value={formData.dependentToData}
                           onChange={handleChange}
-                        />
+                        /> */}
+                        <select
+  className="form-control"
+  name="dependentToData"
+  value={formData.dependentToData}
+  onChange={handleChange}
+>
+  <option value="">
+    {getTranslation("Select Dependency / निर्भरता चुनें", lang)}
+  </option>
+
+  <option value="Alcohol">
+    {getTranslation("Alcohol / शराब", lang)}
+  </option>
+
+  <option value="Afeem, Doada Chura">
+    {getTranslation("Afeem, Doada Chura / अफीम, डोडा चुरा", lang)}
+  </option>
+
+  <option value="Samke Heroin">
+    {getTranslation("Samke Heroin / समके हेरोइन", lang)}
+  </option>
+
+  <option value="Coacine">
+    {getTranslation("Coacine / कोकीन", lang)}
+  </option>
+
+  <option value="MD">
+    {getTranslation("MD / एमडी", lang)}
+  </option>
+
+  <option value="Ganja, Bhang, Charas, Munnka">
+    {getTranslation("Ganja, Bhang, Charas, Munnka / गांजा, भांग, चरस, मुन्नका", lang)}
+  </option>
+
+  <option value="Inhalant Abuse">
+    {getTranslation("Inhalant Abuse / इनहेलेंट का दुरुपयोग", lang)}
+  </option>
+
+  <option value="Medical Abuse">
+    {getTranslation("Medical Abuse / चिकित्सा दुरुपयोग", lang)}
+  </option>
+
+  <option value="Multi Addict">
+    {getTranslation("Multi Addict / मल्टी एडिक्ट", lang)}
+  </option>
+</select>
+
+
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(dependentTo,lang)} />}
+  name="dependentToData"
+  value={formData.dependentToData}
+  onChange={handleChange}
+/> */}
                       </FormGroup>
                     </div>
                     {/*Substance Use Pattern section/उपयोगकर्ता :*/}
                     <div className="col-md-12">
                       <FormGroup className="mb-4 mt-4">
-                        <Label>{getTranslation(substanceUsePattern,lang)}</Label>
-                        <Input
+                        {/* <Label>{getTranslation(substanceUsePattern,lang)}</Label> */}
+                        {/* <Input
                           type="textarea"
                           className="form-control"
                           rows="3"
                           name="substanceUsePatternData"
                           value={formData.substanceUsePatternData}
                           onChange={handleChange}
-                        />
+                        /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(substanceUsePattern,lang)} />}
+  name="substanceUsePatternData"
+  value={formData.substanceUsePatternData}
+  onChange={handleChange}
+/>
+
                       </FormGroup>
                     </div>
                     {/*Last 30 Days Quantity section/उपयोगकर्ता :*/}
                     <div className="col-md-12">
                       <FormGroup className="mb-4 mt-4">
-                        <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
+                        {/* <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
                         <Input
                           type="textarea"
                           className="form-control"
@@ -1922,7 +2007,13 @@ const parseDateString = (dateStr) => {
                           name="last30DaysQuantityData"
                           value={formData.last30DaysQuantityData}
                           onChange={handleChange}
-                        />
+                        /> */}
+                        <VoiceTextarea
+  label={<Translated text={getTranslation(last30DaysQuantity,lang)} />}
+  name="last30DaysQuantityData"
+  value={formData.last30DaysQuantityData}
+  onChange={handleChange}
+/>
                       </FormGroup>
                     </div>
                     {/* General Physical Examination / सामान्य शारीरिक परीक्षण */}
@@ -1936,6 +2027,83 @@ const parseDateString = (dateStr) => {
                           </tr>
                         </thead>
                         <tbody>
+  {[
+    {
+      id: "5",
+      question: getTranslation(anyMedicalHistory, lang),
+      name: "medicalConfirmationData",
+      type: "yesno",
+    },
+    {
+      id: "6",
+      question: getTranslation(anyBloodTransfusionHistory, lang),
+      name: "bloodConfirmationData",
+      type: "yesno",
+    },
+    {
+      id: "7",
+      question: getTranslation(Weight, lang),
+      name: "weight",
+    },
+    {
+      id: "8",
+      question: getTranslation(PulseRate, lang),
+      name: "pulse_rate",
+    },
+    {
+      id: "9",
+      question: getTranslation(Bloodpressure, lang),
+      name: "blood_pressure",
+    },
+    {
+      id: "10",
+      question: getTranslation(Temperature, lang),
+      name: "temperature",
+    },
+  ].map(({ id, question, name, type }) => (
+    <tr key={id}>
+      <td>{id}</td>
+      <td>{question}</td>
+      <td>
+        {type === "yesno" ? (
+          <select
+            className="form-control"
+            name={name}
+            value={formData[name]}
+            onChange={(e) =>
+              setFormData((prevData) => ({
+                ...prevData,
+                [name]: e.target.value,
+              }))
+            }
+          >
+            <option value="">
+              {getTranslation("Select / चुनें", lang)}
+            </option>
+            <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
+            <option value="No">{getTranslation("No / नहीं", lang)}</option>
+          </select>
+        ) : (
+          <Input
+            type={["weight", "pulse_rate", "temperature"].includes(name) ? "number" : "text"}
+            name={name}
+            value={formData[name]}
+            onChange={(e) =>
+              setFormData((prevData) => ({
+                ...prevData,
+                [name]: e.target.value,
+              }))
+            }
+            placeholder={getTranslation("Enter details / विवरण दर्ज करें", lang)}
+            className="form-control"
+          />
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
+
+                        {/* <tbody>
                           {[
                             {
                               id: "5",
@@ -1996,12 +2164,12 @@ const parseDateString = (dateStr) => {
                               </td>
                             </tr>
                           ))}
-                        </tbody>
+                        </tbody> */}
                       </Table>
 
                       <div className="col-md-12">
                         <FormGroup className="mb-4 mt-4">
-                          <Label>{getTranslation(mentionIfAny,lang)}</Label>
+                          {/* <Label>{getTranslation(mentionIfAny,lang)}</Label>
                           <Input
                             type="textarea"
                             className="form-control"
@@ -2009,7 +2177,13 @@ const parseDateString = (dateStr) => {
                             name="bloodTransfusionHistoryData"
                             value={formData.bloodTransfusionHistoryData}
                             onChange={handleChange}
-                          />
+                          /> */}
+                          <VoiceTextarea
+  label={<Translated text={getTranslation(mentionIfAny,lang)} />}
+  name="bloodTransfusionHistoryData"
+  value={formData.bloodTransfusionHistoryData}
+  onChange={handleChange}
+/>
                         </FormGroup>
                       </div>
                     </div>
@@ -2081,7 +2255,7 @@ const parseDateString = (dateStr) => {
 
                       <div className="col-md-12">
                         <FormGroup className="mb-4 mt-4">
-                          <Label>{getTranslation(mentionIfAny2,lang)}</Label>
+                          {/* <Label>{getTranslation(mentionIfAny2,lang)}</Label>
                           <Input
                             type="textarea"
                             className="form-control"
@@ -2089,7 +2263,15 @@ const parseDateString = (dateStr) => {
                             name="complication_description"
                             value={formData.complication_description}
                             onChange={handleChange}
-                          />
+                          /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(mentionIfAny2,lang)} />}
+  name="complication_description"
+  value={formData.complication_description}
+  onChange={handleChange}
+/>
+
                         </FormGroup>
                       </div>
                     </div>
@@ -2149,7 +2331,7 @@ const parseDateString = (dateStr) => {
 
                       <div className="col-md-12">
                         <FormGroup className="mb-4 mt-4">
-                          <Label>{getTranslation(mentionIfAny2,lang)}</Label>
+                          {/* <Label>{getTranslation(mentionIfAny2,lang)}</Label>
                           <Input
                             type="textarea"
                             className="form-control"
@@ -2157,7 +2339,15 @@ const parseDateString = (dateStr) => {
                             name="neuro_description"
                             value={formData.neuro_description}
                             onChange={handleChange}
-                          />
+                          /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(mentionIfAny2,lang)} />}
+  name="neuro_description"
+  value={formData.neuro_description}
+  onChange={handleChange}
+/>
+
                         </FormGroup>
                       </div>
                     </div>
@@ -2165,7 +2355,7 @@ const parseDateString = (dateStr) => {
                     {/* Any Other Findings */}
                     <div className="col-md-12">
                       <FormGroup className="mb-4 mt-4">
-                        <Label>{getTranslation(anyOtherFindings,lang)}</Label>
+                        {/* <Label>{getTranslation(anyOtherFindings,lang)}</Label>
                         <Input
                           type="textarea"
                           className="form-control"
@@ -2173,7 +2363,15 @@ const parseDateString = (dateStr) => {
                           name="other_findings"
                           value={formData.other_findings}
                           onChange={handleChange}
-                        />
+                        /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(anyOtherFindings,lang)} />}
+  name="other_findings"
+  value={formData.other_findings}
+  onChange={handleChange}
+/>
+
                       </FormGroup>
                     </div>
 
@@ -2201,7 +2399,7 @@ const parseDateString = (dateStr) => {
 
                     <div className="col-md-12">
                       <FormGroup className="mb-2 mt-4">
-                        <Label>{getTranslation(Lymphadenopathy,lang)}</Label>
+                        {/* <Label>{getTranslation(Lymphadenopathy,lang)}</Label>
                         <Input
                           type="textarea"
                           className="form-control"
@@ -2209,7 +2407,15 @@ const parseDateString = (dateStr) => {
                           name="lymphadenopathy"
                           value={formData.lymphadenopathy}
                           onChange={handleChange}
-                        />
+                        /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(Lymphadenopathy,lang)} />}
+  name="lymphadenopathy"
+  value={formData.lymphadenopathy}
+  onChange={handleChange}
+/>
+
                       </FormGroup>
                     </div>
 
@@ -2673,6 +2879,13 @@ const parseDateString = (dateStr) => {
                     ? getTranslation("Your PFA is being downloaded.../ आपका PFA डाउनलोड हो रहा है...",lang)
                     : getTranslation("Download Your First Physical Assessment (PFA) / अपना प्रथम शारीरिक मूल्यांकन डाउनलोड करें",lang)}
                 </button>
+                 <button
+                      id="download-btn"
+                      className="btn btn-primary mx-3"
+                      onClick={handlePrint}
+                    >
+                       {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                    </button>
               </div>
             </Col>
           </CommonModal>
@@ -2721,7 +2934,7 @@ const parseDateString = (dateStr) => {
                   <div className="col-md-12 pt-3">
                     <FormGroup className="mb-0">
                       <Label>{getTranslation(dependentTo,lang)}</Label>
-                      <Input
+                      {/* <Input
                         type="textarea"
                         rows="3"
                         name="dependentToData"
@@ -2732,14 +2945,79 @@ const parseDateString = (dateStr) => {
                             dependent_to: e.target.value,
                           })
                         }
-                      />
+                      /> */}
+
+<select
+  className="form-control"
+  name="dependentToData"
+  value={PFAeditData.dependent_to}
+  onChange={(e) =>
+    setPFAeditData({
+      ...PFAeditData,
+      dependent_to: e.target.value,
+    })
+  }
+>
+  <option value="">
+    {getTranslation("Select Dependency / निर्भरता चुनें", lang)}
+  </option>
+
+  <option value="Alcohol">
+    {getTranslation("Alcohol / शराब", lang)}
+  </option>
+
+  <option value="Afeem, Doada Chura">
+    {getTranslation("Afeem, Doada Chura / अफीम, डोडा चुरा", lang)}
+  </option>
+
+  <option value="Samke Heroin">
+    {getTranslation("Samke Heroin / समके हेरोइन", lang)}
+  </option>
+
+  <option value="Coacine">
+    {getTranslation("Coacine / कोकीन", lang)}
+  </option>
+
+  <option value="MD">
+    {getTranslation("MD / एमडी", lang)}
+  </option>
+
+  <option value="Ganja, Bhang, Charas, Munnka">
+    {getTranslation("Ganja, Bhang, Charas, Munnka / गांजा, भांग, चरस, मुन्नका", lang)}
+  </option>
+
+  <option value="Inhalant Abuse">
+    {getTranslation("Inhalant Abuse / इनहेलेंट का दुरुपयोग", lang)}
+  </option>
+
+  <option value="Medical Abuse">
+    {getTranslation("Medical Abuse / चिकित्सा दुरुपयोग", lang)}
+  </option>
+
+  <option value="Multi Addict">
+    {getTranslation("Multi Addict / मल्टी एडिक्ट", lang)}
+  </option>
+</select>
+
+
+                      {/* <VoiceTextarea
+  label={<Translated text={getTranslation(dependentTo,lang)} />}
+  name="dependentToData"
+  value={PFAeditData.dependent_to}
+  onChange={(e) =>
+    setPFAeditData({
+      ...PFAeditData,
+      dependent_to: e.target.value,
+    })
+  }
+/> */}
                     </FormGroup>
                   </div>
 
                   {/* Substance Use Pattern */}
                   <div className="col-md-12">
                     <FormGroup className="mb-0">
-                      <Label>{getTranslation(substanceUsePattern,lang)}</Label>
+                      {/* <Label>{getTranslation(substanceUsePattern,lang)}</Label>
                       <Input
                         type="textarea"
                         rows="3"
@@ -2751,14 +3029,27 @@ const parseDateString = (dateStr) => {
                             substance_use_pattern: e.target.value,
                           })
                         }
-                      />
+                      /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(substanceUsePattern,lang)} />}
+  name="substanceUsePatternData"
+  value={PFAeditData.substance_use_pattern}
+  onChange={(e) =>
+    setPFAeditData({
+      ...PFAeditData,
+      substance_use_pattern: e.target.value,
+    })
+  }
+/>
+
                     </FormGroup>
                   </div>
 
                   {/* Last 30 Days Quantity */}
                   <div className="col-md-12">
                     <FormGroup className="mb-0">
-                      <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
+                      {/* <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
                       <Input
                         type="textarea"
                         rows="3"
@@ -2770,7 +3061,20 @@ const parseDateString = (dateStr) => {
                             last_30_days_quantity: e.target.value,
                           })
                         }
-                      />
+                      /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(last30DaysQuantity,lang)} />}
+  name="last30DaysQuantityData"
+                        value={PFAeditData.last_30_days_quantity}
+                        onChange={(e) =>
+                          setPFAeditData({
+                            ...PFAeditData,
+                            last_30_days_quantity: e.target.value,
+                          })
+                        }
+/>
+
                     </FormGroup>
                   </div>
 
@@ -2785,6 +3089,83 @@ const parseDateString = (dateStr) => {
                         </tr>
                       </thead>
                       <tbody>
+  {[
+    {
+      id: "5",
+      question: getTranslation(anyMedicalHistory, lang),
+      name: "medical_history",
+      type: "yesno", // added type
+    },
+    {
+      id: "6",
+      question: getTranslation(anyBloodTransfusionHistory, lang),
+      name: "blood_transfusion_history",
+      type: "yesno", // added type
+    },
+    {
+      id: "7",
+      question: getTranslation(Weight, lang),
+      name: "weight",
+    },
+    {
+      id: "8",
+      question: getTranslation(PulseRate, lang),
+      name: "pulse_rate",
+    },
+    {
+      id: "9",
+      question: getTranslation(Bloodpressure, lang),
+      name: "blood_pressure",
+    },
+    {
+      id: "10",
+      question: getTranslation(Temperature, lang),
+      name: "temperature",
+    },
+  ].map(({ id, question, name, type }) => (
+    <tr key={id}>
+      <td>{id}</td>
+      <td>{question}</td>
+      <td>
+        {type === "yesno" ? (
+          <select
+            className="form-control"
+            name={name}
+            value={PFAeditData[name] || ""}
+            onChange={(e) => {
+              const { name, value } = e.target;
+              setPFAeditData((prev) => ({
+                ...prev,
+                [name]: value,
+              }));
+            }}
+          >
+            <option value="">
+              {getTranslation("Select / चुनें", lang)}
+            </option>
+            <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
+            <option value="No">{getTranslation("No / नहीं", lang)}</option>
+          </select>
+        ) : (
+          <Input
+            type={["weight", "pulse_rate", "temperature"].includes(name) ? "number" : "text"}
+            name={name}
+            value={PFAeditData[name] || ""}
+            onChange={(e) => {
+              const { name, value, type } = e.target;
+              setPFAeditData((prev) => ({
+                ...prev,
+                [name]: type === "number" ? Number(value) : value,
+              }));
+            }}
+          />
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
+
+                      {/* <tbody>
                         {[
                           {
                             id: "5",
@@ -2845,12 +3226,12 @@ const parseDateString = (dateStr) => {
                             </td>
                           </tr>
                         ))}
-                      </tbody>
+                      </tbody> */}
                     </Table>
 
                     <div className="col-md-12">
                       <FormGroup className="mb-0">
-                        <Label>{getTranslation(mentionIfAny,lang)}</Label>
+                        {/* <Label>{getTranslation(mentionIfAny,lang)}</Label>
                         <Input
                           type="textarea"
                           rows="3"
@@ -2862,7 +3243,20 @@ const parseDateString = (dateStr) => {
                               medical_or_blood_history_details: e.target.value,
                             })
                           }
-                        />
+                        /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(mentionIfAny,lang)} />}
+  name="bloodTransfusionHistoryData"
+  value={PFAeditData.medical_or_blood_history_details}
+  onChange={(e) =>
+    setPFAeditData({
+      ...PFAeditData,
+      medical_or_blood_history_details: e.target.value,
+    })
+  }
+/>
+
                       </FormGroup>
                     </div>
                   </div>
@@ -2949,7 +3343,7 @@ const parseDateString = (dateStr) => {
 
                     <div className="col-md-12">
                       <FormGroup className="mb-0">
-                        <Label>{getTranslation(mentionIfAny2,lang)}</Label>
+                        {/* <Label>{getTranslation(mentionIfAny2,lang)}</Label>
                         <Input
                           type="textarea"
                           rows="3"
@@ -2961,7 +3355,20 @@ const parseDateString = (dateStr) => {
                               complication_description: e.target.value,
                             })
                           }
-                        />
+                        /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(mentionIfAny2,lang)} />}
+  name="complication_description"
+                          value={PFAeditData.complication_description}
+                          onChange={(e) =>
+                            setPFAeditData({
+                              ...PFAeditData,
+                              complication_description: e.target.value,
+                            })
+                          }
+/>
+
                       </FormGroup>
                     </div>
                   </div>
@@ -3027,7 +3434,7 @@ const parseDateString = (dateStr) => {
 
                     <div className="col-md-12">
                       <FormGroup className="mb-0">
-                        <Label>{getTranslation(mentionIfAny2,lang)}</Label>
+                        {/* <Label>{getTranslation(mentionIfAny2,lang)}</Label>
                         <Input
                           type="textarea"
                           rows="3"
@@ -3039,7 +3446,20 @@ const parseDateString = (dateStr) => {
                               neuro_description: e.target.value,
                             })
                           }
-                        />
+                        /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(mentionIfAny2,lang)} />}
+  name="neuro_description"
+  value={PFAeditData.neuro_description}
+  onChange={(e) =>
+    setPFAeditData({
+      ...PFAeditData,
+      neuro_description: e.target.value,
+    })
+  }
+/>
+
                       </FormGroup>
                     </div>
                   </div>
@@ -3047,7 +3467,7 @@ const parseDateString = (dateStr) => {
                   {/* Any Other Findings */}
                   <div className="col-md-12">
                     <FormGroup className="mb-0">
-                      <Label>{getTranslation(anyOtherFindings,lang)}</Label>
+                      {/* <Label>{getTranslation(anyOtherFindings,lang)}</Label>
                       <Input
                         type="textarea"
                         rows="3"
@@ -3059,14 +3479,27 @@ const parseDateString = (dateStr) => {
                             other_findings: e.target.value,
                           })
                         }
-                      />
+                      /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(anyOtherFindings,lang)} />}
+  name="other_findings"
+                        value={PFAeditData.other_findings}
+                        onChange={(e) =>
+                          setPFAeditData({
+                            ...PFAeditData,
+                            other_findings: e.target.value,
+                          })
+                        }
+/>
+
                     </FormGroup>
                   </div>
 
                   {/* Lymphadenopathy */}
                   <div className="col-md-12">
                     <FormGroup className="mb-0">
-                      <Label>{getTranslation(Lymphadenopathy,lang)}</Label>
+                      {/* <Label>{getTranslation(Lymphadenopathy,lang)}</Label>
                       <Input
                         type="textarea"
                         rows="3"
@@ -3078,7 +3511,20 @@ const parseDateString = (dateStr) => {
                             lymphadenopathy: e.target.value,
                           })
                         }
-                      />
+                      /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(Lymphadenopathy,lang)} />}
+  name="lymphadenopathy"
+                        value={PFAeditData.lymphadenopathy}
+                        onChange={(e) =>
+                          setPFAeditData({
+                            ...PFAeditData,
+                            lymphadenopathy: e.target.value,
+                          })
+                        }
+/>
+
                     </FormGroup>
                   </div>
 
@@ -3288,7 +3734,7 @@ const parseDateString = (dateStr) => {
           {/* Dependent To */}
           <div className="col-md-12 pt-3">
             <FormGroup className="mb-0">
-              <Label>{getTranslation(dependentTo,lang)}</Label>
+              {/* <Label>{getTranslation(dependentTo,lang)}</Label>
               <Input
                 type="textarea"
                 rows="3"
@@ -3300,14 +3746,83 @@ const parseDateString = (dateStr) => {
                     dependent_to: e.target.value,
                   })
                 }
-              />
+              /> */}
+
+              {/* <Label>{getTranslation(dependentTo, lang)}</Label> */}
+<Label>{getTranslation("Dependent To / किस पर निर्भर", lang)}</Label>
+
+<select
+  className="form-control"
+  name="dependentToData"
+  value={PFAeditData?.dependent_to}
+  onChange={(e) =>
+    setPFAeditData({
+      ...PFAeditData,
+      dependent_to: e.target.value,
+    })
+  }
+>
+  <option value="">
+    {getTranslation("Select Dependency / निर्भरता चुनें", lang)}
+  </option>
+
+  <option value="Alcohol">
+    {getTranslation("Alcohol / शराब", lang)}
+  </option>
+
+  <option value="Afeem, Doada Chura">
+    {getTranslation("Afeem, Doada Chura / अफीम, डोडा चुरा", lang)}
+  </option>
+
+  <option value="Samke Heroin">
+    {getTranslation("Samke Heroin / समके हेरोइन", lang)}
+  </option>
+
+  <option value="Coacine">
+    {getTranslation("Coacine / कोकीन", lang)}
+  </option>
+
+  <option value="MD">
+    {getTranslation("MD / एमडी", lang)}
+  </option>
+
+  <option value="Ganja, Bhang, Charas, Munnka">
+    {getTranslation("Ganja, Bhang, Charas, Munnka / गांजा, भांग, चरस, मुन्नका", lang)}
+  </option>
+
+  <option value="Inhalant Abuse">
+    {getTranslation("Inhalant Abuse / इनहेलेंट का दुरुपयोग", lang)}
+  </option>
+
+  <option value="Medical Abuse">
+    {getTranslation("Medical Abuse / चिकित्सा दुरुपयोग", lang)}
+  </option>
+
+  <option value="Multi Addict">
+    {getTranslation("Multi Addict / मल्टी एडिक्ट", lang)}
+  </option>
+</select>
+
+
+{/* <VoiceTextarea
+  label={<Translated text={getTranslation(dependentTo,lang)} />}
+  name="dependentToData"
+                value={PFAeditData?.dependent_to}
+                onChange={(e) =>
+                  setPFAeditData({
+                    ...PFAeditData,
+                    dependent_to: e.target.value,
+                  })
+                }
+/> */}
+
             </FormGroup>
           </div>
 
           {/* Substance Use Pattern */}
           <div className="col-md-12">
             <FormGroup className="mb-0">
-              <Label>{getTranslation(substanceUsePattern,lang)}</Label>
+              {/* <Label>{getTranslation(substanceUsePattern,lang)}</Label>
               <Input
                 type="textarea"
                 rows="3"
@@ -3319,14 +3834,26 @@ const parseDateString = (dateStr) => {
                     substance_use_pattern: e.target.value,
                   })
                 }
-              />
+              /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(substanceUsePattern,lang)} />}
+  name="substanceUsePatternData"
+                value={PFAeditData?.substance_use_pattern}
+                onChange={(e) =>
+                  setPFAeditData({
+                    ...PFAeditData,
+                    substance_use_pattern: e.target.value,
+                  })
+                }
+/>
             </FormGroup>
           </div>
 
           {/* Last 30 Days Quantity */}
           <div className="col-md-12">
             <FormGroup className="mb-0">
-              <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
+              {/* <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
               <Input
                 type="textarea"
                 rows="3"
@@ -3338,7 +3865,19 @@ const parseDateString = (dateStr) => {
                     last_30_days_quantity: e.target.value,
                   })
                 }
-              />
+              /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(last30DaysQuantity,lang)} />}
+  name="last30DaysQuantityData"
+  value={PFAeditData?.last_30_days_quantity}
+  onChange={(e) =>
+    setPFAeditData({
+      ...PFAeditData,
+      last_30_days_quantity: e.target.value,
+    })
+  }
+/>
             </FormGroup>
           </div>
 
@@ -3353,6 +3892,83 @@ const parseDateString = (dateStr) => {
                 </tr>
               </thead>
               <tbody>
+  {[
+    {
+      id: "5",
+      question: getTranslation(anyMedicalHistory, lang),
+      name: "medical_history",
+      type: "yesno", // added type
+    },
+    {
+      id: "6",
+      question: getTranslation(anyBloodTransfusionHistory, lang),
+      name: "blood_transfusion_history",
+      type: "yesno", // added type
+    },
+    {
+      id: "7",
+      question: getTranslation(Weight, lang),
+      name: "weight",
+    },
+    {
+      id: "8",
+      question: getTranslation(PulseRate, lang),
+      name: "pulse_rate",
+    },
+    {
+      id: "9",
+      question: getTranslation(Bloodpressure, lang),
+      name: "blood_pressure",
+    },
+    {
+      id: "10",
+      question: getTranslation(Temperature, lang),
+      name: "temperature",
+    },
+  ].map(({ id, question, name, type }) => (
+    <tr key={id}>
+      <td>{id}</td>
+      <td>{question}</td>
+      <td>
+        {type === "yesno" ? (
+          <select
+            className="form-control"
+            name={name}
+            value={PFAeditData[name] || ""}
+            onChange={(e) => {
+              const { name, value } = e.target;
+              setPFAeditData((prev) => ({
+                ...prev,
+                [name]: value,
+              }));
+            }}
+          >
+            <option value="">
+              {getTranslation("Select / चुनें", lang)}
+            </option>
+            <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
+            <option value="No">{getTranslation("No / नहीं", lang)}</option>
+          </select>
+        ) : (
+          <Input
+            type={["weight", "pulse_rate", "temperature"].includes(name) ? "number" : "text"}
+            name={name}
+            value={PFAeditData[name] || ""}
+            onChange={(e) => {
+              const { name, value, type } = e.target;
+              setPFAeditData((prev) => ({
+                ...prev,
+                [name]: type === "number" ? Number(value) : value,
+              }));
+            }}
+          />
+        )}
+      </td>
+    </tr>
+  ))}
+</tbody>
+
+              {/* <tbody>
                 {[
                   {
                     id: "5",
@@ -3413,12 +4029,12 @@ const parseDateString = (dateStr) => {
                     </td>
                   </tr>
                 ))}
-              </tbody>
+              </tbody> */}
             </Table>
 
             <div className="col-md-12">
               <FormGroup className="mb-0 mt-4 mb-4">
-                <Label>{getTranslation(mentionIfAny,lang)}</Label>
+                {/* <Label>{getTranslation(mentionIfAny,lang)}</Label>
                 <Input
                   type="textarea"
                   rows="3"
@@ -3430,7 +4046,18 @@ const parseDateString = (dateStr) => {
                       medical_or_blood_history_details: e.target.value,
                     })
                   }
-                />
+                /> */}
+                <VoiceTextarea
+  label={<Translated text={getTranslation(mentionIfAny,lang)} />}
+  name="bloodTransfusionHistoryData"
+  value={PFAeditData?.medical_or_blood_history_details}
+  onChange={(e) =>
+    setPFAeditData({
+      ...PFAeditData,
+      medical_or_blood_history_details: e.target.value,
+    })
+  }
+/>
               </FormGroup>
             </div>
           </div>
@@ -3504,7 +4131,7 @@ const parseDateString = (dateStr) => {
   <div className="col-md-12">
     <FormGroup className="mb-0 mt-4 mb-4">
       <Label>{getTranslation(mentionIfAny2,lang)}</Label>
-      <Input
+      {/* <Input
         type="textarea"
         rows="3"
         name="complication_description"
@@ -3515,7 +4142,20 @@ const parseDateString = (dateStr) => {
             complication_description: e.target.value,
           })
         }
-      />
+      /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(mentionIfAny2,lang)} />}
+  name="complication_description"
+        value={PFAeditData?.complication_description || ""}
+        onChange={(e) =>
+          setPFAeditData({
+            ...PFAeditData,
+            complication_description: e.target.value,
+          })
+        }
+/>
+
     </FormGroup>
   </div>
 </div>
@@ -3577,7 +4217,7 @@ const parseDateString = (dateStr) => {
 
   <div className="col-md-12">
     <FormGroup className="mb-0 mt-4 mb-4">
-      <Label>{getTranslation(mentionIfAny2,lang)}</Label>
+      {/* <Label>{getTranslation(mentionIfAny2,lang)}</Label>
       <Input
         type="textarea"
         rows="3"
@@ -3589,7 +4229,20 @@ const parseDateString = (dateStr) => {
             neuro_description: e.target.value,
           })
         }
-      />
+      /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(mentionIfAny2,lang)} />}
+  name="neuro_description"
+        value={PFAeditData?.neuro_description || ""}
+        onChange={(e) =>
+          setPFAeditData({
+            ...PFAeditData,
+            neuro_description: e.target.value,
+          })
+        }
+/>
+
     </FormGroup>
   </div>
 </div>
@@ -3598,7 +4251,7 @@ const parseDateString = (dateStr) => {
           {/* Any Other Findings */}
           <div className="col-md-12">
             <FormGroup className="mb-0">
-              <Label>{getTranslation(anyOtherFindings,lang)}</Label>
+              {/* <Label>{getTranslation(anyOtherFindings,lang)}</Label>
               <Input
                 type="textarea"
                 rows="3"
@@ -3610,14 +4263,27 @@ const parseDateString = (dateStr) => {
                     other_findings: e.target.value,
                   })
                 }
-              />
+              /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(anyOtherFindings,lang)} />}
+  name="other_findings"
+                value={PFAeditData?.other_findings}
+                onChange={(e) =>
+                  setPFAeditData({
+                    ...PFAeditData,
+                    other_findings: e.target.value,
+                  })
+                }
+/>
+
             </FormGroup>
           </div>
 
           {/* Lymphadenopathy */}
           <div className="col-md-12">
             <FormGroup className="mb-0">
-              <Label>{getTranslation(Lymphadenopathy,lang)}</Label>
+              {/* <Label>{getTranslation(Lymphadenopathy,lang)}</Label>
               <Input
                 type="textarea"
                 rows="3"
@@ -3629,7 +4295,20 @@ const parseDateString = (dateStr) => {
                     lymphadenopathy: e.target.value,
                   })
                 }
-              />
+              /> */}
+
+<VoiceTextarea
+  label={<Translated text={getTranslation(Lymphadenopathy,lang)} />}
+  name="lymphadenopathy"
+  value={PFAeditData?.lymphadenopathy}
+  onChange={(e) =>
+    setPFAeditData({
+      ...PFAeditData,
+      lymphadenopathy: e.target.value,
+    })
+  }
+/>
+
             </FormGroup>
           </div>
 

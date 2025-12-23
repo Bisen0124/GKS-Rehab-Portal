@@ -58,6 +58,9 @@ import Translated from "../Translated";
 import { LangProvider, useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import { useReactToPrint } from "react-to-print";
+
+
 const FirstExamination = () => {
 
    const { lang } = useLang(); // get current language from context
@@ -1115,6 +1118,17 @@ const parseDateString = (dateStr) => {
 };
 
 
+ //Print viewable form data handler
+   const handlePrint = useReactToPrint({
+        content: () => pdfRef.current,
+        pageStyle: `
+          @page { size: A4; margin: 12mm; }
+          @media print {
+            body { margin: 0; }
+          }
+        `,
+      });
+
 
   return (
 <Fragment>
@@ -1519,6 +1533,13 @@ const parseDateString = (dateStr) => {
                     ? getTranslation( "Your First Exam Form is being downloaded.../ आपका प्रथम परीक्षा फॉर्म  डाउनलोड हो रहा है...",lang)
                     : getTranslation("Download Your First Exam Form(FE) / अपना प्रथम परीक्षा फॉर्म डाउनलोड करें",lang)}
                 </button>
+
+                 <button
+                      className="btn btn-primary mx-3"
+                      onClick={handlePrint}
+                    >
+                      {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                    </button>
               </div>
 
         </CommonModal>

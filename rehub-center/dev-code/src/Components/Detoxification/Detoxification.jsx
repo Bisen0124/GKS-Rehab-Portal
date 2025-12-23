@@ -108,6 +108,10 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
+
+import { useReactToPrint } from "react-to-print";
+
 const Detoxification = () => {
 
     const { lang } = useLang(); // get current language from context
@@ -1185,6 +1189,20 @@ const handleDetoxReadmissionSubmit = async (e) => {
     setEditDetoxModal(false);
     setDetoxPrefillModal(false);
   };
+
+
+  //Print viewable form data handler
+         const handlePrint = useReactToPrint({
+              content: () => pdfRef.current,
+              pageStyle: `
+                @page { size: A4; margin: 12mm; }
+                @media print {
+                  body { margin: 0; }
+                }
+              `,
+            });
+  
+
   return (
     <frameElement>
       {/* register user data into data table format start */}
@@ -1422,26 +1440,46 @@ const handleDetoxReadmissionSubmit = async (e) => {
               {/* Start Remark */}
               <div className="mb-3">
                 <label htmlFor="start_remark">{getTranslation("Start Remark/टिप्पणी प्रारंभ करें",lang)}</label>
-                <textarea
+                {/* <textarea
                   id="start_remark"
                   name="start_remark"
                   className="form-control"
                   placeholder="Enter start remark"
                   value={formData.start_remark}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+ id="start_remark"
+ name="start_remark"
+ className="form-control"
+ placeholder="Enter start remark"
+ value={formData.start_remark}
+ onChange={handleChange}
+/>
+
               </div>
               {/* End Remark */}
               <div className="mb-3">
                 <label htmlFor="end_remark">{getTranslation("End Remark/टिप्पणी समाप्त",lang)}</label>
-                <textarea
+                {/* <textarea
                   id="end_remark"
                   name="end_remark"
                   className="form-control"
                   placeholder="Enter end remark"
                   value={formData.end_remark}
                   onChange={handleChange}
-                />
+                /> */}
+
+<VoiceTextarea
+     id="end_remark"
+     name="end_remark"
+     className="form-control"
+     placeholder="Enter end remark"
+     value={formData.end_remark}
+     onChange={handleChange}
+/>
+
               </div>
               {/* Submit */}
               <div className="d-flex gap-3 mt-3">
@@ -1535,6 +1573,14 @@ const handleDetoxReadmissionSubmit = async (e) => {
               ? getTranslation("Your Detoxification report is being downloaded... / आपका डिटॉक्स रिपोर्ट डाउनलोड हो रहा है...",lang)
               : getTranslation("Download Your Detoxification Report / डिटॉक्स रिपोर्ट डाउनलोड करें",lang)}
           </button>
+
+<button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
+
         </div>
       </CommonModal>
       {/* View detoxification data form end */}
@@ -1690,7 +1736,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
         {/* Start Remark */}
         <div className="mb-3">
           <label htmlFor="start_remark">{getTranslation("Start Remark/टिप्पणी प्रारंभ करें",lang)}</label>
-          <textarea
+          {/* <textarea
             id="start_remark"
             name="start_remark"
             className="form-control"
@@ -1702,13 +1748,28 @@ const handleDetoxReadmissionSubmit = async (e) => {
                 start_remark: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+       id="start_remark"
+       name="start_remark"
+       className="form-control"
+       placeholder="Enter start remark"
+       value={editDetoxData?.start_remark || ""}
+       onChange={(e) =>
+         setEditDetoxData((prev) => ({
+           ...prev,
+           start_remark: e.target.value,
+         }))
+       }
+/>
+
         </div>
 
         {/* End Remark */}
         <div className="mb-3">
           <label htmlFor="end_remark">{getTranslation("End Remark/टिप्पणी समाप्त",lang)}</label>
-          <textarea
+          {/* <textarea
             id="end_remark"
             name="end_remark"
             className="form-control"
@@ -1720,7 +1781,22 @@ const handleDetoxReadmissionSubmit = async (e) => {
                 end_remark: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+       id="end_remark"
+       name="end_remark"
+       className="form-control"
+       placeholder="Enter end remark"
+       value={editDetoxData?.end_remark || ""}
+       onChange={(e) =>
+         setEditDetoxData((prev) => ({
+           ...prev,
+           end_remark: e.target.value,
+         }))
+       }
+/>
+
         </div>
 
         {/* Submit */}
@@ -1863,7 +1939,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
         {/* Start Remark */}
         <div className="mb-3">
           <label htmlFor="start_remark">{getTranslation("Start Remark/टिप्पणी प्रारंभ करें",lang)}</label>
-          <textarea
+          {/* <textarea
             id="start_remark"
             name="start_remark"
             className="form-control"
@@ -1875,13 +1951,28 @@ const handleDetoxReadmissionSubmit = async (e) => {
                 start_remark: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+       id="start_remark"
+       name="start_remark"
+       className="form-control"
+       placeholder="Enter start remark"
+       value={DetoxPrefillData?.start_remark || ""}
+       onChange={(e) =>
+         setDetoxPrefillData((prev) => ({
+           ...prev,
+           start_remark: e.target.value,
+         }))
+       }
+/>
+
         </div>
 
         {/* End Remark */}
         <div className="mb-3">
           <label htmlFor="end_remark">{getTranslation("End Remark/टिप्पणी समाप्त",lang)}</label>
-          <textarea
+          {/* <textarea
             id="end_remark"
             name="end_remark"
             className="form-control"
@@ -1893,7 +1984,22 @@ const handleDetoxReadmissionSubmit = async (e) => {
                 end_remark: e.target.value,
               }))
             }
-          />
+          /> */}
+
+<VoiceTextarea
+      id="end_remark"
+      name="end_remark"
+      className="form-control"
+      placeholder="Enter end remark"
+      value={DetoxPrefillData?.end_remark || ""}
+      onChange={(e) =>
+        setDetoxPrefillData((prev) => ({
+          ...prev,
+          end_remark: e.target.value,
+        }))
+      }
+/>
+
         </div>
 
         {/* Submit */}

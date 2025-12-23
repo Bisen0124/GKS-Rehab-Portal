@@ -57,6 +57,10 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
+
+import { useReactToPrint } from "react-to-print";
+
 function SUDBrief() {
 
    const { lang } = useLang(); // get current language from context
@@ -1087,6 +1091,18 @@ const handleSUDBriefUpdate = async () => {
       });
   };
 
+
+   //Print viewable form data handler
+               const handlePrint = useReactToPrint({
+                    content: () => pdfRef.current,
+                    pageStyle: `
+                      @page { size: A4; margin: 12mm; }
+                      @media print {
+                        body { margin: 0; }
+                      }
+                    `,
+                  });
+                  
   return (
     <Fragment>
       {/* register user data into data table format start */}
@@ -1411,195 +1427,330 @@ const handleSUDBriefUpdate = async () => {
               <label class="form-label">
                {getTranslation(" If expenses more than income where do you arrange? / यदि आपके खर्च आय से ज्यादा हैं तो व्यवस्था कँहा से करते हैं?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="expense_more_than_income_arrangement"
                 class="form-control"
                 rows="2"
                 value={formData.expense_more_than_income_arrangement}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+
+<VoiceTextarea
+      name="expense_more_than_income_arrangement"
+      class="form-control"
+      rows="2"
+      value={formData.expense_more_than_income_arrangement}
+      onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                {getTranslation(" Substance abuse Started When? Why? Where? With Whom (No of Person)? Place? Substance? Quantity? Brand? / मादक पदार्थ कांपना सेवन कब शुरू हुआ? क्यों? कहाँ? किसके साथ (कितने लोग) ? स्थान? पदार्थ?मात्रा? ब्रांड?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="substance_abuse_started_when"
                 class="form-control"
                 rows="3"
                 value={formData.substance_abuse_started_when}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+      name="substance_abuse_started_when"
+      class="form-control"
+      rows="3"
+      value={formData.substance_abuse_started_when}
+      onChange={handleInputChange}
+/>
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("If started with Tobacco after how much time you moved to other Substance (like Alcohol Ganja etc) & why? / यदि तम्बाकू से शुरुआत की थी तो कितने समय बाद आप अन्य मादक पदार्थ (जैसे शराब,गांजा आदि) की ओर चले गए और क्यों?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="alcohol_tobacco_experience"
                 class="form-control"
                 rows="3"
                 value={formData.alcohol_tobacco_experience}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+   name="alcohol_tobacco_experience"
+   class="form-control"
+   rows="3"
+   value={formData.alcohol_tobacco_experience}
+   onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
               {getTranslation("  How was your first experience of Substance abuse? / मादक पदार्थ के सेवन का आपका पहला अनुभव कैसा था?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="first_substance_experience"
                 class="form-control"
                 rows="3"
                 value={formData.first_substance_experience}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+   name="first_substance_experience"
+   class="form-control"
+   rows="3"
+   value={formData.first_substance_experience}
+   onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                {getTranslation(" In how much time abuse Substance 2nd time & with whom? How often did you take Substance in the first year? / आपने कितनी बार और किसके साथ मिलकर दूसरी बार मादक पदार्थ का सेवन किया? आपने पहले वर्ष में कितनी बार मादक पदार्थ का सेवन किया?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="second_time_abuse_frequency"
                 class="form-control"
                 rows="3"
                 value={formData.second_time_abuse_frequency}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+   name="second_time_abuse_frequency"
+   class="form-control"
+   rows="3"
+   value={formData.second_time_abuse_frequency}
+   onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("Mental obsession for Substance started on? / मादक पदार्थ के प्रति मानसिक जुनून की शुरुआत कब हुयी?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="mental_obsession_started_when"
                 class="form-control"
                 rows="3"
                 value={formData.mental_obsession_started_when}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+   name="mental_obsession_started_when"
+   class="form-control"
+   rows="3"
+   value={formData.mental_obsession_started_when}
+   onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("Experienced any Trauma, if yes when & what, what effect on Substance use? Reason for regular use was shock/Trauma? कोई सदमा,यदि हाँ तो कब और क्या, मादक पदार्थ के उपयोग पर इसका क्या प्रभाव पड़ा? क्नियमित उपयोग का कारण सदमा था?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="trauma_effect_on_substance_use"
                 class="form-control"
                 rows="3"
                 value={formData.trauma_effect_on_substance_use}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+  name="trauma_effect_on_substance_use"
+  class="form-control"
+  rows="3"
+  value={formData.trauma_effect_on_substance_use}
+  onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("Why & When started Regular use & with Whom? / नियमित उपयोग क्यों और कब शुरू हुआ? किसके साथ ?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="regular_use_when_with_whom"
                 class="form-control"
                 rows="3"
                 value={formData.regular_use_when_with_whom}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+  name="regular_use_when_with_whom"
+  class="form-control"
+  rows="3"
+  value={formData.regular_use_when_with_whom}
+  onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("Residence status of patient when started regularly / ?नियमित रूप से शुरू होने पर रोगी की आवासीय स्थिति?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="residence_status_regular_use"
                 class="form-control"
                 rows="3"
                 value={formData.residence_status_regular_use}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="residence_status_regular_use"
+ class="form-control"
+ rows="3"
+ value={formData.residence_status_regular_use}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                {getTranslation(" list the friends with whom you started regular use. Were they are same friends you started with? / उन दोस्तों की सूची बनाएँ जिनके साथ आपने नियमित उपयोग शुरू किया था। क्या वे वही दोस्त थे जिनके साथ शुरुवात की ?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="friends_regular_use"
                 class="form-control"
                 rows="3"
                 value={formData.friends_regular_use}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="friends_regular_use"
+ class="form-control"
+ rows="3"
+ value={formData.friends_regular_use}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                {getTranslation(" if tried multiple Substance in early stage mention?(if yes why with whom?) / क्या आपने कई मादक पदार्थ का इस्तेमाल किया है?(यदि हां तो क्यों किसके साथ?)",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="multiple_substances_early_stage"
                 class="form-control"
                 rows="3"
                 value={formData.multiple_substances_early_stage}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="multiple_substances_early_stage"
+ class="form-control"
+ rows="3"
+ value={formData.multiple_substances_early_stage}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("Are you in touch with those friends with whom you initially used Substance ? Current relationship with those? Are they Dependent, social Dependent or Sober. / क्या आप उन दोस्तों के संपर्क में हैं जिनके साथ आपने शुरू में मादक पदार्थ लिया था? उनके साथ वर्तमान संबंध क्या हैं? क्या वे आश्रित, सामाजिक आश्रित या संयमित हैं?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="touch_friends_current_relationship"
                 class="form-control"
                 rows="3"
                 value={formData.touch_friends_current_relationship}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="touch_friends_current_relationship"
+ class="form-control"
+ rows="3"
+ value={formData.touch_friends_current_relationship}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("What is reaction of family & friends (who are sober) when they know? What was reaction of patient? / जब परिवार और दोस्तों (जो संयमी हैं) को पता चला तो उनकी क्या प्रतिक्रिया थी? मरीज़ की क्या प्रतिक्रिया थी?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="family_friends_reaction"
                 class="form-control"
                 rows="3"
                 value={formData.family_friends_reaction}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="family_friends_reaction"
+ class="form-control"
+ rows="3"
+ value={formData.family_friends_reaction}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                {getTranslation(" Effect of Substance in Physical, personal, married, Educational, Professional Life & Family ? & Your Reaction? / शारीरिक, व्यक्तिगत, विवाहित, शैक्षिक, व्यावसायिक जीवन और परिवार पर मादक पदार्थ का प्रभाव और आपकी प्रतिक्रिया?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="substance_effect_physical"
                 class="form-control"
                 rows="3"
                 value={formData.substance_effect_physical}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="substance_effect_physical"
+ class="form-control"
+ rows="3"
+ value={formData.substance_effect_physical}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("Chief Complaints: / मुख्य शिकायतें:",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="chief_complaints"
                 class="form-control"
                 rows="3"
                 value={formData.chief_complaints}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="chief_complaints"
+ class="form-control"
+ rows="3"
+ value={formData.chief_complaints}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             {/*  Prior Treatment for substance use Dependency / पदार्थ के उपयोग पर निर्भरता के लिए पूर्व उपचार start */}
@@ -1729,13 +1880,22 @@ const handleSUDBriefUpdate = async () => {
               <label class="form-label">
                {getTranslation(" How Many times tried to stop Substance dependency ?how many times Succeeded & for how much time? / कितनी बार मादक पदार्थों का सेवन बंद करने की कोशिश की? कितनी बार सफलता मिली और कितने समय के लिए?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="substance_stop_tried"
                 class="form-control"
                 rows="3"
                 value={formData.substance_stop_tried}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="substance_stop_tried"
+ class="form-control"
+ rows="3"
+ value={formData.substance_stop_tried}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
@@ -1743,65 +1903,110 @@ const handleSUDBriefUpdate = async () => {
                 {" "}
                 {getTranslation("Coping mechanism during stop using Substance / पदार्थ के उपयोग बंद करने के दौरान मुकाबला तंत्र",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="coping_mechanisms"
                 class="form-control"
                 rows="3"
                 value={formData.coping_mechanisms}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+  name="coping_mechanisms"
+  class="form-control"
+  rows="3"
+  value={formData.coping_mechanisms}
+  onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                {getTranslation(" When Stopped using, what work did you do? (In life) / जब पदार्थ के उपयोग बंद कर दिया तो आपने क्या काम किया?(जीवन में)",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="work_after_stop"
                 class="form-control"
                 rows="3"
                 value={formData.work_after_stop}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="work_after_stop"
+ class="form-control"
+ rows="3"
+ value={formData.work_after_stop}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                {getTranslation(" What Influence made you stop? / किस प्रभाव ने आपको रुकने रुकने के लिए प्रेरित किया?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="influence_reason_to_stop"
                 class="form-control"
                 rows="3"
                 value={formData.influence_reason_to_stop}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+name="influence_reason_to_stop"
+class="form-control"
+rows="3"
+value={formData.influence_reason_to_stop}
+onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                {getTranslation(" If Relapse When? Why? With Whom? / यदि रिलैप्स हुए कब? क्यों? किसके साथ ?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="why_relapse"
                 class="form-control"
                 rows="3"
                 value={formData.why_relapse}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+name="why_relapse"
+class="form-control"
+rows="3"
+value={formData.why_relapse}
+onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
               {getTranslation("  After Relapse did you change your substance and is your Substance quantity increased? / रिलैप्स के बाद क्या आपने अपना मादक पदार्थ बदल दिया और क्या आपकी मादक पदार्थ मात्रा की बढ़ गई है?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="substance_change_quantity"
                 class="form-control"
                 rows="3"
                 value={formData.substance_change_quantity}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+name="substance_change_quantity"
+class="form-control"
+rows="3"
+value={formData.substance_change_quantity}
+onChange={handleInputChange}
+/>
+
             </div>
 
             <H4>{getTranslation("Patient Health / रोगी का स्वास्थ्य",lang)}</H4>
@@ -1811,78 +2016,133 @@ const handleSUDBriefUpdate = async () => {
                 {" "}
                {getTranslation(" Have any mental or physical disorder any accident or injury / रोगी को कोई मानसिक या शारीरिक रोग है?दुर्घटना या चोट?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="mental_physical_disorders"
                 class="form-control"
                 rows="3"
                 value={formData.mental_physical_disorders}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="mental_physical_disorders"
+ class="form-control"
+ rows="3"
+ value={formData.mental_physical_disorders}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("Diagnosed on? Treatment? if took or Undergoing / बीमारी का पता कब चला? कोई उपचार लिया या चल रहा हो तो जानकारी",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="diagnosed_on_treatment"
                 class="form-control"
                 rows="3"
                 value={formData.diagnosed_on_treatment}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="diagnosed_on_treatment"
+ class="form-control"
+ rows="3"
+ value={formData.diagnosed_on_treatment}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("Doctor, Place and duration & Result of Treatment? / चिकित्सक का नाम, अस्पताल, उपचार का समय और परिणाम?",lang)} {" "}
               </label>
-              <textarea
+              {/* <textarea
                 name="doctor_treatment_details"
                 class="form-control"
                 rows="3"
                 value={formData.doctor_treatment_details}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="doctor_treatment_details"
+ class="form-control"
+ rows="3"
+ value={formData.doctor_treatment_details}
+ onChange={handleInputChange}
+/>
+
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                {getTranslation(" If gone under any treatment for Substance abuse? (any Psychiatrist, baba, jadi buti, Religious etc) / क्या आपने मादक पदार्थ के सेवन के लिए कोई उपचार करवाया है? (किसी मनोचिकित्सक, बाबा, जड़ी बूटी, धार्मिक आदि से)",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="traditional_healer_treatment"
                 class="form-control"
                 rows="3"
                 value={formData.traditional_healer_treatment}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+  name="traditional_healer_treatment"
+  class="form-control"
+  rows="3"
+  value={formData.traditional_healer_treatment}
+  onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                 {getTranslation("If yes where? When? For how much Time? / अगर हाँ तो कहाँ? कब? कितने समय के लिए?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="how_long_when"
                 class="form-control"
                 rows="3"
                 value={formData.how_long_when}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="how_long_when"
+ class="form-control"
+ rows="3"
+ value={formData.how_long_when}
+ onChange={handleInputChange}
+/>
+
             </div>
 
             <div class="mb-3">
               <label class="form-label">
                {getTranslation(" You familiar with treatment? Effect of the treatment? / क्या इलाज के बारे में आपको पहले पता था? परिणाम क्या रहा?",lang)}
               </label>
-              <textarea
+              {/* <textarea
                 name="treatment_effect_result"
                 class="form-control"
                 rows="3"
                 value={formData.treatment_effect_result}
                 onChange={handleInputChange}
-              ></textarea>
+              ></textarea> */}
+
+<VoiceTextarea
+ name="treatment_effect_result"
+ class="form-control"
+ rows="3"
+ value={formData.treatment_effect_result}
+ onChange={handleInputChange}
+/>
+
             </div>
             {/* Submit Button */}
             <div className="d-flex gap-3">
@@ -2102,6 +2362,14 @@ const handleSUDBriefUpdate = async () => {
               ? getTranslation("Your SUD Brief is being downloaded.../ आपका SUD डाउनलोड हो रहा है...",lang)
               : getTranslation("Download SUD Brief/SUD संक्षिप्त विवरण डाउनलोड करें",lang)}
           </button>
+
+<button
+                          className="btn btn-primary mx-3"
+                          onClick={handlePrint}
+                        >
+                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
+                        </button>
+
         </div>
       </CommonModal>
       {/* View SUD Brief data into modal end */}
@@ -2177,7 +2445,7 @@ const handleSUDBriefUpdate = async () => {
             ].map((field, idx) => (
               <div key={idx} className="col-md-6 mb-3">
                 <div className="form-group">
-                <label className="form-label">{fieldLabels[field]}</label>
+                <label className="form-label">{getTranslation(fieldLabels[field],lang)}</label>
                   <Input
                     type="text"
                     className="form-control"
@@ -2225,8 +2493,8 @@ const handleSUDBriefUpdate = async () => {
             "treatment_effect_result",
           ].map((field, idx) => (
             <div key={idx} className="mb-3">
-                <label className="form-label">{textareaLabels[field]}</label>
-              <textarea
+                <label className="form-label">{getTranslation(textareaLabels[field],lang)}</label>
+              {/* <textarea
                 className="form-control"
                 rows="3"
                 value={SUDBriefEditData?.[field] || ""}
@@ -2236,7 +2504,21 @@ const handleSUDBriefUpdate = async () => {
                     [field]: e.target.value,
                   }))
                 }
-              />
+              /> */}
+
+<VoiceTextarea
+      className="form-control"
+      rows="3"
+      value={SUDBriefEditData?.[field] || ""}
+      onChange={(e) =>
+        setSUDBriefEditData((prev) => ({
+          ...prev,
+          [field]: e.target.value,
+        }))
+      }
+/>
+
+
             </div>
           ))}
 

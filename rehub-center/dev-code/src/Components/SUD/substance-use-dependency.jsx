@@ -66,6 +66,8 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import { useReactToPrint } from "react-to-print";
+
 function SUD() {
 
       const { lang } = useLang(); // get current language from context
@@ -971,6 +973,33 @@ function SUD() {
             });
         };
 
+
+          //Print viewable form data handler
+                     const handlePrint = useReactToPrint({
+                          content: () => pdfRef.current,
+                          pageStyle: `
+                            @page { size: A4; margin: 12mm; }
+                            @media print {
+                              body { margin: 0; }
+                            }
+                          `,
+                        });
+
+
+                        const EXCLUDED_KEYS = [
+                            "substance_details",
+                            "created_at",
+                            "updated_at",
+                            "created_by",
+                            "updated_by",
+                            "branch_id",
+                            "user_id",
+                            "entry_id",
+                            "sda_id",
+                            "isActive",
+                            "Branch_id"
+                          ];
+
     return (
         <Fragment>
             {/* register user data into data table format start */}
@@ -1467,107 +1496,197 @@ function SUD() {
 
             {/* View SUD data modal start */}
             <CommonModal
-                isOpen={viewSUDmodal}
-                title={getTranslation("View Substance Use Dependency (SUD)/पदार्थ उपयोग निर्भरता (SUD) देखें",lang)}
-                toggler={closeSUDmodal}
-                maxWidth="1200px"
-            >
-                <Col sm="12">
-                    <div className="table-responsive p-4" ref={pdfRef}>
-                        <h4
-                            style={{
-                                textAlign: "center",
-                                textDecoration: "underline",
-                                padding: "20px 0",
-                            }}
-                        >
-                            {getTranslation("Substance Use Dependency / पदार्थ उपयोग निर्भरता",lang)}
-                        </h4>
-                        <Table size="sm" className="table-bordered">
-  <tbody style={{ fontSize: "14px" }}>
-    {isLoading ? (
-      <tr>
-        <td colSpan="2" className="text-center">
-          <div className="loader-box">
-            <Spinner
-              className={selectedSpinner?.spinnerClass || "spinner-border"}
-            />
-          </div>
-        </td>
-      </tr>
-    ) : viewSUDData ? (
-      <>
-        {Object.entries(viewSUDData).map(([key, value], index) => (
-          key !== "substance_details" ? (
-            <tr key={index}>
-              <td className="fw-bold text-capitalize">{key.replace(/_/g, " ")}</td>
-              <td>{String(value)}</td>
+  isOpen={viewSUDmodal}
+  title={getTranslation(
+    "View Substance Use Dependency (SUD) / पदार्थ उपयोग निर्भरता देखें",
+    lang
+  )}
+  toggler={closeSUDmodal}
+  maxWidth="1200px"
+>
+  <Col sm="12">
+    <div className="table-responsive p-4" ref={pdfRef}>
+      <h4
+        style={{
+          textAlign: "center",
+          textDecoration: "underline",
+          padding: "20px 0"
+        }}
+      >
+        {getTranslation(
+          "Substance Use Dependency / पदार्थ उपयोग निर्भरता",
+          lang
+        )}
+      </h4>
+
+      <Table bordered size="sm">
+        <tbody style={{ fontSize: "14px" }}>
+          {isLoading ? (
+            <tr>
+              <td colSpan="2" className="text-center">
+                <Spinner />
+              </td>
             </tr>
           ) : (
-            <>
-              <tr key={index}>
-                <td className="fw-bold text-capitalize">{getTranslation("Substance Details/पदार्थ विवरण",lang)}</td>
-                <td className="p-0">
-                  <Table size="sm" bordered>
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>{getTranslation("Name/नाम", lang)}</th>
-                        <th>{getTranslation("Ever Used/कभी इस्तेमाल किया", lang)}</th>
-                        <th>{getTranslation("Duration/अवधि", lang)}</th>
-                        <th>{getTranslation("Current Use/वर्तमान उपयोग", lang)}</th>
-                        <th>{getTranslation("Pattern/नमूना", lang)}</th>
-                        <th>{getTranslation("Usual Dose/सामान्य खुराक", lang)}</th>
-                        <th>{getTranslation("Remark/टिप्पणी", lang)}</th>
+            (() => {
+              const sudData =
+                viewSUDData?.assessment || viewSUDData;
 
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {value.map((sub, idx) => (
-                        <tr key={idx}>
-                          <td>{idx + 1}</td>
-                          <td>{getTranslation(sub.substance_name,lang)}</td>
-                          <td>{sub.ever_used || "-"}</td>
-                          <td>{sub.duration || "-"}</td>
-                          <td>{sub.current_use || "-"}</td>
-                          <td>{sub.current_use_pattern || "-"}</td>
-                          <td>{sub.usual_dose || "-"}</td>
-                          <td>{sub.remarks || "-"}</td>
+              if (!sudData) {
+                return (
+                  <tr>
+                    <td colSpan="2" className="text-center">
+                      {getTranslation(
+                        "No data available / कोई डेटा मौजूद नहीं",
+                        lang
+                      )}
+                    </td>
+                  </tr>
+                );
+              }
+
+              return (
+                <>
+                  {/* ================= BASIC DETAILS ================= */}
+                  {Object.entries(sudData)
+                    .filter(
+                      ([key]) => !EXCLUDED_KEYS.includes(key)
+                    )
+                    .map(([key, value], index) =>
+                      key !== "substance_details" ? (
+                        <tr key={index}>
+                          <td className="fw-bold" width="35%">
+                            {getTranslation(
+                              key.replace(/_/g, " ").toUpperCase(),
+                              lang
+                            )}
+                          </td>
+                          <td width="65%">
+                            {value ? String(value) : "-"}
+                          </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </Table>
-                </td>
-              </tr>
-            </>
-          )
-        ))}
-      </>
-    ) : (
-      <tr>
-        <td colSpan="2" className="text-center">
-         {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
-        </td>
-      </tr>
-    )}
-  </tbody>
-</Table>
-                    </div>
-                    <div style={{ margin: "0 20px 20px 20px" }}>
-                <button
-                  disabled={pfaDownload}
-                  id="download-btn"
-                  className="btn btn-primary"
-                  onClick={handleDownloadPDF}
-                >
-                  {pfaDownload
-                    ? getTranslation("Your SUD is being downloaded.../ आपका SUD डाउनलोड हो रहा है...",lang)
-                    : getTranslation("Download Your Substance Use Dependency / पदार्थ उपयोग निर्भरता डाउनलोड करें",lang)}
-                </button>
-              </div>
-                </Col>
+                      ) : null
+                    )}
 
-            </CommonModal>
+                  {/* ================= SUBSTANCE DETAILS HEADER ================= */}
+                  {Array.isArray(sudData.substance_details) && (
+                    <tr>
+                      <td
+                        colSpan="2"
+                        className="fw-bold text-center bg-light"
+                      >
+                        {getTranslation(
+                          "Substance Details / पदार्थ विवरण",
+                          lang
+                        )}
+                      </td>
+                    </tr>
+                  )}
+
+                  {/* ================= SUBSTANCE DETAILS TABLE ================= */}
+                  {Array.isArray(sudData.substance_details) && (
+                    <tr>
+                      <td colSpan="2" className="p-0">
+                        <Table
+                          bordered
+                          size="sm"
+                          responsive
+                          className="mb-0"
+                        >
+                          <thead className="table-secondary text-center">
+                            <tr>
+                              <th>#</th>
+                              <th>
+                                {getTranslation("Substance", lang)}
+                              </th>
+                              <th>
+                                {getTranslation("Ever Used", lang)}
+                              </th>
+                              <th>
+                                {getTranslation("Duration", lang)}
+                              </th>
+                              <th>
+                                {getTranslation("Current Use", lang)}
+                              </th>
+                              <th>
+                                {getTranslation("Pattern", lang)}
+                              </th>
+                              <th>
+                                {getTranslation("Dose", lang)}
+                              </th>
+                              <th>
+                                {getTranslation("Remarks", lang)}
+                              </th>
+                            </tr>
+                          </thead>
+
+                          <tbody>
+                            {sudData.substance_details.map(
+                              (sub, idx) => (
+                                <tr key={idx}>
+                                  <td className="text-center">
+                                    {idx + 1}
+                                  </td>
+                                  <td>
+                                    {getTranslation(
+                                      sub.substance_name,
+                                      lang
+                                    )}
+                                  </td>
+                                  <td className="text-center">
+                                    {sub.ever_used || "-"}
+                                  </td>
+                                  <td>{sub.duration || "-"}</td>
+                                  <td>{sub.current_use || "-"}</td>
+                                  <td>
+                                    {sub.current_use_pattern || "-"}
+                                  </td>
+                                  <td>{sub.usual_dose || "-"}</td>
+                                  <td>{sub.remarks || "-"}</td>
+                                </tr>
+                              )
+                            )}
+                          </tbody>
+                        </Table>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              );
+            })()
+          )}
+        </tbody>
+      </Table>
+    </div>
+
+    {/* ================= ACTION BUTTONS ================= */}
+    <div className="m-3">
+      <button
+        disabled={pfaDownload}
+        className="btn btn-primary"
+        onClick={handleDownloadPDF}
+      >
+        {pfaDownload
+          ? getTranslation(
+              "Your SUD is being downloaded...",
+              lang
+            )
+          : getTranslation(
+              "Download Substance Use Dependency",
+              lang
+            )}
+      </button>
+
+      <button
+        className="btn btn-primary mx-3"
+        onClick={handlePrint}
+      >
+        {getTranslation("Print Your Data", lang)}
+      </button>
+    </div>
+  </Col>
+</CommonModal>
+
             {/* View SUD data modal end */}
 
 
