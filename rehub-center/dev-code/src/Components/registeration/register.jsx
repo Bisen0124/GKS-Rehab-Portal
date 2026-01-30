@@ -1218,6 +1218,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
       }
     `,
   });
+
+  // Patient address and Patient relative address Usestate
+  const [sameAddress, setSameAddress] = useState(false);
+
   
 
 
@@ -1745,6 +1749,38 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       style={{ position: "absolute", left: "-9999px" }}
                     />
                   </div>
+                   {/* Patient photo upload */}
+              <div className="col-md-12">
+              {getTranslation("Upload Patient Profile Image/रोगी प्रोफ़ाइल छवि अपलोड करें",lang)}
+              <div className="profile-upload">
+      {preview && (
+        <img
+          src={preview}
+          alt="Preview"
+          style={{
+            width: "120px",
+            height: "120px",
+            borderRadius: "50%",
+            objectFit: "cover",
+            marginBottom: "10px",
+          }}
+        />
+      )}
+
+      <Input
+        type="file"
+        accept="image/*"
+        onChange={handleImageChange}
+        className="form-control"
+      />
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
+
+      <button className="btn btn-primary mt-2" onClick={handleUpload}>
+        {getTranslation("Upload/अपलोड करें",lang)}
+      </button>
+    </div>
+              </div>
                 </div>
               </div>
 
@@ -1779,38 +1815,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
-              {/* Patient photo upload */}
-              <div className="col-md-6">
-              {getTranslation("Upload patient image/मरीज़ की छवि अपलोड करें",lang)}
-              <div className="profile-upload">
-      {preview && (
-        <img
-          src={preview}
-          alt="Preview"
-          style={{
-            width: "120px",
-            height: "120px",
-            borderRadius: "50%",
-            objectFit: "cover",
-            marginBottom: "10px",
-          }}
-        />
-      )}
-
-      <Input
-        type="file"
-        accept="image/*"
-        onChange={handleImageChange}
-        className="form-control"
-      />
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <button className="btn btn-primary mt-2" onClick={handleUpload}>
-        {getTranslation("Upload/अपलोड करें",lang)}
-      </button>
-    </div>
-              </div>
+             
               </div>
 
 <div className="row">
@@ -1827,14 +1832,16 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     onChange={handleChange}
                   />
                 </FormGroup> */}
-                <VoiceTextarea
-  label={<Translated text={pateintRelativeAddress} />}
-  name="address"
-  value={formData.address}
-  onChange={handleChange}
-/>
+<VoiceTextarea
+    label={<Translated text={pateintRelativeAddress} />}
+    name="relativeaddress"
+    value={formData.relativeaddress}
+    onChange={handleChange}
+  />
 
               </div>
+
+            
 
                {/* Patient Address */}
                <div className="col-md-6">
@@ -1849,14 +1856,39 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     onChange={handleChange}
                   />
                 </FormGroup> */}
-                <VoiceTextarea
-  label={<Translated text={pateintAddress} />}
-  name="address"
-  value={formData.address}
-  onChange={handleChange}
-/>
+               <VoiceTextarea
+    label={<Translated text={pateintAddress} />}
+    name="address"
+    value={formData.address}
+    onChange={(e) => {
+      handleChange(e);
+      if (sameAddress) {
+        setSameAddress(false); // user edits manually → uncheck automatically
+      }
+    }}
+  />
 
               </div>
+              <div className="col-md-12 mt-2">
+  <label style={{ cursor: "pointer" }}>
+    <input
+      type="checkbox"
+      checked={sameAddress}
+      onChange={(e) => {
+        setSameAddress(e.target.checked);
+        if (e.target.checked) {
+          setFormData({
+            ...formData,
+            address: formData.relativeaddress,
+          });
+        }
+      }}
+      style={{ marginRight: "6px" }}
+    />
+    <Translated text="Same as Patient Relative Address" />
+  </label>
+</div>
+
               </div>
 
               {/* Submit */}
@@ -1867,10 +1899,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       className="spinner-border spinner-border-sm"
                       role="status"
                     >
-                      <span className="sr-only">Loading...</span>
+                      <span className="sr-only">{getTranslation("Loading Data.../डेटा लोड हो रहा है...",lang)}</span>
                     </div>
                   ) : (
-                    "पंजीकरण करवाना"
+                    getTranslation("Patient Register / रोगी रजिस्टर",lang)
                   )}
                 </Button>
               </div>
