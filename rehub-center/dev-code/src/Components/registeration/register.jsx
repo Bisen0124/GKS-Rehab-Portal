@@ -18,7 +18,6 @@ import {
   whatsAppNo,
   h4Text,
   patientRelativesecPhoneNumber,
-  tertiaryPhonenumber,
   pateintRelativeAddress,
 } from "../../Constant";
 import {
@@ -68,6 +67,8 @@ function Register() {
 
   //Branches selection
   const { selectedBranch } = useBranch();
+  const branchId =
+    selectedBranch?.branch_id || selectedBranch?.id || selectedBranch || "";
 
   //spinner extract from other file
   const selectedSpinner = Data.find(
@@ -101,28 +102,34 @@ function Register() {
     setPreview(URL.createObjectURL(file));
   };
 
-  const handleUpload = async () => {
-    if (!image) {
-      alert("Please select an image first");
+  //Patient admission form (PDF) upload
+  const [admissionForm, setAdmissionForm] = useState(null);
+  const [admissionFormName, setAdmissionFormName] = useState("");
+  const [admissionFormError, setAdmissionFormError] = useState("");
+
+  const handleAdmissionFormChange = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    // File type validation - allow pdf/image
+    if (
+      file.type !== "application/pdf" &&
+      !file.type.startsWith("image/")
+    ) {
+      setAdmissionFormError("Only PDF or image files are allowed");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("profile_image", image);
-
-    try {
-      const response = await fetch("YOUR_API_URL_HERE", {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await response.json();
-      alert("Profile picture uploaded successfully!");
-      console.log(result);
-    } catch (err) {
-      console.error(err);
-      alert("Upload failed");
+    // File size validation (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setAdmissionFormError("File size must be less than 5MB");
+      return;
     }
+
+    setAdmissionFormError("");
+    setAdmissionForm(file);
+    setAdmissionFormName(file.name);
   };
 
   //Show hide password of register password filed.
@@ -162,13 +169,19 @@ function Register() {
     patientRelativeName: "",
     gender: "",
     phone: "",
+    secondary_phone: "",
     isWhatsApp: false,
     whatsapp_no: "",
     email: "",
     password: "",
     dob: new Date(),
     address: "",
+    relativeaddress: "",
+    relation_with_patient: "",
+    relative_contacts: [{ name: "", phone: "" }],
     is_role: "", // This will be 3
+    ward_type_id: "",
+    ward_name: "",
   });
 
   const handleChange = (e) => {
@@ -204,11 +217,33 @@ function Register() {
     });
   };
 
+  //Handle patient relative additional contacts (name + phone pairs)
+  const handleRelativeContactChange = (index, field, value) => {
+    setFormData((prev) => {
+      const updatedContacts = [...prev.relative_contacts];
+      updatedContacts[index] = { ...updatedContacts[index], [field]: value };
+      return { ...prev, relative_contacts: updatedContacts };
+    });
+  };
+
+  const addRelativeContact = () => {
+    setFormData((prev) => ({
+      ...prev,
+      relative_contacts: [...prev.relative_contacts, { name: "", phone: "" }],
+    }));
+  };
+
+  const removeRelativeContact = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      relative_contacts: prev.relative_contacts.filter((_, i) => i !== index),
+    }));
+  };
+
   //Register form data submit funtion
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Basic frontend validation
+  
     const requiredFields = {
       date_of_admission: formData.date_of_admission,
       patientName: formData.patientName,
@@ -221,86 +256,124 @@ function Register() {
       password: formData.password,
       whatsapp_no: formData.whatsapp_no,
       is_role: formData.is_role,
+      secondary_phone: formData.secondary_phone,
     };
-
+  
     for (const [key, value] of Object.entries(requiredFields)) {
       const isEmpty =
         value === null ||
         value === undefined ||
         (typeof value === "string" && value.trim() === "");
-
+  
       if (isEmpty) {
         Swal.fire({
           icon: "warning",
-          title: getTranslation('Field should not be empty!/फ़ील्ड खाली नहीं होना चाहिए!',lang),
-          // text: `Please fill out the "${key.replace(/_/g, " ")}" field.`,
+          title: getTranslation(
+            "Field should not be empty!/फ़ील्ड खाली नहीं होना चाहिए!",
+            lang
+          ),
         });
         return;
       }
     }
-
-    setIsLoading(true); // Start loading
-
+  
+    setIsLoading(true);
+  
     const formatDate = (date) => {
       return date instanceof Date && !isNaN(date.getTime())
         ? date.toISOString().split("T")[0]
-        : "";
+        : date || "";
     };
-
-    const payload = {
-      date_of_admission: formatDate(formData.date_of_admission),
-      name: formData.patientName,
-      email: formData.email,
-      relative_name: formData.patientRelativeName,
-      phone: formData.phone,
-      gender: formData.gender,
-      dob: formatDate(formData.dob),
-      address: formData.address,
-      password: formData.password,
-      whatsapp_no: formData.whatsapp_no,
-      isRole: formData.is_role,
-      ward_type_id: formData.ward_type_id,
-      ward_name: formData.ward_name,
-    };
-
+  
     try {
-      const branch_id = selectedBranch; // make sure `selectedBranch` 
+      const branch_id = branchId;
       const token = localStorage.getItem("Authorization");
-      // const response = await fetch("https://gks-yjdc.onrender.com/api/users", {
-        const response = await fetch(`https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
+  
+      // ✅ Create FormData instead of JSON
+      const payload = new FormData();
+  
+      payload.append("date_of_admission", formatDate(formData.date_of_admission));
+      payload.append("name", formData.patientName);
+      payload.append("email", formData.email);
+      payload.append("relative_name", formData.patientRelativeName);
+      payload.append("phone", formData.phone);
+      payload.append("gender", formData.gender);
+      payload.append("dob", formatDate(formData.dob));
+      payload.append("address", formData.address);
+      payload.append("password", formData.password);
+      payload.append("whatsapp_no", formData.whatsapp_no);
+      payload.append("isRole", formData.is_role);
+      payload.append("ward_type_id", formData.ward_type_id || "");
+      payload.append("ward_name", formData.ward_name || "");
+      payload.append("secondary_phone", formData.secondary_phone);
+  
+      // ✅ New fields (send empty if not available)
+      const cleanedRelativeContacts = formData.relative_contacts.filter(
+        (c) => (c.name && c.name.trim()) || (c.phone && c.phone.trim())
+      );
+      payload.append("relative_contacts", JSON.stringify(cleanedRelativeContacts));
+      payload.append("relative_address", formData.relativeaddress || "");
+      payload.append("relation_with_patient", formData.relation_with_patient || "");
+  
+      // ✅ File uploads
+      if (image) {
+        payload.append("profile_pic", image);
+      } else {
+        payload.append("profile_pic", ""); // optional
+      }
+  
+      if (admissionForm) {
+        payload.append("admission_form_url", admissionForm);
+      } else {
+        payload.append("admission_form_url", ""); // optional
+      }
+  
+      const response = await fetch(
+        `https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `${token}`, // ❗ DO NOT set Content-Type manually
+          },
+          body: payload,
+        }
+      );
+  
       const result = await response.json();
-
+  
       if (!response.ok) {
-        // Check specific backend error
         if (result.error === "Email already exists") {
           Swal.fire({
             icon: "warning",
-            title: getTranslation("Email is already exists/ईमेल पहले से मौजूद है",lang),
-            text: getTranslation("This email is already registered. Please use a different one./यह ईमेल पहले से पंजीकृत है। कृपया कोई दूसरा ईमेल इस्तेमाल करें।",lang),
+            title: getTranslation(
+              "Email is already exists/ईमेल पहले से मौजूद है",
+              lang
+            ),
           });
-        } else if (result.error === getTranslation("Phone number already exists/फ़ोन नंबर पहले से मौजूद है",lang)) {
+        } else if (
+          result.error ===
+          getTranslation(
+            "Phone number already exists/फ़ोन नंबर पहले से मौजूद है",
+            lang
+          )
+        ) {
           Swal.fire({
             icon: "warning",
-            title: getTranslation("Phone is already exist/फ़ोन पहले से मौजूद है",lang),
-            text: getTranslation("This phone is already registered. Please use a different one./यह फ़ोन पहले से पंजीकृत है। कृपया कोई दूसरा फ़ोन इस्तेमाल करें।",lang),
+            title: getTranslation(
+              "Phone is already exist/फ़ोन पहले से मौजूद है",
+              lang
+            ),
           });
         }
       } else {
         Swal.fire({
-          title: getTranslation("Good job!/अच्छा काम!",lang),
-          text: getTranslation("Registration successful!/सफल पंजीकरण!",lang),
+          title: getTranslation("Good job!/अच्छा काम!", lang),
+          text: getTranslation("Registration successful!/सफल पंजीकरण!", lang),
           icon: "success",
-          confirmButtonText: getTranslation("OK/ठीक है",lang),
         }).then(() => {
           setModal(false);
+  
+          // ✅ Reset form including files
           setFormData({
             date_of_admission: "",
             patientName: "",
@@ -313,13 +386,31 @@ function Register() {
             password: "",
             whatsapp_no: "",
             is_role: "",
+            secondary_phone: "",
+            ward_type_id: "",
+            ward_name: "",
+            relativeaddress: "",
+            relation_with_patient: "",
+            relative_contacts: [{ name: "", phone: "" }],
           });
+  
+          // ✅ Reset file upload states too
+          setImage(null);
+          setPreview(null);
+          setAdmissionForm(null);
+          setAdmissionFormName("");
+  
           fetchUsers();
         });
       }
     } catch (error) {
       console.error("Fetch Error:", error);
-      alert(getTranslation("Registration failed! Unknown error./पंजीकरण विफल! अज्ञात त्रुटि.",lang));
+      alert(
+        getTranslation(
+          "Registration failed! Unknown error./पंजीकरण विफल! अज्ञात त्रुटि.",
+          lang
+        )
+      );
     } finally {
       setIsLoading(false);
     }
@@ -353,7 +444,7 @@ function Register() {
 
     try {
       // ✅ Get selected branch from context or state
-      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
+      const branch_id = branchId;
 
       const response = await fetch(
         `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
@@ -381,6 +472,15 @@ function Register() {
       if (!userData) {
         console.error("User not found in response");
         return;
+      }
+
+      // ✅ Normalize relative_contacts in case backend sends it as a JSON string
+      if (userData.relative_contacts && typeof userData.relative_contacts === "string") {
+        try {
+          userData.relative_contacts = JSON.parse(userData.relative_contacts);
+        } catch (e) {
+          userData.relative_contacts = [];
+        }
       }
 
       setSelectedUser(userData);
@@ -419,7 +519,7 @@ function Register() {
         const token = localStorage.getItem("Authorization");
 
         try {
-          const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
+          const branch_id = branchId;
           const response = await fetch(
             `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
             {
@@ -500,7 +600,7 @@ function Register() {
     };
 
     try {
-      const branch_id = selectedBranch; // make sure `selectedBranch` 
+      const branch_id = branchId;
       const token = localStorage.getItem("Authorization");
       const response = await fetch(
         `https://gks-yjdc.onrender.com/api/ipd/create-entry?branch_id=${branch_id}`,
@@ -580,7 +680,7 @@ function Register() {
     const token = localStorage.getItem("Authorization");
 
     try {
-      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
+      const branch_id = branchId;
 
       const response = await fetch(
         `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
@@ -609,6 +709,23 @@ function Register() {
         throw new Error("User not found in response.");
       }
 
+      // ✅ Normalize relative_contacts in case backend sends it as a JSON string
+      let parsedRelativeContacts = [];
+      if (user.relative_contacts) {
+        if (typeof user.relative_contacts === "string") {
+          try {
+            parsedRelativeContacts = JSON.parse(user.relative_contacts);
+          } catch (e) {
+            parsedRelativeContacts = [];
+          }
+        } else if (Array.isArray(user.relative_contacts)) {
+          parsedRelativeContacts = user.relative_contacts;
+        }
+      }
+      if (!parsedRelativeContacts.length) {
+        parsedRelativeContacts = [{ name: "", phone: "" }];
+      }
+
       // Handle null/undefined safely and set editData
       setEditData({
         id: user.user_id || "",
@@ -617,13 +734,19 @@ function Register() {
         dob: user.dob ? parseDateString(user.dob) : "",
         email: user.email || "",
         phone: user.phone || "",
+        secondary_phone: user.secondary_phone || "",
         whatsapp_no: user.whatsapp_no || "",
         isWhatsApp: user.isWhatsApp || false,
         address: user.address || "",
+        relativeaddress: user.relative_address || "",
+        relation_with_patient: user.relation_with_patient || "",
+        relative_contacts: parsedRelativeContacts,
         // is_role: user.isRole || "",
         is_role: Number(user.isRole) || "",
         password: "",
         gender: user.gender || "",
+        profile_pic_url: user.profile_pic || "",
+        admission_form_url: user.admission_form_url || user.admission_form || "",
       });
       setShowEditModal(true);
     } catch (error) {
@@ -637,39 +760,81 @@ function Register() {
     }
   };
 
+  //Handle edit-modal relative contacts (name + phone pairs)
+  const handleEditRelativeContactChange = (index, field, value) => {
+    setEditData((prev) => {
+      const updatedContacts = [...(prev.relative_contacts || [])];
+      updatedContacts[index] = { ...updatedContacts[index], [field]: value };
+      return { ...prev, relative_contacts: updatedContacts };
+    });
+  };
+
+  const addEditRelativeContact = () => {
+    setEditData((prev) => ({
+      ...prev,
+      relative_contacts: [...(prev.relative_contacts || []), { name: "", phone: "" }],
+    }));
+  };
+
+  const removeEditRelativeContact = (index) => {
+    setEditData((prev) => ({
+      ...prev,
+      relative_contacts: (prev.relative_contacts || []).filter((_, i) => i !== index),
+    }));
+  };
+
   //User handle update function
   const handleUpdateSubmit = async () => {
     setIsLoading(true); // Set loading to true when the update starts
     const token = localStorage.getItem("Authorization");
 
-    // Make sure you match your form fields to the API payload structure
-    const updatedData = {
-      name: editData.name,
-      relative_name: editData.patientRelativeName, // Assuming this is mapped correctly
-      email: editData.email,
-      // date_of_admission: editData.date_of_admission, // Ensure this is in the correct format
-      gender: editData.gender,
-      address: editData.address,
-      dob: editData.dob, // Ensure dob is in 'yyyy-mm-dd' format
-      phone: editData.phone,
-      whatsapp_no: editData.whatsapp_no, // Make sure this is correctly handled
-      isRole: editData.is_role // ✅ match DB column name exactly
+    const formatDate = (date) => {
+      return date instanceof Date && !isNaN(date.getTime())
+        ? date.toISOString().split("T")[0]
+        : date || "";
     };
+
+    // Make sure you match your form fields to the API payload structure
+    const cleanedEditContacts = (editData.relative_contacts || []).filter(
+      (c) => (c.name && c.name.trim()) || (c.phone && c.phone.trim())
+    );
+
+    const updatedData = new FormData();
+    updatedData.append("name", editData.name || "");
+    updatedData.append("relative_name", editData.patientRelativeName || "");
+    updatedData.append("email", editData.email || "");
+    updatedData.append("gender", editData.gender || "");
+    updatedData.append("address", editData.address || "");
+    updatedData.append("dob", formatDate(editData.dob));
+    updatedData.append("phone", editData.phone || "");
+    updatedData.append("secondary_phone", editData.secondary_phone || "");
+    updatedData.append("whatsapp_no", editData.whatsapp_no || "");
+    updatedData.append("isRole", editData.is_role || "");
+    updatedData.append("relative_address", editData.relativeaddress || "");
+    updatedData.append("relation_with_patient", editData.relation_with_patient || "");
+    updatedData.append("relative_contacts", JSON.stringify(cleanedEditContacts));
+
+    if (editData.profile_pic instanceof File) {
+      updatedData.append("profile_pic", editData.profile_pic);
+    }
+
+    if (editData.admission_form_file instanceof File) {
+      updatedData.append("admission_form_url", editData.admission_form_file);
+    }
 
     console.log("User ID:", editData.id, typeof editData.id);
 
     try {
-      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
+      const branch_id = branchId;
       const response = await fetch(
         `https://gks-yjdc.onrender.com/api/users/${editData.id}?branch_id=${branch_id}`,
 
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `${token}`,
           },
-          body: JSON.stringify(updatedData), // Send the updated data
+          body: updatedData, // Send multipart form-data for text + file fields
         }
       );
 
@@ -722,10 +887,10 @@ function Register() {
   // ✅ Step 1: Move this into a reusable function
   const [stillLoading, setstillLoading] = useState(true);
   const fetchUsers = () => {
-    if (!selectedBranch) return; // avoid empty branch fetch
+    if (!branchId) return; // avoid empty branch fetch
 
     fetch(
-      `https://gks-yjdc.onrender.com/api/users?branch_id=${selectedBranch}`,
+      `https://gks-yjdc.onrender.com/api/users?branch_id=${branchId}`,
       {
         method: "GET",
         headers: {
@@ -778,7 +943,7 @@ function Register() {
   // ✅ Step 2: Run this once when component mounts
   useEffect(() => {
     fetchUsers();
-  }, [selectedBranch]);
+  }, [branchId]);
 
   // ✅ Define table columns
   const tableColumns = [
@@ -950,10 +1115,10 @@ function Register() {
 
   // Fetch IPD entries
   const fetchIPDEntries = () => {
-    if (!selectedBranch) return;
+    if (!branchId) return;
 
     fetch(
-      `https://gks-yjdc.onrender.com/api/ipd/active-ipd-entries?branch_id=${selectedBranch}`,
+      `https://gks-yjdc.onrender.com/api/ipd/active-ipd-entries?branch_id=${branchId}`,
       {
         method: "GET",
         headers: {
@@ -1004,7 +1169,7 @@ function Register() {
 
   useEffect(() => {
     fetchIPDEntries();
-  }, [selectedBranch]);
+  }, [branchId]);
 
   // ✅ Define table columns
   const tableIPDColumns = [
@@ -1352,22 +1517,6 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <Translated text={dateOfAdmission} />
                     </Label>
                     <Col xl="5" sm="12">
-                      {/* <DatePicker
-                        className="form-control digits"
-                        selected={formData.date_of_admission}
-                        onChange={(date) =>
-                          handleDateChange("dateOfAdmission", date)
-                        }
-                      /> */}
-                      {/* <DatePicker
-    className="form-control digits"
-    dateFormat="yyyy/MM/dd"
-    selected={formData.date_of_admission}
-    onChange={(date) =>
-      handleDateChange("dateOfAdmission", date)
-    }
-  /> */}
-
                       <DatePicker
                         className="form-control digits"
                         selected={
@@ -1446,6 +1595,26 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
+              {/* Relation with patient */}
+              <div className="row">
+                <div className="col-md-6">
+                  <FormGroup className="form-group row">
+                    <Label className="col-sm-12 col-form-label col-xl-6">
+                      {getTranslation("Relation with Patient/रोगी से संबंध", lang)}
+                    </Label>
+                    <Col xl="5" sm="12">
+                      <Input
+                        type="text"
+                        name="relation_with_patient"
+                        value={formData.relation_with_patient}
+                        onChange={handleChange}
+                        placeholder={getTranslation("e.g. Brother, Father/जैसे भाई, पिता", lang)}
+                      />
+                    </Col>
+                  </FormGroup>
+                </div>
+              </div>
+
               <div className="row">
                 <div className="col-md-6">
                   {/* DOB */}
@@ -1456,11 +1625,6 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         {/* {patientDateOfBirth} */}
                       </Label>
                       <Col xl="5" sm="12">
-                        {/* <DatePicker
-                          className="form-control digits"
-                          selected={formData.dob}
-                          onChange={(date) => handleDateChange("dob", date)}
-                        /> */}
                         <DatePicker
                           className="form-control digits"
                           selected={
@@ -1472,7 +1636,6 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       </Col>
                     </FormGroup>
                   </div>
-                  {/* Phone */}
                   {/* Phone */}
                   <div className="col-md-12">
                     <FormGroup className="form-group row">
@@ -1516,20 +1679,20 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <Col xl="5" sm="12">
                         <Input
                           type="text"
-                          name="phone"
-                          value={formData.phone}
+                          name="secondary_phone"
+                          value={formData.secondary_phone}
                           onChange={(e) => {
                             const value = e.target.value;
                             // Allow only numbers and max 10 digits
                             if (/^\d{0,10}$/.test(value)) {
-                              setFormData({ ...formData, phone: value });
+                              setFormData({ ...formData, secondary_phone: value });
                             }
                           }}
                           placeholder={getTranslation("Phone Number/फ़ोन नंबर",lang)}
                           maxLength={10}
                         />
-                        {formData.phone.length > 0 &&
-                          formData.phone.length !== 10 && (
+                        {formData.secondary_phone.length > 0 &&
+                          formData.secondary_phone.length !== 10 && (
                             <small className="text-danger">
                               {getTranslation("Phone number must be 10 digits./फ़ोन नंबर 10 अंकों का होना चाहिए।",lang)}
                             </small>
@@ -1538,17 +1701,55 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     </FormGroup>
                   </div>
 
-
-
-{/* Patient relative tertiary (optional) mobile number */}
+                  {/* Additional relative contacts (name + phone pairs) */}
                   <div className="col-md-12">
-                  <VoiceTextarea
-  label={<Translated text={tertiaryPhonenumber} />}
-  name="address"
-  value={formData.address}
-  onChange={handleChange}
-/>
-</div>
+                    <Label>
+                      {getTranslation("Additional Relative Contacts/अतिरिक्त संबंधी संपर्क", lang)}
+                    </Label>
+                    {formData.relative_contacts.map((contact, index) => (
+                      <div className="d-flex gap-2 align-items-center mb-2" key={index}>
+                        <Input
+                          type="text"
+                          placeholder={getTranslation("Name/नाम", lang)}
+                          value={contact.name}
+                          onChange={(e) =>
+                            handleRelativeContactChange(index, "name", e.target.value)
+                          }
+                        />
+                        <Input
+                          type="text"
+                          placeholder={getTranslation("Phone/फ़ोन", lang)}
+                          value={contact.phone}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (/^\d{0,10}$/.test(value)) {
+                              handleRelativeContactChange(index, "phone", value);
+                            }
+                          }}
+                          maxLength={10}
+                        />
+                        {formData.relative_contacts.length > 1 && (
+                          <Button
+                            color="danger"
+                            type="button"
+                            size="sm"
+                            onClick={() => removeRelativeContact(index)}
+                          >
+                            {getTranslation("Remove/हटाएं", lang)}
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                    <Button
+                      color="secondary"
+                      type="button"
+                      size="sm"
+                      className="mb-2"
+                      onClick={addRelativeContact}
+                    >
+                      {getTranslation("+ Add Contact/+ संपर्क जोड़ें", lang)}
+                    </Button>
+                  </div>
 
                   {/* WhatsApp Option */}
                   <div className="col-md-12">
@@ -1775,11 +1976,28 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
       />
 
       {error && <p style={{ color: "red" }}>{error}</p>}
-
-      <button className="btn btn-primary mt-2" onClick={handleUpload}>
-        {getTranslation("Upload/अपलोड करें",lang)}
-      </button>
     </div>
+              </div>
+
+              {/* Patient admission form upload */}
+              <div className="col-md-12 mt-2">
+                {getTranslation("Upload Admission Form (PDF/Image)/प्रवेश फॉर्म अपलोड करें", lang)}
+                <div className="profile-upload">
+                  <Input
+                    type="file"
+                    accept="application/pdf,image/*"
+                    onChange={handleAdmissionFormChange}
+                    className="form-control"
+                  />
+                  {admissionFormName && (
+                    <small className="text-success d-block mt-1">
+                      {getTranslation("Selected file/चयनित फ़ाइल", lang)}: {admissionFormName}
+                    </small>
+                  )}
+                  {admissionFormError && (
+                    <p style={{ color: "red" }}>{admissionFormError}</p>
+                  )}
+                </div>
               </div>
                 </div>
               </div>
@@ -1944,6 +2162,23 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
             </tr>
           ) : selectedUser && typeof selectedUser === "object" ? (
             <>
+              {selectedUser.profile_pic && (
+                <tr>
+                  <th className="text-start p-3">{getTranslation("Patient Photo/रोगी की तस्वीर", lang)}</th>
+                  <td className="border p-3">
+                    <img
+                      src={selectedUser.profile_pic}
+                      alt="Profile"
+                      style={{
+                        width: "90px",
+                        height: "90px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  </td>
+                </tr>
+              )}
               <tr>
                 <th className="text-start p-3">{getTranslation("Patient Name/रोगी का नाम",lang)}</th>
                 <td className="border p-3">{selectedUser.name}</td>
@@ -1955,6 +2190,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
               <tr>
               <th className="text-start p-3">{getTranslation("Patient Phone/रोगी का फोन", lang)}</th>
                 <td className="border p-3">{selectedUser.phone}</td>
+              </tr>
+              <tr>
+              <th className="text-start p-3">{getTranslation("Patient Secondary Phone/रोगी का द्वितीयक फोन", lang)}</th>
+                <td className="border p-3">{selectedUser.secondary_phone}</td>
               </tr>
               <tr>
               <th className="text-start p-3">{getTranslation("Patient WhatsApp No/रोगी का व्हाट्सएप नंबर", lang)}</th>
@@ -1981,6 +2220,31 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 <td className="border p-3">{selectedUser.relative_name}</td>
               </tr>
               <tr>
+              <th className="text-start p-3">{getTranslation("Relation with Patient/रोगी से संबंध", lang)}</th>
+                <td className="border p-3">{selectedUser.relation_with_patient}</td>
+              </tr>
+              <tr>
+              <th className="text-start p-3">{getTranslation("Patient Relative Address/रोगी के संबंधी का पता", lang)}</th>
+                <td className="border p-3">{selectedUser.relative_address}</td>
+              </tr>
+              <tr>
+              <th className="text-start p-3">{getTranslation("Additional Relative Contacts/अतिरिक्त संबंधी संपर्क", lang)}</th>
+                <td className="border p-3">
+                  {Array.isArray(selectedUser.relative_contacts) &&
+                  selectedUser.relative_contacts.length > 0 ? (
+                    <ul className="mb-0 ps-3">
+                      {selectedUser.relative_contacts.map((c, i) => (
+                        <li key={i}>
+                          {c.name} {c.phone ? `- ${c.phone}` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    "N/A"
+                  )}
+                </td>
+              </tr>
+              <tr>
               <th className="text-start p-3">{getTranslation("Patient Date of Admission/रोगी का प्रवेश की तिथि", lang)}</th>
                 <td className="border p-3">
                   {selectedUser.date_of_admission
@@ -2003,6 +2267,20 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   }[selectedUser.isRole] || "N/A"}
                 </td>
               </tr>
+              {(selectedUser.admission_form_url || selectedUser.admission_form) && (
+                <tr>
+                  <th className="text-start p-3">{getTranslation("Admission Form/प्रवेश फॉर्म", lang)}</th>
+                  <td className="border p-3">
+                    <a
+                      href={selectedUser.admission_form_url || selectedUser.admission_form}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {getTranslation("View File/फ़ाइल देखें", lang)}
+                    </a>
+                  </td>
+                </tr>
+              )}
             </>
           ) : (
             <tr>
@@ -2038,231 +2316,386 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
 
       </CommonModal>
 
-      <CommonModal
-        isOpen={showEditModal}
-        // title={"Update Patient Registration Data/रोगी पंजीकरण डेटा अपडेट करें"}
-        title={getTranslation("Update Patient Registration Data/रोगी पंजीकरण डेटा अपडेट करें",lang)}
-        toggler={closeUserViewModal}
-        maxWidth="1200px"
-      >
-        {showEditModal && (
-          <div className="modal-overlay">
-            <div className="modal-content border-0">
-              <div className="row pb-3 px-3">
-                <Form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleUpdateSubmit();
-                  }}
-                >
-                  <div className="row pt-4">
-                    <div className="col-md-6">
-                      <Label>{getTranslation("Patient Name/रोगी का नाम",lang)}</Label>
-                      <Input
-                        type="text"
-                        placeholder={getTranslation("Name/नाम",lang)}
-                        value={editData.name}
-                        onChange={(e) =>
-                          setEditData({ ...editData, name: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="col-md-6">
-                      <Label>{getTranslation("Patient Relative Name/रोगी का संबंधी का नाम",lang)}</Label>
-                      <Input
-                        type="text"
-                        placeholder={getTranslation("Relative Name/रिश्तेदार का नाम",lang)}
-                        value={editData.patientRelativeName}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            patientRelativeName: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <br />
-
-                  <div className="form-group col-md-6">
-                    <Label>{getTranslation("Patient Gender/रोगी का लिंग",lang)}</Label>
-                    <div className="radio radio-primary d-flex gap-3">
-                      {["Male", "Female", "Other"].map((g) => (
-                        <div key={g}>
-                          <Input
-                            className="radio_animated"
-                            type="radio"
-                            id={`gender-${g}`}
-                            name="gender"
-                            value={g}
-                            checked={editData.gender === g}
-                            onChange={(e) =>
-                              setEditData({
-                                ...editData,
-                                gender: e.target.value,
-                              })
-                            }
-                          />
-                          <Label htmlFor={`gender-${g}`}>{g}</Label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="row align-items-baseline">
-                    <div className="col-md-4">
-                      <Label>{getTranslation("Patient Phone/मरीज़ का फ़ोन",lang)}</Label>
-                      <Input
-                        type="text"
-                        placeholder={getTranslation("Phone/फ़ोन",lang)}
-                        value={editData.phone}
-                        onChange={(e) => {
-                          const newPhone = e.target.value;
-                          setEditData((prev) => ({
-                            ...prev,
-                            phone: newPhone,
-                            whatsapp_no: prev.isWhatsApp
-                              ? newPhone
-                              : prev.whatsapp_no,
-                          }));
+      {/* Update form data JSX code start */}
+       <CommonModal
+              isOpen={showEditModal}
+              // title={"Update Patient Registration Data/रोगी पंजीकरण डेटा अपडेट करें"}
+              title={getTranslation("Update Patient Registration Data/रोगी पंजीकरण डेटा अपडेट करें",lang)}
+              toggler={closeUserViewModal}
+              maxWidth="1200px"
+            >
+              {showEditModal && (
+                <div className="modal-overlay">
+                  <div className="modal-content border-0">
+                    <div className="row pb-3 px-3">
+                      <Form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleUpdateSubmit();
                         }}
-                      />
-                    </div>
-                    <div className="col-md-3">
-                      <Label>
-                        <Input
-                          className="checkbox_animated"
-                          type="checkbox"
-                          checked={editData.isWhatsApp}
-                          onChange={(e) => {
-                            const isChecked = e.target.checked;
-                            setEditData((prev) => ({
-                              ...prev,
-                              isWhatsApp: isChecked,
-                              whatsapp_no: isChecked ? prev.phone : "",
-                            }));
-                          }}
-                        />
-                        {getTranslation("Patient Is WhatsApp?/क्या मरीज़ व्हाट्सएप्प है?",lang)}
-                      </Label>
-                    </div>
-                    <div className="col-md-5">
-                      <Label>{getTranslation("Patient WhatsApp No./मरीज़ का व्हाट्सएप नंबर",lang)}</Label>
-                      <Input
-                        type="text"
-                        placeholder={getTranslation("WhatsApp No./व्हाट्सएप नंबर.",lang)}
-                        value={editData.whatsapp_no}
-                        onChange={(e) =>
-                          setEditData({
-                            ...editData,
-                            whatsapp_no: e.target.value,
-                          })
-                        }
-                        disabled={editData.isWhatsApp}
-                      />
+                      >
+                        <div className="row pt-4">
+                          <div className="col-md-6">
+                            <Label>{getTranslation("Patient Name/रोगी का नाम",lang)}</Label>
+                            <Input
+                              type="text"
+                              placeholder={getTranslation("Name/नाम",lang)}
+                              value={editData.name}
+                              onChange={(e) =>
+                                setEditData({ ...editData, name: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div className="col-md-6">
+                            <Label>{getTranslation("Patient Relative Name/रोगी का संबंधी का नाम",lang)}</Label>
+                            <Input
+                              type="text"
+                              placeholder={getTranslation("Relative Name/रिश्तेदार का नाम",lang)}
+                              value={editData.patientRelativeName}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  patientRelativeName: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <br />
+      
+                        <div className="row">
+                          <div className="col-md-6">
+                            <Label>{getTranslation("Relation with Patient/रोगी से संबंध", lang)}</Label>
+                            <Input
+                              type="text"
+                              placeholder={getTranslation("e.g. Brother, Father/जैसे भाई, पिता", lang)}
+                              value={editData.relation_with_patient}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  relation_with_patient: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <br />
+      
+                        <div className="form-group col-md-6">
+                          <Label>{getTranslation("Patient Gender/रोगी का लिंग",lang)}</Label>
+                          <div className="radio radio-primary d-flex gap-3">
+                            {["Male", "Female", "Other"].map((g) => (
+                              <div key={g}>
+                                <Input
+                                  className="radio_animated"
+                                  type="radio"
+                                  id={`gender-${g}`}
+                                  name="gender"
+                                  value={g}
+                                  checked={editData.gender === g}
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      gender: e.target.value,
+                                    })
+                                  }
+                                />
+                                <Label htmlFor={`gender-${g}`}>{g}</Label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+      
+                        <div className="row align-items-baseline">
+                          <div className="col-md-4">
+                            <Label>{getTranslation("Patient Phone/मरीज़ का फ़ोन",lang)}</Label>
+                            <Input
+                              type="text"
+                              placeholder={getTranslation("Phone/फ़ोन",lang)}
+                              value={editData.phone}
+                              onChange={(e) => {
+                                const newPhone = e.target.value;
+                                setEditData((prev) => ({
+                                  ...prev,
+                                  phone: newPhone,
+                                  whatsapp_no: prev.isWhatsApp
+                                    ? newPhone
+                                    : prev.whatsapp_no,
+                                }));
+                              }}
+                            />
+                          </div>
+                          <div className="col-md-4">
+                            <Label>{getTranslation("Patient Secondary Phone/रोगी का द्वितीयक फोन", lang)}</Label>
+                            <Input
+                              type="text"
+                              placeholder={getTranslation("Secondary Phone/द्वितीयक फोन", lang)}
+                              value={editData.secondary_phone}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  secondary_phone: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="col-md-3">
+                            <Label>
+                              <Input
+                                className="checkbox_animated"
+                                type="checkbox"
+                                checked={editData.isWhatsApp}
+                                onChange={(e) => {
+                                  const isChecked = e.target.checked;
+                                  setEditData((prev) => ({
+                                    ...prev,
+                                    isWhatsApp: isChecked,
+                                    whatsapp_no: isChecked ? prev.phone : "",
+                                  }));
+                                }}
+                              />
+                              {getTranslation("Patient Is WhatsApp?/क्या मरीज़ व्हाट्सएप्प है?",lang)}
+                            </Label>
+                          </div>
+                          <div className="col-md-5">
+                            <Label>{getTranslation("Patient WhatsApp No./मरीज़ का व्हाट्सएप नंबर",lang)}</Label>
+                            <Input
+                              type="text"
+                              placeholder={getTranslation("WhatsApp No./व्हाट्सएप नंबर.",lang)}
+                              value={editData.whatsapp_no}
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  whatsapp_no: e.target.value,
+                                })
+                              }
+                              disabled={editData.isWhatsApp}
+                            />
+                          </div>
+                        </div>
+                        <br />
+      
+                        <div className="row">
+                          <div className="col-md-6">
+                            <Label>{getTranslation("Patient Email/रोगी का ईमेल",lang)}</Label>
+                            <Input
+                              type="email"
+                              placeholder={getTranslation("Email/ईमेल",lang)}
+                              value={editData.email}
+                              onChange={(e) =>
+                                setEditData({ ...editData, email: e.target.value })
+                              }
+                            />
+                          </div>
+                          <div className="col-md-6 d-flex align-items-end gap-4">
+                            <Label>{getTranslation("Patient Date of Birth/रोगी की जन्मतिथि",lang)}</Label>
+                            <DatePicker
+                              className="form-control"
+                              selected={
+                                editData.dob instanceof Date && !isNaN(editData.dob)
+                                  ? editData.dob
+                                  : null
+                              }
+                              onChange={(date) =>
+                                setEditData({ ...editData, dob: date })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <br />
+      
+                        <div className="row">
+                          <div className="col-md-6">
+                            <Label>{getTranslation("Update Patient Profile Image/रोगी प्रोफ़ाइल छवि अपडेट करें", lang)}</Label>
+                            {editData.profile_pic_url && (
+                              <div className="mb-2">
+                                <img
+                                  src={editData.profile_pic_url}
+                                  alt="Patient profile"
+                                  style={{
+                                    width: "90px",
+                                    height: "90px",
+                                    borderRadius: "50%",
+                                    objectFit: "cover",
+                                  }}
+                                />
+                              </div>
+                            )}
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  profile_pic: e.target.files?.[0] || null,
+                                })
+                              }
+                            />
+                            {editData.profile_pic && (
+                              <small className="text-success d-block mt-1">
+                                {getTranslation("Selected file/चयनित फ़ाइल", lang)}: {editData.profile_pic.name}
+                              </small>
+                            )}
+                          </div>
+      
+                          <div className="col-md-6">
+                            <Label>{getTranslation("Update Admission Form (PDF/Image)/प्रवेश फॉर्म अपडेट करें", lang)}</Label>
+                            {editData.admission_form_url && (
+                              <div className="mb-2">
+                                <a
+                                  href={editData.admission_form_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {getTranslation("View Current File/वर्तमान फ़ाइल देखें", lang)}
+                                </a>
+                              </div>
+                            )}
+                            <Input
+                              type="file"
+                              accept="application/pdf,image/*"
+                              onChange={(e) =>
+                                setEditData({
+                                  ...editData,
+                                  admission_form_file: e.target.files?.[0] || null,
+                                })
+                              }
+                            />
+                            {editData.admission_form_file && (
+                              <small className="text-success d-block mt-1">
+                                {getTranslation("Selected file/चयनित फ़ाइल", lang)}: {editData.admission_form_file.name}
+                              </small>
+                            )}
+                          </div>
+                        </div>
+                        <br />
+      
+                        {/* <Label>{getTranslation("Patient Address/रोगी का पता",lang)}</Label> */}
+                        {/* <Input
+                          type="textarea"
+                          rows="3"
+                          placeholder={getTranslation("Address/पता",lang)}
+                          value={editData.address}
+                          onChange={(e) =>
+                            setEditData({ ...editData, address: e.target.value })
+                          }
+      
+                          
+      
+                        ></Input> */}
+      
+      <VoiceTextarea
+        label={<Translated text={getTranslation("Patient Address/रोगी का पता",lang)} />}
+        // name="address"
+        value={editData.address}
+        onChange={(e) =>
+          setEditData({ ...editData, address: e.target.value })
+        }
+      />
+      
+      <br />
+      <VoiceTextarea
+        label={<Translated text={getTranslation("Patient Relative Address/रोगी के संबंधी का पता", lang)} />}
+        value={editData.relativeaddress}
+        onChange={(e) =>
+          setEditData({ ...editData, relativeaddress: e.target.value })
+        }
+      />
+      
+                        {/* Edit-mode additional relative contacts */}
+                        <div className="col-md-12 mt-3">
+                          <Label>
+                            {getTranslation("Additional Relative Contacts/अतिरिक्त संबंधी संपर्क", lang)}
+                          </Label>
+                          {(editData.relative_contacts || []).map((contact, index) => (
+                            <div className="d-flex gap-2 align-items-center mb-2" key={index}>
+                              <Input
+                                type="text"
+                                placeholder={getTranslation("Name/नाम", lang)}
+                                value={contact.name}
+                                onChange={(e) =>
+                                  handleEditRelativeContactChange(index, "name", e.target.value)
+                                }
+                              />
+                              <Input
+                                type="text"
+                                placeholder={getTranslation("Phone/फ़ोन", lang)}
+                                value={contact.phone}
+                                onChange={(e) =>
+                                  handleEditRelativeContactChange(index, "phone", e.target.value)
+                                }
+                              />
+                              {editData.relative_contacts.length > 1 && (
+                                <Button
+                                  color="danger"
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => removeEditRelativeContact(index)}
+                                >
+                                  {getTranslation("Remove/हटाएं", lang)}
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                          <Button
+                            color="secondary"
+                            type="button"
+                            size="sm"
+                            onClick={addEditRelativeContact}
+                          >
+                            {getTranslation("+ Add Contact/+ संपर्क जोड़ें", lang)}
+                          </Button>
+                        </div>
+      
+                        {/* Optional: role dropdown if editable */}
+                        {/* <Label className="mt-4 mb-2">Role</Label>
+                        <select
+        className="form-select"
+        aria-label="Select Role"
+        value={editData.is_role}
+        onChange={(e) =>
+          setEditData({
+            ...editData,
+            is_role: Number(e.target.value),
+          })
+        }
+      >
+        <option value="">Select a role</option>
+        <option value={1}>SuperAdmin</option>
+        <option value={2}>BranchAdmin</option>
+        <option value={3}>BranchOperator</option>
+        <option value={4}>Patient</option>
+      </select> */}
+      
+      
+                        <br />
+                        <div className="d-flex gap-3">
+                          <Button color="primary" type="submit" disabled={isLoading}>
+                            {isLoading ? (
+                              <span
+                                className="spinner-border spinner-border-sm"
+                                role="status"
+                                aria-hidden="true"
+                              ></span>
+                            ) : (
+                              getTranslation('Update Patient Register Data/रोगी रजिस्टर डेटा अपडेट करें',lang)
+                            )}
+                          </Button>
+                          <Button
+                            color="primary"
+                            type="button"
+                            onClick={() => setShowEditModal(false)}
+                          >
+                            {getTranslation('Cancel Patient Register Data/रोगी रजिस्टर डेटा रद्द करें',lang)}
+                          </Button>
+                        </div>
+                      </Form>
                     </div>
                   </div>
-                  <br />
-
-                  <div className="row">
-                    <div className="col-md-6">
-                      <Label>{getTranslation("Patient Email/रोगी का ईमेल",lang)}</Label>
-                      <Input
-                        type="email"
-                        placeholder={getTranslation("Email/ईमेल",lang)}
-                        value={editData.email}
-                        onChange={(e) =>
-                          setEditData({ ...editData, email: e.target.value })
-                        }
-                      />
-                    </div>
-                    <div className="col-md-6 d-flex align-items-end gap-4">
-                      <Label>{getTranslation("Patient Date of Birth/रोगी की जन्मतिथि",lang)}</Label>
-                      <DatePicker
-                        className="form-control"
-                        selected={
-                          editData.dob instanceof Date && !isNaN(editData.dob)
-                            ? editData.dob
-                            : null
-                        }
-                        onChange={(date) =>
-                          setEditData({ ...editData, dob: date })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <br />
-                  {/* <Label>{getTranslation("Patient Address/रोगी का पता",lang)}</Label> */}
-                  {/* <Input
-                    type="textarea"
-                    rows="3"
-                    placeholder={getTranslation("Address/पता",lang)}
-                    value={editData.address}
-                    onChange={(e) =>
-                      setEditData({ ...editData, address: e.target.value })
-                    }
-
-                    
-
-                  ></Input> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation("Patient Address/रोगी का पता",lang)} />}
-  // name="address"
-  value={editData.address}
-  onChange={(e) =>
-    setEditData({ ...editData, address: e.target.value })
-  }
-/>
-
-                  {/* Optional: role dropdown if editable */}
-                  {/* <Label className="mt-4 mb-2">Role</Label>
-                  <select
-  className="form-select"
-  aria-label="Select Role"
-  value={editData.is_role}
-  onChange={(e) =>
-    setEditData({
-      ...editData,
-      is_role: Number(e.target.value),
-    })
-  }
->
-  <option value="">Select a role</option>
-  <option value={1}>SuperAdmin</option>
-  <option value={2}>BranchAdmin</option>
-  <option value={3}>BranchOperator</option>
-  <option value={4}>Patient</option>
-</select> */}
-
-
-                  <br />
-                  <div className="d-flex gap-3">
-                    <Button color="primary" type="submit" disabled={isLoading}>
-                      {isLoading ? (
-                        <span
-                          className="spinner-border spinner-border-sm"
-                          role="status"
-                          aria-hidden="true"
-                        ></span>
-                      ) : (
-                        getTranslation('Update Patient Register Data/रोगी रजिस्टर डेटा अपडेट करें',lang)
-                      )}
-                    </Button>
-                    <Button
-                      color="primary"
-                      type="button"
-                      onClick={() => setShowEditModal(false)}
-                    >
-                      {getTranslation('Cancel Patient Register Data/रोगी रजिस्टर डेटा रद्द करें',lang)}
-                    </Button>
-                  </div>
-                </Form>
-              </div>
-            </div>
-          </div>
-        )}
-      </CommonModal>
+                </div>
+              )}
+            </CommonModal>
+      {/* Update form data JSX code end */}
 
       {/* Readmission/Re-register modal pass ward name and type to backend for re-enter user registration field */}
       <CommonModal
