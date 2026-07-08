@@ -1,6 +1,5 @@
 import React, { Fragment, useState, useEffect, useRef } from "react";
 import {
-  patientRegisterTitle,
   dateOfAdmission,
   patientRelativeName,
   patientSex,
@@ -11,7 +10,6 @@ import {
   Password,
   patientName,
   registerYourDetail,
-  name,
   wardDetails,
   wardOptions,
   IspatientWhatsappNo,
