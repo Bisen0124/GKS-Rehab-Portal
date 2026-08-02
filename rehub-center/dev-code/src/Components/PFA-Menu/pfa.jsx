@@ -1584,6 +1584,8 @@ const parseDateString = (dateStr) => {
         .then((res) => {
           // const pfaPatient = res.entries || [];
           const pfaPatient = res.data || [];
+
+          console.log("All Patient First Assessment (PFA) List =>", pfaPatient )
     
           const formattedPFAPatient = pfaPatient.map((item) => {
             return {
