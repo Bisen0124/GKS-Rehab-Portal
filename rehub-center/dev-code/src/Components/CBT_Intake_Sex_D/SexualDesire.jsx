@@ -1297,7 +1297,7 @@ function SexualDesire() {
                     </Label>
                     <Col xl="5" sm="12">
                       <div className="input-group">
-                        <DatePicker
+                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                           className="form-control digits"
                           selected={startDateOfAssessment}
                           onChange={handleChangeAssessment}
@@ -1431,7 +1431,7 @@ function SexualDesire() {
                     </Label>
                     <Col xl="5" sm="12">
                       <div className="input-group">
-                        <DatePicker
+                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                           className="form-control digits"
                           selected={prefillSDdata?.date_of_assessment instanceof Date && !isNaN(prefillSDdata?.date_of_assessment)
                             ? prefillSDdata?.date_of_assessment
@@ -1697,7 +1697,7 @@ function SexualDesire() {
                     </Label>
                     <Col xl="5" sm="12">
                       <div className="input-group">
-                        <DatePicker
+                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                           className="form-control digits"
                           selected={editindividualSDData?.date_of_assessment instanceof Date && !isNaN(editindividualSDData?.date_of_assessment)
                             ? editindividualSDData?.date_of_assessment

@@ -1609,7 +1609,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
+                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
                       selected={formData.dateOfAssessment}
                       onChange={(date) =>
@@ -3026,7 +3026,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
       </Label>
       <Col xl="5" sm="12">
         <div className="input-group">
-          <DatePicker
+          <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
             className="form-control digits"
             selected={IRFEditData?.date_of_assessment || null}
             onChange={(date) =>
@@ -3625,7 +3625,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
           </Label>
           <Col xl="5" sm="12">
             <div className="input-group">
-              <DatePicker
+              <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                 className="form-control digits"
                 selected={IRFPrefillData?.date_of_assessment || null}
                 onChange={(date) =>

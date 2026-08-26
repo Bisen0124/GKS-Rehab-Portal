@@ -14,12 +14,12 @@ const TimeAndDate = () => {
                     <P>The Date Range Picker can also be used to select times. Hour, minute and (optional) second dropdowns are added below the calendars. An option exists to set the increment count of the minutes dropdown to e.g. offer only 15-minute or 30-minute increments.</P>
                     <div className="theme-form">
                         <FormGroup >
-                            <DatePicker
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                                 className="form-control digits"
                                 selected={startDate}
                                 onChange={(date) => setStartDate(date)}
                                 monthsShown={2}
-                                showYearDropdown
+                                
                                 showTimeSelect
                                 dateFormat="MMMM d, yyyy h:mm aa"
                             />

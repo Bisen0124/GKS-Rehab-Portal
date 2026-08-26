@@ -1260,7 +1260,7 @@ const handleSUDBriefUpdate = async () => {
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
+                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
                       selected={formData.dateOfAssessment}
                       onChange={(date) =>
@@ -2397,7 +2397,7 @@ onChange={handleInputChange}
               </Label>
               <Col xl="5" sm="12">
                 <div className="input-group">
-                  <DatePicker
+                  <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                     className="form-control digits"
                     selected={SUDBriefEditData?.date_of_assessment}
                     onChange={(date) =>

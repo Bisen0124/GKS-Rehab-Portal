@@ -15,39 +15,39 @@ const DatePickersData = () => {
                     <Label className="col-sm-3 col-form-label text-end">{Default}</Label>
                     <Col xl="5" sm="9">
                         <div className="input-group">
-                            <DatePicker className="form-control digits" selected={startDate} onChange={handleChange} />
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits" selected={startDate} onChange={handleChange} />
                         </div>
                     </Col>
                 </FormGroup>
                 <FormGroup className="row">
                     <Label className="col-sm-3 col-form-label text-end">{SelectDateWithTime}</Label>
                     <Col xl="5" sm="9">
-                        <DatePicker className="form-control digits" showPopperArrow={false} selected={startDate} showTimeSelect dateFormat="Pp" />
+                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits" showPopperArrow={false} selected={startDate} showTimeSelect dateFormat="Pp" />
                     </Col>
                 </FormGroup>
                 <FormGroup className="row">
                     <Label className="col-sm-3 col-form-label text-end">{SelectTimeOnly}</Label>
                     <Col xl="5" sm="9">
-                        <DatePicker className="form-control digits" selected={startDate} onChange={handleChange} showTimeSelect
+                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits" selected={startDate} onChange={handleChange} showTimeSelect
                             showTimeSelectOnly timeIntervals={15} timeCaption="Time" dateFormat="h:mm aa" />
                     </Col>
                 </FormGroup>
                 <FormGroup className="row">
                     <Label className="col-sm-3 col-form-label text-end">{CustomDateFormat}</Label>
                     <Col xl="5" sm="9">
-                        <DatePicker className="form-control digits" dateFormat="yyyy/MM/dd" selected={startDate} onChange={handleChange} />
+                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits" dateFormat="yyyy/MM/dd" selected={startDate} onChange={handleChange} />
                     </Col>
                 </FormGroup>
                 <FormGroup className="row">
                     <Label className="col-sm-3 col-form-label text-end">{TodayButton}</Label>
                     <Col xl="5" sm="9">
-                        <DatePicker className="form-control digits" todayButton="Vandaag" selected={startDate} onChange={handleChange} />
+                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits" todayButton="Vandaag" selected={startDate} onChange={handleChange} />
                     </Col>
                 </FormGroup>
                 <FormGroup className="row">
                     <Label className="col-sm-3 col-form-label text-end">{DisableDaysOfWeek}</Label>
                     <Col xl="5" sm="9">
-                        <DatePicker className="form-control digits" placeholderText="Click to select a date" />
+                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits" placeholderText="Click to select a date" />
                     </Col>
                 </FormGroup>
                 <ChildDatepicker />
@@ -55,7 +55,7 @@ const DatePickersData = () => {
                     <Label className="col-sm-3 col-form-label text-end">{DisableDatepicker}</Label>
                     <Col sm="3">
                         <div className="datepicker-here" data-language="en">
-                            <DatePicker className="form-control digits"
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits"
                                 selected={startDate}
                                 onChange={handleChange}
                                 disabled
@@ -68,7 +68,7 @@ const DatePickersData = () => {
                     <Label className="col-sm-3 col-form-label text-end">{InlineVersion}</Label>
                     <Col sm="3">
                         <div className="datepicker-here" data-language="en">
-                            <DatePicker className="form-control digits"
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits"
                                 selected={startDate}
                                 onChange={handleChange}
                                 inline

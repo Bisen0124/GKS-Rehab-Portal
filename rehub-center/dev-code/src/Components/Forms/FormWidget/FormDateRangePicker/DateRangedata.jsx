@@ -35,7 +35,7 @@ const DateRangedata = () => {
                     <P>The Date Range Picker use the current value of the input to initialize, and update the input if new dates are chosen.</P>
                     <div className="theme-form">
                         <FormGroup >
-                            <DatePicker
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                                 className="form-control digits"
                                 selectsRange={true}
                                 startDate={startDate}

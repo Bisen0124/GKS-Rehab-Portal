@@ -15,7 +15,7 @@ const DateTimeForm = () => {
                     <Label className="col-sm-3 col-form-label text-end">Minimum Setup</Label>
                     <Col xl="5" sm="7" lg="8">
                         <InputGroup className="date" id="dt-minimum" data-target-input="nearest">
-                            <DatePicker
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                                 className="form-control digits"
                                 selected={startDate}
                                 showTimeSelect
@@ -30,7 +30,7 @@ const DateTimeForm = () => {
                     <Label className="col-sm-3 col-form-label text-end">Using Locales</Label>
                     <Col xl="5" sm="7" lg="8">
                         <InputGroup className="date" id="dt-minimum" data-target-input="nearest">
-                            <DatePicker
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                                 className="form-control datetimepicker-input digits"
                                 selected={startDate}
                                 showTimeSelect
@@ -45,7 +45,7 @@ const DateTimeForm = () => {
                     <Label className="col-sm-3 col-form-label text-end">Time Only</Label>
                     <Col xl="5" sm="7" lg="8">
                         <InputGroup className="date" id="dt-minimum" data-target-input="nearest">
-                            <DatePicker
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                                 className="form-control datetimepicker-input digits"
                                 selected={startDate}
                                 onChange={handleChange}
@@ -63,7 +63,7 @@ const DateTimeForm = () => {
                     <Label className="col-sm-3 col-form-label text-end">Date Only</Label>
                     <Col xl="5" sm="7" lg="8">
                         <InputGroup className="date" id="dt-minimum" data-target-input="nearest">
-                            <DatePicker
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                                 className="form-control datetimepicker-input digits"
                                 selected={startDate}
                                 onChange={handleChange}

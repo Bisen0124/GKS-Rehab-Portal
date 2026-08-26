@@ -1184,7 +1184,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
+                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
                       selected={formData.dateOfAssessment}
                       onChange={(date) =>
@@ -1418,7 +1418,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
+                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
                       selected={FDAEditData?.date_of_assessment || null}
                       onChange={(date) =>
@@ -1652,7 +1652,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
+                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
                       selected={FDAEditData?.date_of_assessment || null}
                       onChange={(date) =>

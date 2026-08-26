@@ -1355,14 +1355,14 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <Translated text={dateOfAdmission} />
                     </Label>
                     <Col xl="5" sm="12">
-                      {/* <DatePicker
+                      {/* <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                         className="form-control digits"
                         selected={formData.date_of_admission}
                         onChange={(date) =>
                           handleDateChange("dateOfAdmission", date)
                         }
                       /> */}
-                      {/* <DatePicker
+                      {/* <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
     className="form-control digits"
     dateFormat="yyyy/MM/dd"
     selected={formData.date_of_admission}
@@ -1371,7 +1371,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
     }
   /> */}
 
-                      <DatePicker
+                      <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                         className="form-control digits"
                         selected={
                           formData.date_of_admission
@@ -1459,12 +1459,12 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         {/* {patientDateOfBirth} */}
                       </Label>
                       <Col xl="5" sm="12">
-                        {/* <DatePicker
+                        {/* <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                           className="form-control digits"
                           selected={formData.dob}
                           onChange={(date) => handleDateChange("dob", date)}
                         /> */}
-                        <DatePicker
+                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                           className="form-control digits"
                           selected={
                             formData.dob ? new Date(formData.dob) : null
@@ -2182,7 +2182,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     </div>
                     <div className="col-md-6 d-flex align-items-end gap-4">
                       <Label>{getTranslation("Patient Date of Birth/रोगी की जन्मतिथि",lang)}</Label>
-                      <DatePicker
+                      <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                         className="form-control"
                         selected={
                           editData.dob instanceof Date && !isNaN(editData.dob)

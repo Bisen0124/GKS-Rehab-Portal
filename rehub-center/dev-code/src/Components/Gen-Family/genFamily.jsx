@@ -2955,7 +2955,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </Label>
                   <Col xl="5" sm="12">
                     <div className="input-group">
-                      <DatePicker
+                      <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                         className="form-control digits"
                         selected={formData.dateOfFormFilling}
                         onChange={(date) =>
@@ -2978,7 +2978,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </Label>
                   <Col xl="5" sm="12">
                     <div className="input-group">
-                      <DatePicker
+                      <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                         className="form-control digits"
                         selected={formData.dateOfAdmission}
                         onChange={(date) =>
@@ -6324,7 +6324,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
+                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
                       selected={
                         GenfamiltEditData?.form_fill_date
@@ -10006,7 +10006,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
+                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
                       selected={
                         GenfamiltEditData?.form_fill_date

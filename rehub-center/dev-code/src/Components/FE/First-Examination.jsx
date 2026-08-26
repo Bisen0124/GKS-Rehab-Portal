@@ -1113,7 +1113,7 @@ const FirstExamination = () => {
                 {getTranslation("Date of Assessment/मूल्यांकन की तिथि", lang)}
               </label>
               <div className="col-xl-5 col-sm-12">
-                <DatePicker
+                <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                   className="form-control digits"
                   selected={formData.dateOfAssessment}
                   onChange={(date) =>
@@ -1393,7 +1393,7 @@ const FirstExamination = () => {
                 {getTranslation("Date of Assessment/मूल्यांकन की तिथि", lang)}
               </label>
               <div className="col-xl-5 col-sm-12">
-                <DatePicker
+                <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                   className="form-control digits"
                   selected={FEEditData?.date_of_assessment}
                   onChange={(date) =>
@@ -1557,7 +1557,7 @@ const FirstExamination = () => {
                 {getTranslation("Date of Assessment/मूल्यांकन की तिथि", lang)}
               </label>
               <div className="col-xl-5 col-sm-12">
-                <DatePicker
+                <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                   className="form-control digits"
                   selected={FEPrefillData?.date_of_assessment || null}
                   onChange={(date) =>

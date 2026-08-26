@@ -1325,7 +1325,7 @@ const token = localStorage.getItem("Authorization");
                   </Label>
                   <Col xl="5" sm="12">
                     <div className="input-group">
-                      <DatePicker
+                      <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                         className="form-control digits"
                         selected={startDateOfAssessment}
                         onChange={handleChangeAssessment}
@@ -1477,7 +1477,7 @@ const token = localStorage.getItem("Authorization");
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
-            <DatePicker
+            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
               className="form-control digits"
               selected={CBTpreefillData?.date_of_assessment instanceof Date && !isNaN(CBTpreefillData?.date_of_assessment)
                 ? CBTpreefillData?.date_of_assessment
@@ -1835,7 +1835,7 @@ const token = localStorage.getItem("Authorization");
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
-            <DatePicker
+            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
               className="form-control digits"
               selected={CBTindividuallUpdateData?.date_of_assessment instanceof Date && !isNaN(CBTindividuallUpdateData?.date_of_assessment)
                 ? CBTindividuallUpdateData?.date_of_assessment

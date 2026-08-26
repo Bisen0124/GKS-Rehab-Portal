@@ -36,12 +36,12 @@ const ExperienceClass = () => {
                         <Row>
                             <Col sm="6">
                                 <FormGroup>
-                                    <DatePicker className="form-control digits" selected={startDate2} onChange={handleChange2} />
+                                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits" selected={startDate2} onChange={handleChange2} />
                                 </FormGroup>
                             </Col>
                             <Col sm="6">
                                 <FormGroup>
-                                    <DatePicker className="form-control digits" selected={startDate3} onChange={handleChange3} />
+                                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits" selected={startDate3} onChange={handleChange3} />
                                 </FormGroup>
                             </Col>
                         </Row>

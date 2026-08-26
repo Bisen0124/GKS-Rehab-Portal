@@ -18,7 +18,7 @@ const ChildDatepicker = () => {
                 <Col xl="5" sm="9">
                     <Row className="min-date">
                         <Col md="12" className="mb-2">
-                            <DatePicker className="form-control digits"
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits"
                                 selected={startDate}
                                 onChange={handleChange}
                                 minDate={new Date()}
@@ -28,7 +28,7 @@ const ChildDatepicker = () => {
                         </Col>
                         <Col md="12" className="mb-2">
                             <Label className="col-sm-3 col-form-label">{MinDate}</Label>
-                            <DatePicker className="form-control digits"
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits"
                                 selected={startDate}
                                 onChange={handleChange}
                                 minDate={new Date()}
@@ -37,7 +37,7 @@ const ChildDatepicker = () => {
                         </Col>
                         <Col md="12" className="mb-2">
                             <Label className="col-sm-3 col-form-label text-end">{MaxDate}</Label>
-                            <DatePicker className="form-control digits"
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits"
                                 selected={startDate}
                                 onChange={handleChange}
                                 maxDate={new Date()}
@@ -46,14 +46,14 @@ const ChildDatepicker = () => {
                         </Col>
                         <Col md="12" className="date-range">
                             <Label className="col-sm-3 col-form-label text-end">{DateRange}</Label>
-                            <DatePicker className="form-control digits"
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits"
                                 selected={startDate}
                                 onChange={handleChange}
                                 selectsStart
                                 startDate={startDate}
                                 endDate={endDate}
                             />
-                            <DatePicker className="form-control digits ms-2"
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits ms-2"
                                 selected={endDate}
                                 onChange={handleChange}
                                 selectsEnd

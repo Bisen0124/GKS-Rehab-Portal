@@ -1363,7 +1363,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               </Label>
               <Col xl="5" sm="12">
                 <div className="input-group">
-                  <DatePicker
+                  <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                     className="form-control digits"
                     selected={formData.dateOfAssessment}
                     onChange={(date) =>
@@ -2145,7 +2145,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               </Label>
               <Col xl="5" sm="12">
                 <div className="input-group">
-                  <DatePicker
+                  <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                     className="form-control digits"
                     selected={ChildhoodEditData?.date_of_assessment || null}
                     onChange={(date) =>
@@ -2904,7 +2904,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
-            <DatePicker
+            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
               className="form-control digits"
               selected={ChildhoodPrefillData?.date_of_assessment || null}
               onChange={(date) =>

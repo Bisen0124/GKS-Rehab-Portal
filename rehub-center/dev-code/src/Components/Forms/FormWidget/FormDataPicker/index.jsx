@@ -18,7 +18,7 @@ const FormDatapickerContain = () => {
                                 <Row>
                                     <Col md="12">
                                         <div className="date-picker">
-                                            <DatePickersData />
+                                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"sData />
                                         </div>
                                     </Col>
                                 </Row>

@@ -1286,7 +1286,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
+                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
                       selected={formData.dateOfAssessment}
                       onChange={(date) =>
@@ -1655,7 +1655,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
-            <DatePicker
+            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
               className="form-control digits"
               selected={
                 socialBehaviorEditData?.date_of_assessment
@@ -1958,7 +1958,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
         </Label>
         <Col xl="5" sm="12">
           <div className="input-group">
-            <DatePicker
+            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
               className="form-control digits"
               selected={
                 SBPrefillData?.date_of_assessment

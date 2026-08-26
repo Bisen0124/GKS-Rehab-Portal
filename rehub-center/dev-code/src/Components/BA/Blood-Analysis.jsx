@@ -1432,7 +1432,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                         </Label>
                         <Col xl="5" sm="12">
                           <div className="input-group">
-                            <DatePicker
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                               className="form-control digits"
                               selected={formData.date_of_assessment}
                               onChange={(date) =>
@@ -1726,7 +1726,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
           </Label>
           <Col xl="5" sm="12">
             <div className="input-group">
-              <DatePicker
+              <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                 className="form-control digits"
                 selected={
                   BAEditData?.date_of_assessment instanceof Date &&
@@ -1799,7 +1799,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
           </Label>
           <Col xl="5" sm="12">
             <div className="input-group">
-              <DatePicker
+              <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                 className="form-control digits"
                 showTimeSelect
                 dateFormat="Pp"
@@ -1934,7 +1934,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
           </Label>
           <Col xl="5" sm="12">
             <div className="input-group">
-              <DatePicker
+              <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                 className="form-control digits"
                 selected={
                   BAPrefillData?.date_of_assessment instanceof Date &&
@@ -2007,7 +2007,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
           </Label>
           <Col xl="5" sm="12">
             <div className="input-group">
-              <DatePicker
+              <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                 className="form-control digits"
                 showTimeSelect
                 dateFormat="Pp"

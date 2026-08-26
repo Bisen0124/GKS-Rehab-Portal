@@ -27,7 +27,7 @@ const DatewidgetCard = () => {
                             <Col xl="6" xs="12" md="6" sm="6">
                                 <div className="cal-datepicker">
                                     <div className="datepicker-here float-sm-end" data-language="en">
-                                        <DatePicker
+                                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                                             selected={startDate}
                                             onChange={handleChange}
                                             inline

@@ -169,3 +169,9 @@ span.Discharge {
     margin: 10mm;
   }
 }
+
+.react-datepicker__header__dropdown.react-datepicker__header__dropdown--select {
+  padding: 20px 0;
+  display: flex;
+  justify-content: space-between;
+}

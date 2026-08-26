@@ -147,7 +147,7 @@ function FPA() {
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
+                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
                       selected={startDateOfAdmission}
                       onChange={handleChangeAdmission}
@@ -164,7 +164,7 @@ function FPA() {
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                    <DatePicker
+                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
                       selected={startDateOfAssessment}
                       onChange={handleChangeAssessment}

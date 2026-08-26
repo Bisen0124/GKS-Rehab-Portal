@@ -1869,7 +1869,7 @@ const parseDateString = (dateStr) => {
                         </Label>
                         <Col xl="5" sm="12">
                           <div className="input-group">
-                            <DatePicker
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                               className="form-control digits"
                               selected={formData.dateOfAssessment}
                               onChange={(date) =>
@@ -1891,7 +1891,7 @@ const parseDateString = (dateStr) => {
                         </Label>
                         <Col xl="5" sm="12">
                           <div className="input-group">
-                            <DatePicker
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                               className="form-control digits"
                               selected={formData.dateOfAdmission}
                               onChange={(date) =>
@@ -2915,7 +2915,7 @@ const parseDateString = (dateStr) => {
                         </Label>
                         <Col xl="5" sm="12">
                           <div className="input-group">
-                            <DatePicker
+                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                               className="form-control digits"
                               selected={PFAeditData.date_of_assessment instanceof Date && !isNaN(PFAeditData.date_of_assessment)
                             ? PFAeditData.date_of_assessment
@@ -3717,7 +3717,7 @@ const parseDateString = (dateStr) => {
                 </Label>
                 <Col xl="5" sm="12">
                   <div className="input-group">
-                  <DatePicker
+                  <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
   className="form-control digits"
   selected={PFAeditData?.date_of_assessment} // Always Date object or null
   onChange={(date) =>

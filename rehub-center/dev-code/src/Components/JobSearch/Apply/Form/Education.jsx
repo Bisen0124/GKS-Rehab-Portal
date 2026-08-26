@@ -35,12 +35,12 @@ const EducationClass = () => {
                         <Row>
                             <Col sm="6">
                                 <FormGroup>
-                                    <DatePicker className="form-control digits" selected={startDate} onChange={handleChange} />
+                                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits" selected={startDate} onChange={handleChange} />
                                 </FormGroup>
                             </Col>
                             <Col sm="6">
                                 <FormGroup>
-                                    <DatePicker className="form-control digits" selected={startDate1} onChange={handleChange1} />
+                                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select" className="form-control digits" selected={startDate1} onChange={handleChange1} />
                                 </FormGroup>
                             </Col>
                         </Row>
