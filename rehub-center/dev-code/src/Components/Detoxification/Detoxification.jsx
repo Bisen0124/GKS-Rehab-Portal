@@ -78,6 +78,7 @@ import {
   Table,
   InputGroup,
   Button,
+  Badge,
 } from "reactstrap";
 import { H5 } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
@@ -111,6 +112,13 @@ import { getTranslation } from "../../utils/translator";
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
 import { useReactToPrint } from "react-to-print";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import ModalLoading from "../Common/ModalLoading";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
 const Detoxification = () => {
 
@@ -118,6 +126,13 @@ const Detoxification = () => {
 
   //Branches selection
   const { selectedBranch } = useBranch();
+  const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+  const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+  const handleViewUserDetails = (userId) => {
+    setSelectedViewUserId(userId);
+    setViewUserDetailsModal(true);
+  };
 
   //Downloading view sexual desire form into pdf format
   const pdfRef = useRef();
@@ -130,9 +145,14 @@ const Detoxification = () => {
     // Add a temporary class to scale fonts if needed
     element.classList.add("pdf-scale");
 
+    const patientName = viewDetoxData?.name || viewDetoxData?.patient_name || "Patient";
+    const gksId = viewDetoxData?.custom_code || viewDetoxData?.gks_id || viewDetoxData?.uid || viewDetoxData?.user_id || "";
+    const safeName = String(patientName).trim().replace(/\s+/g, "_");
+    const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
     const opt = {
       margin: [10, 10, 10, 10], // top, left, bottom, right
-      filename: `user_data_${viewDetoxData?.name}_${viewDetoxData?.user_id}.pdf`,
+      filename: `patient_${safeName}_${safeId || "detox_report"}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -262,12 +282,6 @@ const Detoxification = () => {
   //Getting registred patient data into table row
   const tableColumns = [
     {
-      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
       name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
@@ -288,16 +302,6 @@ const Detoxification = () => {
         </span>
       ),
     },
-    {
-     name: `${getTranslation('Status/स्थिति' , lang)}`,
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
-        </span>
-      ),
-    },
 
     {
       name: `${getTranslation('Action/क्रिया' , lang)}`,
@@ -310,6 +314,30 @@ const Detoxification = () => {
         return (
           //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
@@ -321,48 +349,13 @@ const Detoxification = () => {
               </span>
             )}
 
-{/* <span
-                onClick={() => handleDetoxPrefill(row.recentDetoxId)}
-                style={{ cursor: "pointer" }}
-                title="Readmission Sexsual Desire Form"
-              >
-                ✏️
-              </span> */}
-
-            {/* Show Create PFA if not discharged and not readmission */}
-            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-              <span
-                onClick={() => createDetoxificationHandler(row.id)}
-                style={{ cursor: "pointer" }}
-                title="Create Sexsual Desire From"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="12" y1="8" x2="12" y2="16"></line>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-              </span>
-            )} */}
-
-
 {row.dischargeStatus === 0 && row.isReadmission === 0 && (
   <span
-    onClick={() => (row.isDetoxCompleted ? null : createDetoxificationHandler(row.id))}
+    onClick={() => createDetoxificationHandler(row.id)}
     style={{
-      cursor: row.isDetoxCompleted ? getTranslation("not-allowed/अनुमति नहीं",lang) : "pointer",
-      opacity: row.isDetoxCompleted ? 0.5 : 1,
+      cursor: "pointer",
     }}
-    title={row.isDetoxCompleted ? getTranslation("Detox Completed/डिटॉक्स पूरा हुआ",lang) : getTranslation("Create Detoxification Form/डिटॉक्सिफिकेशन फॉर्म बनाएं",lang)}
+    title={getTranslation("Create Detoxification Form/डिटॉक्सिफिकेशन फॉर्म बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -507,12 +500,6 @@ const Detoxification = () => {
   //Getting registred patient data into table row
   const tableColumnsSecoundTbl = [
     {
-     name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
       name: getTranslation("Detox ID/डिटॉक्स आईडी",lang),
       selector: (row) => row.detox_id,
       sortable: true,
@@ -649,15 +636,39 @@ const Detoxification = () => {
 
   //Create sexual desire form handler start
   const [isopenDetoxCreateForm, SetisopenDetoxCreateForm] = useState(false);
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentDetoxUserId, setCurrentDetoxUserId] = useState(null);
+
+  const initialDetoxFormData = {
+    dateOfAssessment: new Date(),
+    is_detoxified: "",
+    start_date: "",
+    end_date: "",
+    start_remark: "",
+    end_remark: "",
+  };
+
   const createDetoxificationHandler = async (userId = null) => {
-    console.log("Sexual Desire =>", userId);
+    console.log("Detoxification =>", userId);
     SetisopenDetoxCreateForm(true);
-    if (userId) {
+    const targetId = userId || currentDetoxUserId;
+    if (userId) setCurrentDetoxUserId(userId);
+
+    if (targetId) {
+      const saved = loadDraft("detoxification", targetId);
+      if (saved && saved.data) {
+        setFormData(saved.data);
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData(initialDetoxFormData);
+        setDraftTimestamp(null);
+      }
+
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch;
       try {
         const response = await fetch(
-          `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
+          `https://gks-yjdc.onrender.com/api/users/${targetId}?branch_id=${branch_id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -677,14 +688,7 @@ const Detoxification = () => {
 
   //Create sexual desire form handler end
 
-  const [formData, setFormData] = useState({
-    dateOfAssessment: new Date(),
-    is_detoxified: "",
-    start_date: "",
-    end_date: "",
-    start_remark: "",
-    end_remark: "",
-  });
+  const [formData, setFormData] = useState(initialDetoxFormData);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -742,10 +746,16 @@ const Detoxification = () => {
       const result = await response.json();
 
       if (response.ok) {
+        const userTargetId = selectedUser?.user_id || selectedUser?.[0]?.user_id || selectedUser?.id || currentDetoxUserId;
+        clearDraft("detoxification", userTargetId);
+        setDraftTimestamp(null);
+
         Swal.fire({
           icon: "success",
           title: getTranslation("Detoxification Submitted/विषहरण प्रस्तुत किया गया",lang),
           text: getTranslation("The detoxification form has been submitted successfully./विषहरण प्रपत्र सफलतापूर्वक प्रस्तुत कर दिया गया है।",lang),
+        }).then(() => {
+          SetisopenDetoxCreateForm(false);
         });
       } else {
         console.error("Error Response:", result);
@@ -774,14 +784,20 @@ const Detoxification = () => {
 
   const ViewDetoxindividualData = async (detoxId = null) => {
     console.log("View Detoxification =>", detoxId);
+    if (typeof detoxId === "object" && detoxId !== null) {
+      detoxId = detoxId.detox_id || detoxId.id;
+    }
+
+    setDetoxData(null);
     setDetoxDataModal(true);
 
     if (detoxId) {
+      setIsLoading(true);
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch;
 
       try {
-        const response = await fetch(
+        let response = await fetch(
           `https://gks-yjdc.onrender.com/api/detoxification/assessment/${detoxId}?branch_id=${branch_id}`,
           {
             headers: {
@@ -791,16 +807,30 @@ const Detoxification = () => {
           }
         );
 
-        const data = await response.json();
-        if (!response.ok) throw new Error("Detoxification fetch failed");
+        let data = await response.json();
+        if (!response.ok || !data.data) {
+          const fallback = await fetch(
+            `https://gks-yjdc.onrender.com/api/detoxification/assessment/${detoxId}`,
+            {
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `${token}`,
+              },
+            }
+          );
+          if (fallback.ok) {
+            data = await fallback.json();
+          }
+        }
 
-        const viewData = data.data; // ✅ API returns "data", not "assessment"
-
-        console.log("View Detoxification Data =>", viewData);
-
-        setDetoxData(viewData); // ✅ store into correct state
+        const viewData = data?.data;
+        if (viewData) {
+          setDetoxData(viewData);
+        }
       } catch (error) {
         console.error("Fetch error:", error);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -1204,7 +1234,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
   
 
   return (
-    <frameElement>
+    <Fragment>
       {/* register user data into data table format start */}
       <Container fluid={true} className="datatables">
         <Row>
@@ -1220,8 +1250,8 @@ const handleDetoxReadmissionSubmit = async (e) => {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1234,6 +1264,14 @@ const handleDetoxReadmissionSubmit = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="Detoxification_Registration_List"
+                        title={getTranslation("Detoxification Registration List / विषहरण पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1287,8 +1325,8 @@ const handleDetoxReadmissionSubmit = async (e) => {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1301,6 +1339,14 @@ const handleDetoxReadmissionSubmit = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredSecondTblData}
+                        columns={tableColumnsSecoundTbl}
+                        filename="All_Detoxification_Patient_List"
+                        title={getTranslation("All Detoxification Patient Lists / सभी विषहरण रोगी सूचियाँ", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1346,6 +1392,15 @@ const handleDetoxReadmissionSubmit = async (e) => {
         maxWidth="1200px"
       >
         <div className="sd__wrapper">
+          <DraftNoticeBanner
+            draftTimestamp={draftTimestamp}
+            formKey="detoxification"
+            targetId={selectedUser?.user_id || selectedUser?.[0]?.user_id || selectedUser?.id || currentDetoxUserId}
+            onDiscard={() => {
+              setFormData(initialDetoxFormData);
+              setDraftTimestamp(null);
+            }}
+          />
           <Form className="theme-form" onSubmit={handleDetoxSubmit}>
             {/* Patient name and date of assessment */}
             <PatientCommonInfo
@@ -1370,7 +1425,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
                     <div className="input-group">
                       <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                         className="form-control digits"
-                        selected={formData.dateOfAssessment}
+                        selected={safeDate(formData.dateOfAssessment)}
                         onChange={(date) =>
                           handleAssesmentDateChange("dateOfAssessment", date)
                         }
@@ -1481,8 +1536,16 @@ const handleDetoxReadmissionSubmit = async (e) => {
 />
 
               </div>
-              {/* Submit */}
-              <div className="d-flex gap-3 mt-3">
+              {/* Submit & Save Draft */}
+              <div className="d-flex align-items-center gap-3 mt-3 flex-wrap">
+                <SaveDraftButton
+                  formKey="detoxification"
+                  targetId={selectedUser?.user_id || selectedUser?.[0]?.user_id || selectedUser?.id || currentDetoxUserId}
+                  formData={formData}
+                  onDraftSaved={() => setDraftTimestamp(Date.now())}
+                  style={{ height: "38px", padding: "6px 16px" }}
+                />
+
                 <Button color="primary" type="submit" disabled={isLoading}>
                   {isLoading ? (
                     <span className="spinner-border spinner-border-sm"></span>
@@ -1500,88 +1563,243 @@ const handleDetoxReadmissionSubmit = async (e) => {
       {/* View detoxification data form start */}
       <CommonModal
         isOpen={viewDetoxDataModal}
-        title={getTranslation("View Detoxification/विषहरण देखें",lang)}
+        title={getTranslation("View Detoxification/विषहरण देखें", lang)}
         toggler={closeAllModal}
-        maxWidth="1200px"
+        maxWidth="1100px"
       >
-        <Col sm="12"></Col>
-        {viewDetoxDataModal && (
-          <div className="table-responsive p-4" ref={pdfRef}>
-            <h4
-              style={{
-                textAlign: "center",
-                textDecoration: "underline",
-                padding: "20px 0",
-              }}
-            >
-              {getTranslation("Detoxification Form/विषहरण प्रपत्र",lang)}
-            </h4>
-            {viewDetoxData ? (
-              <Table className="table table-bordered table-striped">
-                <thead className="table-light">
-                  <tr>
-                    <th>{getTranslation("Field/मैदान",lang)}</th>
-                    <th>{getTranslation("Value/कीमत",lang)}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries({
-                   [getTranslation('Name/नाम', lang)]: viewDetoxData.name,
-                   [getTranslation('Phone/फ़ोन', lang)]: viewDetoxData.phone,
-                   [getTranslation('Email/ईमेल', lang)]: viewDetoxData.email,
-                   [getTranslation('Gender/लिंग', lang)]: viewDetoxData.gender,
-                   [getTranslation('DOB/जन्म तिथि', lang)]: viewDetoxData.dob,
-                   [getTranslation('Address/पता', lang)]: viewDetoxData.address,
-                   [getTranslation('Branch/शाखा', lang)]: viewDetoxData.branch_name,
-                   [getTranslation('Ward Name/वार्ड का नाम', lang)]: viewDetoxData.ward_name,
-                   [getTranslation('GKS ID/जीकेएस आईडी', lang)]: viewDetoxData.gks_id,
-                   [getTranslation('Custom Code/कस्टम कोड', lang)]: viewDetoxData.custom_code,
-                   [getTranslation('Admission Date/प्रवेश तिथि', lang)]: viewDetoxData.admit_date,
-                   [getTranslation('Visit No/विज़िट नं.', lang)]: viewDetoxData.visit_no,
-                   [getTranslation('Is Detoxified/विषमुक्त है', lang)]: viewDetoxData.is_detoxified,
-                   [getTranslation('Start Date/आरंभ करने की तिथि', lang)]: viewDetoxData.start_date,
-                   [getTranslation('End Date/अंतिम तिथि', lang)]: viewDetoxData.end_date,
-                   [getTranslation('Start Remark/टिप्पणी प्रारंभ करें', lang)]: viewDetoxData.start_remark,
-                   [getTranslation('End Remark/टिप्पणी समाप्त', lang)]: viewDetoxData.end_remark,
-                   [getTranslation('Status/स्थिति', lang)]: viewDetoxData.status,
-                   [getTranslation('Created At/बनाया गया', lang)]: viewDetoxData.created_at,
-                   [getTranslation('Updated At/अपडेट किया गया', lang)]: viewDetoxData.updated_at,
-                  }).map(([key, value]) => (
-                    <tr key={key}>
-                      <td className="fw-bold">{key}</td>
-                      <td>
-                        {value || <span className="text-muted">N/A</span>}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            ) : (
-              <p className="text-center text-danger">{getTranslation("No data available./कोई डेटा मौजूद नहीं।",lang)}</p>
-            )}
-          </div>
-        )}
+        <div className="p-3 p-md-4 print-area" ref={pdfRef} style={{ background: "#f8fafc" }}>
+          {isLoading ? (
+            <ModalLoading message={getTranslation("Loading Detoxification details... / विवरण लोड हो रहा है...", lang)} />
+          ) : viewDetoxData ? (
+            <div>
+              <PatientViewHeader data={viewDetoxData} />
 
-        <div style={{ margin: "20px" }}>
-          <button
-            disabled={pfaDownload}
-            id="download-btn"
-            className="btn btn-primary"
-            onClick={handleDownloadPDF}
-          >
-            {pfaDownload
-              ? getTranslation("Your Detoxification report is being downloaded... / आपका डिटॉक्स रिपोर्ट डाउनलोड हो रहा है...",lang)
-              : getTranslation("Download Your Detoxification Report / डिटॉक्स रिपोर्ट डाउनलोड करें",lang)}
-          </button>
+              {/* Card 1: Patient & Admission Details */}
+              <div
+                className="card shadow-sm border-0 mb-4"
+                style={{
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div
+                  className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                  style={{
+                    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                    borderLeft: "5px solid #d56337",
+                  }}
+                >
+                  <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                    👤 {getTranslation("Patient & Admission Details / रोगी एवं प्रवेश विवरण", lang)}
+                  </h6>
+                  <Badge color="light" className="text-muted border px-2 py-1">
+                    GKS ID: {viewDetoxData.gks_id || "-"}
+                  </Badge>
+                </div>
+                <div className="card-body p-3 p-md-4">
+                  <div className="row g-3">
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Name/नाम", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark text-capitalize mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewDetoxData.name || "-"}
+                        </div>
+                      </div>
+                    </div>
 
-<button
-                          className="btn btn-primary mx-3"
-                          onClick={handlePrint}
-                        >
-                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-                        </button>
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Phone/फ़ोन", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          📞 {viewDetoxData.phone || "-"}
+                        </div>
+                      </div>
+                    </div>
 
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Email/ईमेल", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          ✉️ {viewDetoxData.email || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-sm-4 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Gender/लिंग", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewDetoxData.gender || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-sm-4 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("DOB/जन्म तिथि", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          📅 {viewDetoxData.dob ? new Date(viewDetoxData.dob).toLocaleDateString() : "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-4 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Admission Date/प्रवेश तिथि", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          📅 {viewDetoxData.admit_date ? new Date(viewDetoxData.admit_date).toLocaleDateString() : "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Branch/शाखा", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          🏢 {viewDetoxData.branch_name || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Ward Name/वार्ड का नाम", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          🏥 {viewDetoxData.ward_name || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Visit No/विज़िट नं.", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          #{viewDetoxData.visit_no || "1"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Detoxification Plan & Remarks */}
+              <div
+                className="card shadow-sm border-0 mb-4"
+                style={{
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div
+                  className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                  style={{
+                    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                    borderLeft: "5px solid #d56337",
+                  }}
+                >
+                  <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                    🌿 {getTranslation("Detoxification Plan & Remarks / विषहरण योजना एवं टिप्पणियाँ", lang)}
+                  </h6>
+                </div>
+                <div className="card-body p-3 p-md-4">
+                  <div className="row g-3">
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Is Detoxified/विषमुक्त है", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          <Badge color="light" className="text-dark border">
+                            {viewDetoxData.is_detoxified || "-"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Start Date/आरंभ करने की तिथि", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          📅 {viewDetoxData.start_date ? new Date(viewDetoxData.start_date).toLocaleDateString() : "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("End Date/अंतिम तिथि", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          📅 {viewDetoxData.end_date ? new Date(viewDetoxData.end_date).toLocaleDateString() : "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Start Remark/टिप्पणी प्रारंभ करें", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewDetoxData.start_remark || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("End Remark/टिप्पणी समाप्त", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewDetoxData.end_remark || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-5">
+              <p className="text-muted mb-0">
+                {getTranslation("No data available./कोई डेटा मौजूद नहीं।", lang)}
+              </p>
+            </div>
+          )}
         </div>
+
+        {/* Action Buttons */}
+        <ModalActionButtons
+          onClose={closeAllModal}
+          onPrint={handlePrint}
+          onDownload={handleDownloadPDF}
+          isDownloading={pfaDownload}
+          downloadText={getTranslation("Download PDF / डाउनलोड करें", lang)}
+        />
       </CommonModal>
       {/* View detoxification data form end */}
 
@@ -1620,11 +1838,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
               <div className="input-group">
                 <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                   className="form-control digits"
-                  selected={
-                    editDetoxData?.dateOfAssessment
-                      ? new Date(editDetoxData.dateOfAssessment)
-                      : null
-                  }
+                  selected={safeDate(editDetoxData?.dateOfAssessment)}
                   onChange={(date) =>
                     setEditDetoxData((prev) => ({
                       ...prev,
@@ -2018,8 +2232,14 @@ const handleDetoxReadmissionSubmit = async (e) => {
 </CommonModal>
 {/* ✅ Readmission Detoxification Form End */}
 
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
 
-    </frameElement>
+    </Fragment>
   );
 };
 

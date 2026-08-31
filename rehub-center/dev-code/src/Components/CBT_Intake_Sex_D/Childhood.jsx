@@ -112,10 +112,14 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
+import UserDetailsModal from "../Common/UserDetailsModal";
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
-
 import { useReactToPrint } from "react-to-print";
-
 
 function Childhood() {
 
@@ -130,6 +134,13 @@ function Childhood() {
   const [isLoading, setIsLoading] = useState(false);
   //Branches selection
   const { selectedBranch } = useBranch();
+  const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+  const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+  const handleViewUserDetails = (userId) => {
+    setSelectedViewUserId(userId);
+    setViewUserDetailsModal(true);
+  };
 
   //Pring vide data in pdf format
   const pdfRef = useRef();
@@ -230,19 +241,13 @@ function Childhood() {
   //Getting registred patient data into table row
   const tableColumns = [
     {
-      name: getTranslation("User ID/उपयोगकर्ता पहचान",lang),
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
       name: getTranslation("GKS ID/जीकेएस आईडी",lang),
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
     {
-      name: getTranslation("Name/नाम",lang),
+      name: getTranslation("Patient name/रोगी का नाम",lang),
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -253,16 +258,6 @@ function Childhood() {
           }}
         >
           {row.name} {row.disabled && "(disabled)"}
-        </span>
-      ),
-    },
-    {
-      name: getTranslation("Status/स्थिति",lang),
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
         </span>
       ),
     },
@@ -278,6 +273,30 @@ function Childhood() {
         return (
           //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
@@ -289,47 +308,13 @@ function Childhood() {
               </span>
             )}
 
-{/* <span
-                onClick={() => handleChildhoodPreFill(row.recentChildhoodIDs)}
-                style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
-              >
-                ✏️
-              </span> */}
-
-            {/* Show Create PFA if not discharged and not readmission */}
-            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-              <span
-                onClick={() => CreateChildHoodHandler(row.id)}
-                style={{ cursor: "pointer" }}
-                title="Create PDA"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="12" y1="8" x2="12" y2="16"></line>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-              </span>
-            )} */}
-
 {row.dischargeStatus === 0 && row.isReadmission === 0 && (
   <span
-    onClick={() => (row.isChildhoodCompleted ? null : CreateChildHoodHandler(row.id))}
+    onClick={() => CreateChildHoodHandler(row.id)}
     style={{
-      cursor: row.isChildhoodCompleted ? "not-allowed" : "pointer",
-      opacity: row.isChildhoodCompleted ? 0.5 : 1,
+      cursor: "pointer",
     }}
-    title={row.isChildhoodCompleted ? getTranslation("Childhood Completed/बचपन पूरा हुआ",lang) : getTranslation("Create Childhood Form/बचपन का फॉर्म बनाएँ",lang)}
+    title={getTranslation("Create Childhood Form/बचपन प्रपत्र बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -549,15 +534,50 @@ function Childhood() {
 
   //Create Childhood form function start
   const [isChildhoodModalOpen, setIsChildhoodModalOpen] = useState(false);
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentChildhoodUserId, setCurrentChildhoodUserId] = useState(null);
+
+  const initialChildhoodFormData = {
+    dateOfAssessment: new Date(),
+    parenting_history: "",
+    family_dispute_childhood: "",
+    sociality_born_living: "",
+    high_risk_behavior: "",
+    impact_substance_movies: "",
+    abuse_history_types: [], // ✅ checkboxes
+    abuse_history_description: "",
+    education_status: "",
+    occupational_status: "",
+    dropout_reason: "",
+    study_work_details: "",
+    hobbies: "",
+    extra_skills: "",
+    achievement_life: "",
+    why_here: "",
+    why_family_sent: "",
+  };
+
   const CreateChildHoodHandler = async (userId = null) => {
     setIsChildhoodModalOpen(true);
-    if (userId) {
+    const targetId = userId || currentChildhoodUserId;
+    if (userId) setCurrentChildhoodUserId(userId);
+
+    if (targetId) {
+      const saved = loadDraft("childhood", targetId);
+      if (saved && saved.data) {
+        setFormData(saved.data);
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData(initialChildhoodFormData);
+        setDraftTimestamp(null);
+      }
+
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch;
 
       try {
         const response = await fetch(
-          `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
+          `https://gks-yjdc.onrender.com/api/users/${targetId}?branch_id=${branch_id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -577,25 +597,7 @@ function Childhood() {
   };
 
   //Submit childhood form data
-  const [formData, setFormData] = useState({
-    dateOfAssessment: new Date(),
-    parenting_history: "",
-    family_dispute_childhood: "",
-    sociality_born_living: "",
-    high_risk_behavior: "",
-    impact_substance_movies: "",
-    abuse_history_types: [], // ✅ checkboxes
-    abuse_history_description: "",
-    education_status: "",
-    occupational_status: "",
-    dropout_reason: "",
-    study_work_details: "",
-    hobbies: "",
-    extra_skills: "",
-    achievement_life: "",
-    why_here: "",
-    why_family_sent: "",
-  });
+  const [formData, setFormData] = useState(initialChildhoodFormData);
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -652,6 +654,9 @@ function Childhood() {
 
       const data = await response.json();
       setIsLoading(false);
+      const userTargetId = selectedUser?.user_id || selectedUser?.id || currentChildhoodUserId;
+      clearDraft("childhood", userTargetId);
+      setDraftTimestamp(null);
 
       Swal.fire({
         icon: "success",
@@ -1170,9 +1175,14 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
     // Add a temporary class to scale fonts if needed
     element.classList.add("pdf-scale");
 
+    const patientName = viewChildhoodData?.name || viewChildhoodData?.patient_name || "Patient";
+    const gksId = viewChildhoodData?.custom_code || viewChildhoodData?.gks_id || viewChildhoodData?.uid || viewChildhoodData?.user_id || "";
+    const safeName = String(patientName).trim().replace(/\s+/g, "_");
+    const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
     const opt = {
       margin: [10, 10, 10, 10], // top, left, bottom, right
-      filename: `user_data_${viewChildhoodData?.name}_${viewChildhoodData?.user_id}.pdf`,
+      filename: `patient_${safeName}_${safeId || "childhood_report"}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -1224,8 +1234,8 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1238,6 +1248,14 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="Childhood_History_Registration_List"
+                        title={getTranslation("Childhood History Registration List / बचपन का इतिहास पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1287,8 +1305,8 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard title={getTranslation("All Childhood /बचपन Patient Data List",lang)} className="p-0" />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1301,6 +1319,14 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredDataone}
+                        columns={tableColumnsFDAList}
+                        filename="All_Childhood_Patient_List"
+                        title={getTranslation("All Childhood Patient Data List / सभी बचपन रोगी डेटा सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1345,6 +1371,15 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
+        <DraftNoticeBanner
+          draftTimestamp={draftTimestamp}
+          formKey="childhood"
+          targetId={selectedUser?.user_id || selectedUser?.id || currentChildhoodUserId}
+          onDiscard={() => {
+            setFormData(initialChildhoodFormData);
+            setDraftTimestamp(null);
+          }}
+        />
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
@@ -1365,7 +1400,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <div className="input-group">
                   <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                     className="form-control digits"
-                    selected={formData.dateOfAssessment}
+                    selected={safeDate(formData.dateOfAssessment)}
                     onChange={(date) =>
                       handleAssesmentDateChange("dateOfAssessment", date)
                     }
@@ -1917,8 +1952,16 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
               </FormGroup>
             </div>
 
-            {/* Submit */}
-            <div className="d-flex gap-3 mt-3">
+            {/* Submit & Save Draft */}
+            <div className="d-flex align-items-center gap-3 mt-3 flex-wrap">
+              <SaveDraftButton
+                formKey="childhood"
+                targetId={selectedUser?.user_id || selectedUser?.id || currentChildhoodUserId}
+                formData={formData}
+                onDraftSaved={() => setDraftTimestamp(Date.now())}
+                style={{ height: "38px", padding: "6px 16px" }}
+              />
+
               <Button color="primary" type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <span className="spinner-border spinner-border-sm"></span>
@@ -1939,7 +1982,9 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
-        <div className="table-responsive p-4" ref={pdfRef}>
+        <div className="table-responsive p-4" ref={pdfRef} style={{ background: "#f8fafc" }}>
+          {viewChildhoodData && <PatientViewHeader data={viewChildhoodData} />}
+
           <h4
             style={{
               textAlign: "center",
@@ -2100,26 +2145,13 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
           </Table>
         </div>
 
-        <div style={{ margin: "0 20px 20px 20px" }}>
-          <button
-            disabled={pfaDownload}
-            id="download-btn"
-            className="btn btn-primary"
-            onClick={handleDownloadPDF}
-          >
-            {pfaDownload
-              ? getTranslation("Your Childhood form is being downloaded.../ आपका बचपन फॉर्म डाउनलोड हो रहा है...",lang)
-              : getTranslation("Download Childhood / बचपन फॉर्म",lang)}
-          </button>
-
-<button
-                          className="btn btn-primary mx-3"
-                          onClick={handlePrint}
-                        >
-                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-                        </button>
-
-        </div>
+        <ModalActionButtons
+          onClose={closeAllmodal}
+          onPrint={handlePrint}
+          onDownload={handleDownloadPDF}
+          isDownloading={pfaDownload}
+          downloadText={getTranslation("Download Childhood / बचपन फॉर्म", lang)}
+        />
       </CommonModal>
       {/* View Childhood data into modal end */}
 
@@ -2147,7 +2179,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
                 <div className="input-group">
                   <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                     className="form-control digits"
-                    selected={ChildhoodEditData?.date_of_assessment || null}
+                    selected={safeDate(ChildhoodEditData?.date_of_assessment)}
                     onChange={(date) =>
                       setChildhoodEditData((prev) => ({
                         ...prev,
@@ -2906,7 +2938,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
           <div className="input-group">
             <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
               className="form-control digits"
-              selected={ChildhoodPrefillData?.date_of_assessment || null}
+              selected={safeDate(ChildhoodPrefillData?.date_of_assessment)}
               onChange={(date) =>
                 setChildhoodPrefillData((prev) => ({
                   ...prev,
@@ -3639,6 +3671,13 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
   </div>
 </CommonModal>
 {/* Prefill readmission Childhood individual form data end */}
+
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
 
     </Fragment>
   );

@@ -56,6 +56,12 @@ import { Btn, H5, Breadcrumbs, H4 } from "../../AbstractElements";
 import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
@@ -67,6 +73,13 @@ function SUDBrief() {
 
   //Branches selection
   const { selectedBranch } = useBranch();
+  const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+  const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+  const handleViewUserDetails = (userId) => {
+    setSelectedViewUserId(userId);
+    setViewUserDetailsModal(true);
+  };
 
   //Pring vide data in pdf format
   const pdfRef = useRef();
@@ -166,19 +179,13 @@ function SUDBrief() {
   //Getting registred patient data into table row
   const tableColumns = [
     {
-     name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
       name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
     {
-     name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
+      name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -189,16 +196,6 @@ function SUDBrief() {
           }}
         >
           {row.name} {row.disabled && "(disabled)"}
-        </span>
-      ),
-    },
-    {
-      name: `${getTranslation('Status/स्थिति' , lang)}`,
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
         </span>
       ),
     },
@@ -214,6 +211,30 @@ function SUDBrief() {
         return (
           //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
@@ -225,12 +246,13 @@ function SUDBrief() {
               </span>
             )}
 
-            {/* Show Create PFA if not discharged and not readmission */}
-            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
               <span
                 onClick={() => createSUDBrief(row.id)}
-                style={{ cursor: "pointer" }}
-                title="Create PDA"
+                style={{
+                  cursor: "pointer",
+                }}
+                title={getTranslation("Create SUD Brief/SUD संक्षिप्त विवरण बनाएँ",lang)}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -248,34 +270,7 @@ function SUDBrief() {
                   <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
               </span>
-            )} */}
-
-{row.dischargeStatus === 0 && row.isReadmission === 0 && (
-  <span
-    onClick={() => (row.isSUDBriefCompleted ? null : createSUDBrief(row.id))}
-    style={{
-      cursor: row.isSUDBriefCompleted ? "not-allowed" : "pointer",
-      opacity: row.isSUDBriefCompleted ? 0.5 : 1,
-    }}
-    title={row.isSUDBriefCompleted ? getTranslation("SUDBrief Completed/एसयूडीब्रीफ पूरा हुआ",lang) : getTranslation("Create SUD Brief/SUD संक्षिप्त विवरण बनाएँ",lang)}
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-      <line x1="12" y1="8" x2="12" y2="16"></line>
-      <line x1="8" y1="12" x2="16" y2="12"></line>
-    </svg>
-  </span>
-)}
+            )}
           </div>
         );
       },
@@ -538,35 +533,19 @@ function SUDBrief() {
 
   //Crete SUD brief form function start
   const [isSUDbriefModalOpen, setIsSUDbriefModalOpen] = useState(false);
-  const createSUDBrief = async (userId = null) => {
-    setIsSUDbriefModalOpen(true);
-    if (userId) {
-      const token = localStorage.getItem("Authorization");
-      const branch_id = selectedBranch;
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentSUDBriefUserId, setCurrentSUDBriefUserId] = useState(null);
 
-      try {
-        const response = await fetch(
-          `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `${token}`,
-            },
-          }
-        );
-        const data = await response.json();
-        if (!response.ok) throw new Error("User fetch failed");
+  const initialRows = [
+    {
+      treatment_year: "",
+      treatment_place: "",
+      treatment_duration: "",
+      days_of_sobriety: "",
+    },
+  ];
 
-        // ✅ store the user object
-        setSelectedUser(data.data[0]);
-      } catch (error) {
-        console.error("Fetch error:", error);
-      }
-    }
-  };
-
-  //Post Submit SUD brief from data to DB via API Handeler
-  const [formData, setFormData] = useState({
+  const initialSUDBriefFormData = {
     dateOfAssessment: new Date(),
     dependent_to: "",
     substance_daily_quantity: "",
@@ -607,7 +586,52 @@ function SUDBrief() {
     traditional_healer_treatment: "",
     how_long_when: "",
     treatment_effect_result: "",
-  });
+  };
+
+  const createSUDBrief = async (userId = null) => {
+    setIsSUDbriefModalOpen(true);
+    const targetId = userId || currentSUDBriefUserId;
+    if (userId) setCurrentSUDBriefUserId(userId);
+
+    if (targetId) {
+      const saved = loadDraft("sud_brief", targetId);
+      if (saved && saved.data) {
+        if (saved.data.formData) setFormData(saved.data.formData);
+        else setFormData(saved.data);
+        if (saved.data.rows) setRows(saved.data.rows);
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData(initialSUDBriefFormData);
+        setRows(initialRows);
+        setDraftTimestamp(null);
+      }
+
+      const token = localStorage.getItem("Authorization");
+      const branch_id = selectedBranch;
+
+      try {
+        const response = await fetch(
+          `https://gks-yjdc.onrender.com/api/users/${targetId}?branch_id=${branch_id}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        );
+        const data = await response.json();
+        if (!response.ok) throw new Error("User fetch failed");
+
+        // ✅ store the user object
+        setSelectedUser(data.data[0]);
+      } catch (error) {
+        console.error("Fetch error:", error);
+      }
+    }
+  };
+
+  //Post Submit SUD brief from data to DB via API Handeler
+  const [formData, setFormData] = useState(initialSUDBriefFormData);
 
   //spinner extract from other file
   const selectedSpinner = Data.find(
@@ -652,6 +676,9 @@ function SUDBrief() {
 
       const data = await response.json();
       setIsLoading(false);
+      const userTargetId = selectedUser?.user_id || selectedUser?.id || currentSUDBriefUserId;
+      clearDraft("sud_brief", userTargetId);
+      setDraftTimestamp(null);
 
       Swal.fire({
         icon: "success",
@@ -1065,9 +1092,14 @@ const handleSUDBriefUpdate = async () => {
     // Add a temporary class to scale fonts if needed
     element.classList.add("pdf-scale");
 
+    const patientName = viewSUDBriefData?.name || viewSUDBriefData?.patient_name || "Patient";
+    const gksId = viewSUDBriefData?.custom_code || viewSUDBriefData?.gks_id || viewSUDBriefData?.uid || viewSUDBriefData?.user_id || "";
+    const safeName = String(patientName).trim().replace(/\s+/g, "_");
+    const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
     const opt = {
       margin: [10, 10, 10, 10], // top, left, bottom, right
-      filename: `user_data_${viewSUDBriefData?.name}_${viewSUDBriefData?.user_id}.pdf`,
+      filename: `patient_${safeName}_${safeId || "sud_brief_report"}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -1120,8 +1152,8 @@ const handleSUDBriefUpdate = async () => {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1134,6 +1166,14 @@ const handleSUDBriefUpdate = async () => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="SUD_Brief_Registration_List"
+                        title={getTranslation("SUD Brief Registration List / एसयूडी संक्षिप्त पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1183,8 +1223,8 @@ const handleSUDBriefUpdate = async () => {
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard title={getTranslation("All Substance Use Dependenc Patient Data List/सभी पदार्थ उपयोग निर्भरता रोगी डेटा सूची",lang)} className="p-0" />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1197,6 +1237,14 @@ const handleSUDBriefUpdate = async () => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredDataone}
+                        columns={tableColumnsFDAList}
+                        filename="All_SUD_Brief_Patient_List"
+                        title={getTranslation("All Substance Use Dependency Brief Patient Data List / सभी पदार्थ उपयोग निर्भरता संक्षिप्त रोगी डेटा सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1241,6 +1289,16 @@ const handleSUDBriefUpdate = async () => {
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
+        <DraftNoticeBanner
+          draftTimestamp={draftTimestamp}
+          formKey="sud_brief"
+          targetId={selectedUser?.user_id || selectedUser?.id || currentSUDBriefUserId}
+          onDiscard={() => {
+            setFormData(initialSUDBriefFormData);
+            setRows(initialRows);
+            setDraftTimestamp(null);
+          }}
+        />
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
@@ -1262,7 +1320,7 @@ const handleSUDBriefUpdate = async () => {
                   <div className="input-group">
                     <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
-                      selected={formData.dateOfAssessment}
+                      selected={safeDate(formData.dateOfAssessment)}
                       onChange={(date) =>
                         handleAssesmentDateChange("dateOfAssessment", date)
                       }
@@ -2144,8 +2202,16 @@ onChange={handleInputChange}
 />
 
             </div>
-            {/* Submit Button */}
-            <div className="d-flex gap-3">
+            {/* Submit Button & Save Draft */}
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+              <SaveDraftButton
+                formKey="sud_brief"
+                targetId={selectedUser?.user_id || selectedUser?.id || currentSUDBriefUserId}
+                formData={{ formData, rows }}
+                onDraftSaved={() => setDraftTimestamp(Date.now())}
+                style={{ height: "38px", padding: "6px 16px" }}
+              />
+
               <Button color="primary" type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <span
@@ -2170,7 +2236,9 @@ onChange={handleInputChange}
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
-        <div className="table-responsive p-4" ref={pdfRef}>
+        <div className="table-responsive p-4" ref={pdfRef} style={{ background: "#f8fafc" }}>
+          {viewSUDBriefData && <PatientViewHeader data={viewSUDBriefData} />}
+
           <h4
             style={{
               textAlign: "center",
@@ -2351,26 +2419,13 @@ onChange={handleInputChange}
           </Table>
         </div>
 
-        <div style={{ margin: "0 20px 20px 20px" }}>
-          <button
-            disabled={pfaDownload}
-            id="download-btn"
-            className="btn btn-primary"
-            onClick={handleDownloadPDF}
-          >
-            {pfaDownload
-              ? getTranslation("Your SUD Brief is being downloaded.../ आपका SUD डाउनलोड हो रहा है...",lang)
-              : getTranslation("Download SUD Brief/SUD संक्षिप्त विवरण डाउनलोड करें",lang)}
-          </button>
-
-<button
-                          className="btn btn-primary mx-3"
-                          onClick={handlePrint}
-                        >
-                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-                        </button>
-
-        </div>
+        <ModalActionButtons
+          onClose={closeAllmodal}
+          onPrint={handlePrint}
+          onDownload={handleDownloadPDF}
+          isDownloading={pfaDownload}
+          downloadText={getTranslation("Download SUD Brief/SUD संक्षिप्त विवरण डाउनलोड करें", lang)}
+        />
       </CommonModal>
       {/* View SUD Brief data into modal end */}
 
@@ -2399,7 +2454,7 @@ onChange={handleInputChange}
                 <div className="input-group">
                   <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                     className="form-control digits"
-                    selected={SUDBriefEditData?.date_of_assessment}
+                    selected={safeDate(SUDBriefEditData?.date_of_assessment)}
                     onChange={(date) =>
                       setSUDBriefEditData((prev) => ({
                         ...prev,
@@ -2607,6 +2662,13 @@ onChange={handleInputChange}
         </div>
       </CommonModal>
       {/* Edit SUD Brief individual form data end */}
+
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
     </Fragment>
   );
 }

@@ -9,6 +9,7 @@ import {
   CardBody,
   InputGroup,
   Table,
+  Badge,
 } from "reactstrap";
 
 import DatePicker from "react-datepicker";
@@ -29,7 +30,14 @@ import html2pdf from "html2pdf.js";
 import { useBranch } from "../../contexts/BranchContext";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import ModalLoading from "../Common/ModalLoading";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import { useReactToPrint } from "react-to-print";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
 const FirstExamination = () => {
   const { lang } = useLang();
@@ -37,17 +45,27 @@ const FirstExamination = () => {
   const pdfRef = useRef();
 
   const [pfaDownload, setpfaDownload] = useState(false);
+  const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+  const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+  const handleViewUserDetails = (userId) => {
+    setSelectedViewUserId(userId);
+    setViewUserDetailsModal(true);
+  };
 
   const handleDownloadPDF = () => {
     const element = pdfRef.current;
     setpfaDownload(true);
     element.classList.add("pdf-scale");
 
+    const patientName = viewFEData?.name || viewFEData?.patient_name || "Patient";
+    const gksId = viewFEData?.custom_code || viewFEData?.gks_id || viewFEData?.uid || viewFEData?.user_id || "";
+    const safeName = String(patientName).trim().replace(/\s+/g, "_");
+    const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
     const opt = {
       margin: [10, 10, 10, 10],
-      filename: `user_data_${viewFEData?.name || viewFEData?.patient_name}_${
-        viewFEData?.user_id
-      }.pdf`,
+      filename: `patient_${safeName}_${safeId || "fe_report"}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
@@ -269,12 +287,6 @@ const FirstExamination = () => {
   // Table 1 Columns
   const tableColumns = [
     {
-      name: getTranslation("User ID/उपयोगकर्ता आईडी", lang),
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
       name: getTranslation("GKS ID/GKS आईडी", lang),
       selector: (row) => row.gks_id,
       sortable: true,
@@ -287,24 +299,38 @@ const FirstExamination = () => {
       cell: (row) => <span>{row.name}</span>,
     },
     {
-      name: getTranslation("Status/स्थिति", lang),
-      selector: (row) => row.status,
-      sortable: true,
-      cell: () => (
-        <span className="badge bg-success p-2">
-          {getTranslation("PFA Completed/पीएफए पूरा हुआ", lang)}
-        </span>
-      ),
-    },
-    {
       name: getTranslation("Action/क्रिया", lang),
       center: true,
       cell: (row) => {
         if (row.dischargeStatus === 1) return null;
-        const canCreateFE = Boolean(row.userId) && !row.isFECompleted;
+        const canCreateFE = Boolean(row.userId);
 
         return (
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.userId || row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
                 onClick={() => handleFEprefill(row.recent_first_eval_id)}
@@ -330,9 +356,7 @@ const FirstExamination = () => {
                         "User ID missing/उपयोगकर्ता आईडी नहीं मिली",
                         lang,
                       )
-                    : row.isFECompleted
-                      ? getTranslation("FE Completed/एफई पूरा हुआ", lang)
-                      : getTranslation("Create FE/FE बनाएँ", lang)
+                    : getTranslation("Create FE/FE बनाएँ", lang)
                 }
               >
                 <svg
@@ -509,7 +533,7 @@ const FirstExamination = () => {
   ];
 
   // FE Form Creation State
-  const [formData, setFormData] = useState({
+  const initialFEFormData = {
     dateOfAssessment: new Date(),
     patient_name: "",
     weight: "",
@@ -519,7 +543,11 @@ const FirstExamination = () => {
     location: "",
     addiction: "",
     intoxicated_at_admission: "No",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFEFormData);
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentFEUserId, setCurrentFEUserId] = useState(null);
 
   const handleIntoxicatedChange = (e) => {
     setFormData((prev) => ({
@@ -574,13 +602,22 @@ const FirstExamination = () => {
       userId = userId.userId || getPFAUserId(userId);
     }
 
-    userId = userId || getPFAUserId(pfaDataRow);
+    userId = userId || getPFAUserId(pfaDataRow) || currentFEUserId;
+    if (userId) setCurrentFEUserId(userId);
 
     if (!isValidValue(userId)) {
       toast.error(
         getTranslation("User ID not found for this PFA record.", lang),
       );
       return;
+    }
+
+    const saved = loadDraft("first_examination", userId);
+    if (saved && saved.data) {
+      setFormData(saved.data);
+      setDraftTimestamp(saved.savedAt);
+    } else {
+      setDraftTimestamp(null);
     }
 
     const token = localStorage.getItem("Authorization");
@@ -657,6 +694,10 @@ const FirstExamination = () => {
       if (!response.ok) throw new Error("API call failed");
 
       setIsLoading(false);
+      const userTargetId = getPFAUserId(selectedUser) || currentFEUserId;
+      clearDraft("first_examination", userTargetId);
+      setDraftTimestamp(null);
+
       Swal.fire({
         icon: "success",
         title: getTranslation(
@@ -988,8 +1029,8 @@ const FirstExamination = () => {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1005,6 +1046,14 @@ const FirstExamination = () => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="FE_Registration_List"
+                        title={getTranslation("First Examination Registration List / प्रथम परीक्षा पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1048,8 +1097,8 @@ const FirstExamination = () => {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1065,6 +1114,14 @@ const FirstExamination = () => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredDataone}
+                        columns={tableColumnsFDAList}
+                        filename="All_FE_Examination_List"
+                        title={getTranslation("All First Examination Data List / सभी प्रथम परीक्षा डेटा सूची", lang)}
+                      />
                     </div>
                   </div>
                   <DataTable
@@ -1107,20 +1164,27 @@ const FirstExamination = () => {
           }}
         />
         <div className="row px-3 pt-4 pb-3">
+          <DraftNoticeBanner
+            draftTimestamp={draftTimestamp}
+            formKey="first_examination"
+            targetId={getPFAUserId(selectedUser) || currentFEUserId}
+            onDiscard={() => {
+              setFormData(initialFEFormData);
+              setDraftTimestamp(null);
+            }}
+          />
           <form onSubmit={handleSubmit}>
-            <div className="col-md-6 mb-3">
-              <label className="col-sm-12 col-form-label col-xl-6">
+            <div className="col-12 col-md-6 mb-3">
+              <label className="form-label">
                 {getTranslation("Date of Assessment/मूल्यांकन की तिथि", lang)}
               </label>
-              <div className="col-xl-5 col-sm-12">
-                <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                  className="form-control digits"
-                  selected={formData.dateOfAssessment}
-                  onChange={(date) =>
-                    handleAssesmentDateChange("dateOfAssessment", date)
-                  }
-                />
-              </div>
+              <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
+                className="form-control digits"
+                selected={safeDate(formData.dateOfAssessment)}
+                onChange={(date) =>
+                  handleAssesmentDateChange("dateOfAssessment", date)
+                }
+              />
             </div>
 
             <div className="row mb-3">
@@ -1238,7 +1302,15 @@ const FirstExamination = () => {
               </label>
             </div>
 
-            <div className="d-flex gap-3">
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+              <SaveDraftButton
+                formKey="first_examination"
+                targetId={getPFAUserId(selectedUser) || currentFEUserId}
+                formData={formData}
+                onDraftSaved={() => setDraftTimestamp(Date.now())}
+                style={{ height: "38px", padding: "6px 16px" }}
+              />
+
               <Button color="primary" type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <span className="spinner-border spinner-border-sm"></span>
@@ -1259,116 +1331,184 @@ const FirstExamination = () => {
           lang,
         )}
         toggler={closeAllmodal}
-        maxWidth="1200px"
+        maxWidth="1100px"
       >
-        <div className="table-responsive p-4" ref={pdfRef}>
-          <h4
-            style={{
-              textAlign: "center",
-              textDecoration: "underline",
-              padding: "20px 0",
-            }}
-          >
-            {getTranslation("First Evaluation / प्रथम मूल्यांकन", lang)}
-          </h4>
-          <Table size="sm" className="table-auto table-bordered">
-            <tbody style={{ fontSize: "14px" }}>
-              {viewFEData ? (
-                <>
-                  <tr>
-                    <th className="text-start p-3">
-                      {getTranslation(
-                        "Date of assessment/मूल्यांकन की तिथि",
-                        lang,
-                      )}
-                    </th>
-                    <td className="border p-3">
-                      {viewFEData.date_of_assessment
-                        ? new Date(
-                            viewFEData.date_of_assessment,
-                          ).toLocaleDateString()
-                        : ""}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th className="text-start p-3">
-                      {getTranslation("Patient Name/रोगी का नाम", lang)}
-                    </th>
-                    <td className="border p-3">
-                      {viewFEData?.patient_name || viewFEData?.name}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th className="text-start p-3">
-                      {getTranslation("Weight/वज़न", lang)}
-                    </th>
-                    <td className="border p-3">{viewFEData?.weight}</td>
-                  </tr>
-                  <tr>
-                    <th className="text-start p-3">
-                      {getTranslation("Pulse/नाड़ी", lang)}
-                    </th>
-                    <td className="border p-3">{viewFEData?.pulse_rate}</td>
-                  </tr>
-                  <tr>
-                    <th className="text-start p-3">Blood Pressure</th>
-                    <td className="border p-3">{viewFEData.blood_pressure}</td>
-                  </tr>
-                  <tr>
-                    <th className="text-start p-3">SpO2 (%)</th>
-                    <td className="border p-3">{viewFEData.spo2_percentage}</td>
-                  </tr>
-                  <tr>
-                    <th className="text-start p-3">
-                      {getTranslation("Location/जगह", lang)}
-                    </th>
-                    <td className="border p-3">{viewFEData.location}</td>
-                  </tr>
-                  <tr>
-                    <th className="text-start p-3">
-                      {getTranslation("Addiction/लत", lang)}
-                    </th>
-                    <td className="border p-3">{viewFEData.addiction}</td>
-                  </tr>
-                  <tr>
-                    <th className="text-start p-3">
-                      {getTranslation(
-                        "Intoxicated at the time of admission/प्रवेश के समय नशे में",
-                        lang,
-                      )}
-                    </th>
-                    <td className="border p-3">
-                      {viewFEData.intoxicated_at_admission}
-                    </td>
-                  </tr>
-                </>
-              ) : (
-                <tr>
-                  <td colSpan="2" className="text-center">
-                    {getTranslation(
-                      "No data available/कोई डेटा मौजूद नहीं",
-                      lang,
-                    )}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
+        <div className="p-3 p-md-4 print-area" ref={pdfRef} style={{ background: "#f8fafc" }}>
+          {isLoading ? (
+            <ModalLoading message={getTranslation("Loading First Examination details... / विवरण लोड हो रहा है...", lang)} />
+          ) : viewFEData ? (
+            <div>
+              <PatientViewHeader data={viewFEData} />
+
+              {/* Card 1: Clinical Vitals */}
+              <div
+                className="card shadow-sm border-0 mb-4"
+                style={{
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div
+                  className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                  style={{
+                    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                    borderLeft: "5px solid #d56337",
+                  }}
+                >
+                  <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                    🩺 {getTranslation("Patient & Clinical Vitals / रोगी एवं नैदानिक ​​विवरण", lang)}
+                  </h6>
+                </div>
+                <div className="card-body p-3 p-md-4">
+                  <div className="row g-3">
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Date of assessment/मूल्यांकन की तिथि", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          📅 {viewFEData.date_of_assessment ? new Date(viewFEData.date_of_assessment).toLocaleDateString() : "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Patient Name/रोगी का नाम", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark text-capitalize mt-1" style={{ fontSize: "13.5px" }}>
+                          👤 {viewFEData?.patient_name || viewFEData?.name || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Location/जगह", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          📍 {viewFEData?.location || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-sm-3 col-lg-3">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Weight/वज़न", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          ⚖️ {viewFEData?.weight ? `${viewFEData.weight} kg` : "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-sm-3 col-lg-3">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Pulse/नाड़ी", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          ❤️ {viewFEData?.pulse_rate ? `${viewFEData.pulse_rate} bpm` : "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-sm-3 col-lg-3">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          Blood Pressure
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          🩸 {viewFEData?.blood_pressure || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-sm-3 col-lg-3">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          SpO2 (%)
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          🫁 {viewFEData?.spo2_percentage ? `${viewFEData.spo2_percentage}%` : "-"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Addiction & Admission Status */}
+              <div
+                className="card shadow-sm border-0 mb-4"
+                style={{
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div
+                  className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                  style={{
+                    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                    borderLeft: "5px solid #d56337",
+                  }}
+                >
+                  <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                    ⚠️ {getTranslation("Addiction & Admission Status / लत एवं प्रवेश स्थिति", lang)}
+                  </h6>
+                </div>
+                <div className="card-body p-3 p-md-4">
+                  <div className="row g-3">
+                    <div className="col-12 col-md-6">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Addiction/लत", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFEData?.addiction || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation(
+                            "Intoxicated at the time of admission/प्रवेश के समय नशे में",
+                            lang,
+                          )}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFEData?.intoxicated_at_admission || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-5">
+              <p className="text-muted mb-0">
+                {getTranslation("No data available/कोई डेटा मौजूद नहीं", lang)}
+              </p>
+            </div>
+          )}
         </div>
-        <div style={{ margin: "0 20px 20px 20px" }}>
-          <button
-            disabled={pfaDownload}
-            className="btn btn-primary"
-            onClick={handleDownloadPDF}
-          >
-            {pfaDownload
-              ? getTranslation("Downloading.../डाउनलोड हो रहा है...", lang)
-              : getTranslation("Download Your First Exam Form(FE)", lang)}
-          </button>
-          <button className="btn btn-primary mx-3" onClick={handlePrint}>
-            {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-          </button>
-        </div>
+
+        {/* Action Buttons */}
+        <ModalActionButtons
+          onClose={closeAllmodal}
+          onPrint={handlePrint}
+          onDownload={handleDownloadPDF}
+          isDownloading={pfaDownload}
+          downloadText={getTranslation("Download PDF / डाउनलोड करें", lang)}
+        />
       </CommonModal>
 
       {/* FE Edit Modal */}
@@ -1388,22 +1528,20 @@ const FirstExamination = () => {
               handleFEUpdate();
             }}
           >
-            <div className="col-md-6 mb-3">
-              <label className="col-sm-12 col-form-label col-xl-6">
+            <div className="col-12 col-md-6 mb-3">
+              <label className="form-label">
                 {getTranslation("Date of Assessment/मूल्यांकन की तिथि", lang)}
               </label>
-              <div className="col-xl-5 col-sm-12">
-                <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                  className="form-control digits"
-                  selected={FEEditData?.date_of_assessment}
-                  onChange={(date) =>
-                    setFEEditData((prev) => ({
-                      ...prev,
-                      date_of_assessment: date,
-                    }))
-                  }
-                />
-              </div>
+              <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
+                className="form-control digits"
+                selected={safeDate(FEEditData?.date_of_assessment)}
+                onChange={(date) =>
+                  setFEEditData((prev) => ({
+                    ...prev,
+                    date_of_assessment: date,
+                  }))
+                }
+              />
             </div>
 
             <div className="row mb-3">
@@ -1552,22 +1690,20 @@ const FirstExamination = () => {
       >
         <div className="row px-3 pt-4 pb-3">
           <form onSubmit={handleReadmissionSubmit}>
-            <div className="col-md-6 mb-3">
-              <label className="col-sm-12 col-form-label col-xl-6">
+            <div className="col-12 col-md-6 mb-3">
+              <label className="form-label">
                 {getTranslation("Date of Assessment/मूल्यांकन की तिथि", lang)}
               </label>
-              <div className="col-xl-5 col-sm-12">
-                <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                  className="form-control digits"
-                  selected={FEPrefillData?.date_of_assessment || null}
-                  onChange={(date) =>
-                    setFEPrefillData((prev) => ({
-                      ...prev,
-                      date_of_assessment: date,
-                    }))
-                  }
-                />
-              </div>
+              <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
+                className="form-control digits"
+                selected={safeDate(FEPrefillData?.date_of_assessment)}
+                onChange={(date) =>
+                  setFEPrefillData((prev) => ({
+                    ...prev,
+                    date_of_assessment: date,
+                  }))
+                }
+              />
             </div>
 
             <div className="row mb-3">
@@ -1705,6 +1841,13 @@ const FirstExamination = () => {
           </form>
         </div>
       </CommonModal>
+
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
     </Fragment>
   );
 };

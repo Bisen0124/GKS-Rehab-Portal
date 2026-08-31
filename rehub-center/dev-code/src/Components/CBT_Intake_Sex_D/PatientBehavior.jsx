@@ -39,7 +39,14 @@ import { consent, dateOfAssessment, prepared, signature } from "../../Constant";
 import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 import { useReactToPrint } from "react-to-print";
 
 const attitudeOptions = [
@@ -141,6 +148,13 @@ function PatientBehavior() {
 
   //Branches selection
   const { selectedBranch } = useBranch();
+  const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+  const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+  const handleViewUserDetails = (userId) => {
+    setSelectedViewUserId(userId);
+    setViewUserDetailsModal(true);
+  };
 
   //Pring vide data in pdf format
   const pdfRef = useRef();
@@ -203,8 +217,6 @@ function PatientBehavior() {
             gks_id: user.gks_id || "N/A",
             name: user.name,
             recentPBIds: user.recent_intake_patient_behavior_id,
-            status: userStatus,
-            isPBCompleted,
             dischargeStatus: user.discharge_status,
             dischargeStatusText: dischargeStatus,
             isReadmission: user.is_readmission,
@@ -241,12 +253,6 @@ function PatientBehavior() {
   //Getting registred patient data into table row
   const tableColumns = [
     {
-      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
       name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
@@ -267,16 +273,6 @@ function PatientBehavior() {
         </span>
       ),
     },
-    {
-     name: `${getTranslation('Status/स्थिति' , lang)}`,
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
-        </span>
-      ),
-    },
 
     {
       name: `${getTranslation('Action/क्रिया' , lang)}`,
@@ -289,6 +285,30 @@ function PatientBehavior() {
         return (
           //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
@@ -300,20 +320,13 @@ function PatientBehavior() {
               </span>
             )}
 
-{/* <span
-                onClick={() => handlePatientBehaviourPreFill(row.recentPBIds)}
-                style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
-              >
-                ✏️
-              </span> */}
-
-            {/* Show Create PFA if not discharged and not readmission */}
-            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
               <span
                 onClick={() => createPatientBehaviour(row.id)}
-                style={{ cursor: "pointer" }}
-                title="Create PDA"
+                style={{
+                  cursor: "pointer",
+                }}
+                title={getTranslation("Create PB Form/पीबी फॉर्म बनाएं",lang)}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -331,33 +344,7 @@ function PatientBehavior() {
                   <line x1="8" y1="12" x2="16" y2="12"></line>
                 </svg>
               </span>
-            )} */}
-            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-  <span
-    onClick={() => (row.isPBCompleted ? null : createPatientBehaviour(row.id))}
-    style={{
-      cursor: row.isPBCompleted ? "not-allowed" : "pointer",
-      opacity: row.isPBCompleted ? 0.5 : 1,
-    }}
-    title={row.isPBCompleted ? getTranslation("PB Completed/पीबी पूरा हुआ",lang) : getTranslation("Create PB Form/पीबी फॉर्म बनाएं",lang)}
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-      <line x1="12" y1="8" x2="12" y2="16"></line>
-      <line x1="8" y1="12" x2="16" y2="12"></line>
-    </svg>
-  </span>
-)}
+            )}
           </div>
         );
       },
@@ -566,21 +553,23 @@ function PatientBehavior() {
     });
   };
 
-  const [formData, setFormData] = useState({
+  const initialPBFormData = {
     dateOfAssessment: new Date(),
     lifeAim: "",
-    mostImportantThingLife:"",
+    mostImportantThingLife: "",
     mentalStatus: "",
     dischargePlan: "",
     familyExpectations: "",
     attitude: [],
     silentBehaviors: [],
-    mentalStage: [], // ✅ Add mentalStage here
+    mentalStage: [],
     questions: {},
     consent: "Yes",
     prepared_by: "",
     signature: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialPBFormData);
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -615,15 +604,30 @@ function PatientBehavior() {
   //Create Patient form function start
   const [isPatientBehaviourModalOpen, setIsPatientBehaviourModalOpen] =
     useState(false);
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentPBUserId, setCurrentPBUserId] = useState(null);
+
   const createPatientBehaviour = async (userId = null) => {
     setIsPatientBehaviourModalOpen(true);
-    if (userId) {
+    const targetId = userId || currentPBUserId;
+    if (userId) setCurrentPBUserId(userId);
+
+    if (targetId) {
+      const saved = loadDraft("patient_behavior", targetId);
+      if (saved && saved.data) {
+        setFormData(saved.data);
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData(initialPBFormData);
+        setDraftTimestamp(null);
+      }
+
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch;
 
       try {
         const response = await fetch(
-          `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
+          `https://gks-yjdc.onrender.com/api/users/${targetId}?branch_id=${branch_id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -749,6 +753,9 @@ const handlePBFormSubmit = async (e) => {
 
     const data = await response.json();
     setIsLoading(false);
+    const userTargetId = selectedUser?.user_id || selectedUser?.id || currentPBUserId;
+    clearDraft("patient_behavior", userTargetId);
+    setDraftTimestamp(null);
 
     Swal.fire({
       icon: "success",
@@ -1414,9 +1421,14 @@ const handlePBReadmissionFormSubmit = async (e) => {
       // Add a temporary class to scale fonts if needed
       element.classList.add("pdf-scale");
   
+      const patientName = viewPBData?.name || viewPBData?.patient_name || "Patient";
+      const gksId = viewPBData?.custom_code || viewPBData?.gks_id || viewPBData?.uid || viewPBData?.user_id || "";
+      const safeName = String(patientName).trim().replace(/\s+/g, "_");
+      const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
       const opt = {
         margin: [10, 10, 10, 10], // top, left, bottom, right
-        filename: `user_data_${viewPBData?.name}_${viewPBData?.user_id}.pdf`,
+        filename: `patient_${safeName}_${safeId || "patient_behavior_report"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: {
           scale: 2,
@@ -1478,8 +1490,8 @@ const handlePBReadmissionFormSubmit = async (e) => {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1492,6 +1504,14 @@ const handlePBReadmissionFormSubmit = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="Patient_Behavior_Registration_List"
+                        title={getTranslation("Patient Behavior Registration List / रोगी व्यवहार पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1541,8 +1561,8 @@ const handlePBReadmissionFormSubmit = async (e) => {
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard title={getTranslation("All Patient behavior Data List",lang)} className="p-0" />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1555,6 +1575,14 @@ const handlePBReadmissionFormSubmit = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredDataone}
+                        columns={tableColumnsFDAList}
+                        filename="All_Patient_Behavior_List"
+                        title={getTranslation("All Patient Behavior Data List / सभी रोगी व्यवहार डेटा सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1599,6 +1627,15 @@ const handlePBReadmissionFormSubmit = async (e) => {
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
+        <DraftNoticeBanner
+          draftTimestamp={draftTimestamp}
+          formKey="patient_behavior"
+          targetId={selectedUser?.user_id || selectedUser?.id || currentPBUserId}
+          onDiscard={() => {
+            setFormData(initialPBFormData);
+            setDraftTimestamp(null);
+          }}
+        />
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
@@ -1619,7 +1656,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                 <div className="input-group">
                   <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                     className="form-control digits"
-                    selected={formData.dateOfAssessment}
+                    selected={safeDate(formData.dateOfAssessment)}
                     onChange={(date) =>
                       handleAssesmentDateChange("dateOfAssessment", date)
                     }
@@ -1921,20 +1958,28 @@ const handlePBReadmissionFormSubmit = async (e) => {
               </div>
             </div>
 
-           {/* Submit Button */}
-                       <div className="d-flex gap-3">
-                         <Button color="primary" type="submit" disabled={isLoading}>
-                           {isLoading ? (
-                             <span
-                               className="spinner-border spinner-border-sm"
-                               role="status"
-                               aria-hidden="true"
-                             ></span>
-                           ) : (
-                             getTranslation("Create Patient Behaviour Form/रोगी व्यवहार प्रपत्र बनाएँ",lang)
-                           )}
-                         </Button>
-                       </div>
+           {/* Submit Button & Save Draft */}
+           <div className="d-flex align-items-center gap-3 flex-wrap">
+             <SaveDraftButton
+               formKey="patient_behavior"
+               targetId={selectedUser?.user_id || selectedUser?.id || currentPBUserId}
+               formData={formData}
+               onDraftSaved={() => setDraftTimestamp(Date.now())}
+               style={{ height: "38px", padding: "6px 16px" }}
+             />
+
+             <Button color="primary" type="submit" disabled={isLoading}>
+               {isLoading ? (
+                 <span
+                   className="spinner-border spinner-border-sm"
+                   role="status"
+                   aria-hidden="true"
+                 ></span>
+               ) : (
+                 getTranslation("Create Patient Behaviour Form/रोगी व्यवहार प्रपत्र बनाएँ",lang)
+               )}
+             </Button>
+           </div>
           </form>
         </div>
       </CommonModal>
@@ -1947,7 +1992,9 @@ const handlePBReadmissionFormSubmit = async (e) => {
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
-  <div className="table-responsive p-4" ref={pdfRef}>
+  <div className="table-responsive p-4" ref={pdfRef} style={{ background: "#f8fafc" }}>
+    {viewPBData && <PatientViewHeader data={viewPBData} />}
+
     <h4
       style={{
         textAlign: "center",
@@ -2104,26 +2151,13 @@ const handlePBReadmissionFormSubmit = async (e) => {
     </Table>
   </div>
 
-  <div style={{ margin: "0 20px 20px 20px" }}>
-    <button
-      disabled={pfaDownload}
-      id="download-btn"
-      className="btn btn-primary"
-      onClick={handleDownloadPDF}
-    >
-      {pfaDownload
-        ? getTranslation("Your Patient Behaviour Assessment is being downloaded.../आपका रोगी व्यवहार मूल्यांकन डाउनलोड किया जा रहा है...",lang)
-        : getTranslation("Download Patient Behaviour/रोगी व्यवहार डाउनलोड करें",lang)}
-    </button>
-
-<button
-                          className="btn btn-primary mx-3"
-                          onClick={handlePrint}
-                        >
-                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-                        </button>
-
-  </div>
+  <ModalActionButtons
+    onClose={closeAllmodal}
+    onPrint={handlePrint}
+    onDownload={handleDownloadPDF}
+    isDownloading={pfaDownload}
+    downloadText={getTranslation("Download Patient Behaviour / रोगी व्यवहार डाउनलोड करें", lang)}
+  />
 </CommonModal>
 {/* View Patient Behaviour data into modal end */}
 
@@ -2160,11 +2194,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
           <div className="input-group">
             <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
               className="form-control digits"
-              selected={
-                PBEditData?.date_of_assessment
-                  ? new Date(PBEditData.date_of_assessment)
-                  : null
-              }
+              selected={safeDate(PBEditData?.date_of_assessment)}
               onChange={(date) =>
                 setPBEditData((prev) => ({
                   ...prev,
@@ -2574,11 +2604,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
           <div className="input-group">
             <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
               className="form-control digits"
-              selected={
-                PBPrefillData?.date_of_assessment
-                  ? new Date(PBPrefillData.date_of_assessment)
-                  : null
-              }
+              selected={safeDate(PBPrefillData?.date_of_assessment)}
               onChange={(date) =>
                 setPBPrefillData((prev) => ({
                   ...prev,
@@ -2948,15 +2974,12 @@ const handlePBReadmissionFormSubmit = async (e) => {
 </CommonModal>
 {/* Patient readmission behaviour form end */}
 
-
-
-
-
-
-
-
-
-
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
 
     </Fragment>
   );

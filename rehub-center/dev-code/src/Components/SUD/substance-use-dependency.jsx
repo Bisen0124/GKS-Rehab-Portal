@@ -35,6 +35,7 @@ import {
     Button,
     InputGroup,
     Spinner,
+    Badge,
 } from "reactstrap";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
@@ -65,6 +66,13 @@ import { useBranch } from "../../contexts/BranchContext";
 import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import ModalLoading from "../Common/ModalLoading";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
 import { useReactToPrint } from "react-to-print";
 
@@ -74,6 +82,13 @@ function SUD() {
 
      //Branches selection
         const { selectedBranch } = useBranch();
+        const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+        const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+        const handleViewUserDetails = (userId) => {
+            setSelectedViewUserId(userId);
+            setViewUserDetailsModal(true);
+        };
     
     //Download view SUD form data into PDF 
      const pdfRef = useRef();
@@ -174,7 +189,6 @@ function SUD() {
 
     //Getting registred patient data into table row 
     const tableColumns = [
-        { name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.id, sortable: true, center: true },
         { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
         {
            name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
@@ -191,16 +205,6 @@ function SUD() {
                 </span>
             ),
         },
-        {
-            name: `${getTranslation('Status/स्थिति' , lang)}`,
-            selector: (row) => row.status,
-            sortable: true,
-            cell: (row) => (
-                <span style={{ color: row.disabled ? "#999" : "#000" }}>
-                    {row.status}
-                </span>
-            ),
-        },
 
         {
             name: `${getTranslation('Action/क्रिया' , lang)}`,
@@ -213,6 +217,30 @@ function SUD() {
                 return (
                     //Showing action buttons on register user list on FDA page
                     <div className="d-flex gap-2">
+                        {/* View User Details Icon */}
+                        <span
+                            onClick={() => handleViewUserDetails(row.id)}
+                            style={{ cursor: "pointer" }}
+                            title={getTranslation("View/देखना", lang)}
+                        >
+                            <svg
+                                style={{ color: "#d56337" }}
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="feather feather-eye"
+                            >
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </span>
+
                         {/* Show Edit only if not discharged and readmission */}
                         {row.dischargeStatus === 0 && row.isReadmission === 1 && (
                             <span
@@ -343,7 +371,6 @@ function SUD() {
 
     //Getting registred patient data into table row 
     const tableColumnsSecoundTbl = [
-        { name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,selector: (row) => row.id, sortable: true, center: true },
         { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
         {
            name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
@@ -429,13 +456,48 @@ function SUD() {
 
 
     //Create SUD form handler
+    const [draftTimestamp, setDraftTimestamp] = useState(null);
+    const [currentSUDUserId, setCurrentSUDUserId] = useState(null);
+
+    const getInitialSubstances = () =>
+        substanceList.map((name, index) => ({
+            substance_id: index + 1,
+            substance_name: getTranslation(name, lang),
+            ever_used: "",
+            duration: "",
+            current_use: "",
+            current_use_pattern: "",
+            usual_dose: "",
+            remarks: "",
+        }));
+
+    const initialSUDFormData = {
+        sudDateOfAssessment: new Date(),
+        consent: "No", // or "Yes" if checked by default
+        SUDsignature: "",
+    };
+
     const createSUD = async (userId = null) => {
         setModal(true);
-        if (userId) {
+        const targetId = userId || currentSUDUserId;
+        if (userId) setCurrentSUDUserId(userId);
+
+        if (targetId) {
+            const saved = loadDraft("sud", targetId);
+            if (saved && saved.data) {
+                if (saved.data.formData) setformData(saved.data.formData);
+                if (saved.data.substances) setSubstances(saved.data.substances);
+                setDraftTimestamp(saved.savedAt);
+            } else {
+                setformData(initialSUDFormData);
+                setSubstances(getInitialSubstances());
+                setDraftTimestamp(null);
+            }
+
             const token = localStorage.getItem("Authorization");
             const branch_id = selectedBranch;
             try {
-                const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`, {
+                const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${targetId}?branch_id=${branch_id}`, {
                     headers: {
                         "Content-Type": "application/json",
                         Authorization: `${token}`,
@@ -444,31 +506,19 @@ function SUD() {
                 const data = await response.json();
                 if (!response.ok) throw new Error("User fetch failed");
                 // ✅ store the user object
-        setSelectedUser(data.data[0]); 
+                setSelectedUser(data.data[0]); 
             } catch (error) {
                 console.error("Fetch error:", error);
             }
         }
-    }
+    };
 
     //Close all modal handler
     const closePFAModal = () => {
         setModal(false);
     };
 
-
-    const [substances, setSubstances] = useState(
-        substanceList.map((name, index) => ({
-            substance_id: index + 1,
-            substance_name: getTranslation(name,lang),
-            ever_used: "",
-            duration: "",
-            current_use: "",
-            current_use_pattern: "",
-            usual_dose: "",
-            remarks: "",
-        }))
-    );
+    const [substances, setSubstances] = useState(getInitialSubstances());
 
     const handleSubstances = (index, field, value) => {
         const updated = [...substances];
@@ -476,13 +526,7 @@ function SUD() {
         setSubstances(updated);
     };
 
-
-
-    const [formData, setformData] = useState({
-        sudDateOfAssessment: new Date(),
-        consent: "No", // or "Yes" if checked by default
-        SUDsignature: ""
-    })
+    const [formData, setformData] = useState(initialSUDFormData);
     // const handleChanges = (e) => {
     //     const { name, value } = e.target.value;
     //     setformData((prev) => ({
@@ -532,6 +576,10 @@ function SUD() {
             console.log("API Response:", result);
             // ✅ Success Case
             setIsLoading(false);
+            const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentSUDUserId;
+            clearDraft("sud", userTargetId);
+            setDraftTimestamp(null);
+
             Swal.fire({
                 icon: "success",
                 title: getTranslation("SUD Created Successfully/SUD सफलतापूर्वक बनाया गया",lang),
@@ -947,9 +995,14 @@ function SUD() {
           // Add a temporary class to scale fonts if needed
           element.classList.add("pdf-scale");
       
+          const patientName = viewSUDData?.assessment?.name || viewSUDData?.name || viewSUDData?.patient_name || "Patient";
+          const gksId = viewSUDData?.assessment?.custom_code || viewSUDData?.assessment?.gks_id || viewSUDData?.custom_code || viewSUDData?.gks_id || viewSUDData?.uid || viewSUDData?.user_id || "";
+          const safeName = String(patientName).trim().replace(/\s+/g, "_");
+          const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
           const opt = {
             margin: [10, 10, 10, 10], // top, left, bottom, right
-            filename: `user_data_${viewSUDData?.name}_${viewSUDData?.user_id}.pdf`,
+            filename: `patient_${safeName}_${safeId || "sud_report"}.pdf`,
             image: { type: "jpeg", quality: 0.98 },
             html2canvas: {
               scale: 2,
@@ -1017,8 +1070,8 @@ function SUD() {
                                             className="p-0"
                                         />
                                     </div>
-                                    <div className="row pb-2">
-                                        <div className="col-md-4">
+                                    <div className="row pb-3 align-items-center">
+                                        <div className="col-md-5 col-12 mb-2 mb-md-0">
                                             <InputGroup>
                                                 <Input
                                                     className="form-control"
@@ -1031,6 +1084,14 @@ function SUD() {
                                                     <i className="fa fa-search"></i>
                                                 </span>
                                             </InputGroup>
+                                        </div>
+                                        <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                                            <TableExportButtons
+                                                data={filteredData}
+                                                columns={tableColumns}
+                                                filename="SUD_Registration_List"
+                                                title={getTranslation("Substance Use Dependency Registration List / पदार्थ उपयोग निर्भरता पंजीकरण सूची", lang)}
+                                            />
                                         </div>
                                     </div>
                                     {stillLoading ? (
@@ -1084,8 +1145,8 @@ function SUD() {
                                             className="p-0"
                                         />
                                     </div>
-                                    <div className="row pb-2">
-                                        <div className="col-md-4">
+                                    <div className="row pb-3 align-items-center">
+                                        <div className="col-md-5 col-12 mb-2 mb-md-0">
                                             <InputGroup>
                                                 <Input
                                                     className="form-control"
@@ -1098,6 +1159,14 @@ function SUD() {
                                                     <i className="fa fa-search"></i>
                                                 </span>
                                             </InputGroup>
+                                        </div>
+                                        <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                                            <TableExportButtons
+                                                data={filteredSecondTblData}
+                                                columns={tableColumnsSecoundTbl}
+                                                filename="All_SUD_Patient_List"
+                                                title={getTranslation("All Substance Use Dependency Patient Data List / सभी पदार्थ उपयोग निर्भरता रोगी डेटा सूची", lang)}
+                                            />
                                         </div>
                                     </div>
                                     {stillLoading ? (
@@ -1145,6 +1214,16 @@ function SUD() {
                 maxWidth="1200px"
             >
                 <div className="col-md-12 table-responsive">
+                    <DraftNoticeBanner
+                        draftTimestamp={draftTimestamp}
+                        formKey="sud"
+                        targetId={selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentSUDUserId}
+                        onDiscard={() => {
+                            setformData(initialSUDFormData);
+                            setSubstances(getInitialSubstances());
+                            setDraftTimestamp(null);
+                        }}
+                    />
                     <Form onSubmit={handleSubmitSUD} className="theme-form">
                         <PatientCommonInfo
                             selectedUser={selectedUser}
@@ -1167,7 +1246,7 @@ function SUD() {
                                         <div className="input-group">
                                             <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                                                 className="form-control digits"
-                                                selected={formData.sudDateOfAssessment}
+                                                selected={safeDate(formData.sudDateOfAssessment)}
                                                 onChange={(date) =>
                                                     handleAssesmentDateChange(
                                                         "dateOfAssessment",
@@ -1302,8 +1381,16 @@ function SUD() {
                             </Col>
                         </div>
 
-                        {/* Submit Button */}
-                        <div className="d-flex gap-3 px-3 mb-3 mt-4">
+                        {/* Submit Button & Save Draft */}
+                        <div className="d-flex align-items-center gap-3 px-3 mb-3 mt-4 flex-wrap">
+                            <SaveDraftButton
+                                formKey="sud"
+                                targetId={selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentSUDUserId}
+                                formData={{ formData, substances }}
+                                onDraftSaved={() => setDraftTimestamp(Date.now())}
+                                style={{ height: "38px", padding: "6px 16px" }}
+                            />
+
                             <Button color="primary" type="submit" disabled={isLoading}>
                                 {isLoading ? (
                                     <span
@@ -1343,7 +1430,7 @@ function SUD() {
                                     <div className="input-group">
                                         <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                                             className="form-control digits"
-                                            selected={SUDselectedUser?.date_of_assessment || null}
+                                            selected={safeDate(SUDselectedUser?.date_of_assessment)}
                                             onChange={(date) =>
                                                 setSUDselectedUser((prev) => ({
                                                     ...prev,
@@ -1496,197 +1583,168 @@ function SUD() {
 
             {/* View SUD data modal start */}
             <CommonModal
-  isOpen={viewSUDmodal}
-  title={getTranslation(
-    "View Substance Use Dependency (SUD) / पदार्थ उपयोग निर्भरता देखें",
-    lang
-  )}
-  toggler={closeSUDmodal}
-  maxWidth="1200px"
->
-  <Col sm="12">
-    <div className="table-responsive p-4" ref={pdfRef}>
-      <h4
-        style={{
-          textAlign: "center",
-          textDecoration: "underline",
-          padding: "20px 0"
-        }}
-      >
-        {getTranslation(
-          "Substance Use Dependency / पदार्थ उपयोग निर्भरता",
-          lang
-        )}
-      </h4>
+              isOpen={viewSUDmodal}
+              title={getTranslation(
+                "View Substance Use Dependency (SUD) / पदार्थ उपयोग निर्भरता देखें",
+                lang
+              )}
+              toggler={closeSUDmodal}
+              maxWidth="1100px"
+            >
+              <div className="p-3 p-md-4 print-area" ref={pdfRef} style={{ background: "#f8fafc" }}>
+                {isLoading ? (
+                  <ModalLoading message={getTranslation("Loading SUD details... / विवरण लोड हो रहा है...", lang)} />
+                ) : (
+                  (() => {
+                    const sudData = viewSUDData?.assessment || viewSUDData;
+                    if (!sudData) {
+                      return (
+                        <div className="text-center py-5">
+                          <p className="text-muted mb-0">
+                            {getTranslation("No data available / कोई डेटा मौजूद नहीं", lang)}
+                          </p>
+                        </div>
+                      );
+                    }
 
-      <Table bordered size="sm">
-        <tbody style={{ fontSize: "14px" }}>
-          {isLoading ? (
-            <tr>
-              <td colSpan="2" className="text-center">
-                <Spinner />
-              </td>
-            </tr>
-          ) : (
-            (() => {
-              const sudData =
-                viewSUDData?.assessment || viewSUDData;
+                    return (
+                      <div>
+                        <PatientViewHeader data={sudData} />
 
-              if (!sudData) {
-                return (
-                  <tr>
-                    <td colSpan="2" className="text-center">
-                      {getTranslation(
-                        "No data available / कोई डेटा मौजूद नहीं",
-                        lang
-                      )}
-                    </td>
-                  </tr>
-                );
-              }
-
-              return (
-                <>
-                  {/* ================= BASIC DETAILS ================= */}
-                  {Object.entries(sudData)
-                    .filter(
-                      ([key]) => !EXCLUDED_KEYS.includes(key)
-                    )
-                    .map(([key, value], index) =>
-                      key !== "substance_details" ? (
-                        <tr key={index}>
-                          <td className="fw-bold" width="35%">
-                            {getTranslation(
-                              key.replace(/_/g, " ").toUpperCase(),
-                              lang
-                            )}
-                          </td>
-                          <td width="65%">
-                            {value ? String(value) : "-"}
-                          </td>
-                        </tr>
-                      ) : null
-                    )}
-
-                  {/* ================= SUBSTANCE DETAILS HEADER ================= */}
-                  {Array.isArray(sudData.substance_details) && (
-                    <tr>
-                      <td
-                        colSpan="2"
-                        className="fw-bold text-center bg-light"
-                      >
-                        {getTranslation(
-                          "Substance Details / पदार्थ विवरण",
-                          lang
-                        )}
-                      </td>
-                    </tr>
-                  )}
-
-                  {/* ================= SUBSTANCE DETAILS TABLE ================= */}
-                  {Array.isArray(sudData.substance_details) && (
-                    <tr>
-                      <td colSpan="2" className="p-0">
-                        <Table
-                          bordered
-                          size="sm"
-                          responsive
-                          className="mb-0"
+                        {/* Card 1: Patient Information */}
+                        <div
+                          className="card shadow-sm border-0 mb-4"
+                          style={{
+                            borderRadius: "14px",
+                            overflow: "hidden",
+                            border: "1px solid #e2e8f0",
+                          }}
                         >
-                          <thead className="table-secondary text-center">
-                            <tr>
-                              <th>#</th>
-                              <th>
-                                {getTranslation("Substance", lang)}
-                              </th>
-                              <th>
-                                {getTranslation("Ever Used", lang)}
-                              </th>
-                              <th>
-                                {getTranslation("Duration", lang)}
-                              </th>
-                              <th>
-                                {getTranslation("Current Use", lang)}
-                              </th>
-                              <th>
-                                {getTranslation("Pattern", lang)}
-                              </th>
-                              <th>
-                                {getTranslation("Dose", lang)}
-                              </th>
-                              <th>
-                                {getTranslation("Remarks", lang)}
-                              </th>
-                            </tr>
-                          </thead>
+                          <div
+                            className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                            style={{
+                              background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                              borderLeft: "5px solid #d56337",
+                            }}
+                          >
+                            <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                              👤 {getTranslation("Patient Information / रोगी की जानकारी", lang)}
+                            </h6>
+                            <Badge color="light" className="text-muted border px-2 py-1">
+                              📅 {sudData.date_of_assessment ? new Date(sudData.date_of_assessment).toLocaleDateString() : "-"}
+                            </Badge>
+                          </div>
+                          <div className="card-body p-3 p-md-4">
+                            <div className="row g-3">
+                              {Object.entries(sudData)
+                                .filter(
+                                  ([key]) =>
+                                    key !== "substance_details" &&
+                                    !["id", "sda_id", "entry_id", "user_id", "created_at", "updated_at", "is_active"].includes(key)
+                                )
+                                .map(([key, value]) => {
+                                  let valStr = "-";
+                                  if (value !== null && value !== undefined && value !== "null") {
+                                    if (typeof value === "string" && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+                                      valStr = new Date(value).toLocaleDateString();
+                                    } else {
+                                      valStr = String(value);
+                                    }
+                                  }
+                                  return (
+                                    <div key={key} className="col-12 col-sm-6 col-lg-4">
+                                      <div className="p-2 px-3 rounded-3 bg-light border" style={{ minHeight: "60px" }}>
+                                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                                          {getTranslation(key.replace(/_/g, " "), lang)}
+                                        </div>
+                                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                                          {valStr}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </div>
+                        </div>
 
-                          <tbody>
-                            {sudData.substance_details.map(
-                              (sub, idx) => (
-                                <tr key={idx}>
-                                  <td className="text-center">
-                                    {idx + 1}
-                                  </td>
-                                  <td>
-                                    {getTranslation(
-                                      sub.substance_name,
-                                      lang
-                                    )}
-                                  </td>
-                                  <td className="text-center">
-                                    {sub.ever_used || "-"}
-                                  </td>
-                                  <td>{sub.duration || "-"}</td>
-                                  <td>{sub.current_use || "-"}</td>
-                                  <td>
-                                    {sub.current_use_pattern || "-"}
-                                  </td>
-                                  <td>{sub.usual_dose || "-"}</td>
-                                  <td>{sub.remarks || "-"}</td>
-                                </tr>
-                              )
-                            )}
-                          </tbody>
-                        </Table>
-                      </td>
-                    </tr>
-                  )}
-                </>
-              );
-            })()
-          )}
-        </tbody>
-      </Table>
-    </div>
+                        {/* Card 2: Substance History Details */}
+                        {Array.isArray(sudData.substance_details) && sudData.substance_details.length > 0 && (
+                          <div
+                            className="card shadow-sm border-0 mb-4"
+                            style={{
+                              borderRadius: "14px",
+                              overflow: "hidden",
+                              border: "1px solid #e2e8f0",
+                            }}
+                          >
+                            <div
+                              className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                              style={{
+                                background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                                borderLeft: "5px solid #d56337",
+                              }}
+                            >
+                              <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                                🧪 {getTranslation("Substance Details / पदार्थ विवरण", lang)}
+                              </h6>
+                              <Badge color="light" className="text-muted border px-2 py-1">
+                                {sudData.substance_details.length} Substances
+                              </Badge>
+                            </div>
+                            <div className="card-body p-3 p-md-4">
+                              <div className="table-responsive rounded-3 border">
+                                <table className="table table-hover align-middle mb-0">
+                                  <thead style={{ backgroundColor: "#f1f5f9" }}>
+                                    <tr>
+                                      <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>#</th>
+                                      <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>{getTranslation("Substance", lang)}</th>
+                                      <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>{getTranslation("Ever Used", lang)}</th>
+                                      <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>{getTranslation("Duration", lang)}</th>
+                                      <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>{getTranslation("Current Use", lang)}</th>
+                                      <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>{getTranslation("Pattern", lang)}</th>
+                                      <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>{getTranslation("Dose", lang)}</th>
+                                      <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>{getTranslation("Remarks", lang)}</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {sudData.substance_details.map((sub, idx) => (
+                                      <tr key={idx}>
+                                        <td className="py-2 px-3 fw-semibold text-muted">{idx + 1}</td>
+                                        <td className="py-2 px-3 fw-semibold text-dark">{getTranslation(sub.substance_name, lang) || "-"}</td>
+                                        <td className="py-2 px-3">
+                                          <Badge color={sub.ever_used === "Yes" || sub.ever_used === "हाँ" ? "danger" : "light"} className="border">
+                                            {sub.ever_used || "-"}
+                                          </Badge>
+                                        </td>
+                                        <td className="py-2 px-3">{sub.duration || "-"}</td>
+                                        <td className="py-2 px-3">{sub.current_use || "-"}</td>
+                                        <td className="py-2 px-3">{sub.current_use_pattern || "-"}</td>
+                                        <td className="py-2 px-3">{sub.usual_dose || "-"}</td>
+                                        <td className="py-2 px-3">{sub.remarks || "-"}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
 
-    {/* ================= ACTION BUTTONS ================= */}
-    <div className="m-3">
-      <button
-        disabled={pfaDownload}
-        className="btn btn-primary"
-        onClick={handleDownloadPDF}
-      >
-        {pfaDownload
-          ? getTranslation(
-              "Your SUD is being downloaded...",
-              lang
-            )
-          : getTranslation(
-              "Download Substance Use Dependency",
-              lang
-            )}
-      </button>
-
-      <button
-        className="btn btn-primary mx-3"
-        onClick={handlePrint}
-      >
-        {getTranslation("Print Your Data", lang)}
-      </button>
-    </div>
-  </Col>
-</CommonModal>
-
+              {/* Modal Footer Actions */}
+              <ModalActionButtons
+                onClose={closeSUDmodal}
+                onPrint={handlePrint}
+                onDownload={handleDownloadPDF}
+                isDownloading={pfaDownload}
+                downloadText={getTranslation("Download PDF / डाउनलोड करें", lang)}
+              />
+            </CommonModal>
             {/* View SUD data modal end */}
 
 
@@ -1711,7 +1769,7 @@ function SUD() {
                                     <div className="input-group">
                                         <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                                             className="form-control digits"
-                                            selected={SUDselectedUser?.date_of_assessment || null}
+                                            selected={safeDate(SUDselectedUser?.date_of_assessment)}
                                             onChange={(date) =>
                                                 setSUDselectedUser((prev) => ({
                                                     ...prev,
@@ -1860,6 +1918,13 @@ function SUD() {
                 </form>
             </CommonModal>
             {/* Edit SUD individual form modal end */}
+
+            {/* View user details modal */}
+            <UserDetailsModal
+                isOpen={viewUserDetailsModal}
+                userId={selectedViewUserId}
+                toggler={() => setViewUserDetailsModal(false)}
+            />
 
         </Fragment>
     )

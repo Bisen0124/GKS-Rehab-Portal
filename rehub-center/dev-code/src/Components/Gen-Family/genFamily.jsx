@@ -149,6 +149,7 @@ import {
   Button,
   InputGroup,
   Spinner,
+  Badge,
 } from "reactstrap";
 import { H5, Btn } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
@@ -179,7 +180,13 @@ import { getTranslation } from "../../utils/translator";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
+import UserDetailsModal from "../Common/UserDetailsModal";
+import ModalLoading from "../Common/ModalLoading";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import { useReactToPrint } from "react-to-print";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
 function GenFamily() {
 
@@ -187,6 +194,13 @@ function GenFamily() {
 
    //Branches selection
     const { selectedBranch } = useBranch();
+    const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+    const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+    const handleViewUserDetails = (userId) => {
+      setSelectedViewUserId(userId);
+      setViewUserDetailsModal(true);
+    };
 
   const pdfRef = useRef();
    //PDf view download pdf code handler
@@ -197,10 +211,29 @@ function GenFamily() {
   
       // Add a temporary class to scale fonts if needed
       element.classList.add("pdf-scale");
+
+      const patientName =
+        viewgenData?.gen_family?.name ||
+        viewgenData?.name ||
+        viewgenData?.patient_name ||
+        viewgenData?.user?.name ||
+        "Patient";
+      const gksId =
+        viewgenData?.gen_family?.custom_code ||
+        viewgenData?.gen_family?.gks_id ||
+        viewgenData?.gks_id ||
+        viewgenData?.custom_code ||
+        viewgenData?.gen_family?.uid ||
+        viewgenData?.uid ||
+        viewgenData?.gen_family?.user_id ||
+        viewgenData?.user_id ||
+        "";
+      const safeName = String(patientName).trim().replace(/\s+/g, "_");
+      const safeId = String(gksId).trim().replace(/\s+/g, "_");
   
       const opt = {
         margin: [10, 10, 10, 10], // top, left, bottom, right
-        filename: `user_data_${viewgenData?.name}_${viewgenData?.user_id}.pdf`,
+        filename: `patient_${safeName}_${safeId || "data"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: {
           scale: 2,
@@ -440,15 +473,30 @@ function GenFamily() {
   const [selectedUser, setSelectedUser] = useState(null); // User data
   //Gen family form submit handler
   const [genFamilyModal, setgetFamilyModal] = useState(false);
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentGenFamilyUserId, setCurrentGenFamilyUserId] = useState(null);
+
   const createGenFamilyToggle = async (userId = null) => {
     // Always open the modal immediately
     setgetFamilyModal(true);
-    if (userId) {
+    const targetId = userId || currentGenFamilyUserId;
+    if (userId) setCurrentGenFamilyUserId(userId);
+
+    if (targetId) {
+      const saved = loadDraft("general_family", targetId);
+      if (saved && saved.data) {
+        setFormData(saved.data);
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData(initialGenFamilyFormData);
+        setDraftTimestamp(null);
+      }
+
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch;
       try {
         const response = await fetch(
-          `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
+          `https://gks-yjdc.onrender.com/api/users/${targetId}?branch_id=${branch_id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -476,7 +524,6 @@ function GenFamily() {
        console.error("Fetch error:", error);
      }
     }
-    setgetFamilyModal(!genFamilyModal);
   };
 
   //This React hook calculates a user's age based on their date of birth (dob) and returns the age on General family form by create.
@@ -493,7 +540,7 @@ function GenFamily() {
 
   //Datatable column data start
   const tableColumns = [
-    {  name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.id, sortable: true, center: true },
+    {  name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id || row.custom_code || row.uid || "N/A", sortable: true, center: true },
     {
      name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
@@ -510,15 +557,6 @@ function GenFamily() {
     },
     { name: `${getTranslation('Email/ईमेल' , lang)}`, selector: (row) => row.email, sortable: true, center: true },
     { name: `${getTranslation('Patient Phone/मरीज़ का फ़ोन' , lang)}`, selector: (row) => row.phone, sortable: true, center: true },
-    {
-     name: `${getTranslation('Status/स्थिति' , lang)}`,
-      selector: (row) => row.status,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
-        </span>
-      ),
-    },
     //old code
     // {
     //   name: "Action",
@@ -639,6 +677,30 @@ function GenFamily() {
 
         return (
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
@@ -677,12 +739,11 @@ function GenFamily() {
 
 {row.dischargeStatus === 0 && row.isReadmission === 0 && (
   <span
-    onClick={() => (row.isGenFamCompleted ? null : createGenFamilyToggle(row.id))}
+    onClick={() => createGenFamilyToggle(row.id)}
     style={{
-      cursor: row.isGenFamCompleted ? "not-allowed" : "pointer",
-      opacity: row.isGenFamCompleted ? 0.5 : 1,
+      cursor: "pointer",
     }}
-    title={row.isGenFamCompleted ? getTranslation("Create Gen Family Form/जनरल फैमिली फॉर्म बनाएं",lang) : getTranslation("Create Gen Family Form/जनरल फैमिली फॉर्म बनाएं",lang)}
+    title={getTranslation("Create Gen Family Form/जनरल फैमिली फॉर्म बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -709,7 +770,6 @@ function GenFamily() {
 
   //All gen family data into datatabble column 
   const tableGenFamilyListColumns = [
-    { name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.user_id, sortable: true, center: true },
     { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
     {
       name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
@@ -868,7 +928,7 @@ function GenFamily() {
           return {
             id: user.user_id,
             recentGenfamID: user.recent_gen_fam_id,
-            gks_id: user.gks_id || "N/A",
+            gks_id: user.gks_id || user.custom_code || user.uid || "N/A",
             name: user.name,
             email: user.email,
             phone: user.phone,
@@ -932,7 +992,7 @@ function GenFamily() {
   //disabled row from datatable list after status completed
   const selectableRowDisabled = (row) => row.disabled === true;
 
-  const [formData, setFormData] = useState({
+  const initialGenFamilyFormData = {
     genUID: "",
     dateOfAdmission: new Date(),
     dateOfFormFilling: new Date(),
@@ -1160,7 +1220,9 @@ function GenFamily() {
     relationship: "",
     signature: "",
     prepared_by: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialGenFamilyFormData);
 
   //source of money
   const handleSourceOfMoney = (e) => {
@@ -1616,7 +1678,9 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
         source_by_bluff: formData.source_by_bluff,
         source_illegal: formData.source_illegal,
         source_any_other: formData.source_any_other,
-        source_other_text: formData.source_other_text,
+        ...(formData.source_any_other === "Yes" && formData.source_other_text && formData.source_other_text.trim() !== ""
+          ? { source_other_text: formData.source_other_text.trim() }
+          : {}),
         family_reaction: formData.family_reaction,
         first_action_when_known: formData.first_action_when_known,
         pattern_of_use: formData.pattern_of_use,
@@ -1792,76 +1856,63 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
 
 
       setIsLoading(false);
+      const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.[0]?.id || selectedUser?.user_id || selectedUser?.id || currentGenFamilyUserId;
+      clearDraft("general_family", userTargetId);
+      setDraftTimestamp(null);
+      setgetFamilyModal(false);
 
       Swal.fire({
         icon: "success",
-        title: getTranslation("Assessment Submitted/मूल्यांकन प्रस्तुत किया गया",lang),
-      }).then(() => {
-        setgetFamilyModal(false);
+        title: getTranslation("Assessment Submitted/मूल्यांकन प्रस्तुत किया गया", lang),
       });
 
-      // ✅ Fetch all users and update their status
-      const usersResponse = await fetch(
-        `https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-        }
-      );
-
-      if (!usersResponse.ok) {
-        throw new Error("Failed to fetch users");
-      }
-
-      const usersData = await usersResponse.json();
-
-      const formatted = await Promise.all(
-        usersData.map(async (user) => {
-          try {
-            const statusResponse = await fetch(
-              `https://gks-yjdc.onrender.com/api/gen-family/gen-family-details/${user.user_id}`,
-              {
-                headers: {
-                  Authorization: `${token}`,
-                },
-              }
-            );
-
-            const assessmentData = await statusResponse.json();
-            console.log("assessmentData:", assessmentData);
-
-            const userStatus =
-              assessmentData?.genFamilyDetails?.consent_info?.status ===
-                "Completed"
-                ? getTranslation("Completed/पुरा होना।",lang)
-                : getTranslation("Pending/लंबित",lang);
-
-            console.log("userStatus:", userStatus);
-
-            return {
-              id: user.user_id,
-              name: user.name,
-              status: userStatus,
-            };
-          } catch (err) {
-            console.error(
-              `Failed to fetch status for user ${user.user_id}`,
-              err
-            );
-            return {
-              id: user.user_id,
-              name: user.name,
-              status: "Unknown",
-            };
+      // ✅ Fetch all users and update table in 1 single fast API call
+      try {
+        const usersResponse = await fetch(
+          `https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
           }
-        })
-      );
+        );
 
-      setData(formatted);
-      setFilteredData(formatted);
+        if (usersResponse.ok) {
+          const res = await usersResponse.json();
+          const users = res.data || [];
+          const formatted = users.map((user) => {
+            const admitDate = user.recent_admit_date ? new Date(user.recent_admit_date) : null;
+            const genfamilyDate = user.recent_gen_fam_date ? new Date(user.recent_gen_fam_date) : null;
+            let isGenFamCompleted = false;
+            let userStatus = <p className="badge bg-warning text-dark p-2">{getTranslation("Pending/लंबित", lang)}</p>;
+            if (admitDate && genfamilyDate && admitDate > genfamilyDate) {
+              isGenFamCompleted = true;
+              userStatus = <p className="badge bg-success p-2">{getTranslation("Completed/पुरा होना।", lang)}</p>;
+            }
+            const dischargeStatus = user.discharge_status_text || "Unknown";
+            return {
+              id: user.user_id,
+              recentGenfamID: user.recent_gen_fam_id,
+              gks_id: user.gks_id || user.custom_code || user.uid || "N/A",
+              name: user.name,
+              email: user.email,
+              phone: user.phone,
+              status: userStatus,
+              isGenFamCompleted,
+              dischargeStatus: user.discharge_status,
+              dischargeStatusText: dischargeStatus,
+              isReadmission: user.is_readmission,
+              recent_gen_fam_id: user.recent_gen_fam_id,
+            };
+          });
+          setData(formatted);
+          setFilteredData(formatted);
+        }
+      } catch (refreshErr) {
+        console.error("Failed to refresh table:", refreshErr);
+      }
     } catch (error) {
       setIsLoading(false);
       Swal.fire({
@@ -1874,28 +1925,29 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
 
 
 
-  const [viewGenFamilyModel, setviewGenFamilyModel] = useState(false)
-  const [viewgenData, setviewgenData] = useState(null)
+  const [viewGenFamilyModel, setviewGenFamilyModel] = useState(false);
+  const [viewgenData, setviewgenData] = useState(null);
 
   const viewGenFamily = async (userId = null) => {
-    setviewGenFamilyModel(true);
-    console.log("userId =>", userId);
-  
     if (typeof userId === "object" && userId !== null) {
-      userId = userId.id;
+      userId = userId.id || userId.user_id;
     }
-  
+
     if (!userId) {
       console.error("Invalid userId provided");
       return;
     }
-  
+
+    setviewgenData(null);
+    setviewGenFamilyModel(true);
+    setIsLoading(true);
+
     const token = localStorage.getItem("Authorization");
-    const branch_id = selectedBranch;
-  
+    const branch_id = selectedBranch?.branch_id || selectedBranch?.id || selectedBranch || "";
+
     try {
       // Step 1: get gen_fam_id
-      const response = await fetch(
+      let response = await fetch(
         `https://gks-yjdc.onrender.com/api/gen-family/user-gen-families/${userId}?branch_id=${branch_id}`,
         {
           method: "GET",
@@ -1905,18 +1957,34 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
           },
         }
       );
-  
-      const famIdData = await response.json();
-  
+
+      let famIdData = await response.json();
+
       if (!response.ok || !famIdData.data || !famIdData.data.length) {
+        const fallbackRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/gen-family/user-gen-families/${userId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        );
+        if (fallbackRes.ok) {
+          famIdData = await fallbackRes.json();
+        }
+      }
+
+      if (!famIdData.data || !famIdData.data.length) {
         console.error("Failed to get gen_fam_id");
         return;
       }
-  
+
       const gen_fam_id = famIdData.data[0].gen_family.gen_fam_id;
-  
+
       // Step 2: Get full gen-family data
-      const fullDataResponse = await fetch(
+      let fullDataResponse = await fetch(
         `https://gks-yjdc.onrender.com/api/gen-family/gen-family/${gen_fam_id}?branch_id=${branch_id}`,
         {
           method: "GET",
@@ -1926,22 +1994,32 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
           },
         }
       );
-  
-      const fullData = await fullDataResponse.json();
-      console.log("Full Gen Family Data:", fullData);
-  
+
+      let fullData = await fullDataResponse.json();
+
       if (!fullDataResponse.ok || !fullData.data) {
-        console.error("Failed to get gen family details");
-        return;
+        const fallbackFull = await fetch(
+          `https://gks-yjdc.onrender.com/api/gen-family/gen-family/${gen_fam_id}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        );
+        if (fallbackFull.ok) {
+          fullData = await fallbackFull.json();
+        }
       }
-  
-      // ✅ Save the whole "data" object (which has all sections)
-      setviewgenData(fullData.data);
-      console.log("Updated viewgenData:", fullData.data);
-      
-  
+
+      if (fullData.data) {
+        setviewgenData(fullData.data);
+      }
     } catch (error) {
       console.error("Fetch error:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -2240,7 +2318,9 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
         source_by_bluff: GenfamiltEditData.source_by_bluff,
         source_illegal: GenfamiltEditData.source_illegal,
         source_any_other: GenfamiltEditData.source_any_other,
-        source_other_text: GenfamiltEditData.source_other_text,
+        ...(GenfamiltEditData.source_any_other === "Yes" && GenfamiltEditData.source_other_text && GenfamiltEditData.source_other_text.trim() !== ""
+          ? { source_other_text: GenfamiltEditData.source_other_text.trim() }
+          : {}),
         family_reaction: GenfamiltEditData.family_reaction,
         first_action_when_known: GenfamiltEditData.first_action_when_known,
         pattern_of_use: GenfamiltEditData.pattern_of_use,
@@ -2405,13 +2485,16 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
 
       if (!response.ok) {
         setIsLoading(false);
+        const errorMsg =
+          result.errors && Array.isArray(result.errors) && result.errors.length > 0
+            ? result.errors.map((e) => e.message || e.msg || JSON.stringify(e)).join("\n")
+            : (result.message || getTranslation("Server error/सर्वर त्रुटि", lang));
         Swal.fire({
           icon: "error",
-          title: getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल",lang),
-          text: result.message || getTranslation("Server error/सर्वर त्रुटि",lang),
+          title: getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल", lang),
+          text: errorMsg,
         }).then(() => {
-          // This runs after the user clicks "OK"
-          // setModal(false);
+          setIsLoading(false);
         });
         return;
       }
@@ -2465,12 +2548,12 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
         const genfamiltallEntriesData = genfamiltEntries.map((list) => {
           return {
             // gen_fam_id:list.gen_fam_id,
-            genFamilyPateintname: list.user.name,
-            genFammiltStatus: list.consent.status,
-            genfamiltEmail: list.user.email,
-            genfamiltNumber: list.user.phone,
-            gks_id: list.user.gks_id,
-            user_id: list.user.user_id,
+            genFamilyPateintname: list.user?.name || list.name || "Patient",
+            genFammiltStatus: list.consent?.status || list.status || "Pending",
+            genfamiltEmail: list.user?.email || list.email || "N/A",
+            genfamiltNumber: list.user?.phone || list.phone || "N/A",
+            gks_id: list.user?.gks_id || list.user?.custom_code || list.user?.uid || list.gks_id || list.custom_code || list.uid || list.user?.user_id || "N/A",
+            user_id: list.user?.user_id || list.user_id || list.id,
 
           }
         });
@@ -2692,7 +2775,9 @@ console.log(latestGenFamilyData.substance_use_dependency)
         source_by_bluff: GenfamiltEditData.source_by_bluff,
         source_illegal: GenfamiltEditData.source_illegal,
         source_any_other: GenfamiltEditData.source_any_other,
-        source_other_text: GenfamiltEditData.source_other_text,
+        ...(GenfamiltEditData.source_any_other === "Yes" && GenfamiltEditData.source_other_text && GenfamiltEditData.source_other_text.trim() !== ""
+          ? { source_other_text: GenfamiltEditData.source_other_text.trim() }
+          : {}),
         family_reaction: GenfamiltEditData.family_reaction,
         first_action_when_known: GenfamiltEditData.first_action_when_known,
         pattern_of_use: GenfamiltEditData.pattern_of_use,
@@ -2857,13 +2942,15 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
       if (!response.ok) {
         setIsLoading(false);
+        const errorMsg =
+          result.errors && Array.isArray(result.errors) && result.errors.length > 0
+            ? result.errors.map((e) => e.message || e.msg || JSON.stringify(e)).join("\n")
+            : (result.message || getTranslation("Server error/सर्वर त्रुटि", lang));
         Swal.fire({
           icon: "error",
-          title: getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल",lang),
-          text: result.message || getTranslation("Server error/सर्वर त्रुटि",lang),
+          title: getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल", lang),
+          text: errorMsg,
         }).then(() => {
-          // This runs after the user clicks "OK"
-          setEditIndividualmodal(false);
           setIsLoading(false);
         });
         return;
@@ -2913,6 +3000,15 @@ console.log(latestGenFamilyData.substance_use_dependency)
         maxWidth="1200px"
       >
         <div className="genFamily__wrapper container">
+          <DraftNoticeBanner
+            draftTimestamp={draftTimestamp}
+            formKey="general_family"
+            targetId={selectedUser?.[0]?.user_id || selectedUser?.[0]?.id || selectedUser?.user_id || selectedUser?.id || currentGenFamilyUserId}
+            onDiscard={() => {
+              setFormData(initialGenFamilyFormData);
+              setDraftTimestamp(null);
+            }}
+          />
           {/* <h5>{patientPersonalInformation}</h5> */}
           <Form className="theme-form" onSubmit={handleGeneralFamilySubmit}>
 
@@ -2930,40 +3026,38 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
             {/* <Form className="theme-form"> */}
             {/*UID*/}
-            <div className="row pt-3 pb-3">
-              <FormGroup className="form-group row col-md-6">
-                <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {getTranslation(UID,lang)}
-                </Label>
-                <Col xl="5" sm="12">
-                  <div className="input-group">
-                    <Input
-                      className="form-control"
-                      type="text"
-                      name="genUID"
-                      value={formData.genUID}
-                      onChange={onChangeEventHandler}
-                    />
-                  </div>
-                </Col>
-              </FormGroup>
-              {/*Date of Form Filling फॉर्म भरने की तिथि section/परीक्षण की तारीख :*/}
-              <div className="col-md-6">
-                <FormGroup className="form-group row">
-                  <Label className="col-sm-12 col-form-label  col-xl-6">
+            {/*UID & Date of Form Filling*/}
+            <div className="row g-3 pt-3 pb-2">
+              <div className="col-12 col-md-6">
+                <FormGroup className="mb-3">
+                  <Label>
+                    {getTranslation(UID,lang)}
+                  </Label>
+                  <Input
+                    className="form-control"
+                    type="text"
+                    name="genUID"
+                    value={formData.genUID}
+                    onChange={onChangeEventHandler}
+                  />
+                </FormGroup>
+              </div>
+
+              <div className="col-12 col-md-6">
+                <FormGroup className="mb-3">
+                  <Label>
                     {getTranslation(dateOfFormFilling,lang)}
                   </Label>
-                  <Col xl="5" sm="12">
-                    <div className="input-group">
-                      <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                        className="form-control digits"
-                        selected={formData.dateOfFormFilling}
-                        onChange={(date) =>
-                          handleChangeFormFilling("dateOfFormFilling", date)
-                        }
-                      />
-                    </div>
-                  </Col>
+                  <DatePicker 
+                    showMonthDropdown 
+                    showYearDropdown 
+                    dropdownMode="select"
+                    className="form-control digits"
+                    selected={safeDate(formData.dateOfFormFilling)}
+                    onChange={(date) =>
+                      handleChangeFormFilling("dateOfFormFilling", date)
+                    }
+                  />
                 </FormGroup>
               </div>
             </div>
@@ -5905,8 +5999,16 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   />
                 </div>
               </div>
-              {/* Submit */}
-              <div className="col-md-12 mb-4">
+              {/* Submit & Save Draft */}
+              <div className="col-md-12 mb-4 d-flex align-items-center gap-2 flex-wrap">
+                <SaveDraftButton
+                  formKey="general_family"
+                  targetId={selectedUser?.[0]?.user_id || selectedUser?.[0]?.id || selectedUser?.user_id || selectedUser?.id || currentGenFamilyUserId}
+                  formData={formData}
+                  onDraftSaved={() => setDraftTimestamp(Date.now())}
+                  style={{ height: "38px", padding: "6px 16px" }}
+                />
+
                 <Button color="primary" type="submit" disabled={isLoading}>
                   {isLoading ? (
                     <span
@@ -5936,8 +6038,8 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard title={getTranslation("General Family Form/सामान्य परिवार प्रपत्र",lang)} className="p-0" />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -5950,6 +6052,14 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="General_Family_Registration_List"
+                        title={getTranslation("General Family Form Registration List / सामान्य परिवार प्रपत्र पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -6000,8 +6110,8 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard title={getTranslation("All General Family Data List/सभी सामान्य पारिवारिक डेटा सूची",lang)} className="p-0" />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -6014,6 +6124,14 @@ console.log(latestGenFamilyData.substance_use_dependency)
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={genFilterData}
+                        columns={tableGenFamilyListColumns}
+                        filename="All_General_Family_Data_List"
+                        title={getTranslation("All General Family Data List / सभी सामान्य पारिवारिक डेटा सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -6055,225 +6173,333 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
       {/* View Gen Family Data Modal start */}
       <CommonModal
-  isOpen={viewGenFamilyModel}
-  title={getTranslation(patientPersonalInformation, lang)}
-  toggler={closeGenFamily}
-  maxWidth="1200px"
->
-  <div className="genFamily__wrapper container p-4" ref={pdfRef}>
+        isOpen={viewGenFamilyModel}
+        title={getTranslation(patientPersonalInformation, lang)}
+        toggler={closeGenFamily}
+        maxWidth="1100px"
+      >
+        <div className="p-3 p-md-4 print-area" ref={pdfRef} style={{ background: "#f8fafc" }}>
+          {isLoading ? (
+            <ModalLoading message={getTranslation("Loading General Family details... / विवरण लोड हो रहा है...", lang)} />
+          ) : viewgenData ? (
+            <div className="genFamily__content">
+              {/* Header Profile Banner Card with Profile Photo & GKS ID */}
+              {(() => {
+                const genFamObj = viewgenData.gen_family || viewgenData;
+                const patientName = genFamObj.name || genFamObj.patient_name || viewgenData.name || "Patient";
+                const gksId = genFamObj.custom_code || genFamObj.gks_id || genFamObj.uid || viewgenData.custom_code || viewgenData.gks_id || viewgenData.uid || genFamObj.user_id || viewgenData.user_id || "";
+                const profilePic = genFamObj.profile_pic || genFamObj.profile_image || viewgenData.profile_pic || viewgenData.profile_image || "";
+                const initial = typeof patientName === "string" && patientName.trim() ? patientName.trim().charAt(0).toUpperCase() : "P";
 
-    {/* MAIN TITLE */}
-    <h4
-      style={{
-        textAlign: "center",
-        textDecoration: "underline",
-        padding: "20px 0",
-      }}
-    >
-      {getTranslation(patientPersonalInformation, lang)}
-    </h4>
-
-    {/* CONTENT */}
-    {isLoading ? (
-      <div className="text-center py-5">
-        <Spinner className={selectedSpinner?.spinnerClass || "spinner-border"} />
-      </div>
-    ) : viewgenData ? (
-      <div className="genFamily__content">
-
-        {Object.entries(viewgenData).map(([key, value]) => {
-          let parsed = value;
-
-          try {
-            if (
-              typeof value === "string" &&
-              (value.startsWith("{") || value.startsWith("["))
-            ) {
-              parsed = JSON.parse(value);
-            }
-          } catch {}
-
-          return (
-            <div key={key} className="print-section mb-4">
-
-              {/* SECTION TITLE */}
-              <h5 className="fw-bold text-capitalize mb-3">
-                {key.replace(/_/g, " ")}
-              </h5>
-
-              {/* ================= FAMILY MEMBERS ================= */}
-              {key === "family_members" && parsed?.members && (
-                <table className="table table-bordered table-sm">
-                  <thead className="table-light">
-                    <tr>
-                      <th>#</th>
-                      <th>Name</th>
-                      <th>Relation</th>
-                      <th>Age</th>
-                      <th>Living Status</th>
-                      <th>Physical Disorder</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {parsed.members.map((m, i) => (
-                      <tr key={i}>
-                        <td>{i + 1}</td>
-                        <td>{m.name || "-"}</td>
-                        <td>{m.relation || "-"}</td>
-                        <td>{m.age || "-"}</td>
-                        <td>{m.living_status || "-"}</td>
-                        <td>{m.physical_disorder || "-"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {/* ================= FAMILY HISTORY ================= */}
-              {key === "family_members" && parsed?.family_history_data && (
-                Object.entries(parsed.family_history_data).map(([side, members]) => (
-                  <div key={side} className="mb-4">
-                    <h6 className="fw-bold text-capitalize mb-2">
-                      {side.replace(/_/g, " ")}
-                    </h6>
-
-                    <table className="table table-bordered table-sm">
-                      <tbody>
-                        {Object.entries(members).map(([role, details]) => (
-                          <tr key={role}>
-                            <td className="fw-bold text-capitalize" style={{ width: "30%" }}>
-                              {role.replace(/_/g, " ")}
-                            </td>
-                            <td>
-                              {typeof details === "object"
-                                ? Object.entries(details).map(([k, v]) => (
-                                    <div key={k}>
-                                      <strong>{k}:</strong> {v}
-                                    </div>
-                                  ))
-                                : details}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ))
-              )}
-
-              {/* ================= TREATMENT HISTORY ================= */}
-              {key === "treatment_history" && (
-                <>
-                  {/* Treatment History Details */}
-                  <table className="table table-bordered table-sm mb-3">
-                    <tbody>
-                      {Object.entries(parsed).map(([k, v]) =>
-                        k !== "treatment_records" ? (
-                          <tr key={k}>
-                            <td
-                              className="fw-bold text-capitalize"
-                              style={{ width: "30%" }}
-                            >
-                              {k.replace(/_/g, " ")}
-                            </td>
-                            <td>{v && v !== "null" ? v : "-"}</td>
-                          </tr>
-                        ) : null
-                      )}
-                    </tbody>
-                  </table>
-
-                  {/* Treatment Records */}
-                  {Array.isArray(parsed.treatment_records) && (
-                    <table className="table table-bordered table-sm">
-                      <thead className="table-light">
-                        <tr>
-                          <th>Treatment Year</th>
-                          <th>Treatment Place</th>
-                          <th>Duration</th>
-                          <th>Days of Sobriety</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {parsed.treatment_records.map((r, i) => (
-                          <tr key={i}>
-                            <td>{r.treatment_year || "-"}</td>
-                            <td>{r.treatment_place || "-"}</td>
-                            <td>{r.treatment_duration || "-"}</td>
-                            <td>{r.days_of_sobriety || "-"}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </>
-              )}
-
-              {/* ================= GENERIC OBJECT ================= */}
-              {typeof parsed === "object" &&
-                !Array.isArray(parsed) &&
-                key !== "family_members" &&
-                key !== "treatment_history" && (
-                  <table className="table table-bordered table-sm">
-                    <tbody>
-                      {Object.entries(parsed).map(([k, v]) => (
-                        <tr key={k}>
-                          <td
-                            className="fw-bold text-capitalize"
-                            style={{ width: "30%" }}
+                return (
+                  <div
+                    className="card shadow-sm border-0 mb-4"
+                    style={{
+                      borderRadius: "16px",
+                      background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                      borderLeft: "6px solid #24695c",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div className="card-body p-4">
+                      <div className="d-flex flex-column flex-sm-row align-items-center gap-4">
+                        {profilePic ? (
+                          <img
+                            src={profilePic}
+                            crossOrigin="anonymous"
+                            alt="Patient Profile"
+                            style={{
+                              width: "90px",
+                              height: "90px",
+                              borderRadius: "50%",
+                              objectFit: "cover",
+                              border: "3px solid #24695c",
+                              boxShadow: "0 4px 12px rgba(36, 105, 92, 0.2)",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: "90px",
+                              height: "90px",
+                              borderRadius: "50%",
+                              background: "#eaf2f0",
+                              color: "#24695c",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              fontSize: "32px",
+                              fontWeight: "700",
+                              border: "3px solid #24695c",
+                              boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+                            }}
                           >
-                            {k.replace(/_/g, " ")}
-                          </td>
-                          <td>{v && v !== "null" ? v : "-"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                            {initial}
+                          </div>
+                        )}
 
-              {/* ================= SIMPLE TEXT ================= */}
-              {typeof parsed !== "object" && (
-                <p className="mb-0">{parsed || "-"}</p>
-              )}
+                        <div className="text-center text-sm-start flex-grow-1">
+                          <div className="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-2 mb-1">
+                            <h3 className="mb-0 fw-bold text-dark" style={{ fontSize: "1.4rem" }}>
+                              {patientName}
+                            </h3>
+                            {gksId && (
+                              <Badge
+                                style={{
+                                  borderRadius: "10px",
+                                  fontSize: "12.5px",
+                                  fontWeight: "700",
+                                  backgroundColor: "#24695c",
+                                  color: "#ffffff",
+                                  padding: "5px 12px",
+                                  letterSpacing: "0.4px",
+                                }}
+                              >
+                                GKS ID: {gksId}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-3 mt-2 text-muted" style={{ fontSize: "13px" }}>
+                            {genFamObj.phone && <span>📞 {genFamObj.phone}</span>}
+                            {genFamObj.email && <span>✉️ {genFamObj.email}</span>}
+                            {genFamObj.gender && <span>👤 {genFamObj.gender}</span>}
+                            {genFamObj.form_fill_date && <span>📅 Form Date: {genFamObj.form_fill_date}</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
+              {Object.entries(viewgenData).map(([key, value]) => {
+                let parsed = value;
+                try {
+                  if (typeof value === "string" && (value.startsWith("{") || value.startsWith("["))) {
+                    parsed = JSON.parse(value);
+                  }
+                } catch (e) {}
+
+                const sectionTitle = key
+                  .replace(/_/g, " ")
+                  .replace(/\b\w/g, (l) => l.toUpperCase());
+
+                return (
+                  <div
+                    key={key}
+                    className="card shadow-sm border-0 mb-4"
+                    style={{
+                      borderRadius: "14px",
+                      overflow: "hidden",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div
+                      className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                      style={{
+                        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                        borderLeft: "5px solid #d56337",
+                      }}
+                    >
+                      <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                        📋 {sectionTitle}
+                      </h6>
+                      <Badge color="light" className="text-muted border px-2 py-1" style={{ fontSize: "11px" }}>
+                        {Array.isArray(parsed?.members)
+                          ? `${parsed.members.length} Members`
+                          : Array.isArray(parsed?.treatment_records)
+                          ? `${parsed.treatment_records.length} Records`
+                          : "Section Details"}
+                      </Badge>
+                    </div>
+
+                    <div className="card-body p-3 p-md-4">
+                      {/* Family Members Table */}
+                      {key === "family_members" && parsed?.members && (
+                        <div className="table-responsive rounded-3 border">
+                          <table className="table table-hover align-middle mb-0">
+                            <thead style={{ backgroundColor: "#f1f5f9" }}>
+                              <tr>
+                                <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>#</th>
+                                <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>Name</th>
+                                <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>Relation</th>
+                                <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>Age</th>
+                                <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>Living Status</th>
+                                <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>Physical Disorder</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {parsed.members.map((m, i) => (
+                                <tr key={i}>
+                                  <td className="py-2 px-3 fw-semibold text-muted">{i + 1}</td>
+                                  <td className="py-2 px-3 fw-semibold text-dark">{m.name || "-"}</td>
+                                  <td className="py-2 px-3">
+                                    <Badge color="light" className="text-dark border">
+                                      {m.relation || "-"}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-2 px-3">{m.age ? `${m.age} Yrs` : "-"}</td>
+                                  <td className="py-2 px-3">{m.living_status || "-"}</td>
+                                  <td className="py-2 px-3">{m.physical_disorder || "-"}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+
+                      {/* Family History */}
+                      {key === "family_members" && parsed?.family_history_data && (
+                        <div className="mt-3">
+                          {Object.entries(parsed.family_history_data).map(([side, members]) => (
+                            <div key={side} className="mb-3">
+                              <h6 className="fw-bold text-dark text-capitalize mb-2" style={{ fontSize: "13.5px" }}>
+                                🔹 {side.replace(/_/g, " ")}
+                              </h6>
+                              <div className="row g-2">
+                                {Object.entries(members).map(([role, details]) => (
+                                  <div key={role} className="col-12 col-md-6">
+                                    <div className="p-2 px-3 rounded-3 bg-light border">
+                                      <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                                        {role.replace(/_/g, " ")}
+                                      </div>
+                                      <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13px" }}>
+                                        {typeof details === "object"
+                                          ? Object.entries(details)
+                                              .map(([k, v]) => `${k}: ${v}`)
+                                              .join(" | ")
+                                          : details || "-"}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Treatment History */}
+                      {key === "treatment_history" && (
+                        <div>
+                          {/* Summary fields */}
+                          <div className="row g-3 mb-3">
+                            {Object.entries(parsed)
+                              .filter(([k]) => k !== "treatment_records")
+                              .map(([k, v]) => (
+                                <div key={k} className="col-12 col-sm-6 col-lg-4">
+                                  <div className="p-2 px-3 rounded-3 bg-light border">
+                                    <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                                      {k.replace(/_/g, " ")}
+                                    </div>
+                                    <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                                      {v && v !== "null" ? String(v) : "-"}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+
+                          {/* Records table */}
+                          {Array.isArray(parsed.treatment_records) && parsed.treatment_records.length > 0 && (
+                            <div className="table-responsive rounded-3 border">
+                              <table className="table table-hover align-middle mb-0">
+                                <thead style={{ backgroundColor: "#f1f5f9" }}>
+                                  <tr>
+                                    <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>Treatment Year</th>
+                                    <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>Place</th>
+                                    <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>Duration</th>
+                                    <th className="py-2 px-3 text-secondary text-uppercase fw-semibold" style={{ fontSize: "12px" }}>Days of Sobriety</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {parsed.treatment_records.map((r, i) => (
+                                    <tr key={i}>
+                                      <td className="py-2 px-3 fw-semibold">{r.treatment_year || "-"}</td>
+                                      <td className="py-2 px-3">{r.treatment_place || "-"}</td>
+                                      <td className="py-2 px-3">{r.treatment_duration || "-"}</td>
+                                      <td className="py-2 px-3">
+                                        <Badge color="success" pill>
+                                          {r.days_of_sobriety || "-"}
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Generic Object key-value pairs */}
+                      {typeof parsed === "object" &&
+                        !Array.isArray(parsed) &&
+                        key !== "family_members" &&
+                        key !== "treatment_history" && (
+                          <div className="row g-3">
+                            {Object.entries(parsed).map(([k, v]) => {
+                              if (k === "is_active" || k === "entry_id") return null;
+                              let valStr = "-";
+                              if (v !== null && v !== undefined && v !== "null") {
+                                if (typeof v === "string" && v.match(/^\d{4}-\d{2}-\d{2}T/)) {
+                                  valStr = new Date(v).toLocaleDateString("en-GB", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                  });
+                                } else if (typeof v === "object") {
+                                  valStr = JSON.stringify(v);
+                                } else {
+                                  valStr = String(v);
+                                }
+                              }
+
+                              return (
+                                <div key={k} className="col-12 col-sm-6 col-lg-4">
+                                  <div className="p-2 px-3 rounded-3 bg-light border" style={{ minHeight: "62px" }}>
+                                    <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px", letterSpacing: "0.3px" }}>
+                                      {k.replace(/_/g, " ")}
+                                    </div>
+                                    <div className="fw-semibold text-dark text-break mt-1" style={{ fontSize: "13.5px" }}>
+                                      {valStr}
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                      {/* Simple primitive text */}
+                      {typeof parsed !== "object" && (
+                        <div className="p-3 rounded-3 bg-light border">
+                          <span className="fw-semibold text-dark">{parsed || "-"}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-
-      </div>
-    ) : (
-      <p className="text-center">
-        {getTranslation("No data available/कोई डेटा मौजूद नहीं", lang)}
-      </p>
-    )}
-  </div>
-
-  {/* ACTION BUTTONS */}
-  <div style={{ margin: "0 20px 20px 20px" }}>
-    <button
-      disabled={pfaDownload}
-      className="btn btn-primary"
-      onClick={handleDownloadPDF}
-    >
-      {pfaDownload
-        ? getTranslation(
-            "Your Patient Personal Information is being downloaded.../ आपका PPI डाउनलोड हो रहा है...",
-            lang
-          )
-        : getTranslation(
-            "Download Your Patient Personal Information (PPI) / अपना प्रथम व्यक्तिगत जानकारी डाउनलोड करें",
-            lang
+          ) : (
+            <div className="text-center py-5">
+              <p className="text-muted mb-0">
+                {getTranslation("No data available / कोई डेटा मौजूद नहीं", lang)}
+              </p>
+            </div>
           )}
-    </button>
+        </div>
 
-    <button
-      className="btn btn-primary mx-3"
-      onClick={handlePrint}
-    >
-      {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-    </button>
-  </div>
-</CommonModal>
+        {/* Modal Footer Actions */}
+        <ModalActionButtons
+          onClose={closeGenFamily}
+          onPrint={handlePrint}
+          onDownload={handleDownloadPDF}
+          isDownloading={pfaDownload}
+          downloadText={getTranslation("Download PDF / डाउनलोड करें", lang)}
+        />
+      </CommonModal>
 
 
 
@@ -6291,56 +6517,48 @@ console.log(latestGenFamilyData.substance_use_dependency)
             e.preventDefault();
             handleGenFamilyReadmission();
           }}>
-            {/* UID */}
-            <div className="row pt-3 pb-3">
-              <FormGroup className="form-group row col-md-6">
-                <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {getTranslation(UID,lang)}
-                </Label>
-                <Col xl="5" sm="12">
-                  <div className="input-group">
-                    <Input
-                      className="form-control"
-                      type="text"
-                      name="genUID"
-                      value={GenfamiltEditData.uid}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          uid: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </Col>
-              </FormGroup>
-            </div>
+            {/* UID & Form Fill Date */}
+            <div className="row g-3 pt-3 pb-2">
+              <div className="col-12 col-md-6">
+                <FormGroup className="mb-3">
+                  <Label>
+                    {getTranslation(UID,lang)}
+                  </Label>
+                  <Input
+                    className="form-control"
+                    type="text"
+                    name="genUID"
+                    value={GenfamiltEditData.uid || ""}
+                    onChange={(e) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        uid: e.target.value,
+                      })
+                    }
+                  />
+                </FormGroup>
+              </div>
 
-            {/* Form Fill Date */}
-            <div className="col-md-6">
-              <FormGroup className="form-group row">
-                <Label className="col-sm-12 col-form-label col-xl-6">
-                  {getTranslation(dateOfFormFilling,lang)}
-                </Label>
-                <Col xl="5" sm="12">
-                  <div className="input-group">
-                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                      className="form-control digits"
-                      selected={
-                        GenfamiltEditData?.form_fill_date
-                          ? new Date(GenfamiltEditData.form_fill_date)
-                          : null
-                      }
-                      onChange={(date) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          form_fill_date: date,
-                        })
-                      }
-                    />
-                  </div>
-                </Col>
-              </FormGroup>
+              <div className="col-12 col-md-6">
+                <FormGroup className="mb-3">
+                  <Label>
+                    {getTranslation(dateOfFormFilling,lang)}
+                  </Label>
+                  <DatePicker 
+                    showMonthDropdown 
+                    showYearDropdown 
+                    dropdownMode="select"
+                    className="form-control digits"
+                    selected={safeDate(GenfamiltEditData?.form_fill_date)}
+                    onChange={(date) =>
+                      setGenfamilyEditData({
+                        ...GenfamiltEditData,
+                        form_fill_date: date,
+                      })
+                    }
+                  />
+                </FormGroup>
+              </div>
             </div>
 
             {/* Occupation Status */}
@@ -10008,11 +10226,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   <div className="input-group">
                     <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
-                      selected={
-                        GenfamiltEditData?.form_fill_date
-                          ? new Date(GenfamiltEditData.form_fill_date)
-                          : null
-                      }
+                      selected={safeDate(GenfamiltEditData?.form_fill_date)}
                       onChange={(date) =>
                         setGenfamilyEditData({
                           ...GenfamiltEditData,
@@ -13627,6 +13841,13 @@ console.log(latestGenFamilyData.substance_use_dependency)
           <p className="text-center p-4">{getTranslation("Loading data.../डेटा लोड हो रहा है...",lang)}</p>
         )}
       </CommonModal>
+
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
 
     </Fragment>
   );

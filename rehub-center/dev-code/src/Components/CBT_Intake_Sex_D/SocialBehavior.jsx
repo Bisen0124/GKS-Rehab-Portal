@@ -110,6 +110,12 @@ import { Btn, Breadcrumbs, H4 } from "../../AbstractElements";
 import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
@@ -128,6 +134,13 @@ function SocialBehavior() {
 
   //Branches selection
   const { selectedBranch } = useBranch();
+  const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+  const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+  const handleViewUserDetails = (userId) => {
+    setSelectedViewUserId(userId);
+    setViewUserDetailsModal(true);
+  };
 
   //Pring vide data in pdf format
   const pdfRef = useRef();
@@ -227,19 +240,13 @@ function SocialBehavior() {
   //Getting registred patient data into table row
   const tableColumns = [
     {
-      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
     name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
     {
-     name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
+      name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -250,16 +257,6 @@ function SocialBehavior() {
           }}
         >
           {row.name} {row.disabled && "(disabled)"}
-        </span>
-      ),
-    },
-    {
-      name: `${getTranslation('Status/स्थिति' , lang)}`,
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
         </span>
       ),
     },
@@ -275,6 +272,30 @@ function SocialBehavior() {
         return (
           //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
@@ -286,22 +307,13 @@ function SocialBehavior() {
               </span>
             )}
 
-{/* <span
-                onClick={() => handleSBPreFill(row.recentSbIds)}
-                style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
-              >
-                ✏️
-              </span> */}
-
 {row.dischargeStatus === 0 && row.isReadmission === 0 && (
   <span
-    onClick={() => (row.isSBCompleted ? null : createSUDBrief(row.id))}
+    onClick={() => createSUDBrief(row.id)}
     style={{
-      cursor: row.isSBCompleted ? "not-allowed" : "pointer",
-      opacity: row.isSBCompleted ? 0.5 : 1,
+      cursor: "pointer",
     }}
-    title={row.isSBCompleted ? getTranslation("Social behaviour completed/सामाजिक व्यवहार पूरा हुआ",lang) : getTranslation("Create Social behaviour Form/सामाजिक व्यवहार प्रपत्र बनाएँ",lang)}
+    title={getTranslation("Create Social behaviour Form/सामाजिक व्यवहार प्रपत्र बनाएँ",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -320,31 +332,6 @@ function SocialBehavior() {
     </svg>
   </span>
 )}
-
-            {/* Show Create PFA if not discharged and not readmission */}
-            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-              <span
-                onClick={() => createSUDBrief(row.id)}
-                style={{ cursor: "pointer" }}
-                title="Create PDA"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="12" y1="8" x2="12" y2="16"></line>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-              </span>
-            )} */}
           </div>
         );
       },
@@ -541,15 +528,40 @@ function SocialBehavior() {
 
   //Create Social form function start
   const [isSocialModalOpen, setIsSocialModalOpen] = useState(false);
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentSocialUserId, setCurrentSocialUserId] = useState(null);
+
+  const initialSocialFormData = {
+    dateOfAssessment: new Date(),
+    social_behavior: "",
+    with_whom_spend_time: "",
+    how_many_friends: "",
+    their_social_status: "",
+    substance_dependent_friends_count: "",
+    well_wisher_person: "",
+  };
+
   const createSUDBrief = async (userId = null) => {
     setIsSocialModalOpen(true);
-    if (userId) {
+    const targetId = userId || currentSocialUserId;
+    if (userId) setCurrentSocialUserId(userId);
+
+    if (targetId) {
+      const saved = loadDraft("social_behavior", targetId);
+      if (saved && saved.data) {
+        setFormData(saved.data);
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData(initialSocialFormData);
+        setDraftTimestamp(null);
+      }
+
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch;
 
       try {
         const response = await fetch(
-          `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
+          `https://gks-yjdc.onrender.com/api/users/${targetId}?branch_id=${branch_id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -571,15 +583,7 @@ function SocialBehavior() {
 
   // 🚀 Submit Social Behavior Create Form
   // Social Behavior Form Data
-  const [formData, setFormData] = useState({
-    dateOfAssessment: new Date(),
-    social_behavior: "",
-    with_whom_spend_time: "",
-    how_many_friends: "",
-    their_social_status: "",
-    substance_dependent_friends_count: "",
-    well_wisher_person: "",
-  });
+  const [formData, setFormData] = useState(initialSocialFormData);
   // Universal input change handler
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -628,6 +632,9 @@ function SocialBehavior() {
 
       const data = await response.json();
       setIsLoading(false);
+      const userTargetId = selectedUser?.user_id || selectedUser?.id || currentSocialUserId;
+      clearDraft("social_behavior", userTargetId);
+      setDraftTimestamp(null);
 
       Swal.fire({
         icon: "success",
@@ -1090,9 +1097,14 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       // Add a temporary class to scale fonts if needed
       element.classList.add("pdf-scale");
   
+      const patientName = viewSocailData?.name || viewSocailData?.patient_name || "Patient";
+      const gksId = viewSocailData?.custom_code || viewSocailData?.gks_id || viewSocailData?.uid || viewSocailData?.user_id || "";
+      const safeName = String(patientName).trim().replace(/\s+/g, "_");
+      const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
       const opt = {
         margin: [10, 10, 10, 10], // top, left, bottom, right
-        filename: `user_data_${viewSocailData?.name}_${viewSocailData?.user_id}.pdf`,
+        filename: `patient_${safeName}_${safeId || "social_behavior_report"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: {
           scale: 2,
@@ -1116,17 +1128,16 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
         });
     };
 
-
-     //Print viewable form data handler
-                     const handlePrint = useReactToPrint({
-                          content: () => pdfRef.current,
-                          pageStyle: `
-                            @page { size: A4; margin: 12mm; }
-                            @media print {
-                              body { margin: 0; }
-                            }
-                          `,
-                        });
+    //Print viewable form data handler
+    const handlePrint = useReactToPrint({
+      content: () => pdfRef.current,
+      pageStyle: `
+        @page { size: A4; margin: 12mm; }
+        @media print {
+          body { margin: 0; }
+        }
+      `,
+    });
 
   return (
     <Fragment>
@@ -1145,13 +1156,13 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
                           type="text"
-                            placeholder={getTranslation("Search......./खोज.......",lang)}
+                          placeholder={getTranslation("Search......./खोज.......",lang)}
                           value={searchText}
                           onChange={handleSearchChange}
                         />
@@ -1159,6 +1170,14 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="Social_Behavior_Registration_List"
+                        title={getTranslation("Social Behavior Registration List / सामाजिक व्यवहार पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1208,8 +1227,8 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard title={getTranslation("All Social Behavior Patient Data List/सभी सामाजिक व्यवहार रोगी डेटा सूची",lang)} className="p-0" />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1222,6 +1241,14 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredDataone}
+                        columns={tableColumnsFDAList}
+                        filename="All_Social_Behavior_Patient_List"
+                        title={getTranslation("All Social Behavior Patient Data List / सभी सामाजिक व्यवहार रोगी डेटा सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1266,6 +1293,15 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
+        <DraftNoticeBanner
+          draftTimestamp={draftTimestamp}
+          formKey="social_behavior"
+          targetId={selectedUser?.user_id || selectedUser?.id || currentSocialUserId}
+          onDiscard={() => {
+            setFormData(initialSocialFormData);
+            setDraftTimestamp(null);
+          }}
+        />
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
@@ -1288,7 +1324,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
                   <div className="input-group">
                     <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
-                      selected={formData.dateOfAssessment}
+                      selected={safeDate(formData.dateOfAssessment)}
                       onChange={(date) =>
                         handleAssesmentDateChange("dateOfAssessment", date)
                       }
@@ -1484,8 +1520,16 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
               </FormGroup>
             </div>
 
-            {/* Submit Button */}
-            <div className="d-flex gap-3">
+            {/* Submit Button & Save Draft */}
+            <div className="d-flex align-items-center gap-3 flex-wrap">
+              <SaveDraftButton
+                formKey="social_behavior"
+                targetId={selectedUser?.user_id || selectedUser?.id || currentSocialUserId}
+                formData={formData}
+                onDraftSaved={() => setDraftTimestamp(Date.now())}
+                style={{ height: "38px", padding: "6px 16px" }}
+              />
+
               <Button color="primary" type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <span
@@ -1510,7 +1554,9 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
   toggler={closeAllmodal}
   maxWidth="1200px"
 >
-  <div className="table-responsive p-4" ref={pdfRef}>
+  <div className="table-responsive p-4" ref={pdfRef} style={{ background: "#f8fafc" }}>
+    {viewSocailData && <PatientViewHeader data={viewSocailData} />}
+
     <h4
       style={{
         textAlign: "center",
@@ -1601,26 +1647,13 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
     </Table>
   </div>
 
-  <div style={{ margin: "0 20px 20px 20px" }}>
-    <button
-      disabled={pfaDownload}
-      id="download-btn"
-      className="btn btn-primary"
-      onClick={handleDownloadPDF}
-    >
-      {pfaDownload
-        ? getTranslation("Your Social Behavior is being downloaded... / आपका सामाजिक व्यवहार डाउनलोड हो रहा है...",lang)
-        : getTranslation("Download Social Behavior/सामाजिक व्यवहार डाउनलोड करें",lang)}
-    </button>
-
-<button
-                          className="btn btn-primary mx-3"
-                          onClick={handlePrint}
-                        >
-                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-                        </button>
-
-  </div>
+  <ModalActionButtons
+    onClose={closeAllmodal}
+    onPrint={handlePrint}
+    onDownload={handleDownloadPDF}
+    isDownloading={pfaDownload}
+    downloadText={getTranslation("Download Social Behavior / सामाजिक व्यवहार डाउनलोड करें", lang)}
+  />
 </CommonModal>
 {/* View Social Behavior data into modal end */}
 
@@ -1657,11 +1690,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
           <div className="input-group">
             <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
               className="form-control digits"
-              selected={
-                socialBehaviorEditData?.date_of_assessment
-                  ? new Date(socialBehaviorEditData.date_of_assessment)
-                  : null
-              }
+              selected={safeDate(socialBehaviorEditData?.date_of_assessment)}
               onChange={(date) =>
                 setSocialBehaviorEditData((prev) => ({
                   ...prev,
@@ -1960,11 +1989,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
           <div className="input-group">
             <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
               className="form-control digits"
-              selected={
-                SBPrefillData?.date_of_assessment
-                  ? new Date(SBPrefillData.date_of_assessment)
-                  : null
-              }
+              selected={safeDate(SBPrefillData?.date_of_assessment)}
               onChange={(date) =>
                 setSBPrefillData((prev) => ({
                   ...prev,
@@ -2229,11 +2254,13 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
 </CommonModal>
 {/* Pre-fill Readmission  Social Behavior Form end */}
 
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
 
-
-
-
-      
     </Fragment>
   );
 }

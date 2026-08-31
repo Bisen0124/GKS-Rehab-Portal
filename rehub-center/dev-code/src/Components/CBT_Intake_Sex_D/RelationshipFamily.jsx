@@ -109,6 +109,12 @@ import { Btn, H5, Breadcrumbs, H4 } from "../../AbstractElements";
 import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
@@ -120,6 +126,13 @@ function RelationshipFamily() {
 
   //Branches selection
   const { selectedBranch } = useBranch();
+  const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+  const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+  const handleViewUserDetails = (userId) => {
+    setSelectedViewUserId(userId);
+    setViewUserDetailsModal(true);
+  };
 
   //Pring vide data in pdf format
   const pdfRef = useRef();
@@ -226,19 +239,13 @@ function RelationshipFamily() {
   //Getting registred patient data into table row
   const tableColumns = [
     {
-      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
-    name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
+      name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
     {
-     name: `${getTranslation('Email/ईमेल' , lang)}`,
+      name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
@@ -249,16 +256,6 @@ function RelationshipFamily() {
           }}
         >
           {row.name} {row.disabled && "(disabled)"}
-        </span>
-      ),
-    },
-    {
-      name: `${getTranslation('Status/स्थिति' , lang)}`,
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
         </span>
       ),
     },
@@ -274,6 +271,30 @@ function RelationshipFamily() {
         return (
           //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
@@ -285,47 +306,13 @@ function RelationshipFamily() {
               </span>
             )}
 
-
-{/* <span
-                onClick={() => handleIRFprefill(row.IRFrecentIds)}
-                style={{ cursor: "pointer" }}
-                title="Readmission FDA Form"
-              >
-                ✏️
-              </span> */}
-            {/* Show Create PFA if not discharged and not readmission */}
-            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-              <span
-                onClick={() => createIRFForm(row.id)}
-                style={{ cursor: "pointer" }}
-                title="Create PDA"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="12" y1="8" x2="12" y2="16"></line>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-              </span>
-            )} */}
-
 {row.dischargeStatus === 0 && row.isReadmission === 0 && (
   <span
-    onClick={() => (row.isIRFCompleted ? null : createIRFForm(row.id))}
+    onClick={() => createIRFForm(row.id)}
     style={{
-      cursor: row.isIRFCompleted ? "not-allowed" : "pointer",
-      opacity: row.isIRFCompleted ? 0.5 : 1,
+      cursor: "pointer",
     }}
-    title={row.isIRFCompleted ? getTranslation("RF Completed/आरएफ पूरा हुआ",lang) : getTranslation("Create Relationship Family Form/संबंध परिवार फ़ॉर्म बनाएँ",lang)}
+    title={getTranslation("Create Relationship Family Form/संबंध परिवार फ़ॉर्म बनाएँ",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -558,37 +545,10 @@ function RelationshipFamily() {
 
   //Create IRF brief form function start
   const [isIRFModalOpen, setIsIRFModalOpen] = useState(false);
-  const createIRFForm = async (userId = null) => {
-    setIsIRFModalOpen(true);
-    if (userId) {
-      const token = localStorage.getItem("Authorization");
-      const branch_id = selectedBranch;
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentIRFUserId, setCurrentIRFUserId] = useState(null);
 
-      try {
-        const response = await fetch(
-          `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
-          {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `${token}`,
-            },
-          }
-        );
-        const data = await response.json();
-        if (!response.ok) throw new Error("User fetch failed");
-
-        // ✅ store the user object
-        setSelectedUser(data.data[0]);
-      } catch (error) {
-        console.error("Fetch error:", error);
-      }
-    }
-  };
-  //Create IRF brief form function end
-
-  //Submit IRF form handler start
-  // ✅ State
-  const [formData, setFormData] = useState({
+  const initialIRFFormData = {
     dateOfAssessment: new Date(),
     relationship_status: "",
     marriage_arrangement: "",
@@ -627,7 +587,51 @@ function RelationshipFamily() {
     family_behavior: "",
     head_of_family: "",
     relationships_with_family: "",
-  });
+  };
+
+  const createIRFForm = async (userId = null) => {
+    setIsIRFModalOpen(true);
+    const targetId = userId || currentIRFUserId;
+    if (userId) setCurrentIRFUserId(userId);
+
+    if (targetId) {
+      const saved = loadDraft("relationship_family", targetId);
+      if (saved && saved.data) {
+        setFormData(saved.data);
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData(initialIRFFormData);
+        setDraftTimestamp(null);
+      }
+
+      const token = localStorage.getItem("Authorization");
+      const branch_id = selectedBranch;
+
+      try {
+        const response = await fetch(
+          `https://gks-yjdc.onrender.com/api/users/${targetId}?branch_id=${branch_id}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        );
+        const data = await response.json();
+        if (!response.ok) throw new Error("User fetch failed");
+
+        // ✅ store the user object
+        setSelectedUser(data.data[0]);
+      } catch (error) {
+        console.error("Fetch error:", error);
+      }
+    }
+  };
+  //Create IRF brief form function end
+
+  //Submit IRF form handler start
+  // ✅ State
+  const [formData, setFormData] = useState(initialIRFFormData);
 
   //Get data value
   const handleAssesmentDateChange = (name, date) => {
@@ -883,6 +887,9 @@ function RelationshipFamily() {
 
       const data = await response.json();
       setIsLoading(false);
+      const userTargetId = selectedUser?.user_id || selectedUser?.id || currentIRFUserId;
+      clearDraft("relationship_family", userTargetId);
+      setDraftTimestamp(null);
 
       Swal.fire({
         icon: "success",
@@ -1414,9 +1421,14 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     // Add a temporary class to scale fonts if needed
     element.classList.add("pdf-scale");
 
+    const patientName = viewIRFFormData?.name || viewIRFFormData?.patient_name || "Patient";
+    const gksId = viewIRFFormData?.custom_code || viewIRFFormData?.gks_id || viewIRFFormData?.uid || viewIRFFormData?.user_id || "";
+    const safeName = String(patientName).trim().replace(/\s+/g, "_");
+    const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
     const opt = {
       margin: [10, 10, 10, 10], // top, left, bottom, right
-      filename: `user_data_${viewIRFFormData?.name}_${viewIRFFormData?.user_id}.pdf`,
+      filename: `patient_${safeName}_${safeId || "relationship_report"}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -1469,8 +1481,8 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1483,6 +1495,14 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="Relationship_Family_Registration_List"
+                        title={getTranslation("Relationship & Family Status Registration List / संबंध और पारिवारिक स्थिति पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1532,8 +1552,8 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard title={getTranslation("All Relationship & Family Status Patient Data List/सभी संबंध और पारिवारिक स्थिति रोगी डेटा सूची",lang)} className="p-0" />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1546,6 +1566,14 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredDataone}
+                        columns={tableColumnsFDAList}
+                        filename="All_Relationship_Family_Patient_List"
+                        title={getTranslation("All Relationship & Family Status Patient Data List / सभी संबंध और पारिवारिक स्थिति रोगी डेटा सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1590,6 +1618,15 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
+        <DraftNoticeBanner
+          draftTimestamp={draftTimestamp}
+          formKey="relationship_family"
+          targetId={selectedUser?.user_id || selectedUser?.id || currentIRFUserId}
+          onDiscard={() => {
+            setFormData(initialIRFFormData);
+            setDraftTimestamp(null);
+          }}
+        />
         <PatientCommonInfo
           selectedUser={selectedUser}
           labels={{
@@ -1611,7 +1648,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                   <div className="input-group">
                     <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
-                      selected={formData.dateOfAssessment}
+                      selected={safeDate(formData.dateOfAssessment)}
                       onChange={(date) =>
                         handleAssesmentDateChange("dateOfAssessment", date)
                       }
@@ -2662,8 +2699,16 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
                 </FormGroup>
               </div>
 
-              {/* Submit Button */}
-              <div className="d-flex gap-3">
+              {/* Submit Button & Save Draft */}
+              <div className="d-flex align-items-center gap-3 flex-wrap">
+                <SaveDraftButton
+                  formKey="relationship_family"
+                  targetId={selectedUser?.user_id || selectedUser?.id || currentIRFUserId}
+                  formData={formData}
+                  onDraftSaved={() => setDraftTimestamp(Date.now())}
+                  style={{ height: "38px", padding: "6px 16px" }}
+                />
+
                 <Button color="primary" type="submit" disabled={isLoading}>
                   {isLoading ? (
                     <span
@@ -2689,7 +2734,9 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         toggler={closeAllmodal}
         maxWidth="1200px"
       >
-        <div className="table-responsive p-4" ref={pdfRef}>
+        <div className="table-responsive p-4" ref={pdfRef} style={{ background: "#f8fafc" }}>
+          {viewIRFFormData && <PatientViewHeader data={viewIRFFormData} />}
+
           <h4
             style={{
               textAlign: "center",
@@ -2982,26 +3029,13 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
           </Table>
         </div>
 
-        <div style={{ margin: "0 20px 20px 20px" }}>
-          <button
-            disabled={pfaDownload}
-            id="download-btn"
-            className="btn btn-primary"
-            onClick={handleDownloadPDF}
-          >
-            {pfaDownload
-              ? getTranslation("Your IRF Report is being downloaded.../ आपका IRF डाउनलोड हो रहा है...",lang)
-              : getTranslation("Download IRF Report/आईआरएफ रिपोर्ट डाउनलोड करें",lang)}
-          </button>
-
-<button
-                          className="btn btn-primary mx-3"
-                          onClick={handlePrint}
-                        >
-                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-                        </button>
-
-        </div>
+        <ModalActionButtons
+          onClose={closeAllmodal}
+          onPrint={handlePrint}
+          onDownload={handleDownloadPDF}
+          isDownloading={pfaDownload}
+          downloadText={getTranslation("Download IRF Report / आईआरएफ रिपोर्ट डाउनलोड करें", lang)}
+        />
       </CommonModal>
       {/* View IRF form data end */}
 
@@ -3028,7 +3062,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
         <div className="input-group">
           <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
             className="form-control digits"
-            selected={IRFEditData?.date_of_assessment || null}
+            selected={safeDate(IRFEditData?.date_of_assessment)}
             onChange={(date) =>
               setIRFEditData((prev) => ({ ...prev, date_of_assessment: date }))
             }
@@ -3627,7 +3661,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
             <div className="input-group">
               <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                 className="form-control digits"
-                selected={IRFPrefillData?.date_of_assessment || null}
+                selected={safeDate(IRFPrefillData?.date_of_assessment)}
                 onChange={(date) =>
                   setIRFPrefillData((prev) => ({
                     ...prev,
@@ -4227,6 +4261,13 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
   </div>
 </CommonModal>
 {/* IRF Prefill form end */}
+
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
 
     </Fragment>
   );

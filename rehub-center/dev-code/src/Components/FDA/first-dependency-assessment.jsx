@@ -32,6 +32,7 @@ import {
   Button,
   InputGroup,
   Spinner,
+  Badge,
 } from "reactstrap";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
@@ -59,6 +60,13 @@ import { useBranch } from "../../contexts/BranchContext";
 import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import ModalLoading from "../Common/ModalLoading";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
 import { useReactToPrint } from "react-to-print";
 
@@ -68,6 +76,13 @@ function FDA() {
 
     //Branches selection
     const { selectedBranch } = useBranch();
+    const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+    const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+    const handleViewUserDetails = (userId) => {
+      setSelectedViewUserId(userId);
+      setViewUserDetailsModal(true);
+    };
 
     const pdfRef = useRef();
   //spinner extract from other file
@@ -370,13 +385,16 @@ function FDA() {
   };
 
   //Accepting fda form data state
-  const [formData, setFormData] = useState({
+  const initialFDAFormData = {
     addiction: {},
     remarks: "",
     prepared_by: "",
     dateOfAssessment: new Date(),
+  };
 
-  });
+  const [formData, setFormData] = useState(initialFDAFormData);
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentFDAUserId, setCurrentFDAUserId] = useState(null);
 
   const handleRadioChange = (key, value) => {
     setFormData((prev) => ({
@@ -401,7 +419,6 @@ function FDA() {
 
   //Getting registred patient data into table row 
   const tableColumns = [
-    {  name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.id, sortable: true, center: true },
     {  name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
     {
        name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
@@ -418,16 +435,6 @@ function FDA() {
         </span>
       ),
     },
-    {
-     name: `${getTranslation('Status/स्थिति' , lang)}`,
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
-        </span>
-      ),
-    },
 
     {
      name: `${getTranslation('Action/क्रिया' , lang)}`,
@@ -440,6 +447,30 @@ function FDA() {
         return (
           //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
@@ -451,39 +482,13 @@ function FDA() {
               </span>
             )}
 
-            {/* Show Create PFA if not discharged and not readmission */}
-            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-              <span
-                onClick={() => createFDA(row.id)}
-                style={{ cursor: "pointer" }}
-                title="Create PDA"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="12" y1="8" x2="12" y2="16"></line>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-              </span>
-            )} */}
-
 {row.dischargeStatus === 0 && row.isReadmission === 0 && (
   <span
-    onClick={() => (row.isFDACompleted ? null : createFDA(row.id))}
+    onClick={() => createFDA(row.id)}
     style={{
-      cursor: row.isFDACompleted ? "not-allowed" : "pointer",
-      opacity: row.isFDACompleted ? 0.5 : 1,
+      cursor: "pointer",
     }}
-    title={row.isFDACompleted ? getTranslation("FDA Completed/एफडीए पूरा हुआ",lang) : getTranslation("Create FDA/एफडीए बनाएं",lang)}
+    title={getTranslation("Create FDA/एफडीए बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -515,12 +520,24 @@ function FDA() {
 
   const createFDA = async (userId = null) => {
     setModal(true);
-    if (userId) {
+    const targetId = userId || currentFDAUserId;
+    if (userId) setCurrentFDAUserId(userId);
+
+    if (targetId) {
+      const saved = loadDraft("fda", targetId);
+      if (saved && saved.data) {
+        setFormData(saved.data);
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData(initialFDAFormData);
+        setDraftTimestamp(null);
+      }
+
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch;
   
       try {
-        const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`, {
+        const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${targetId}?branch_id=${branch_id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `${token}`,
@@ -590,6 +607,9 @@ function FDA() {
   
       const data = await response.json();
       setIsLoading(false);
+      const userTargetId = selectedUser?.user_id || selectedUser?.id || currentFDAUserId;
+      clearDraft("fda", userTargetId);
+      setDraftTimestamp(null);
   
       Swal.fire({
         icon: "success",
@@ -771,11 +791,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
   const [viewFDAData, setviewFDAData] = useState(null)
   const [viewFDADataModal, setviewDADataModal] = useState(false);
   const viewFDAFamily = async (FDAID) => {
-    setviewDADataModal(true);
-    console.log("FDAID =>", FDAID);
-
     if (typeof FDAID === "object" && FDAID !== null) {
-      FDAID = FDAID.fda_id;
+      FDAID = FDAID.fda_id || FDAID.id;
     }
 
     if (!FDAID) {
@@ -783,12 +800,14 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       return;
     }
 
+    setviewFDAData(null);
+    setviewDADataModal(true);
     setIsLoading(true);
     const token = localStorage.getItem("Authorization");
 
     try {
-      const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
-      const response = await fetch(
+      const branch_id = selectedBranch;
+      let response = await fetch(
         `https://gks-yjdc.onrender.com/api/fda/assessment/${FDAID}?branch_id=${branch_id}`,
         {
           method: "GET",
@@ -799,22 +818,29 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         }
       );
 
-      const data = await response.json();
+      let data = await response.json();
 
-      if (!response.ok) {
-        console.error("Fetch error:", data);
-        return;
+      if (!response.ok || !data.assessment) {
+        const fallback = await fetch(
+          `https://gks-yjdc.onrender.com/api/fda/assessment/${FDAID}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        );
+        if (fallback.ok) {
+          data = await fallback.json();
+        }
       }
 
-      const ViewFdaDataEntry = data.assessment || null;
+      const ViewFdaDataEntry = data?.assessment || data?.data || null;
 
-      if (!ViewFdaDataEntry) {
-        console.warn("No FDA assessment data found.");
-        return;
+      if (ViewFdaDataEntry) {
+        setviewFDAData(ViewFdaDataEntry);
       }
-
-      setviewFDAData(ViewFdaDataEntry); // ✅ Correct
-      console.log("FDA Data Fetched:", ViewFdaDataEntry.fda_id); // ✅ Log the correct data
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
@@ -832,9 +858,14 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       // Add a temporary class to scale fonts if needed
       element.classList.add("pdf-scale");
   
+      const patientName = viewFDAData?.name || viewFDAData?.patient_name || "Patient";
+      const gksId = viewFDAData?.custom_code || viewFDAData?.gks_id || viewFDAData?.uid || viewFDAData?.user_id || "";
+      const safeName = String(patientName).trim().replace(/\s+/g, "_");
+      const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
       const opt = {
         margin: [10, 10, 10, 10], // top, left, bottom, right
-        filename: `user_data_${viewFDAData?.name}_${viewFDAData?.user_id}.pdf`,
+        filename: `patient_${safeName}_${safeId || "fda_report"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: {
           scale: 2,
@@ -1036,8 +1067,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1050,6 +1081,14 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="FDA_Registration_List"
+                        title={getTranslation("First Dependency Assessment Registration List / प्रथम निर्भरता मूल्यांकन पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1104,8 +1143,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1118,6 +1157,14 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredDataone}
+                        columns={tableColumnsFDAList}
+                        filename="All_FDA_Assessment_List"
+                        title={getTranslation("All First Dependency Assessment Data List / सभी प्रथम निर्भरता मूल्यांकन डेटा सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1163,6 +1210,15 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         toggler={closePFAModal}
         maxWidth="1200px"
       >
+        <DraftNoticeBanner
+          draftTimestamp={draftTimestamp}
+          formKey="fda"
+          targetId={selectedUser?.user_id || selectedUser?.id || currentFDAUserId}
+          onDiscard={() => {
+            setFormData(initialFDAFormData);
+            setDraftTimestamp(null);
+          }}
+        />
         <Form className="theme-form" onSubmit={handleSubmit}>
           <PatientCommonInfo
             selectedUser={selectedUser}
@@ -1186,7 +1242,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   <div className="input-group">
                     <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
-                      selected={formData.dateOfAssessment}
+                      selected={safeDate(formData.dateOfAssessment)}
                       onChange={(date) =>
                         handleAssesmentDateChange(
                           "dateOfAssessment",
@@ -1381,8 +1437,16 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
             </FormGroup>
           </div>
 
-          {/* Submit Button */}
-          <div className="d-flex gap-3 px-2 pb-3">
+          {/* Submit Button & Save Draft */}
+          <div className="d-flex align-items-center gap-3 px-2 pb-3 flex-wrap">
+            <SaveDraftButton
+              formKey="fda"
+              targetId={selectedUser?.user_id || selectedUser?.id || currentFDAUserId}
+              formData={formData}
+              onDraftSaved={() => setDraftTimestamp(Date.now())}
+              style={{ height: "38px", padding: "6px 16px" }}
+            />
+
             <Button color="primary" type="submit" disabled={isLoading}>
               {isLoading ? (
                 <span
@@ -1420,7 +1484,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   <div className="input-group">
                     <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
-                      selected={FDAEditData?.date_of_assessment || null}
+                      selected={safeDate(FDAEditData?.date_of_assessment)}
                       onChange={(date) =>
                         setFDAEditData((prev) => ({
                           ...prev,
@@ -1534,99 +1598,369 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       {/* View FDA data into modal start */}
       <CommonModal
         isOpen={viewFDADataModal}
-        title={getTranslation("First Dependency Assessment / प्रथम निर्भरता मूल्यांकन",lang)}
+        title={getTranslation("First Dependency Assessment / प्रथम निर्भरता मूल्यांकन", lang)}
         toggler={closePFAModal}
-        maxWidth="1200px"
+        maxWidth="1100px"
       >
-        <div className="table-responsive p-4" ref={pdfRef}>
-          <h4
-            style={{
-              textAlign: "center",
-              textDecoration: "underline",
-              padding: "20px 0",
-            }}
-          >
-            {getTranslation("First Dependency Assessment / प्रथम निर्भरता मूल्यांकन",lang)}
-          </h4>
+        <div className="p-3 p-md-4 print-area" ref={pdfRef} style={{ background: "#f8fafc" }}>
+          {isLoading ? (
+            <ModalLoading message={getTranslation("Loading FDA details... / विवरण लोड हो रहा है...", lang)} />
+          ) : viewFDAData ? (
+            <div>
+              <PatientViewHeader data={viewFDAData} />
 
-          <Table size="sm" className="table-auto table-bordered">
-            <tbody style={{ fontSize: "14px" }}>
-              {isLoading ? (
-                <tr>
-                  <td colSpan="2" className="text-center">
-                    <div className="loader-box">
-                      <Spinner
-                        className={
-                          selectedSpinner?.spinnerClass ||
-                          "spinner-border"
-                        }
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ) : viewFDAData ? (
-                <>
-
-                  <tr><th className="text-start p-3">{getTranslation('Name/नाम',lang)}</th><td className="border p-3">{viewFDAData.name}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Relative Name/रिश्तेदार का नाम",lang)}</th><td className="border p-3">{viewFDAData.relative_name}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Gender/लिंग",lang)}</th><td className="border p-3">{viewFDAData.gender}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Phone/फ़ोन",lang)}</th><td className="border p-3">{viewFDAData.phone}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Email/ईमेल",lang)}</th><td className="border p-3">{viewFDAData.email}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("User GKS ID/उपयोगकर्ता GKS आईडी",lang)}</th><td className="border p-3">{viewFDAData.user_gks_id}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Entry GKS ID/प्रविष्टि जीकेएस आईडी",lang)}</th><td className="border p-3">{viewFDAData.entry_gks_id}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Visit No/विज़िट नं.",lang)}</th><td className="border p-3">{viewFDAData.visit_no}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Substance Type/पदार्थ का प्रकार",lang)}</th><td className="border p-3">{viewFDAData.substance_description}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Substance Code/पदार्थ कोड",lang)}</th><td className="border p-3">{viewFDAData.substance_code}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Desire to Quit/छोड़ने की इच्छा",lang)}</th><td className="border p-3">{viewFDAData.desire_to_quit}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Lack of Control/नियंत्रण का अभाव",lang)}</th><td className="border p-3">{viewFDAData.lack_control}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Lack of Responsibility/जिम्मेदारी का अभाव",lang)}</th><td className="border p-3">{viewFDAData.lack_responsibility}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Time Spent Using/उपयोग में बिताया गया समय",lang)}</th><td className="border p-3">{viewFDAData.time_purchasing_using}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Cravings/लालसा",lang)}</th><td className="border p-3">{viewFDAData.cravings}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Relationship Problems/रिश्ते की समस्याएं",lang)}</th><td className="border p-3">{viewFDAData.relationship_problems}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Using Dangerously/खतरनाक तरीके से उपयोग करना",lang)}</th><td className="border p-3">{viewFDAData.using_dangerously}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Losing Interest/रुचि खोना",lang)}</th><td className="border p-3">{viewFDAData.losing_interest}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Increasing Tolerance/सहनशीलता में वृद्धि",lang)}</th><td className="border p-3">{viewFDAData.increasing_tolerance}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Experiencing Withdrawal/वापसी का अनुभव",lang)}</th><td className="border p-3">{viewFDAData.experiencing_withdrawal}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Addiction Severity/लत की गंभीरता",lang)}</th><td className="border p-3">{viewFDAData.addiction_severity_rating}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Remarks/टिप्पणी",lang)}</th><td className="border p-3">{viewFDAData.remarks}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Prepared By/द्वारा तैयार",lang)}</th><td className="border p-3">{viewFDAData.prepared_by}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Assessment Date/मूल्यांकन तिथि",lang)}</th><td className="border p-3">{new Date(viewFDAData.date_of_assessment).toLocaleDateString()}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Created By/के द्वारा बनाई गई",lang)}</th><td className="border p-3">{viewFDAData.created_by_name}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Updated By/द्वारा अपडेट किया गया",lang)}</th><td className="border p-3">{viewFDAData.updated_by_name}</td></tr>
-                  <tr><th className="text-start p-3">{getTranslation("Status/स्थिति",lang)}</th><td className="border p-3">{viewFDAData.status}</td></tr>
-                </>
-              ) : (
-                <tr>
-                  <td colSpan="2" className="text-center">
-                    {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
-                  </td>
-                </tr>
-              )}
-
-            </tbody>
-          </Table>
-
-        </div>
-        <div style={{ margin: "0 20px 20px 20px" }}>
-                <button
-                  disabled={pfaDownload}
-                  id="download-btn"
-                  className="btn btn-primary"
-                  onClick={handleDownloadPDF}
+              {/* Card 1: Patient & Admission Details */}
+              <div
+                className="card shadow-sm border-0 mb-4"
+                style={{
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div
+                  className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                  style={{
+                    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                    borderLeft: "5px solid #d56337",
+                  }}
                 >
-                  {pfaDownload
-                    ? getTranslation("Your FDA is being downloaded.../ आपका FDA डाउनलोड हो रहा है...",lang)
-                    : getTranslation("Download Your First Dependency Assessment / प्रथम निर्भरता मूल्यांकन डाउनलोड करें",lang)}
-                </button>
+                  <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                    👤 {getTranslation("Patient & Admission Details / रोगी एवं प्रवेश विवरण", lang)}
+                  </h6>
+                  <Badge color="light" className="text-muted border px-2 py-1">
+                    GKS ID: {viewFDAData.user_gks_id || viewFDAData.entry_gks_id || "-"}
+                  </Badge>
+                </div>
+                <div className="card-body p-3 p-md-4">
+                  <div className="row g-3">
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Name/नाम", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark text-capitalize mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.name || "-"}
+                        </div>
+                      </div>
+                    </div>
 
-<button
-                          className="btn btn-primary mx-3"
-                          onClick={handlePrint}
-                        >
-                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-                        </button>
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Relative Name/रिश्तेदार का नाम", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark text-capitalize mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.relative_name || "-"}
+                        </div>
+                      </div>
+                    </div>
 
+                    <div className="col-6 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Gender/लिंग", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.gender || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Phone/फ़ोन", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          📞 {viewFDAData.phone || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Email/ईमेल", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          ✉️ {viewFDAData.email || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-sm-6 col-lg-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Visit No/विज़िट नं.", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          #{viewFDAData.visit_no || "1"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Card 2: Substance & Assessment Criteria */}
+              <div
+                className="card shadow-sm border-0 mb-4"
+                style={{
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div
+                  className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                  style={{
+                    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                    borderLeft: "5px solid #d56337",
+                  }}
+                >
+                  <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                    🧪 {getTranslation("Substance & Assessment Criteria / पदार्थ एवं मूल्यांकन मानदंड", lang)}
+                  </h6>
+                </div>
+                <div className="card-body p-3 p-md-4">
+                  <div className="row g-3">
+                    <div className="col-12 col-md-6">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Substance Type/पदार्थ का प्रकार", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.substance_description || "-"} {viewFDAData.substance_code ? `(${viewFDAData.substance_code})` : ""}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Addiction Severity/लत की गंभीरता", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          <Badge color="warning" className="text-dark">
+                            {viewFDAData.addiction_severity_rating || "-"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Desire to Quit/छोड़ने की इच्छा", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.desire_to_quit || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Lack of Control/नियंत्रण का अभाव", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.lack_control || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Lack of Responsibility/जिम्मेदारी का अभाव", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.lack_responsibility || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Time Spent Using/उपयोग में बिताया गया समय", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.time_purchasing_using || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Cravings/लालसा", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.cravings || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Relationship Problems/रिश्ते की समस्याएं", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.relationship_problems || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Using Dangerously/खतरनाक तरीके से उपयोग करना", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.using_dangerously || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Losing Interest/रुचि खोना", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.losing_interest || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-6 col-md-4">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Increasing Tolerance/सहनशीलता में वृद्धि", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.increasing_tolerance || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Experiencing Withdrawal/वापसी का अनुभव", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.experiencing_withdrawal || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Remarks/टिप्पणी", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.remarks || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Administrative details */}
+              <div
+                className="card shadow-sm border-0 mb-4"
+                style={{
+                  borderRadius: "14px",
+                  overflow: "hidden",
+                  border: "1px solid #e2e8f0",
+                }}
+              >
+                <div
+                  className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                  style={{
+                    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                    borderLeft: "5px solid #d56337",
+                  }}
+                >
+                  <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                    📝 {getTranslation("Administrative & Staff Details / प्रशासनिक एवं स्टाफ विवरण", lang)}
+                  </h6>
+                </div>
+                <div className="card-body p-3 p-md-4">
+                  <div className="row g-3">
+                    <div className="col-12 col-sm-6 col-lg-3">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Prepared By/द्वारा तैयार", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.prepared_by || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-3">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Assessment Date/मूल्यांकन तिथि", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          📅 {viewFDAData.date_of_assessment ? new Date(viewFDAData.date_of_assessment).toLocaleDateString() : "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-3">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Created By/के द्वारा बनाई गई", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFDAData.created_by_name || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-sm-6 col-lg-3">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Status/स्थिति", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          <Badge color="light" className="text-dark border">
+                            {viewFDAData.status || "-"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-5">
+              <p className="text-muted mb-0">
+                {getTranslation("No data available/कोई डेटा मौजूद नहीं", lang)}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Modal Footer Actions */}
+        <ModalActionButtons
+          onClose={closePFAModal}
+          onPrint={handlePrint}
+          onDownload={handleDownloadPDF}
+          isDownloading={pfaDownload}
+          downloadText={getTranslation("Download PDF / डाउनलोड करें", lang)}
+        />
       </CommonModal>
       {/* View FDA data into modal end */}
 
@@ -1654,7 +1988,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   <div className="input-group">
                     <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                       className="form-control digits"
-                      selected={FDAEditData?.date_of_assessment || null}
+                      selected={safeDate(FDAEditData?.date_of_assessment)}
                       onChange={(date) =>
                         setFDAEditData((prev) => ({
                           ...prev,
@@ -1764,6 +2098,13 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         </form>
       </CommonModal>
        {/* Edit FDA individual form data end */}
+
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
 
     </Fragment>
   )

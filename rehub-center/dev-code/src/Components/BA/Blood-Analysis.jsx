@@ -13,6 +13,7 @@ import {
   InputGroup,
   Table,
   Spinner,
+  Badge,
 } from "reactstrap";
 
 import {
@@ -57,8 +58,14 @@ import { Btn, H5, Breadcrumbs, H4 } from "../../AbstractElements";
 import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
-
+import UserDetailsModal from "../Common/UserDetailsModal";
+import ModalLoading from "../Common/ModalLoading";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import { useReactToPrint } from "react-to-print";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
 const BloodAnalysis = () => {
 
@@ -66,6 +73,13 @@ const BloodAnalysis = () => {
 
   //Branches selection
     const { selectedBranch } = useBranch();
+    const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+    const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+  
+    const handleViewUserDetails = (userId) => {
+      setSelectedViewUserId(userId);
+      setViewUserDetailsModal(true);
+    };
   
     //Pring vide data in pdf format
     const pdfRef = useRef();
@@ -165,12 +179,6 @@ const BloodAnalysis = () => {
     //Getting registred patient data into table row
     const tableColumns = [
       {
-      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
-        selector: (row) => row.id,
-        sortable: true,
-        center: true,
-      },
-      {
            name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
         selector: (row) => row.gks_id,
         sortable: true,
@@ -197,16 +205,6 @@ const BloodAnalysis = () => {
           </span>
         ),
       },
-      {
-        name: `${getTranslation('Status/स्थिति' , lang)}`,
-        selector: (row) => row.status,
-        sortable: true,
-        cell: (row) => (
-          <span style={{ color: row.disabled ? "#999" : "#000" }}>
-            {row.status}
-          </span>
-        ),
-      },
   
       {
        name: `${getTranslation('Action/क्रिया' , lang)}`,
@@ -219,6 +217,30 @@ const BloodAnalysis = () => {
           return (
             //Showing action buttons on register user list on FDA page
             <div className="d-flex gap-2">
+              {/* View User Details Icon */}
+              <span
+                onClick={() => handleViewUserDetails(row.id)}
+                style={{ cursor: "pointer" }}
+                title={getTranslation("View/देखना", lang)}
+              >
+                <svg
+                  style={{ color: "#d56337" }}
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="feather feather-eye"
+                >
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </span>
+
               {/* Show Edit only if not discharged and readmission */}
               {row.dischargeStatus === 0 && row.isReadmission === 1 && (
                 <span
@@ -230,49 +252,14 @@ const BloodAnalysis = () => {
                 </span>
               )}
 
-              {/* <span
-                  onClick={() => handleBAprefill(row.recentBAId)}
-                  style={{ cursor: "pointer" }}
-                  title="Readmission FDA Form"
-                >
-                  ✏️
-                </span> */}
-  
-              {/* Show Create PFA if not discharged and not readmission */}
-              {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+              {row.dischargeStatus === 0 && row.isReadmission === 0 && (
                 <span
                   onClick={() => createSUDBrief(row.id)}
-                  style={{ cursor: "pointer" }}
-                  title="Create PDA"
+                  style={{
+                    cursor: "pointer",
+                  }}
+                  title={getTranslation("Create Blood Analysis/रक्त विश्लेषण बनाएँ",lang)}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                  </svg>
-                </span>
-              )} */}
-
-
-{row.dischargeStatus === 0 && row.isReadmission === 0 && (
-  <span
-    onClick={() => (row.isBACompleted ? null : createSUDBrief(row.id))}
-    style={{
-      cursor: row.isBACompleted ? "not-allowed" : "pointer",
-      opacity: row.isBACompleted ? 0.5 : 1,
-    }}
-    title={row.isBACompleted ? getTranslation("Blood Analysis Completed/रक्त विश्लेषण पूरा हुआ",lang) : getTranslation("Create Blood Analysis/रक्त विश्लेषण बनाएँ",lang)}
-  >
     <svg
       xmlns="http://www.w3.org/2000/svg"
       width="24"
@@ -496,9 +483,20 @@ const BloodAnalysis = () => {
   //Crete BA form function start
   //Loading spinner
     const [isBAModalOpen, setIsBAModalOpen] = useState(false);
+    const [draftTimestamp, setDraftTimestamp] = useState(null);
+
     const createSUDBrief = async (userId = null) => {
       setIsBAModalOpen(true);
       if (userId) {
+        const saved = loadDraft("blood_analysis", userId);
+        if (saved && saved.data) {
+          setFormData(saved.data);
+          setDraftTimestamp(saved.savedAt);
+        } else {
+          setFormData(initialBAFormData);
+          setDraftTimestamp(null);
+        }
+
         const token = localStorage.getItem("Authorization");
         const branch_id = selectedBranch;
   
@@ -613,7 +611,7 @@ const BloodAnalysis = () => {
 
    const [isLoading, setIsLoading] = useState(false);
 
-   const [formData, setFormData] = useState({
+   const initialBAFormData = {
     date_of_assessment: new Date(),
     package_type_id: "",
     package_name: "",
@@ -624,7 +622,9 @@ const BloodAnalysis = () => {
     report_file: "Dummt.pdf",
     report_file_type: "",
     remarks: "",
-  });
+  };
+
+   const [formData, setFormData] = useState(initialBAFormData);
   
  
  // Generic handler
@@ -738,6 +738,9 @@ const SubmitBAFormHandler = async (e) => {
 
     const data = await response.json();
     setIsLoading(false);
+
+    clearDraft("blood_analysis", selectedUser?.user_id || selectedUser?.id);
+    setDraftTimestamp(null);
 
     Swal.fire({
       icon: "success",
@@ -1235,9 +1238,14 @@ const SubmitBAReadmissionFormHandler = async (e) => {
       // Add a temporary class to scale fonts if needed
       element.classList.add("pdf-scale");
   
+      const patientName = viewBAData?.name || viewBAData?.patient_name || "Patient";
+      const gksId = viewBAData?.custom_code || viewBAData?.gks_id || viewBAData?.uid || viewBAData?.user_id || "";
+      const safeName = String(patientName).trim().replace(/\s+/g, "_");
+      const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
       const opt = {
         margin: [10, 10, 10, 10], // top, left, bottom, right
-        filename: `user_data_${viewBAData?.name}_${viewBAData?.user_id}.pdf`,
+        filename: `patient_${safeName}_${safeId || "blood_analysis_report"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: {
           scale: 2,
@@ -1274,7 +1282,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
           });
 
   return (
-   <frameElement>
+   <Fragment>
      {/* register user data into data table format start */}
      <Container fluid={true} className="datatables">
         <Row>
@@ -1290,8 +1298,8 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1304,6 +1312,14 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="Blood_Analysis_Registration_List"
+                        title={getTranslation("Blood Analysis Registration List / रक्त विश्लेषण पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1353,8 +1369,8 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                   <div class="d-flex pb-2 justify-content-between">
                     <HeaderCard title={getTranslation("All Blood Analysis Data List/सभी रक्त विश्लेषण डेटा सूची",lang)} className="p-0" />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1367,6 +1383,14 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredDataone}
+                        columns={tableColumnsBAList}
+                        filename="All_Blood_Analysis_Data_List"
+                        title={getTranslation("All Blood Analysis Data List / सभी रक्त विश्लेषण डेटा सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1423,6 +1447,15 @@ const SubmitBAReadmissionFormHandler = async (e) => {
   />
 
   <div className="ow px-3 pt-4 pb-3">
+    <DraftNoticeBanner
+      draftTimestamp={draftTimestamp}
+      formKey="blood_analysis"
+      targetId={selectedUser?.user_id || selectedUser?.id}
+      onDiscard={() => {
+        setFormData(initialBAFormData);
+        setDraftTimestamp(null);
+      }}
+    />
     <form onSubmit={SubmitBAFormHandler}>
       {/*Date of Assessment section/परीक्षण की तारीख :*/}
       <div className="col-md-6">
@@ -1434,7 +1467,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                           <div className="input-group">
                             <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                               className="form-control digits"
-                              selected={formData.date_of_assessment}
+                              selected={safeDate(formData.date_of_assessment)}
                               onChange={(date) =>
                                 handleAssesmentDateChange(
                                   "date_of_assessment",
@@ -1530,7 +1563,15 @@ const SubmitBAReadmissionFormHandler = async (e) => {
       </div>
 
       {/* Submit Button */}
-      <div className="d-flex gap-3 pt-3">
+      <div className="d-flex align-items-center gap-3 pt-3 flex-wrap">
+        <SaveDraftButton
+          formKey="blood_analysis"
+          targetId={selectedUser?.user_id || selectedUser?.id}
+          formData={formData}
+          onDraftSaved={() => setDraftTimestamp(Date.now())}
+          style={{ height: "38px", padding: "6px 16px" }}
+        />
+
         <Button color="primary" type="submit" disabled={isLoading}>
           {isLoading ? (
             <span
@@ -1551,148 +1592,240 @@ const SubmitBAReadmissionFormHandler = async (e) => {
  {/* View BA data into modal start */}
 <CommonModal
   isOpen={viewBAModal}
-  title={getTranslation("View Blood Analysis Assessment/रक्त विश्लेषण मूल्यांकन देखें",lang)}
+  title={getTranslation("View Blood Analysis Assessment/रक्त विश्लेषण मूल्यांकन देखें", lang)}
   toggler={closeAllmodal}
-  maxWidth="1200px"
+  maxWidth="1100px"
 >
-  <div className="table-responsive p-4" ref={pdfRef}>
-    <h4
-      style={{
-        textAlign: "center",
-        textDecoration: "underline",
-        padding: "20px 0",
-      }}
-    >
-      {getTranslation("Blood Analysis Report / रक्त विश्लेषण रिपोर्ट",lang)}
-    </h4>
+  <div className="p-3 p-md-4 print-area" ref={pdfRef} style={{ background: "#f8fafc" }}>
+    {isLoading ? (
+      <ModalLoading message={getTranslation("Loading Blood Analysis details... / विवरण लोड हो रहा है...", lang)} />
+    ) : viewBAData ? (
+      <div>
+        <PatientViewHeader data={viewBAData} />
 
-    <Table size="sm" className="table-auto table-bordered">
-      <tbody style={{ fontSize: "14px" }}>
-        {isLoading ? (
-          <tr>
-            <td colSpan="2" className="text-center">
-              <div className="loader-box">
-                <Spinner
-                  className={selectedSpinner?.spinnerClass || "spinner-border"}
-                />
+        {/* Card 1: Patient Information */}
+        <div
+          className="card shadow-sm border-0 mb-4"
+          style={{
+            borderRadius: "14px",
+            overflow: "hidden",
+            border: "1px solid #e2e8f0",
+          }}
+        >
+          <div
+            className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+            style={{
+              background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+              borderLeft: "5px solid #d56337",
+            }}
+          >
+            <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+              👤 {getTranslation("Patient Information / रोगी की जानकारी", lang)}
+            </h6>
+          </div>
+          <div className="card-body p-3 p-md-4">
+            <div className="row g-3">
+              <div className="col-12 col-sm-6 col-lg-4">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Patient Name/रोगी का नाम", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark text-capitalize mt-1" style={{ fontSize: "13.5px" }}>
+                    {viewBAData.name || "-"}
+                  </div>
+                </div>
               </div>
-            </td>
-          </tr>
-        ) : viewBAData ? (
-          <>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Patient Name/रोगी का नाम",lang)}</th>
-              <td className="border p-3">{viewBAData.name}</td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Phone/फ़ोन",lang)}</th>
-              <td className="border p-3">{viewBAData.phone}</td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Email/ईमेल",lang)}</th>
-              <td className="border p-3">{viewBAData.email}</td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Gender/लिंग",lang)}</th>
-              <td className="border p-3">{viewBAData.gender}</td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Date of Birth/जन्म तिथि",lang)}</th>
-              <td className="border p-3">
-                {viewBAData.dob
-                  ? new Date(viewBAData.dob).toLocaleDateString()
-                  : ""}
-              </td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Assessment Date/मूल्यांकन तिथि",lang)}</th>
-              <td className="border p-3">
-                {viewBAData.date_of_assessment
-                  ? new Date(viewBAData.date_of_assessment).toLocaleDateString()
-                  : ""}
-              </td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Package/पैकेट",lang)}</th>
-              <td className="border p-3">
-                {viewBAData.package_name} - {viewBAData.package_description}
-              </td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Sample Collected/नमूना एकत्र किया गया",lang)}</th>
-              <td className="border p-3">{viewBAData.sample_collected}</td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Sample Collection Time/नमूना संग्रह समय",lang)}</th>
-              <td className="border p-3">
-                {viewBAData.sample_collection_time
-                  ? new Date(
-                      viewBAData.sample_collection_time
-                    ).toLocaleString()
-                  : ""}
-              </td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Severity/गंभीरता",lang)}</th>
-              <td className="border p-3">
-                {viewBAData.severity_name} -{" "}
-                {viewBAData.severity_description || ""}
-              </td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Remarks/टिप्पणी",lang)}</th>
-              <td className="border p-3">{viewBAData.remarks}</td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Status/स्थिति",lang)}</th>
-              <td className="border p-3">{viewBAData.status}</td>
-            </tr>
-            <tr>
-              <th className="text-start p-3">{getTranslation("Report File/रिपोर्ट फ़ाइल",lang)}</th>
-              <td className="border p-3">
-                {viewBAData.report_file_path ? (
-                  <a
-                    href={viewBAData.report_file_path}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    View Report ({viewBAData.report_file_type})
-                  </a>
-                ) : (
-                  getTranslation("Not Uploaded/अपलोड नहीं किया गया",lang)
-                )}
-              </td>
-            </tr>
-          </>
-        ) : (
-          <tr>
-            <td colSpan="2" className="text-center">
-              {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
-            </td>
-          </tr>
-        )}
-      </tbody>
-    </Table>
+
+              <div className="col-12 col-sm-6 col-lg-4">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Phone/फ़ोन", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    📞 {viewBAData.phone || "-"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-sm-6 col-lg-4">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Email/ईमेल", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    ✉️ {viewBAData.email || "-"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-6 col-sm-4 col-lg-4">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Gender/लिंग", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    {viewBAData.gender || "-"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-6 col-sm-4 col-lg-4">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Date of Birth/जन्म तिथि", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    📅 {viewBAData.dob ? new Date(viewBAData.dob).toLocaleDateString() : "-"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-sm-4 col-lg-4">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Assessment Date/मूल्यांकन तिथि", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    📅 {viewBAData.date_of_assessment ? new Date(viewBAData.date_of_assessment).toLocaleDateString() : "-"}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Sample & Investigation Details */}
+        <div
+          className="card shadow-sm border-0 mb-4"
+          style={{
+            borderRadius: "14px",
+            overflow: "hidden",
+            border: "1px solid #e2e8f0",
+          }}
+        >
+          <div
+            className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+            style={{
+              background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+              borderLeft: "5px solid #d56337",
+            }}
+          >
+            <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+              🧪 {getTranslation("Investigation & Sample Details / जांच एवं नमूना विवरण", lang)}
+            </h6>
+          </div>
+          <div className="card-body p-3 p-md-4">
+            <div className="row g-3">
+              <div className="col-12 col-md-6">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Package/पैकेट", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    {viewBAData.package_name} {viewBAData.package_description ? `- ${viewBAData.package_description}` : ""}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-md-6">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Severity/गंभीरता", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    {viewBAData.severity_name} {viewBAData.severity_description ? `- ${viewBAData.severity_description}` : ""}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-sm-6 col-lg-4">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Sample Collected/नमूना एकत्र किया गया", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    {viewBAData.sample_collected || "-"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-sm-6 col-lg-4">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Sample Collection Time/नमूना संग्रह समय", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    ⏰ {viewBAData.sample_collection_time ? new Date(viewBAData.sample_collection_time).toLocaleString() : "-"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-sm-6 col-lg-4">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Status/स्थिति", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    <Badge color="light" className="text-dark border">
+                      {viewBAData.status || "-"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-md-6">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Remarks/टिप्पणी", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    {viewBAData.remarks || "-"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="col-12 col-md-6">
+                <div className="p-2 px-3 rounded-3 bg-light border">
+                  <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                    {getTranslation("Report File/रिपोर्ट फ़ाइल", lang)}
+                  </div>
+                  <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                    {viewBAData.report_file_path ? (
+                      <a
+                        href={viewBAData.report_file_path}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary text-decoration-none fw-bold d-inline-flex align-items-center gap-1"
+                      >
+                        📄 {getTranslation("View Uploaded Report", lang)} ({viewBAData.report_file_type || "PDF"})
+                      </a>
+                    ) : (
+                      getTranslation("Not Uploaded/अपलोड नहीं किया गया", lang)
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <div className="text-center py-5">
+        <p className="text-muted mb-0">
+          {getTranslation("No data available/कोई डेटा मौजूद नहीं", lang)}
+        </p>
+      </div>
+    )}
   </div>
 
-  <div style={{ margin: "0 20px 20px 20px" }}>
-    <button
-      disabled={pfaDownload}
-      id="download-btn"
-      className="btn btn-primary"
-      onClick={handleDownloadPDF}
-    >
-      {pfaDownload
-        ? getTranslation("Your BA Report is being downloaded... / आपका BA रिपोर्ट डाउनलोड हो रहा है...",lang)
-        : getTranslation("Download Blood Analysis Report/रक्त विश्लेषण रिपोर्ट डाउनलोड करें",lang)}
-    </button>
-    <button
-                          className="btn btn-primary mx-3"
-                          onClick={handlePrint}
-                        >
-                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-                        </button>
-  </div>
+  {/* Modal Footer Actions */}
+  <ModalActionButtons
+    onClose={closeAllmodal}
+    onPrint={handlePrint}
+    onDownload={handleDownloadPDF}
+    isDownloading={pfaDownload}
+    downloadText={getTranslation("Download PDF / डाउनलोड करें", lang)}
+  />
 </CommonModal>
 {/* View BA data into modal end */}
 
@@ -1728,12 +1861,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
             <div className="input-group">
               <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                 className="form-control digits"
-                selected={
-                  BAEditData?.date_of_assessment instanceof Date &&
-                  !isNaN(BAEditData?.date_of_assessment)
-                    ? BAEditData?.date_of_assessment
-                    : null
-                }
+                selected={safeDate(BAEditData?.date_of_assessment)}
                 onChange={(date) =>
                   setBAEditData({
                     ...BAEditData,
@@ -1803,12 +1931,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                 className="form-control digits"
                 showTimeSelect
                 dateFormat="Pp"
-                selected={
-                  BAEditData?.sample_collection_time instanceof Date &&
-                  !isNaN(BAEditData?.sample_collection_time)
-                    ? BAEditData?.sample_collection_time
-                    : null
-                }
+                selected={safeDate(BAEditData?.sample_collection_time)}
                 onChange={(date) =>
                   setBAEditData({
                     ...BAEditData,
@@ -1936,12 +2059,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
             <div className="input-group">
               <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                 className="form-control digits"
-                selected={
-                  BAPrefillData?.date_of_assessment instanceof Date &&
-                  !isNaN(BAPrefillData?.date_of_assessment)
-                    ? BAPrefillData?.date_of_assessment
-                    : null
-                }
+                selected={safeDate(BAPrefillData?.date_of_assessment)}
                 onChange={(date) =>
                   setBAPrefillData({
                     ...BAPrefillData,
@@ -2011,12 +2129,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                 className="form-control digits"
                 showTimeSelect
                 dateFormat="Pp"
-                selected={
-                  BAPrefillData?.sample_collection_time instanceof Date &&
-                  !isNaN(BAPrefillData?.sample_collection_time)
-                    ? BAPrefillData?.sample_collection_time
-                    : null
-                }
+                selected={safeDate(BAPrefillData?.sample_collection_time)}
                 onChange={(date) =>
                   setBAPrefillData({
                     ...BAPrefillData,
@@ -2110,11 +2223,14 @@ const SubmitBAReadmissionFormHandler = async (e) => {
 </CommonModal>
 {/* BA Prefill readmission form end */}
 
-
-
-
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
     
-   </frameElement>
+   </Fragment>
   );
 };
 

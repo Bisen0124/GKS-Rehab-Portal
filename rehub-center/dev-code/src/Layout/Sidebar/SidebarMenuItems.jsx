@@ -1,26 +1,42 @@
 import React, { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { LI, UL, H6 } from '../../AbstractElements';
 import { MENUITEMS } from './Menu';
 import { Label } from 'reactstrap';
-
-// import Translated from "../Translated";
-// import { useLang } from "../../contexts/LangContext";
-// import { getTranslation } from "../../utils/translator";
 
 import Translated from '../../Components/Translated';
 import { useLang } from '../../contexts/LangContext';
 import { getTranslation } from '../../utils/translator';
 
 const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
-
   const { lang } = useLang(); // get current language from context
-
   const { t } = useTranslation();
+  const location = useLocation();
+  const currentPath = (location.pathname || "").toLowerCase();
+
+  const isPathActive = (itemPath) => {
+    if (!itemPath) return false;
+    const path = String(itemPath).toLowerCase();
+    if (path === currentPath) return true;
+    if (path !== '/' && path !== '/dashboard/home' && currentPath.includes(path.replace(process.env.PUBLIC_URL || '', '').toLowerCase())) {
+      return true;
+    }
+    return false;
+  };
+
+  const hasActiveChild = (item) => {
+    if (!item || !item.children) return false;
+    return item.children.some((child) => {
+      if (isPathActive(child.path)) return true;
+      if (child.children) {
+        return child.children.some((subChild) => isPathActive(subChild.path));
+      }
+      return false;
+    });
+  };
 
   const toggletNavActive = (item) => {
-
     if (!item.active) {
       MENUITEMS.map((a) => {
         a.Items.filter((Items) => {
@@ -60,19 +76,21 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                 <H6>{t(Item.menutitle)}</H6>
               </div>
             </LI>
-            {Item.Items.map((menuItem, i) => (
+            {Item.Items.map((menuItem, i) => {
+              const isMenuActive = menuItem.active || isPathActive(menuItem.path) || hasActiveChild(menuItem);
+              return (
               <LI attrLI={{ className: 'dropdown' }} key={i}>
                 {menuItem.type === 'sub' && (
                   <a href="javascript"
                     id="nav-link"
-                    className={`nav-link menu-title ${menuItem.active ? 'active' : ''}`}
+                    className={`nav-link menu-title ${isMenuActive ? 'active' : ''}`}
                     onClick={(event) => {
                       event.preventDefault(); setNavActive(menuItem);
                     }} >
                     {menuItem.icon !== undefined && <menuItem.icon />}
                     <span>{t(getTranslation(menuItem.title,lang))}</span>
                     <div className="according-menu">
-                      {menuItem.active ? (
+                      {isMenuActive ? (
                         <i className="fa fa-angle-down"></i>
                       ) : (
                         <i className="fa fa-angle-right"></i>
@@ -84,8 +102,7 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                   <Link
                     to={menuItem.path}
                     id="nav-link"
-                    className={`nav-link menu-title ${menuItem.active ? 'active' : ''
-                      }`}
+                    className={`nav-link menu-title ${isMenuActive ? 'active' : ''}`}
                     onClick={() => toggletNavActive(menuItem)}
                   >
                     {menuItem.icon !== undefined && <menuItem.icon />}
@@ -106,7 +123,7 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                   }}>
                     <UL attrUL={{ className: 'nav-submenu menu-content',
                     style:
-                      menuItem.active
+                      (menuItem.active || hasActiveChild(menuItem))
                         ? sidebartoogle
                           ? {
                             opacity: 1,
@@ -115,22 +132,23 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                           : { display: 'block' }
                         : { display: 'none' } }}>
                       {menuItem.children.map((childrenItem, index) => {
+                        const isChildActive = childrenItem.active || isPathActive(childrenItem.path);
                         return (
                           <LI key={index}>
                             {childrenItem.type === 'sub' && (
-                              <a href="javascript" className={`${childrenItem.active ? 'active' : ''}`}
+                              <a href="javascript" className={`${isChildActive ? 'active' : ''}`}
                                 onClick={(event) => {
                                   event.preventDefault();
                                   toggletNavActive(childrenItem);
                                 }}>
                                 {t(getTranslation(childrenItem.title,lang))}
                                 <div className="according-menu">
-                                  {childrenItem.active ? (<i className="fa fa-caret-down"></i>) : (<i className="fa fa-caret-right"></i>)} </div>
+                                  {isChildActive ? (<i className="fa fa-caret-down"></i>) : (<i className="fa fa-caret-right"></i>)} </div>
                               </a>
                             )}
                             {childrenItem.type === 'link' && (
                               <Link
-                                to={childrenItem.path} className={`${childrenItem.active ? 'active' : ''}`}
+                                to={childrenItem.path} className={`${isChildActive ? 'active' : ''}`}
                                 onClick={() => toggletNavActive(childrenItem)} >
                                 {t(getTranslation(childrenItem.title,lang))}
                               </Link>
@@ -166,7 +184,8 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                   </UL>
                 )}
               </LI>
-            ))}
+              );
+            })}
           </Fragment>
         ))
         }

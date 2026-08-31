@@ -51,6 +51,10 @@ import html2pdf from "html2pdf.js";
 import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
@@ -161,14 +165,13 @@ function Register() {
     }
   };
 
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     date_of_admission: new Date(),
     patientName: "",
     patientRelativeName: "",
-    gender: "",
+    gender: "Male", // Default Male
     phone: "",
     secondary_phone: "",
-    isWhatsApp: false,
     whatsapp_no: "",
     email: "",
     password: "",
@@ -177,17 +180,18 @@ function Register() {
     relativeaddress: "",
     relation_with_patient: "",
     relative_contacts: [{ name: "", phone: "" }],
-    is_role: "", // This will be 3
+    is_role: 4, // Default Patient role (4)
     ward_type_id: "",
     ward_name: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === "phone" && prev.isWhatsApp ? { whatsapp_no: value } : {}),
     }));
   };
 
@@ -196,23 +200,6 @@ function Register() {
       ...prev,
       [field === "dateOfAdmission" ? "date_of_admission" : field]: value,
     }));
-  };
-
-  const handleWhatsAppToggle = (e) => {
-    const isChecked = e.target.value === "yes";
-    setFormData((prev) => ({
-      ...prev,
-      isWhatsApp: isChecked,
-      whatsapp_no: isChecked ? prev.phone : "",
-    }));
-  };
-
-  const handleIsRoleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: name === "is_role" ? Number(value) : value,
-    });
   };
 
   //Handle patient relative additional contacts (name + phone pairs)
@@ -242,37 +229,142 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
   
-    const requiredFields = {
-      date_of_admission: formData.date_of_admission,
-      patientName: formData.patientName,
-      email: formData.email,
-      patientRelativeName: formData.patientRelativeName,
-      phone: formData.phone,
-      gender: formData.gender,
-      dob: formData.dob,
-      address: formData.address,
-      password: formData.password,
-      whatsapp_no: formData.whatsapp_no,
-      is_role: formData.is_role,
-      secondary_phone: formData.secondary_phone,
-    };
-  
-    for (const [key, value] of Object.entries(requiredFields)) {
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Admission / प्रवेश की तिथि", lang),
+        value: formData.date_of_admission,
+      },
+      {
+        label: getTranslation("Name of Patient / रोगी का नाम", lang),
+        value: formData.patientName,
+      },
+      {
+        label: getTranslation("Name of Patient Relative / रोगी के संबंधी का नाम", lang),
+        value: formData.patientRelativeName,
+      },
+      {
+        label: getTranslation("Patient Sex / रोगी का लिंग", lang),
+        value: formData.gender,
+      },
+      {
+        label: getTranslation("Relation with Patient / रोगी से संबंध", lang),
+        value: formData.relation_with_patient,
+      },
+      {
+        label: getTranslation("Patient Date of Birth / रोगी की जन्म तिथि", lang),
+        value: formData.dob,
+      },
+      {
+        label: getTranslation("Patient Relative Primary Phone Number / संबंधी का प्राथमिक फ़ोन नंबर", lang),
+        value: formData.phone,
+      },
+      {
+        label: getTranslation("Mobile number for WhatsApp/SMS communication / व्हाट्सएप/एसएमएस संचार के लिए मोबाइल नंबर", lang),
+        value: formData.whatsapp_no,
+      },
+      {
+        label: getTranslation("Password / पासवर्ड", lang),
+        value: formData.password,
+      },
+      {
+        label: getTranslation("Ward Details / वार्ड विवरण", lang),
+        value: formData.ward_type_id,
+      },
+      {
+        label: getTranslation("Patient Relative Address / रोगी के संबंधी का पता", lang),
+        value: formData.relativeaddress,
+      },
+      {
+        label: getTranslation("Patient Address / रोगी का पता", lang),
+        value: formData.address,
+      },
+    ];
+
+    const missingFields = [];
+
+    for (const field of compulsoryFieldDefinitions) {
+      const val = field.value;
       const isEmpty =
-        value === null ||
-        value === undefined ||
-        (typeof value === "string" && value.trim() === "");
-  
+        val === null ||
+        val === undefined ||
+        (typeof val === "string" && val.trim() === "") ||
+        (typeof val === "number" && isNaN(val));
+
       if (isEmpty) {
-        Swal.fire({
-          icon: "warning",
-          title: getTranslation(
-            "Field should not be empty!/फ़ील्ड खाली नहीं होना चाहिए!",
-            lang
-          ),
-        });
-        return;
+        missingFields.push(field.label);
       }
+    }
+
+    if (missingFields.length > 0) {
+      const missingListHtml = `<div style="text-align: left; margin-top: 10px; font-size: 14px;"><p style="margin-bottom: 8px; font-weight: 600;">${getTranslation(
+        "Please fill the following compulsory field(s): / कृपया निम्नलिखित अनिवार्य फ़ील्ड भरें:",
+        lang
+      )}</p><ul style="padding-left: 20px; margin-bottom: 0; line-height: 1.6;">${missingFields
+        .map((f) => `<li>${f}</li>`)
+        .join("")}</ul></div>`;
+
+      Swal.fire({
+        icon: "warning",
+        title: getTranslation(
+          "Required field(s) missing! / आवश्यक फ़ील्ड खाली हैं!",
+          lang
+        ),
+        html: missingListHtml,
+        confirmButtonText: getTranslation("OK / ठीक है", lang),
+      });
+      return;
+    }
+
+    if (formData.phone && formData.phone.length !== 10) {
+      Swal.fire({
+        icon: "warning",
+        title: getTranslation("Invalid Phone Number / अमान्य फ़ोन नंबर", lang),
+        text: getTranslation(
+          "Patient Relative Primary Phone number must be 10 digits. / प्राथमिक फ़ोन नंबर 10 अंकों का होना चाहिए।",
+          lang
+        ),
+        confirmButtonText: getTranslation("OK / ठीक है", lang),
+      });
+      return;
+    }
+
+    if (formData.whatsapp_no && formData.whatsapp_no.length !== 10) {
+      Swal.fire({
+        icon: "warning",
+        title: getTranslation("Invalid WhatsApp/SMS Number / अमान्य व्हाट्सएप/एसएमएस नंबर", lang),
+        text: getTranslation(
+          "Mobile number for WhatsApp/SMS communication must be 10 digits. / व्हाट्सएप/एसएमएस नंबर 10 अंकों का होना चाहिए।",
+          lang
+        ),
+        confirmButtonText: getTranslation("OK / ठीक है", lang),
+      });
+      return;
+    }
+
+    if (
+      formData.email &&
+      !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email)
+    ) {
+      Swal.fire({
+        icon: "warning",
+        title: getTranslation("Invalid Email / अमान्य ईमेल", lang),
+        text: getTranslation(
+          "Please enter a valid email address / कृपया एक वैध ईमेल पता दर्ज करें",
+          lang
+        ),
+        confirmButtonText: getTranslation("OK / ठीक है", lang),
+      });
+      return;
+    }
+
+    if (passwordError) {
+      Swal.fire({
+        icon: "warning",
+        title: getTranslation("Weak Password / कमजोर पासवर्ड", lang),
+        text: passwordError,
+        confirmButtonText: getTranslation("OK / ठीक है", lang),
+      });
+      return;
     }
   
     setIsLoading(true);
@@ -299,11 +391,11 @@ function Register() {
       payload.append("dob", formatDate(formData.dob));
       payload.append("address", formData.address);
       payload.append("password", formData.password);
-      payload.append("whatsapp_no", formData.whatsapp_no);
-      payload.append("isRole", formData.is_role);
+      payload.append("whatsapp_no", formData.whatsapp_no || "");
+      payload.append("isRole", 4);
       payload.append("ward_type_id", formData.ward_type_id || "");
       payload.append("ward_name", formData.ward_name || "");
-      payload.append("secondary_phone", formData.secondary_phone);
+      payload.append("secondary_phone", formData.secondary_phone || "");
   
       // ✅ New fields (send empty if not available)
       const cleanedRelativeContacts = formData.relative_contacts.filter(
@@ -362,6 +454,12 @@ function Register() {
               lang
             ),
           });
+        } else {
+          Swal.fire({
+            icon: "error",
+            title: getTranslation("Registration Failed / पंजीकरण विफल", lang),
+            text: result.message || result.error || getTranslation("Server error/सर्वर त्रुटि", lang),
+          });
         }
       } else {
         Swal.fire({
@@ -369,28 +467,14 @@ function Register() {
           text: getTranslation("Registration successful!/सफल पंजीकरण!", lang),
           icon: "success",
         }).then(() => {
+          clearDraft("patient_registration", "new");
+          setDraftTimestamp(null);
           setModal(false);
   
           // ✅ Reset form including files
-          setFormData({
-            date_of_admission: "",
-            patientName: "",
-            email: "",
-            patientRelativeName: "",
-            phone: "",
-            gender: "",
-            dob: "",
-            address: "",
-            password: "",
-            whatsapp_no: "",
-            is_role: "",
-            secondary_phone: "",
-            ward_type_id: "",
-            ward_name: "",
-            relativeaddress: "",
-            relation_with_patient: "",
-            relative_contacts: [{ name: "", phone: "" }],
-          });
+          setFormData(initialFormData);
+          setPasswordError("");
+          setEmailError("");
   
           // ✅ Reset file upload states too
           setImage(null);
@@ -416,17 +500,26 @@ function Register() {
 
   //Modal - register
   const [modal, setModal] = useState(false);
-  const toggle = () => setModal(!modal);
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const toggle = () => {
+    if (!modal) {
+      const saved = loadDraft("patient_registration", "new");
+      if (saved && saved.data) {
+        setFormData(saved.data);
+        setDraftTimestamp(saved.savedAt);
+      }
+    }
+    setModal(!modal);
+  };
 
   //View and delete user data state
   const [viewModal, setViewModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
 
   //view user data on modal
-
   const userViewToggle = async (userId = null) => {
     if (typeof userId === "object" && userId !== null) {
-      userId = userId.id;
+      userId = userId.id || userId.user_id;
     }
 
     if (!userId) {
@@ -434,17 +527,17 @@ function Register() {
       return;
     }
 
-    // Open modal immediately
+    // Set state immediately so modal opens with loading screen
+    setSelectedUserId(userId);
+    setSelectedUser(null);
     setViewModal(true);
-    setIsLoading(true); // Start loading
+    setIsLoading(true);
 
     const token = localStorage.getItem("Authorization");
 
     try {
-      // ✅ Get selected branch from context or state
       const branch_id = branchId;
-
-      const response = await fetch(
+      let response = await fetch(
         `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
         {
           method: "GET",
@@ -455,37 +548,43 @@ function Register() {
         }
       );
 
-      const data = await response.json();
+      let data = await response.json();
 
-      console.log("register user details: ", data);
-
-      if (!response.ok) {
-        console.error("User fetch error:", data);
-        return;
-      }
-
-      const userData = data.data?.[0];
-      console.log("userData", userData);
-
-      if (!userData) {
-        console.error("User not found in response");
-        return;
-      }
-
-      // ✅ Normalize relative_contacts in case backend sends it as a JSON string
-      if (userData.relative_contacts && typeof userData.relative_contacts === "string") {
-        try {
-          userData.relative_contacts = JSON.parse(userData.relative_contacts);
-        } catch (e) {
-          userData.relative_contacts = [];
+      // If branch param caused empty result, fallback without branch_id
+      if (!response.ok || !data.data || (Array.isArray(data.data) && data.data.length === 0)) {
+        const fallbackRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/users/${userId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        );
+        if (fallbackRes.ok) {
+          data = await fallbackRes.json();
         }
       }
 
-      setSelectedUser(userData);
+      console.log("register user details: ", data);
+
+      const userData = Array.isArray(data.data) ? data.data[0] : (data.data || data);
+
+      if (userData && typeof userData === "object") {
+        if (userData.relative_contacts && typeof userData.relative_contacts === "string") {
+          try {
+            userData.relative_contacts = JSON.parse(userData.relative_contacts);
+          } catch (e) {
+            userData.relative_contacts = [];
+          }
+        }
+        setSelectedUser(userData);
+      }
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
-      setIsLoading(false); // End loading
+      setIsLoading(false);
     }
   };
 
@@ -649,6 +748,8 @@ function Register() {
   //close view data modal
   const closeUserViewModal = () => {
     setViewModal(false);
+    setSelectedUser(null);
+    setSelectedUserId(null);
     setShowEditModal(false);
     setreregisterModal(false);
   };
@@ -946,13 +1047,6 @@ function Register() {
   // ✅ Define table columns
   const tableColumns = [
     {
-      // name: "User ID",
-      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
       // name: "GKS ID",
       name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
@@ -1172,13 +1266,6 @@ function Register() {
   // ✅ Define table columns
   const tableIPDColumns = [
     {
-      name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`,
-      
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
       name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
@@ -1318,16 +1405,22 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
     setFilteredIPDData(IPDfiltered);
   };
 
-  //Generate password dynamically while regestering/entering password
+  //Generate strong password dynamically while registering
   const generatePassword = () => {
-    const length = 10;
-    const charset =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+    const lowers = "abcdefghijklmnopqrstuvwxyz";
+    const uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const digits = "0123456789";
+    const symbols = "!@#$%^&*";
     let password = "";
-    for (let i = 0, n = charset.length; i < length; ++i) {
-      password += charset.charAt(Math.floor(Math.random() * n));
+    password += lowers.charAt(Math.floor(Math.random() * lowers.length));
+    password += uppers.charAt(Math.floor(Math.random() * uppers.length));
+    password += digits.charAt(Math.floor(Math.random() * digits.length));
+    password += symbols.charAt(Math.floor(Math.random() * symbols.length));
+    const all = lowers + uppers + digits + symbols;
+    for (let i = 4; i < 10; ++i) {
+      password += all.charAt(Math.floor(Math.random() * all.length));
     }
-    return password;
+    return password.split("").sort(() => 0.5 - Math.random()).join("");
   };
 
   //PDf view download pdf code handler
@@ -1339,9 +1432,14 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
       // Add a temporary class to scale fonts if needed
       element.classList.add("pdf-scale");
   
+      const patientName = selectedUser?.name || selectedUser?.patient_name || "Patient";
+      const gksId = selectedUser?.custom_code || selectedUser?.gks_id || selectedUser?.uid || selectedUser?.user_id || "";
+      const safeName = String(patientName).trim().replace(/\s+/g, "_");
+      const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
       const opt = {
         margin: [10, 10, 10, 10], // top, left, bottom, right
-        filename: `user_data_${selectedUser.name}_${selectedUser.user_id}.pdf`,
+        filename: `patient_${safeName}_${safeId || "registration"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: {
           scale: 2,
@@ -1410,8 +1508,8 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     <Translated text={registerYourDetail} />
                   </Btn>
                 </div>
-                <div className="row pb-2">
-                  <div className="col-md-4">
+                <div className="row pb-3 align-items-center">
+                  <div className="col-md-5 col-12 mb-2 mb-md-0">
                     <InputGroup>
                       <Input
                         className="form-control"
@@ -1424,6 +1522,14 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         <i className="fa fa-search"></i>
                       </span>
                     </InputGroup>
+                  </div>
+                  <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                    <TableExportButtons
+                      data={filteredData}
+                      columns={tableColumns}
+                      filename="Active_Patient_Registration_List"
+                      title={getTranslation("Active Patient Registration List / सक्रिय रोगी पंजीकरण सूची", lang)}
+                    />
                   </div>
                 </div>
                 {stillLoading ? (
@@ -1455,14 +1561,13 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
               <CardBody>
                 <div class="d-flex pb-2 justify-content-between">
                   <HeaderCard
-                    // title="All Registered Patient List"
                     title={getTranslation("All Registered Patient List/ सभी पंजीकृत रोगियों की सूची" , lang)}
                     className="p-0"
                     qweq
                   />
                 </div>
-                <div className="row pb-2">
-                  <div className="col-md-4">
+                <div className="row pb-3 align-items-center">
+                  <div className="col-md-5 col-12 mb-2 mb-md-0">
                     <InputGroup>
                       <Input
                         className="form-control"
@@ -1475,6 +1580,14 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         <i className="fa fa-search"></i>
                       </span>
                     </InputGroup>
+                  </div>
+                  <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                    <TableExportButtons
+                      data={filteredIPDData}
+                      columns={tableIPDColumns}
+                      filename="All_Registered_Patient_List"
+                      title={getTranslation("All Registered Patient List / सभी पंजीकृत रोगियों की सूची", lang)}
+                    />
                   </div>
                 </div>
                 {stillLoading ? (
@@ -1497,518 +1610,322 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
           </Col>
         </Row>
       </Container>
+
       <CommonModal
         isOpen={modal}
-        title={getTranslation("Patient Registration Form/रोगी पंजीकरण फॉर्म" , lang)}
+        title={getTranslation("Patient Registration Form/रोगी पंजीकरण फॉर्म", lang)}
         toggler={toggle}
-        maxWidth="1200px"
+        maxWidth="1100px"
       >
-        <div className="register__wrapper p-20">
+        <div className="p-3 p-md-4" style={{ backgroundColor: "#ffffff" }}>
+          <DraftNoticeBanner
+            draftTimestamp={draftTimestamp}
+            formKey="patient_registration"
+            targetId="new"
+            onDiscard={() => {
+              setFormData(initialFormData);
+              setDraftTimestamp(null);
+            }}
+          />
           <Form onSubmit={handleSubmit}>
-            <div className="row gap-3">
-              <div className="row">
-                {/* Date of Admission */}
-                <div className="col-md-6">
-                  <FormGroup className="form-group row">
-                    <Label className="col-sm-12 col-form-label col-xl-6">
-                      {/* {dateOfAdmission} */}
-                      <Translated text={dateOfAdmission} />
-                    </Label>
-                    <Col xl="5" sm="12">
-                      <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                        className="form-control digits"
-                        selected={
-                          formData.date_of_admission
-                            ? new Date(formData.date_of_admission)
-                            : null
-                        } // Make sure it's a valid Date object
-                        onChange={(date) =>
-                          handleDateChange("dateOfAdmission", date)
-                        }
-                        dateFormat="yyyy/MM/dd"
-                      />
-                    </Col>
-                  </FormGroup>
-                </div>
-
-                {/* Name */}
-                <div className="col-md-6">
-                  <FormGroup className="form-group row">
-                    <Label className="col-sm-12 col-form-label col-xl-6">
-                      {/* {patientName} */}
-                      <Translated text={patientName} />
-                    </Label>
-                    <Col xl="5" sm="12">
-                      <Input
-                        type="text"
-                        name="patientName"
-                        value={formData.patientName}
-                        onChange={handleChange}
-                        placeholder={getTranslation("Patient Name/मरीज़ का नाम",lang)}
-                      />
-                    </Col>
-                  </FormGroup>
-                </div>
-              </div>
-
-              <div className="row">
-                {/* Relative Name */}
-                <div className="col-md-6">
-                  <FormGroup className="form-group row">
-                    <Label className="col-sm-12 col-form-label col-xl-6">
-                      {/* {patientRelativeName} */}
-                      <Translated text={patientRelativeName} />
-                    </Label>
-                    <Col xl="5" sm="12">
-                      <Input
-                        type="text"
-                        name="patientRelativeName"
-                        value={formData.patientRelativeName}
-                        onChange={handleChange}
-                        placeholder={getTranslation("Patient Relative Name/मरीज़ का नाम",lang)}
-                      />
-                    </Col>
-                  </FormGroup>
-                </div>
-
-                {/* Gender */}
-                <div className="col-md-6">
-                <Translated text={patientSex} />
-                  {/* <Label>{patientSex}</Label> */}
-                  <div className="radio radio-primary d-flex gap-3">
-                    {["Male", "Female", "Other"].map((g) => (
-                      <div key={g}>
-                        <Input
-                          type="radio"
-                          id={`gender-${g}`}
-                          name="gender"
-                          value={g}
-                          checked={formData.gender === g}
-                          onChange={handleChange}
-                        />
-                        <Label for={`gender-${g}`}>{g}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Relation with patient */}
-              <div className="row">
-                <div className="col-md-6">
-                  <FormGroup className="form-group row">
-                    <Label className="col-sm-12 col-form-label col-xl-6">
-                      {getTranslation("Relation with Patient/रोगी से संबंध", lang)}
-                    </Label>
-                    <Col xl="5" sm="12">
-                      <Input
-                        type="text"
-                        name="relation_with_patient"
-                        value={formData.relation_with_patient}
-                        onChange={handleChange}
-                        placeholder={getTranslation("e.g. Brother, Father/जैसे भाई, पिता", lang)}
-                      />
-                    </Col>
-                  </FormGroup>
-                </div>
-              </div>
-
-              <div className="row">
-                <div className="col-md-6">
-                  {/* DOB */}
-                  <div className="col-md-12">
-                    <FormGroup className="form-group row">
-                      <Label className="col-sm-12 col-form-label col-xl-6">
-                      <Translated text={patientDateOfBirth} />
-                        {/* {patientDateOfBirth} */}
-                      </Label>
-                      <Col xl="5" sm="12">
-                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                          className="form-control digits"
-                          selected={
-                            formData.dob ? new Date(formData.dob) : null
-                          } // Make sure it's a valid Date object
-                          onChange={(date) => handleDateChange("dob", date)}
-                          dateFormat="yyyy/MM/dd"
-                        />
-                      </Col>
-                    </FormGroup>
-                  </div>
-                  {/* Phone */}
-                  <div className="col-md-12">
-                    <FormGroup className="form-group row">
-                      <Label className="col-sm-12 col-form-label col-xl-6">
-                        {/* {patientRelativePhoneNumber} */}
-                        <Translated text={patientRelativePhoneNumber} />
-                      </Label>
-                      <Col xl="5" sm="12">
-                        <Input
-                          type="text"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // Allow only numbers and max 10 digits
-                            if (/^\d{0,10}$/.test(value)) {
-                              setFormData({ ...formData, phone: value });
-                            }
-                          }}
-                          placeholder={getTranslation("Phone Number/फ़ोन नंबर",lang)}
-                          maxLength={10}
-                        />
-                        {formData.phone.length > 0 &&
-                          formData.phone.length !== 10 && (
-                            <small className="text-danger">
-                              {getTranslation("Phone number must be 10 digits./फ़ोन नंबर 10 अंकों का होना चाहिए।",lang)}
-                            </small>
-                          )}
-                      </Col>
-                    </FormGroup>
-                  </div>
-
-
-{/* Patient relative secondary mobile number */}
-                  <div className="col-md-12">
-                    <FormGroup className="form-group row">
-                      <Label className="col-sm-12 col-form-label col-xl-6">
-                        {/* {patientRelativePhoneNumber} */}
-                        <Translated text={patientRelativesecPhoneNumber} />
-                      </Label>
-                      <Col xl="5" sm="12">
-                        <Input
-                          type="text"
-                          name="secondary_phone"
-                          value={formData.secondary_phone}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            // Allow only numbers and max 10 digits
-                            if (/^\d{0,10}$/.test(value)) {
-                              setFormData({ ...formData, secondary_phone: value });
-                            }
-                          }}
-                          placeholder={getTranslation("Phone Number/फ़ोन नंबर",lang)}
-                          maxLength={10}
-                        />
-                        {formData.secondary_phone.length > 0 &&
-                          formData.secondary_phone.length !== 10 && (
-                            <small className="text-danger">
-                              {getTranslation("Phone number must be 10 digits./फ़ोन नंबर 10 अंकों का होना चाहिए।",lang)}
-                            </small>
-                          )}
-                      </Col>
-                    </FormGroup>
-                  </div>
-
-                  {/* Additional relative contacts (name + phone pairs) */}
-                  <div className="col-md-12">
-                    <Label>
-                      {getTranslation("Additional Relative Contacts/अतिरिक्त संबंधी संपर्क", lang)}
-                    </Label>
-                    {formData.relative_contacts.map((contact, index) => (
-                      <div className="d-flex gap-2 align-items-center mb-2" key={index}>
-                        <Input
-                          type="text"
-                          placeholder={getTranslation("Name/नाम", lang)}
-                          value={contact.name}
-                          onChange={(e) =>
-                            handleRelativeContactChange(index, "name", e.target.value)
-                          }
-                        />
-                        <Input
-                          type="text"
-                          placeholder={getTranslation("Phone/फ़ोन", lang)}
-                          value={contact.phone}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (/^\d{0,10}$/.test(value)) {
-                              handleRelativeContactChange(index, "phone", value);
-                            }
-                          }}
-                          maxLength={10}
-                        />
-                        {formData.relative_contacts.length > 1 && (
-                          <Button
-                            color="danger"
-                            type="button"
-                            size="sm"
-                            onClick={() => removeRelativeContact(index)}
-                          >
-                            {getTranslation("Remove/हटाएं", lang)}
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    <Button
-                      color="secondary"
-                      type="button"
-                      size="sm"
-                      className="mb-2"
-                      onClick={addRelativeContact}
-                    >
-                      {getTranslation("+ Add Contact/+ संपर्क जोड़ें", lang)}
-                    </Button>
-                  </div>
-
-                  {/* WhatsApp Option */}
-                  <div className="col-md-12">
-                  <Translated text={IspatientWhatsappNo} />
-                    {/* <Label>Is it WhatsApp?</Label> */}
-                    <div className="radio radio-primary d-flex gap-3">
-                      <Input
-                        type="radio"
-                        id="whatsappYes"
-                        name="isWhatsApp"
-                        value="yes"
-                        checked={formData.isWhatsApp}
-                        onChange={handleWhatsAppToggle}
-                      />
-                      <Label for="whatsappYes">{getTranslation("Yes/हाँ",lang)}</Label>
-
-                      <Input
-                        type="radio"
-                        id="whatsappNo"
-                        name="isWhatsApp"
-                        value="no"
-                        checked={!formData.isWhatsApp}
-                        onChange={handleWhatsAppToggle}
-                      />
-                      <Label for="whatsappNo">{getTranslation("No/नहीं",lang)}</Label>
-                    </div>
-                  </div>
-
-                  {/* WhatsApp Number */}
-                  {!formData.isWhatsApp && (
-                    <div className="col-md-12">
-                      <FormGroup className="form-group row">
-                        <Label className="col-sm-12 col-form-label col-xl-6">
-                           <Translated text={whatsAppNo} />
-                          {/* WhatsApp Number */}
-                        </Label>
-                        <Col xl="5" sm="12">
-                          <Input
-                            type="text"
-                            name="whatsapp_no"
-                            value={formData.whatsapp_no}
-                            onChange={handleChange}
-                            placeholder={getTranslation("Enter WhatsApp Number/WhatsApp नंबर डालें",lang)}
-                          />
-                        </Col>
-                      </FormGroup>
-                    </div>
-                  )}
-                </div>
-
-                <div className="col-md-6">
-                  {/* Email */}
-                  <div className="col-md-12">
-                    <FormGroup className="form-group row">
-                      <Label className="col-sm-12 col-form-label col-xl-6">
-                      <Translated text={patientRelativeEmailAddr} />
-                        {/* {patientRelativeEmailAddr} */}
-                      </Label>
-                      <Col xl="5" sm="12">
-                        <Input
-                          type="email"
-                          name="email"
-                          value={formData.email}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            setFormData({ ...formData, email: value });
-                            setEmailError(
-                              value &&
-                                !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value)
-                                ? "Please enter a valid email address"
-                                : ""
-                            );
-                          }}
-                          placeholder={getTranslation("Enter Email/ईमेल दर्ज करें",lang)}
-                        />
-                        {emailError && (
-                          <small className="text-danger">{emailError}</small>
-                        )}
-                      </Col>
-                    </FormGroup>
-                  </div>
-
-                  {/* Password */}
-                  <div className="col-md-12">
-                    <FormGroup className="form-group row">
-                      <Label className="col-sm-12 col-form-label col-xl-6">
-                      <Translated text={Password} />
-                        {/* {Password} */}
-                      </Label>
-                      <Col xl="5" sm="12">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                          <label htmlFor="password">{getTranslation("Password/पासवर्ड",lang)}</label>
-                          <svg
-                            className="pe-auto d-block"
-                            onClick={() => {
-                              const generatedPassword = generatePassword();
-                              setFormData({
-                                ...formData,
-                                password: generatedPassword,
-                              });
-                              validatePassword(generatedPassword);
-                            }}
-                            width="30px"
-                            height="30px"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              fill-rule="evenodd"
-                              clip-rule="evenodd"
-                              d="M15.0614 9.67972L16.4756 11.0939L17.8787 9.69083L16.4645 8.27662L15.0614 9.67972ZM16.4645 6.1553L20 9.69083L8.6863 21.0045L5.15076 17.469L16.4645 6.1553Z"
-                              fill="#1F2328"
-                            />
-                            <path
-                              fill-rule="evenodd"
-                              clip-rule="evenodd"
-                              d="M11.364 5.06066L9.59619 6.82843L8.53553 5.76777L10.3033 4L11.364 5.06066ZM6.76778 6.82842L5 5.06067L6.06066 4L7.82843 5.76776L6.76778 6.82842ZM10.3033 10.364L8.53553 8.5962L9.59619 7.53554L11.364 9.3033L10.3033 10.364ZM7.82843 8.5962L6.06066 10.364L5 9.3033L6.76777 7.53554L7.82843 8.5962Z"
-                              fill="#1F2328"
-                            />
-                          </svg>
-                        </div>
-
-                        <div className="position-relative">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            name="password"
-                            value={formData.password}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setFormData({ ...formData, password: value });
-                              validatePassword(value);
-                            }}
-                            placeholder={getTranslation("Enter Password/पास वर्ड दर्ज करें",lang)}
-                          />
-                          <span
-                            onClick={() => setShowPassword(!showPassword)}
-                            style={{
-                              position: "absolute",
-                              right: "10px",
-                              top: "50%",
-                              transform: "translateY(-50%)",
-                              cursor: "pointer",
-                              fontSize: "14px",
-                              color: "#007bff",
-                            }}
-                          >
-                            {showPassword ? "Hide" : "Show"}
-                          </span>
-                        </div>
-
-                        {passwordError && (
-                          <small className="text-danger">{passwordError}</small>
-                        )}
-                      </Col>
-                    </FormGroup>
-                  </div>
-
-                  {/* Role */}
-                  <div className="col-md-12">
-                    {/* <Label>User Role</Label> */}
-
-                    {/* Role while register */}
-                    <div className="form-group row mb-4 mt-3">
-                    <label
-                      className="col-sm-12 col-form-label col-xl-6 form-label"
-                      htmlFor="selectRole"
-                    >
-                      
-                      <Translated text={"Select Role/भूमिका चुनें"} />
-                    </label>
-                    <div className="col-sm-12 col-xl-5">
-                    <select
-                      className="form-select"
-                      aria-label="Select Role"
-                      name="is_role"
-                      value={formData.is_role}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          is_role: Number(e.target.value),
-                        })
-                      }
-                    >
-                      <option value="">{getTranslation("Select a role/एक भूमिका चुनें",lang)}</option>
-                      {/* <option value="1">SuperAdmin</option>
-                      <option value="2">BranchAdmin</option>
-                      <option value="3">BranchOperator</option> */}
-                      <option value="4">{getTranslation("Patient/मरीज़",lang)}</option>
-                    </select>
-                    </div>
-                    </div>
-                    {/* Read-only visible input showing text like "USER" */}
-                    <Input
-                      type="text"
-                      value="USER"
-                      readOnly
-                      style={{ position: "absolute", left: "-9999px" }}
-                    />
-                  </div>
-                   {/* Patient photo upload */}
-              <div className="col-md-12">
-              {getTranslation("Upload Patient Profile Image/रोगी प्रोफ़ाइल छवि अपलोड करें",lang)}
-              <div className="profile-upload">
-      {preview && (
-        <img
-          src={preview}
-          alt="Preview"
-          style={{
-            width: "120px",
-            height: "120px",
-            borderRadius: "50%",
-            objectFit: "cover",
-            marginBottom: "10px",
-          }}
-        />
-      )}
-
-      <Input
-        type="file"
-        accept="image/*"
-        onChange={handleImageChange}
-        className="form-control"
-      />
-
-      {error && <p style={{ color: "red" }}>{error}</p>}
-    </div>
-              </div>
-
-              {/* Patient admission form upload */}
-              <div className="col-md-12 mt-2">
-                {getTranslation("Upload Admission Form (PDF/Image)/प्रवेश फॉर्म अपलोड करें", lang)}
-                <div className="profile-upload">
-                  <Input
-                    type="file"
-                    accept="application/pdf,image/*"
-                    onChange={handleAdmissionFormChange}
-                    className="form-control"
-                  />
-                  {admissionFormName && (
-                    <small className="text-success d-block mt-1">
-                      {getTranslation("Selected file/चयनित फ़ाइल", lang)}: {admissionFormName}
-                    </small>
-                  )}
-                  {admissionFormError && (
-                    <p style={{ color: "red" }}>{admissionFormError}</p>
-                  )}
-                </div>
-              </div>
-                </div>
-              </div>
-
-
-<div className="row">
-              {/* Wards details */}
+            <div className="row g-3">
+              {/* Date of Admission */}
               <div className="col-md-6">
-                {/* <Label>{wardDetails}</Label> */}
-                <Translated text={wardDetails} />
-                <div className="radio radio-primary d-flex gap-3">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  <Translated text={dateOfAdmission} /> <span className="text-danger">*</span>
+                </Label>
+                <div>
+                  <DatePicker
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                    selected={safeDate(formData.date_of_admission)}
+                    onChange={(date) => handleDateChange("dateOfAdmission", date)}
+                    dateFormat="yyyy/MM/dd"
+                  />
+                </div>
+              </div>
+
+              {/* Patient Name */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  <Translated text={patientName} /> <span className="text-danger">*</span>
+                </Label>
+                <Input
+                  type="text"
+                  name="patientName"
+                  value={formData.patientName}
+                  onChange={handleChange}
+                  placeholder={getTranslation("Enter Patient Name / मरीज़ का नाम दर्ज करें", lang)}
+                  className="form-control"
+                  style={{ borderRadius: "8px", height: "40px" }}
+                />
+              </div>
+
+              {/* Patient Relative Name */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  <Translated text={patientRelativeName} /> <span className="text-danger">*</span>
+                </Label>
+                <Input
+                  type="text"
+                  name="patientRelativeName"
+                  value={formData.patientRelativeName}
+                  onChange={handleChange}
+                  placeholder={getTranslation("Enter Relative Name / रिश्तेदार का नाम दर्ज करें", lang)}
+                  className="form-control"
+                  style={{ borderRadius: "8px", height: "40px" }}
+                />
+              </div>
+
+              {/* Gender */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1 d-block" style={{ fontSize: "13px" }}>
+                  <Translated text={patientSex} /> <span className="text-danger">*</span>
+                </Label>
+                <div className="d-flex align-items-center gap-3" style={{ height: "40px" }}>
+                  {["Male", "Female", "Other"].map((g) => (
+                    <div key={g} className="form-check form-check-inline m-0">
+                      <Input
+                        type="radio"
+                        id={`gender-${g}`}
+                        name="gender"
+                        value={g}
+                        checked={formData.gender === g}
+                        onChange={handleChange}
+                        className="form-check-input"
+                      />
+                      <Label for={`gender-${g}`} className="form-check-label ms-1" style={{ cursor: "pointer", fontSize: "14px" }}>
+                        {g}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Relation with Patient */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  {getTranslation("Relation with Patient / रोगी से संबंध", lang)} <span className="text-danger">*</span>
+                </Label>
+                <select
+                  className="form-select"
+                  name="relation_with_patient"
+                  value={formData.relation_with_patient}
+                  onChange={handleChange}
+                  style={{ borderRadius: "8px", height: "40px", fontSize: "13.5px" }}
+                >
+                  <option value="">{getTranslation("Select Relation / संबंध चुनें", lang)}</option>
+                  <option value="Father">{getTranslation("Father / पिता", lang)}</option>
+                  <option value="Mother">{getTranslation("Mother / माता", lang)}</option>
+                  <option value="Brother">{getTranslation("Brother / भाई", lang)}</option>
+                  <option value="Sister">{getTranslation("Sister / बहन", lang)}</option>
+                  <option value="Spouse">{getTranslation("Spouse (Husband/Wife) / पति/पत्नी", lang)}</option>
+                  <option value="Son">{getTranslation("Son / बेटा", lang)}</option>
+                  <option value="Daughter">{getTranslation("Daughter / बेटी", lang)}</option>
+                  <option value="Friend">{getTranslation("Friend / मित्र", lang)}</option>
+                  <option value="Guardian">{getTranslation("Guardian / अभिभावक", lang)}</option>
+                  <option value="Uncle">{getTranslation("Uncle / चाचा/मामा", lang)}</option>
+                  <option value="Aunt">{getTranslation("Aunt / चाची/मामी", lang)}</option>
+                  <option value="Cousin">{getTranslation("Cousin / चचेरा/ममेरा भाई/बहन", lang)}</option>
+                  <option value="Self">{getTranslation("Self / स्वयं", lang)}</option>
+                  <option value="Other Relative">{getTranslation("Other Relative / अन्य रिश्तेदार", lang)}</option>
+                  <option value="Other">{getTranslation("Other / अन्य", lang)}</option>
+                </select>
+              </div>
+
+              {/* DOB */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  <Translated text={patientDateOfBirth} /> <span className="text-danger">*</span>
+                </Label>
+                <div>
+                  <DatePicker
+                    showMonthDropdown
+                    showYearDropdown
+                    dropdownMode="select"
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                    selected={safeDate(formData.dob)}
+                    onChange={(date) => handleDateChange("dob", date)}
+                    dateFormat="yyyy/MM/dd"
+                  />
+                </div>
+              </div>
+
+              {/* Relative Email (Optional) */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  <Translated text={patientRelativeEmailAddr} />
+                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>({getTranslation("Optional / वैकल्पिक", lang)})</span>
+                </Label>
+                <Input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, email: value });
+                    setEmailError(
+                      value &&
+                        !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value)
+                        ? "Please enter a valid email address"
+                        : ""
+                    );
+                  }}
+                  placeholder={getTranslation("Enter Email Address / ईमेल पता दर्ज करें", lang)}
+                  className="form-control"
+                  style={{ borderRadius: "8px", height: "40px" }}
+                />
+                {emailError && (
+                  <small className="text-danger d-block mt-1">{emailError}</small>
+                )}
+              </div>
+
+              {/* Primary Phone */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  <Translated text={patientRelativePhoneNumber} /> <span className="text-danger">*</span>
+                </Label>
+                <Input
+                  type="text"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^\d{0,10}$/.test(value)) {
+                      setFormData({ ...formData, phone: value });
+                    }
+                  }}
+                  placeholder={getTranslation("Enter 10-digit Phone Number / 10 अंकों का फोन नंबर दर्ज करें", lang)}
+                  maxLength={10}
+                  className="form-control"
+                  style={{ borderRadius: "8px", height: "40px" }}
+                />
+                {formData.phone.length > 0 && formData.phone.length !== 10 && (
+                  <small className="text-danger d-block mt-1">
+                    {getTranslation("Phone number must be 10 digits. / फ़ोन नंबर 10 अंकों का होना चाहिए।", lang)}
+                  </small>
+                )}
+              </div>
+
+              {/* Mobile number for WhatsApp/SMS communication (Manual Input) */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  {getTranslation("Mobile number for WhatsApp/SMS communication / व्हाट्सएप/एसएमएस संचार के लिए मोबाइल नंबर", lang)} <span className="text-danger">*</span>
+                </Label>
+                <Input
+                  type="text"
+                  name="whatsapp_no"
+                  value={formData.whatsapp_no}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^\d{0,10}$/.test(value)) {
+                      setFormData((prev) => ({ ...prev, whatsapp_no: value }));
+                    }
+                  }}
+                  placeholder={getTranslation("Enter 10-digit WhatsApp/SMS Number / 10 अंकों का व्हाट्सएप/एसएमएस नंबर दर्ज करें", lang)}
+                  maxLength={10}
+                  className="form-control"
+                  style={{ borderRadius: "8px", height: "40px" }}
+                />
+                {formData.whatsapp_no.length > 0 && formData.whatsapp_no.length !== 10 && (
+                  <small className="text-danger d-block mt-1">
+                    {getTranslation("WhatsApp/SMS number must be 10 digits. / व्हाट्सएप/एसएमएस नंबर 10 अंकों का होना चाहिए।", lang)}
+                  </small>
+                )}
+              </div>
+
+              {/* Password */}
+              <div className="col-md-6">
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                    <Translated text={Password} /> <span className="text-danger">*</span>
+                  </Label>
+                  <span
+                    className="text-primary d-inline-flex align-items-center gap-1"
+                    style={{ fontSize: "12px", cursor: "pointer", fontWeight: "500" }}
+                    onClick={() => {
+                      const generatedPassword = generatePassword();
+                      setFormData((prev) => ({
+                        ...prev,
+                        password: generatedPassword,
+                      }));
+                      setPasswordError("");
+                    }}
+                    title="Generate Password"
+                  >
+                    ✨ {getTranslation("Generate / बनाएं", lang)}
+                  </span>
+                </div>
+                <div className="position-relative">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData({ ...formData, password: value });
+                      validatePassword(value);
+                    }}
+                    placeholder={getTranslation("Enter Password / पासवर्ड दर्ज करें", lang)}
+                    className="form-control pe-5"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                  <span
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      cursor: "pointer",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      color: "#64748b",
+                    }}
+                  >
+                    {showPassword ? "Hide" : "Show"}
+                  </span>
+                </div>
+                {passwordError && (
+                  <small className="text-danger d-block mt-1">{passwordError}</small>
+                )}
+              </div>
+
+              {/* Secondary Phone (Optional) */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  <Translated text={patientRelativesecPhoneNumber} />
+                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>({getTranslation("Optional / वैकल्पिक", lang)})</span>
+                </Label>
+                <Input
+                  type="text"
+                  name="secondary_phone"
+                  value={formData.secondary_phone}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^\d{0,10}$/.test(value)) {
+                      setFormData({ ...formData, secondary_phone: value });
+                    }
+                  }}
+                  placeholder={getTranslation("Secondary Phone Number / द्वितीयक फ़ोन नंबर", lang)}
+                  maxLength={10}
+                  className="form-control"
+                  style={{ borderRadius: "8px", height: "40px" }}
+                />
+              </div>
+
+              {/* Wards Details */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1 d-block" style={{ fontSize: "13px" }}>
+                  <Translated text={wardDetails} /> <span className="text-danger">*</span>
+                </Label>
+                <div className="d-flex align-items-center gap-3" style={{ height: "40px" }}>
                   {wardOptions.map((option) => (
-                    <div key={option.ward_type_id}>
+                    <div key={option.ward_type_id} className="form-check form-check-inline m-0">
                       <Input
                         type="radio"
                         id={`wards-${option.ward_type_id}`}
@@ -2022,8 +1939,9 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                             ward_name: option.ward_name,
                           }))
                         }
+                        className="form-check-input"
                       />
-                      <Label for={`wards-${option.ward_type_id}`}>
+                      <Label for={`wards-${option.ward_type_id}`} className="form-check-label ms-1" style={{ cursor: "pointer", fontSize: "14px" }}>
                         {option.ward_name}
                       </Label>
                     </div>
@@ -2031,668 +1949,724 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
-             
+              {/* Patient Photo Upload with Camera Icon */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  {getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि", lang)}
+                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>({getTranslation("Optional / वैकल्पिक", lang)})</span>
+                </Label>
+                <div className="d-flex align-items-center gap-2">
+                  {preview && (
+                    <img
+                      src={preview}
+                      alt="Preview"
+                      style={{
+                        width: "42px",
+                        height: "42px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                        border: "2px solid #e2e8f0",
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  <div className="position-relative flex-grow-1">
+                    <Input
+                      id="patientPhotoInput"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleImageChange}
+                      className="form-control"
+                      style={{ borderRadius: "8px", height: "40px", paddingRight: "40px" }}
+                    />
+                    <label
+                      htmlFor="patientPhotoInput"
+                      className="position-absolute end-0 top-50 translate-middle-y me-2 mb-0 d-flex align-items-center justify-content-center"
+                      style={{
+                        cursor: "pointer",
+                        width: "30px",
+                        height: "30px",
+                        borderRadius: "6px",
+                        background: "#f1f5f9",
+                        border: "1px solid #cbd5e1",
+                        fontSize: "14px",
+                      }}
+                      title={getTranslation("Take or choose photo / फ़ोटो लें या चुनें", lang)}
+                    >
+                      📷
+                    </label>
+                  </div>
+                </div>
+                {error && <small className="text-danger d-block mt-1">{error}</small>}
               </div>
 
-<div className="row">
+              {/* Admission Form Upload with Camera Icon */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  {getTranslation("Upload Admission Form (PDF / Image) / प्रवेश फॉर्म अपलोड करें", lang)}
+                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>({getTranslation("Optional / वैकल्पिक", lang)})</span>
+                </Label>
+                <div className="position-relative">
+                  <Input
+                    id="admissionFormInput"
+                    type="file"
+                    accept="application/pdf,image/*"
+                    capture="environment"
+                    onChange={handleAdmissionFormChange}
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px", paddingRight: "40px" }}
+                  />
+                  <label
+                    htmlFor="admissionFormInput"
+                    className="position-absolute end-0 top-50 translate-middle-y me-2 mb-0 d-flex align-items-center justify-content-center"
+                    style={{
+                      cursor: "pointer",
+                      width: "30px",
+                      height: "30px",
+                      borderRadius: "6px",
+                      background: "#f1f5f9",
+                      border: "1px solid #cbd5e1",
+                      fontSize: "14px",
+                    }}
+                    title={getTranslation("Capture or select document / दस्तावेज़ कैप्चर करें या चुनें", lang)}
+                  >
+                    📷
+                  </label>
+                </div>
+                {admissionFormName && (
+                  <small className="text-success d-block mt-1">
+                    ✓ {getTranslation("Selected file / चयनित फ़ाइल", lang)}: {admissionFormName}
+                  </small>
+                )}
+                {admissionFormError && (
+                  <small className="text-danger d-block mt-1">{admissionFormError}</small>
+                )}
+              </div>
+
+              {/* Additional Relative Contacts */}
+              <div className="col-12">
+                <div className="p-3 bg-light rounded-3 border" style={{ borderRadius: "10px" }}>
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                      {getTranslation("Additional Relative Contacts / अतिरिक्त संबंधी संपर्क", lang)}
+                      <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>({getTranslation("Optional / वैकल्पिक", lang)})</span>
+                    </Label>
+                    <Button
+                      color="secondary"
+                      type="button"
+                      size="sm"
+                      onClick={addRelativeContact}
+                      style={{ borderRadius: "6px", fontSize: "12px" }}
+                    >
+                      {getTranslation("+ Add Contact / + संपर्क जोड़ें", lang)}
+                    </Button>
+                  </div>
+
+                  {formData.relative_contacts.map((contact, index) => (
+                    <div className="row g-2 align-items-center mb-2" key={index}>
+                      <div className="col-sm-5">
+                        <Input
+                          type="text"
+                          placeholder={getTranslation("Contact Name / संपर्क का नाम", lang)}
+                          value={contact.name}
+                          onChange={(e) => handleRelativeContactChange(index, "name", e.target.value)}
+                          className="form-control"
+                          style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
+                        />
+                      </div>
+                      <div className="col-sm-5">
+                        <Input
+                          type="text"
+                          placeholder={getTranslation("Phone Number / फ़ोन नंबर", lang)}
+                          value={contact.phone}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (/^\d{0,10}$/.test(value)) {
+                              handleRelativeContactChange(index, "phone", value);
+                            }
+                          }}
+                          maxLength={10}
+                          className="form-control"
+                          style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
+                        />
+                      </div>
+                      <div className="col-sm-2">
+                        {formData.relative_contacts.length > 1 && (
+                          <Button
+                            color="danger"
+                            outline
+                            type="button"
+                            size="sm"
+                            className="w-100"
+                            onClick={() => removeRelativeContact(index)}
+                            style={{ borderRadius: "6px", height: "36px" }}
+                          >
+                            {getTranslation("Remove / हटाएं", lang)}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Patient Relative Address */}
               <div className="col-md-6">
-                {/* <FormGroup>
-                <Translated text={pateintAddress} />
-                  <Label>{pateintAddress}</Label>
-                  <Input
-                    type="textarea"
-                    rows="3"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                  />
-                </FormGroup> */}
-<VoiceTextarea
-    label={<Translated text={pateintRelativeAddress} />}
-    name="relativeaddress"
-    value={formData.relativeaddress}
-    onChange={handleChange}
-  />
-
+                <VoiceTextarea
+                  label={
+                    <span className="fw-semibold text-dark" style={{ fontSize: "13px" }}>
+                      <Translated text={pateintRelativeAddress} /> <span className="text-danger">*</span>
+                    </span>
+                  }
+                  name="relativeaddress"
+                  value={formData.relativeaddress}
+                  onChange={handleChange}
+                />
               </div>
 
-            
-
-               {/* Patient Address */}
-               <div className="col-md-6">
-                {/* <FormGroup>
-                <Translated text={pateintAddress} />
-                  <Label>{pateintAddress}</Label>
-                  <Input
-                    type="textarea"
-                    rows="3"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                  />
-                </FormGroup> */}
-               <VoiceTextarea
-    label={<Translated text={pateintAddress} />}
-    name="address"
-    value={formData.address}
-    onChange={(e) => {
-      handleChange(e);
-      if (sameAddress) {
-        setSameAddress(false); // user edits manually → uncheck automatically
-      }
-    }}
-  />
-
-              </div>
-              <div className="col-md-12 mt-2">
-  <label style={{ cursor: "pointer" }}>
-    <input
-      type="checkbox"
-      checked={sameAddress}
-      onChange={(e) => {
-        setSameAddress(e.target.checked);
-        if (e.target.checked) {
-          setFormData({
-            ...formData,
-            address: formData.relativeaddress,
-          });
-        }
-      }}
-      style={{ marginRight: "6px" }}
-    />
-    <Translated text="Same as Patient Relative Address" />
-  </label>
-</div>
-
-              </div>
-
-              {/* Submit */}
+              {/* Patient Address */}
               <div className="col-md-6">
-                <Button color="primary" type="submit" disabled={isLoading}>
-                  {isLoading ? (
-                    <div
-                      className="spinner-border spinner-border-sm"
-                      role="status"
-                    >
-                      <span className="sr-only">{getTranslation("Loading Data.../डेटा लोड हो रहा है...",lang)}</span>
-                    </div>
-                  ) : (
-                    getTranslation("Patient Register / रोगी रजिस्टर",lang)
-                  )}
-                </Button>
+                <VoiceTextarea
+                  label={
+                    <span className="fw-semibold text-dark" style={{ fontSize: "13px" }}>
+                      <Translated text={pateintAddress} /> <span className="text-danger">*</span>
+                    </span>
+                  }
+                  name="address"
+                  value={formData.address}
+                  onChange={(e) => {
+                    handleChange(e);
+                    if (sameAddress) {
+                      setSameAddress(false);
+                    }
+                  }}
+                />
               </div>
+
+              {/* Same Address Checkbox */}
+              <div className="col-12">
+                <div className="form-check">
+                  <Input
+                    type="checkbox"
+                    id="sameAddressCheck"
+                    className="form-check-input"
+                    checked={sameAddress}
+                    onChange={(e) => {
+                      setSameAddress(e.target.checked);
+                      if (e.target.checked) {
+                        setFormData({
+                          ...formData,
+                          address: formData.relativeaddress,
+                        });
+                      }
+                    }}
+                  />
+                  <Label for="sameAddressCheck" className="form-check-label ms-1" style={{ cursor: "pointer", fontSize: "13.5px" }}>
+                    <Translated text="Same as Patient Relative Address" />
+                  </Label>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer Actions */}
+            <div className="d-flex justify-content-end align-items-center gap-2 pt-4 mt-4 border-top flex-wrap">
+              <Button
+                color="light"
+                type="button"
+                className="border fw-semibold px-4"
+                onClick={toggle}
+                style={{ borderRadius: "8px" }}
+              >
+                {getTranslation("Cancel / रद्द करें", lang)}
+              </Button>
+
+              <SaveDraftButton
+                formKey="patient_registration"
+                targetId="new"
+                formData={formData}
+                onDraftSaved={() => setDraftTimestamp(Date.now())}
+                style={{ height: "40px", padding: "8px 18px", borderRadius: "8px" }}
+              />
+
+              <Button
+                color="primary"
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  borderRadius: "8px",
+                  backgroundColor: "#d56337",
+                  borderColor: "#d56337",
+                  fontWeight: "600",
+                  padding: "8px 24px",
+                  minWidth: "160px",
+                }}
+              >
+                {isLoading ? (
+                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                ) : (
+                  getTranslation("Patient Register / रोगी रजिस्टर", lang)
+                )}
+              </Button>
             </div>
           </Form>
         </div>
       </CommonModal>
 
-      {/* View user details by id modal */}
-      <CommonModal
+      {/* Modern View User Details Modal */}
+      <UserDetailsModal
         isOpen={viewModal}
-        title={getTranslation("Patient Register View Data / रोगी रजिस्टर डेटा देखें" , lang)}
-        
+        userId={selectedUserId}
+        user={selectedUser}
         toggler={closeUserViewModal}
-        maxWidth="1200px"
-      >
-    <div className="table-responsive p-4 print-area" ref={pdfRef}>
-      <h4
-        style={{
-          textAlign: "center",
-          textDecoration: "underline",
-          padding: "20px 0",
-        }}
-      >
-       {getTranslation(h4Text, lang)}
-      </h4>
+      />
 
-      <Table size="sm" className="table-auto table-bordered">
-        <tbody style={{ fontSize: "14px" }}>
-          {isLoading ? (
-            <tr>
-              <td colSpan="2" className="text-center">
-                <div className="loader-box">
-                  <Spinner
-                    className={selectedSpinner?.spinnerClass || "spinner-border"}
+      {/* Update form data modal */}
+      <CommonModal
+        isOpen={showEditModal}
+        title={getTranslation("Update Patient Registration Data / रोगी पंजीकरण डेटा अपडेट करें", lang)}
+        toggler={closeUserViewModal}
+        maxWidth="1100px"
+      >
+        {showEditModal && (
+          <div className="p-3 p-md-4" style={{ backgroundColor: "#ffffff" }}>
+            <Form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdateSubmit();
+              }}
+            >
+              <div className="row g-3">
+                {/* Patient Name */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Patient Name / रोगी का नाम", lang)}
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder={getTranslation("Name / नाम", lang)}
+                    value={editData.name}
+                    onChange={(e) =>
+                      setEditData({ ...editData, name: e.target.value })
+                    }
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
                   />
                 </div>
-              </td>
-            </tr>
-          ) : selectedUser && typeof selectedUser === "object" ? (
-            <>
-              {selectedUser.profile_pic && (
-                <tr>
-                  <th className="text-start p-3">{getTranslation("Patient Photo/रोगी की तस्वीर", lang)}</th>
-                  <td className="border p-3">
-                    <img
-                      src={selectedUser.profile_pic}
-                      alt="Profile"
-                      style={{
-                        width: "90px",
-                        height: "90px",
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                      }}
-                    />
-                  </td>
-                </tr>
-              )}
-              <tr>
-                <th className="text-start p-3">{getTranslation("Patient Name/रोगी का नाम",lang)}</th>
-                <td className="border p-3">{selectedUser.name}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient Email/रोगी का ईमेल", lang)}</th>
-                <td className="border p-3">{selectedUser.email}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient Phone/रोगी का फोन", lang)}</th>
-                <td className="border p-3">{selectedUser.phone}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient Secondary Phone/रोगी का द्वितीयक फोन", lang)}</th>
-                <td className="border p-3">{selectedUser.secondary_phone}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient WhatsApp No/रोगी का व्हाट्सएप नंबर", lang)}</th>
-                <td className="border p-3">{selectedUser.whatsapp_no}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient Date of Birth/रोगी का जन्म तिथि", lang)}</th>
-                <td className="border p-3">
-                  {selectedUser.dob
-                    ? new Date(selectedUser.dob).toLocaleDateString()
-                    : ""}
-                </td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient Gender/रोगी का लिंग", lang)}</th>
-                <td className="border p-3">{selectedUser.gender}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient Address/रोगी का पता", lang)}</th>
-                <td className="border p-3">{selectedUser.address}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient Relative Name/रोगी का संबंधी का नाम", lang)}</th>
-                <td className="border p-3">{selectedUser.relative_name}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Relation with Patient/रोगी से संबंध", lang)}</th>
-                <td className="border p-3">{selectedUser.relation_with_patient}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient Relative Address/रोगी के संबंधी का पता", lang)}</th>
-                <td className="border p-3">{selectedUser.relative_address}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Additional Relative Contacts/अतिरिक्त संबंधी संपर्क", lang)}</th>
-                <td className="border p-3">
-                  {Array.isArray(selectedUser.relative_contacts) &&
-                  selectedUser.relative_contacts.length > 0 ? (
-                    <ul className="mb-0 ps-3">
-                      {selectedUser.relative_contacts.map((c, i) => (
-                        <li key={i}>
-                          {c.name} {c.phone ? `- ${c.phone}` : ""}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    "N/A"
-                  )}
-                </td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient Date of Admission/रोगी का प्रवेश की तिथि", lang)}</th>
-                <td className="border p-3">
-                  {selectedUser.date_of_admission
-                    ? new Date(selectedUser.date_of_admission).toLocaleDateString()
-                    : ""}
-                </td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient Ward Name/रोगी का वार्ड का नाम", lang)}</th>
-                <td className="border p-3">{selectedUser.ward_name || "N/A"}</td>
-              </tr>
-              <tr>
-              <th className="text-start p-3">{getTranslation("Patient role/रोगी की भूमिका", lang)}</th>
-                <td className="border p-3">
-                  {{
-                    1: "SuperAdmin",
-                    2: "BranchAdmin",
-                    3: "BranchOperator",
-                    4: "Patient",
-                  }[selectedUser.isRole] || "N/A"}
-                </td>
-              </tr>
-              {(selectedUser.admission_form_url || selectedUser.admission_form) && (
-                <tr>
-                  <th className="text-start p-3">{getTranslation("Admission Form/प्रवेश फॉर्म", lang)}</th>
-                  <td className="border p-3">
-                    <a
-                      href={selectedUser.admission_form_url || selectedUser.admission_form}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {getTranslation("View File/फ़ाइल देखें", lang)}
-                    </a>
-                  </td>
-                </tr>
-              )}
-            </>
-          ) : (
-            <tr>
-              <td colSpan="2" className="text-center">
-                {getTranslation("No data available/कोई डेटा मौजूद नहीं",lang)}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
-    </div>
 
-    <div style={{ margin: "0 20px 20px 20px" }}>
-    <button
-      disabled={pfaDownload}
-      id="download-btn"
-      className="btn btn-primary"
-      onClick={handleDownloadPDF}
-    >
-      {pfaDownload
-        ? getTranslation("Your patient report is being downloaded... / आपका patient रिपोर्ट डाउनलोड हो रहा है...", lang)
-        : getTranslation("Download patient registered report/रोगी पंजीकृत रिपोर्ट डाउनलोड करें",lang)}
-    </button>
+                {/* Relative Name */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Patient Relative Name / रोगी का संबंधी का नाम", lang)}
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder={getTranslation("Relative Name / रिश्तेदार का नाम", lang)}
+                    value={editData.patientRelativeName}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        patientRelativeName: e.target.value,
+                      })
+                    }
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
 
-    <button
-      id="download-btn"
-      className="btn btn-primary mx-3"
-      onClick={handlePrint}
-    >
-       {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-    </button>
-  </div>
+                {/* Relation with Patient */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Relation with Patient / रोगी से संबंध", lang)}
+                  </Label>
+                  <select
+                    className="form-select"
+                    name="relation_with_patient"
+                    value={editData.relation_with_patient}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        relation_with_patient: e.target.value,
+                      })
+                    }
+                    style={{ borderRadius: "8px", height: "40px", fontSize: "13.5px" }}
+                  >
+                    <option value="">{getTranslation("Select Relation / संबंध चुनें", lang)}</option>
+                    <option value="Father">{getTranslation("Father / पिता", lang)}</option>
+                    <option value="Mother">{getTranslation("Mother / माता", lang)}</option>
+                    <option value="Brother">{getTranslation("Brother / भाई", lang)}</option>
+                    <option value="Sister">{getTranslation("Sister / बहन", lang)}</option>
+                    <option value="Spouse">{getTranslation("Spouse (Husband/Wife) / पति/पत्नी", lang)}</option>
+                    <option value="Son">{getTranslation("Son / बेटा", lang)}</option>
+                    <option value="Daughter">{getTranslation("Daughter / बेटी", lang)}</option>
+                    <option value="Friend">{getTranslation("Friend / मित्र", lang)}</option>
+                    <option value="Guardian">{getTranslation("Guardian / अभिभावक", lang)}</option>
+                    <option value="Uncle">{getTranslation("Uncle / चाचा/मामा", lang)}</option>
+                    <option value="Aunt">{getTranslation("Aunt / चाची/मामी", lang)}</option>
+                    <option value="Cousin">{getTranslation("Cousin / चचेरा/ममेरा भाई/बहन", lang)}</option>
+                    <option value="Self">{getTranslation("Self / स्वयं", lang)}</option>
+                    <option value="Other Relative">{getTranslation("Other Relative / अन्य रिश्तेदार", lang)}</option>
+                    <option value="Other">{getTranslation("Other / अन्य", lang)}</option>
+                  </select>
+                </div>
 
-      </CommonModal>
-
-      {/* Update form data JSX code start */}
-       <CommonModal
-              isOpen={showEditModal}
-              // title={"Update Patient Registration Data/रोगी पंजीकरण डेटा अपडेट करें"}
-              title={getTranslation("Update Patient Registration Data/रोगी पंजीकरण डेटा अपडेट करें",lang)}
-              toggler={closeUserViewModal}
-              maxWidth="1200px"
-            >
-              {showEditModal && (
-                <div className="modal-overlay">
-                  <div className="modal-content border-0">
-                    <div className="row pb-3 px-3">
-                      <Form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          handleUpdateSubmit();
-                        }}
-                      >
-                        <div className="row pt-4">
-                          <div className="col-md-6">
-                            <Label>{getTranslation("Patient Name/रोगी का नाम",lang)}</Label>
-                            <Input
-                              type="text"
-                              placeholder={getTranslation("Name/नाम",lang)}
-                              value={editData.name}
-                              onChange={(e) =>
-                                setEditData({ ...editData, name: e.target.value })
-                              }
-                            />
-                          </div>
-                          <div className="col-md-6">
-                            <Label>{getTranslation("Patient Relative Name/रोगी का संबंधी का नाम",lang)}</Label>
-                            <Input
-                              type="text"
-                              placeholder={getTranslation("Relative Name/रिश्तेदार का नाम",lang)}
-                              value={editData.patientRelativeName}
-                              onChange={(e) =>
-                                setEditData({
-                                  ...editData,
-                                  patientRelativeName: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-                        </div>
-                        <br />
-      
-                        <div className="row">
-                          <div className="col-md-6">
-                            <Label>{getTranslation("Relation with Patient/रोगी से संबंध", lang)}</Label>
-                            <Input
-                              type="text"
-                              placeholder={getTranslation("e.g. Brother, Father/जैसे भाई, पिता", lang)}
-                              value={editData.relation_with_patient}
-                              onChange={(e) =>
-                                setEditData({
-                                  ...editData,
-                                  relation_with_patient: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-                        </div>
-                        <br />
-      
-                        <div className="form-group col-md-6">
-                          <Label>{getTranslation("Patient Gender/रोगी का लिंग",lang)}</Label>
-                          <div className="radio radio-primary d-flex gap-3">
-                            {["Male", "Female", "Other"].map((g) => (
-                              <div key={g}>
-                                <Input
-                                  className="radio_animated"
-                                  type="radio"
-                                  id={`gender-${g}`}
-                                  name="gender"
-                                  value={g}
-                                  checked={editData.gender === g}
-                                  onChange={(e) =>
-                                    setEditData({
-                                      ...editData,
-                                      gender: e.target.value,
-                                    })
-                                  }
-                                />
-                                <Label htmlFor={`gender-${g}`}>{g}</Label>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-      
-                        <div className="row align-items-baseline">
-                          <div className="col-md-4">
-                            <Label>{getTranslation("Patient Phone/मरीज़ का फ़ोन",lang)}</Label>
-                            <Input
-                              type="text"
-                              placeholder={getTranslation("Phone/फ़ोन",lang)}
-                              value={editData.phone}
-                              onChange={(e) => {
-                                const newPhone = e.target.value;
-                                setEditData((prev) => ({
-                                  ...prev,
-                                  phone: newPhone,
-                                  whatsapp_no: prev.isWhatsApp
-                                    ? newPhone
-                                    : prev.whatsapp_no,
-                                }));
-                              }}
-                            />
-                          </div>
-                          <div className="col-md-4">
-                            <Label>{getTranslation("Patient Secondary Phone/रोगी का द्वितीयक फोन", lang)}</Label>
-                            <Input
-                              type="text"
-                              placeholder={getTranslation("Secondary Phone/द्वितीयक फोन", lang)}
-                              value={editData.secondary_phone}
-                              onChange={(e) =>
-                                setEditData({
-                                  ...editData,
-                                  secondary_phone: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-                          <div className="col-md-3">
-                            <Label>
-                              <Input
-                                className="checkbox_animated"
-                                type="checkbox"
-                                checked={editData.isWhatsApp}
-                                onChange={(e) => {
-                                  const isChecked = e.target.checked;
-                                  setEditData((prev) => ({
-                                    ...prev,
-                                    isWhatsApp: isChecked,
-                                    whatsapp_no: isChecked ? prev.phone : "",
-                                  }));
-                                }}
-                              />
-                              {getTranslation("Patient Is WhatsApp?/क्या मरीज़ व्हाट्सएप्प है?",lang)}
-                            </Label>
-                          </div>
-                          <div className="col-md-5">
-                            <Label>{getTranslation("Patient WhatsApp No./मरीज़ का व्हाट्सएप नंबर",lang)}</Label>
-                            <Input
-                              type="text"
-                              placeholder={getTranslation("WhatsApp No./व्हाट्सएप नंबर.",lang)}
-                              value={editData.whatsapp_no}
-                              onChange={(e) =>
-                                setEditData({
-                                  ...editData,
-                                  whatsapp_no: e.target.value,
-                                })
-                              }
-                              disabled={editData.isWhatsApp}
-                            />
-                          </div>
-                        </div>
-                        <br />
-      
-                        <div className="row">
-                          <div className="col-md-6">
-                            <Label>{getTranslation("Patient Email/रोगी का ईमेल",lang)}</Label>
-                            <Input
-                              type="email"
-                              placeholder={getTranslation("Email/ईमेल",lang)}
-                              value={editData.email}
-                              onChange={(e) =>
-                                setEditData({ ...editData, email: e.target.value })
-                              }
-                            />
-                          </div>
-                          <div className="col-md-6 d-flex align-items-end gap-4">
-                            <Label>{getTranslation("Patient Date of Birth/रोगी की जन्मतिथि",lang)}</Label>
-                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                              className="form-control"
-                              selected={
-                                editData.dob instanceof Date && !isNaN(editData.dob)
-                                  ? editData.dob
-                                  : null
-                              }
-                              onChange={(date) =>
-                                setEditData({ ...editData, dob: date })
-                              }
-                            />
-                          </div>
-                        </div>
-                        <br />
-      
-                        <div className="row">
-                          <div className="col-md-6">
-                            <Label>{getTranslation("Update Patient Profile Image/रोगी प्रोफ़ाइल छवि अपडेट करें", lang)}</Label>
-                            {editData.profile_pic_url && (
-                              <div className="mb-2">
-                                <img
-                                  src={editData.profile_pic_url}
-                                  alt="Patient profile"
-                                  style={{
-                                    width: "90px",
-                                    height: "90px",
-                                    borderRadius: "50%",
-                                    objectFit: "cover",
-                                  }}
-                                />
-                              </div>
-                            )}
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) =>
-                                setEditData({
-                                  ...editData,
-                                  profile_pic: e.target.files?.[0] || null,
-                                })
-                              }
-                            />
-                            {editData.profile_pic && (
-                              <small className="text-success d-block mt-1">
-                                {getTranslation("Selected file/चयनित फ़ाइल", lang)}: {editData.profile_pic.name}
-                              </small>
-                            )}
-                          </div>
-      
-                          <div className="col-md-6">
-                            <Label>{getTranslation("Update Admission Form (PDF/Image)/प्रवेश फॉर्म अपडेट करें", lang)}</Label>
-                            {editData.admission_form_url && (
-                              <div className="mb-2">
-                                <a
-                                  href={editData.admission_form_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  {getTranslation("View Current File/वर्तमान फ़ाइल देखें", lang)}
-                                </a>
-                              </div>
-                            )}
-                            <Input
-                              type="file"
-                              accept="application/pdf,image/*"
-                              onChange={(e) =>
-                                setEditData({
-                                  ...editData,
-                                  admission_form_file: e.target.files?.[0] || null,
-                                })
-                              }
-                            />
-                            {editData.admission_form_file && (
-                              <small className="text-success d-block mt-1">
-                                {getTranslation("Selected file/चयनित फ़ाइल", lang)}: {editData.admission_form_file.name}
-                              </small>
-                            )}
-                          </div>
-                        </div>
-                        <br />
-      
-                        {/* <Label>{getTranslation("Patient Address/रोगी का पता",lang)}</Label> */}
-                        {/* <Input
-                          type="textarea"
-                          rows="3"
-                          placeholder={getTranslation("Address/पता",lang)}
-                          value={editData.address}
+                {/* Gender */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1 d-block" style={{ fontSize: "13px" }}>
+                    {getTranslation("Patient Gender / रोगी का लिंग", lang)}
+                  </Label>
+                  <div className="d-flex align-items-center gap-3" style={{ height: "40px" }}>
+                    {["Male", "Female", "Other"].map((g) => (
+                      <div key={g} className="form-check form-check-inline m-0">
+                        <Input
+                          type="radio"
+                          id={`edit-gender-${g}`}
+                          name="edit-gender"
+                          value={g}
+                          checked={editData.gender === g}
                           onChange={(e) =>
-                            setEditData({ ...editData, address: e.target.value })
+                            setEditData({
+                              ...editData,
+                              gender: e.target.value,
+                            })
                           }
-      
-                          
-      
-                        ></Input> */}
-      
-      <VoiceTextarea
-        label={<Translated text={getTranslation("Patient Address/रोगी का पता",lang)} />}
-        // name="address"
-        value={editData.address}
-        onChange={(e) =>
-          setEditData({ ...editData, address: e.target.value })
-        }
-      />
-      
-      <br />
-      <VoiceTextarea
-        label={<Translated text={getTranslation("Patient Relative Address/रोगी के संबंधी का पता", lang)} />}
-        value={editData.relativeaddress}
-        onChange={(e) =>
-          setEditData({ ...editData, relativeaddress: e.target.value })
-        }
-      />
-      
-                        {/* Edit-mode additional relative contacts */}
-                        <div className="col-md-12 mt-3">
-                          <Label>
-                            {getTranslation("Additional Relative Contacts/अतिरिक्त संबंधी संपर्क", lang)}
-                          </Label>
-                          {(editData.relative_contacts || []).map((contact, index) => (
-                            <div className="d-flex gap-2 align-items-center mb-2" key={index}>
-                              <Input
-                                type="text"
-                                placeholder={getTranslation("Name/नाम", lang)}
-                                value={contact.name}
-                                onChange={(e) =>
-                                  handleEditRelativeContactChange(index, "name", e.target.value)
-                                }
-                              />
-                              <Input
-                                type="text"
-                                placeholder={getTranslation("Phone/फ़ोन", lang)}
-                                value={contact.phone}
-                                onChange={(e) =>
-                                  handleEditRelativeContactChange(index, "phone", e.target.value)
-                                }
-                              />
-                              {editData.relative_contacts.length > 1 && (
-                                <Button
-                                  color="danger"
-                                  type="button"
-                                  size="sm"
-                                  onClick={() => removeEditRelativeContact(index)}
-                                >
-                                  {getTranslation("Remove/हटाएं", lang)}
-                                </Button>
-                              )}
-                            </div>
-                          ))}
-                          <Button
-                            color="secondary"
-                            type="button"
-                            size="sm"
-                            onClick={addEditRelativeContact}
-                          >
-                            {getTranslation("+ Add Contact/+ संपर्क जोड़ें", lang)}
-                          </Button>
-                        </div>
-      
-                        {/* Optional: role dropdown if editable */}
-                        {/* <Label className="mt-4 mb-2">Role</Label>
-                        <select
-        className="form-select"
-        aria-label="Select Role"
-        value={editData.is_role}
-        onChange={(e) =>
-          setEditData({
-            ...editData,
-            is_role: Number(e.target.value),
-          })
-        }
-      >
-        <option value="">Select a role</option>
-        <option value={1}>SuperAdmin</option>
-        <option value={2}>BranchAdmin</option>
-        <option value={3}>BranchOperator</option>
-        <option value={4}>Patient</option>
-      </select> */}
-      
-      
-                        <br />
-                        <div className="d-flex gap-3">
-                          <Button color="primary" type="submit" disabled={isLoading}>
-                            {isLoading ? (
-                              <span
-                                className="spinner-border spinner-border-sm"
-                                role="status"
-                                aria-hidden="true"
-                              ></span>
-                            ) : (
-                              getTranslation('Update Patient Register Data/रोगी रजिस्टर डेटा अपडेट करें',lang)
-                            )}
-                          </Button>
-                          <Button
-                            color="primary"
-                            type="button"
-                            onClick={() => setShowEditModal(false)}
-                          >
-                            {getTranslation('Cancel Patient Register Data/रोगी रजिस्टर डेटा रद्द करें',lang)}
-                          </Button>
-                        </div>
-                      </Form>
+                          className="form-check-input"
+                        />
+                        <Label for={`edit-gender-${g}`} className="form-check-label ms-1" style={{ cursor: "pointer", fontSize: "14px" }}>
+                          {g}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Phone */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Patient Phone / मरीज़ का फ़ोन", lang)}
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder={getTranslation("Phone / फ़ोन", lang)}
+                    value={editData.phone}
+                    onChange={(e) => {
+                      const newPhone = e.target.value;
+                      setEditData((prev) => ({
+                        ...prev,
+                        phone: newPhone,
+                        whatsapp_no: prev.isWhatsApp ? newPhone : prev.whatsapp_no,
+                      }));
+                    }}
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
+
+                {/* Secondary Phone */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Patient Secondary Phone / रोगी का द्वितीयक फोन", lang)}
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder={getTranslation("Secondary Phone / द्वितीयक फोन", lang)}
+                    value={editData.secondary_phone}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        secondary_phone: e.target.value,
+                      })
+                    }
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
+
+                {/* Is WhatsApp & WhatsApp No */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1 d-block" style={{ fontSize: "13px" }}>
+                    {getTranslation("Patient Is WhatsApp? / क्या मरीज़ व्हाट्सएप्प है?", lang)}
+                  </Label>
+                  <div className="d-flex align-items-center gap-2" style={{ height: "40px" }}>
+                    <div className="form-check">
+                      <Input
+                        type="checkbox"
+                        id="editIsWhatsApp"
+                        checked={editData.isWhatsApp}
+                        onChange={(e) => {
+                          const isChecked = e.target.checked;
+                          setEditData((prev) => ({
+                            ...prev,
+                            isWhatsApp: isChecked,
+                            whatsapp_no: isChecked ? prev.phone : "",
+                          }));
+                        }}
+                        className="form-check-input"
+                      />
+                      <Label for="editIsWhatsApp" className="form-check-label ms-1" style={{ cursor: "pointer", fontSize: "13.5px" }}>
+                        {getTranslation("Yes, Same as Primary Phone / हाँ, प्राथमिक फ़ोन जैसा", lang)}
+                      </Label>
                     </div>
                   </div>
                 </div>
-              )}
-            </CommonModal>
+
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Patient WhatsApp No. / मरीज़ का व्हाट्सएप नंबर", lang)}
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder={getTranslation("WhatsApp No. / व्हाट्सएप नंबर", lang)}
+                    value={editData.whatsapp_no}
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        whatsapp_no: e.target.value,
+                      })
+                    }
+                    disabled={editData.isWhatsApp}
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Patient Email / रोगी का ईमेल", lang)}
+                  </Label>
+                  <Input
+                    type="email"
+                    placeholder={getTranslation("Email / ईमेल", lang)}
+                    value={editData.email}
+                    onChange={(e) =>
+                      setEditData({ ...editData, email: e.target.value })
+                    }
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
+
+                {/* DOB */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Patient Date of Birth / रोगी की जन्मतिथि", lang)}
+                  </Label>
+                  <div>
+                    <DatePicker
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      className="form-control"
+                      style={{ borderRadius: "8px", height: "40px" }}
+                      selected={safeDate(editData?.dob)}
+                      onChange={(date) =>
+                        setEditData({ ...editData, dob: date })
+                      }
+                      dateFormat="yyyy/MM/dd"
+                    />
+                  </div>
+                </div>
+
+                {/* Profile Pic Upload */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Update Patient Profile Image / रोगी प्रोफ़ाइल छवि अपडेट करें", lang)}
+                  </Label>
+                  <div className="d-flex align-items-center gap-3">
+                    {editData.profile_pic_url && (
+                      <img
+                        src={editData.profile_pic_url}
+                        alt="Patient profile"
+                        style={{
+                          width: "42px",
+                          height: "42px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          border: "2px solid #e2e8f0",
+                        }}
+                      />
+                    )}
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) =>
+                        setEditData({
+                          ...editData,
+                          profile_pic: e.target.files?.[0] || null,
+                        })
+                      }
+                      className="form-control"
+                      style={{ borderRadius: "8px", height: "40px" }}
+                    />
+                  </div>
+                  {editData.profile_pic && (
+                    <small className="text-success d-block mt-1">
+                      ✓ {getTranslation("Selected file / चयनित फ़ाइल", lang)}: {editData.profile_pic.name}
+                    </small>
+                  )}
+                </div>
+
+                {/* Admission Form Upload */}
+                <div className="col-md-6">
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                      {getTranslation("Update Admission Form (PDF / Image) / प्रवेश फॉर्म अपडेट करें", lang)}
+                    </Label>
+                    {editData.admission_form_url && (
+                      <a
+                        href={editData.admission_form_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary text-decoration-none"
+                        style={{ fontSize: "12px", fontWeight: "500" }}
+                      >
+                        📄 {getTranslation("View Current File / वर्तमान फ़ाइल देखें", lang)}
+                      </a>
+                    )}
+                  </div>
+                  <Input
+                    type="file"
+                    accept="application/pdf,image/*"
+                    onChange={(e) =>
+                      setEditData({
+                        ...editData,
+                        admission_form_file: e.target.files?.[0] || null,
+                      })
+                    }
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                  {editData.admission_form_file && (
+                    <small className="text-success d-block mt-1">
+                      ✓ {getTranslation("Selected file / चयनित फ़ाइल", lang)}: {editData.admission_form_file.name}
+                    </small>
+                  )}
+                </div>
+
+                {/* Additional Contacts */}
+                <div className="col-12">
+                  <div className="p-3 bg-light rounded-3 border" style={{ borderRadius: "10px" }}>
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                        {getTranslation("Additional Relative Contacts / अतिरिक्त संबंधी संपर्क", lang)}
+                      </Label>
+                      <Button
+                        color="secondary"
+                        type="button"
+                        size="sm"
+                        onClick={addEditRelativeContact}
+                        style={{ borderRadius: "6px", fontSize: "12px" }}
+                      >
+                        {getTranslation("+ Add Contact / + संपर्क जोड़ें", lang)}
+                      </Button>
+                    </div>
+
+                    {(editData.relative_contacts || []).map((contact, index) => (
+                      <div className="row g-2 align-items-center mb-2" key={index}>
+                        <div className="col-sm-5">
+                          <Input
+                            type="text"
+                            placeholder={getTranslation("Contact Name / नाम", lang)}
+                            value={contact.name}
+                            onChange={(e) =>
+                              handleEditRelativeContactChange(index, "name", e.target.value)
+                            }
+                            className="form-control"
+                            style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
+                          />
+                        </div>
+                        <div className="col-sm-5">
+                          <Input
+                            type="text"
+                            placeholder={getTranslation("Phone Number / फ़ोन", lang)}
+                            value={contact.phone}
+                            onChange={(e) =>
+                              handleEditRelativeContactChange(index, "phone", e.target.value)
+                            }
+                            className="form-control"
+                            style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
+                          />
+                        </div>
+                        <div className="col-sm-2">
+                          {editData.relative_contacts.length > 1 && (
+                            <Button
+                              color="danger"
+                              outline
+                              type="button"
+                              size="sm"
+                              className="w-100"
+                              onClick={() => removeEditRelativeContact(index)}
+                              style={{ borderRadius: "6px", height: "36px" }}
+                            >
+                              {getTranslation("Remove / हटाएं", lang)}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Relative Address */}
+                <div className="col-md-6">
+                  <VoiceTextarea
+                    label={<Translated text={getTranslation("Patient Relative Address / रोगी के संबंधी का पता", lang)} />}
+                    value={editData.relativeaddress}
+                    onChange={(e) =>
+                      setEditData({ ...editData, relativeaddress: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* Patient Address */}
+                <div className="col-md-6">
+                  <VoiceTextarea
+                    label={<Translated text={getTranslation("Patient Address / रोगी का पता", lang)} />}
+                    value={editData.address}
+                    onChange={(e) =>
+                      setEditData({ ...editData, address: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="d-flex justify-content-end gap-2 pt-4 mt-4 border-top">
+                <Button
+                  color="light"
+                  type="button"
+                  className="border fw-semibold px-4"
+                  onClick={() => setShowEditModal(false)}
+                  style={{ borderRadius: "8px" }}
+                >
+                  {getTranslation("Cancel / रद्द करें", lang)}
+                </Button>
+
+                <Button
+                  color="primary"
+                  type="submit"
+                  disabled={isLoading}
+                  style={{
+                    borderRadius: "8px",
+                    backgroundColor: "#d56337",
+                    borderColor: "#d56337",
+                    fontWeight: "600",
+                    padding: "8px 24px",
+                    minWidth: "160px",
+                  }}
+                >
+                  {isLoading ? (
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  ) : (
+                    getTranslation("Update Patient Data / डेटा अपडेट करें", lang)
+                  )}
+                </Button>
+              </div>
+            </Form>
+          </div>
+        )}
+      </CommonModal>
       {/* Update form data JSX code end */}
 
       {/* Readmission/Re-register modal pass ward name and type to backend for re-enter user registration field */}

@@ -109,6 +109,13 @@ import { useBranch } from "../../contexts/BranchContext";
 import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
+import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
 import { useReactToPrint } from "react-to-print";
 
@@ -118,6 +125,13 @@ function SexualDesire() {
 
     //Branches selection
     const { selectedBranch } = useBranch();
+    const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+    const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+    const handleViewUserDetails = (userId) => {
+      setSelectedViewUserId(userId);
+      setViewUserDetailsModal(true);
+    };
 
   //Downloading view sexual desire form into pdf format
   const pdfRef = useRef();
@@ -130,9 +144,14 @@ function SexualDesire() {
     // Add a temporary class to scale fonts if needed
     element.classList.add("pdf-scale");
 
+    const patientName = viewSexualData?.name || viewSexualData?.patient_name || "Patient";
+    const gksId = viewSexualData?.custom_code || viewSexualData?.gks_id || viewSexualData?.uid || viewSexualData?.user_id || "";
+    const safeName = String(patientName).trim().replace(/\s+/g, "_");
+    const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
     const opt = {
       margin: [10, 10, 10, 10], // top, left, bottom, right
-      filename: `user_data_${viewSexualData?.name}_${viewSexualData?.user_id}.pdf`,
+      filename: `patient_${safeName}_${safeId || "sexual_desire_report"}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -285,7 +304,6 @@ function SexualDesire() {
 
   //Getting registred patient data into table row 
   const tableColumns = [
-    {  name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.id, sortable: true, center: true },
     {  name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
     {
        name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
@@ -302,16 +320,6 @@ function SexualDesire() {
         </span>
       ),
     },
-    {
-      name: `${getTranslation('Status/स्थिति' , lang)}`,
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
-        </span>
-      ),
-    },
 
     {
      name: `${getTranslation('Action/क्रिया' , lang)}`,
@@ -324,6 +332,30 @@ function SexualDesire() {
         return (
           //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
@@ -335,39 +367,13 @@ function SexualDesire() {
               </span>
             )}
 
-            {/* Show Create PFA if not discharged and not readmission */}
-            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-              <span
-                onClick={() => createSDHandler(row.id)}
-                style={{ cursor: "pointer" }}
-                title="Create Sexsual Desire From"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="12" y1="8" x2="12" y2="16"></line>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-              </span>
-            )} */}
-
 {row.dischargeStatus === 0 && row.isReadmission === 0 && (
   <span
-    onClick={() => (row.isSHCompleted ? null : createSDHandler(row.id))}
+    onClick={() => createSDHandler(row.id)}
     style={{
-      cursor: row.isSHCompleted ? "not-allowed" : "pointer",
-      opacity: row.isSHCompleted ? 0.5 : 1,
+      cursor: "pointer",
     }}
-    title={row.isSHCompleted ? getTranslation("Sexsual Desire Completed/यौन इच्छा पूरी हुई",lang) : getTranslation("Create Sexsual Desire From/यौन इच्छा पैदा करें",lang)}
+    title={getTranslation("Create Sexsual Desire From/यौन इच्छा पैदा करें",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -479,7 +485,6 @@ function SexualDesire() {
 
   //Getting registred patient data into table row 
   const tableColumnsSecoundTbl = [
-    { name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.id, sortable: true, center: true },
     { name: `${getTranslation('Sexual ID/यौन पहचान' , lang)}`, selector: (row) => row.sha_id, sortable: true, center: true },
     {  name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
     {
@@ -598,14 +603,32 @@ function SexualDesire() {
 
 
   //Create sexual desire form handler
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentSDUserId, setCurrentSDUserId] = useState(null);
+
   const createSDHandler = async (userId = null) => {
     console.log("Sexual Desire =>", userId);
     setModal(true);
-    if (userId) {
+    const targetId = userId || currentSDUserId;
+    if (userId) setCurrentSDUserId(userId);
+
+    if (targetId) {
+      const saved = loadDraft("sexual_desire", targetId);
+      if (saved && saved.data) {
+        if (saved.data.forData) setFormData(saved.data.forData);
+        if (saved.data.responses) setResponses(saved.data.responses);
+        if (saved.data.startDateOfAssessment) setstartDateOfAssessment(new Date(saved.data.startDateOfAssessment));
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData({ consent: "No", prepared: "", signature: "" });
+        setResponses({});
+        setDraftTimestamp(null);
+      }
+
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch;
       try {
-        const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`, {
+        const response = await fetch(`https://gks-yjdc.onrender.com/api/users/${targetId}?branch_id=${branch_id}`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `${token}`,
@@ -685,11 +708,15 @@ function SexualDesire() {
 
       const result = await response.json();
       if (response.ok) {
+        const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentSDUserId;
+        clearDraft("sexual_desire", userTargetId);
+        setDraftTimestamp(null);
+
         Swal.fire({
           icon: "success",
           title: getTranslation("Sexual History Submitted/यौन इतिहास प्रस्तुत किया गया",lang),
           text: getTranslation("The sexual desire form has been submitted successfully./यौन इच्छा प्रपत्र सफलतापूर्वक प्रस्तुत कर दिया गया है।",lang),
-        });
+        }).then(() => setModal(false));
       } else {
         console.error("Error Response:", result);
         Swal.fire({
@@ -1145,8 +1172,8 @@ function SexualDesire() {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1159,6 +1186,14 @@ function SexualDesire() {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="Sexual_Desire_Registration_List"
+                        title={getTranslation("Sexual History Registration List / यौन इतिहास पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1213,8 +1248,8 @@ function SexualDesire() {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -1227,6 +1262,14 @@ function SexualDesire() {
                           <i className="fa fa-search"></i>
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredSecondTblData}
+                        columns={tableColumnsSecoundTbl}
+                        filename="All_Sexual_History_Patient_List"
+                        title={getTranslation("All Sexual History Patient Data List / सभी यौन इतिहास रोगी डेटा सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -1275,6 +1318,16 @@ function SexualDesire() {
         maxWidth="1200px"
       >
         <div className="sd__wrapper">
+          <DraftNoticeBanner
+            draftTimestamp={draftTimestamp}
+            formKey="sexual_desire"
+            targetId={selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentSDUserId}
+            onDiscard={() => {
+              setFormData({ consent: "No", prepared: "", signature: "" });
+              setResponses({});
+              setDraftTimestamp(null);
+            }}
+          />
           <Form className="theme-form" onSubmit={submitSDdataHandler} >
             {/* Patient name and date of assessment */}
             <PatientCommonInfo
@@ -1299,7 +1352,7 @@ function SexualDesire() {
                       <div className="input-group">
                         <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                           className="form-control digits"
-                          selected={startDateOfAssessment}
+                          selected={safeDate(startDateOfAssessment)}
                           onChange={handleChangeAssessment}
                         />
                       </div>
@@ -1381,8 +1434,16 @@ function SexualDesire() {
               </div>
             </div>
             <br />
-            {/* Submit Button */}
-            <div className="d-flex gap-3 mt-4 mb-3">
+            {/* Submit Button & Save Draft */}
+            <div className="d-flex align-items-center gap-3 mt-4 mb-3 flex-wrap">
+              <SaveDraftButton
+                formKey="sexual_desire"
+                targetId={selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentSDUserId}
+                formData={{ forData, responses, startDateOfAssessment }}
+                onDraftSaved={() => setDraftTimestamp(Date.now())}
+                style={{ height: "38px", padding: "6px 16px" }}
+              />
+
               <Button color="primary" type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <span
@@ -1433,9 +1494,7 @@ function SexualDesire() {
                       <div className="input-group">
                         <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                           className="form-control digits"
-                          selected={prefillSDdata?.date_of_assessment instanceof Date && !isNaN(prefillSDdata?.date_of_assessment)
-                            ? prefillSDdata?.date_of_assessment
-                            : null}
+                          selected={safeDate(prefillSDdata?.date_of_assessment)}
                           onChange={(date) =>
                             setprefillSDdata({
                               ...prefillSDdata,
@@ -1571,7 +1630,9 @@ function SexualDesire() {
         <Col sm="12"></Col>
         {viewSexualDataModal && (
 
-          <div className="table-responsive p-4" ref={pdfRef}>
+          <div className="table-responsive p-4" ref={pdfRef} style={{ background: "#f8fafc" }}>
+            {viewSexualData && <PatientViewHeader data={viewSexualData} />}
+
             <h4
                   style={{
                     textAlign: "center",
@@ -1637,28 +1698,13 @@ function SexualDesire() {
               )}
           </div>
         )}
-        <div style={{ margin: "20px" }}>
-              <button
-                disabled={pfaDownload}
-                id="download-btn"
-                className="btn btn-primary"
-                onClick={handleDownloadPDF}
-              >
-                {pfaDownload
-                  ? getTranslation("Your Sexual Desire is being downloaded.../ आपकी यौन इच्छा डाउनलोड की जा रही है...",lang)
-                  : getTranslation("Download Your View Sexual History / यौन इतिहास डाउनलोड करें",lang)}
-              </button>
-
-<button
-                          className="btn btn-primary mx-3"
-                          onClick={handlePrint}
-                        >
-                          {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-                        </button>
-
-            </div>
-
-
+        <ModalActionButtons
+          onClose={closeAllModal}
+          onPrint={handlePrint}
+          onDownload={handleDownloadPDF}
+          isDownloading={pfaDownload}
+          downloadText={getTranslation("Download Sexual History / यौन इतिहास डाउनलोड करें", lang)}
+        />
       </CommonModal>
 
       {/* View sexual desire data form end */}
@@ -1699,9 +1745,7 @@ function SexualDesire() {
                       <div className="input-group">
                         <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                           className="form-control digits"
-                          selected={editindividualSDData?.date_of_assessment instanceof Date && !isNaN(editindividualSDData?.date_of_assessment)
-                            ? editindividualSDData?.date_of_assessment
-                            : null}
+                          selected={safeDate(editindividualSDData?.date_of_assessment)}
                           onChange={(date) =>
                             seteditindividualSDData({
                               ...editindividualSDData,
@@ -1825,6 +1869,13 @@ function SexualDesire() {
         </div>
       </CommonModal>
       {/* Update and submit Sexual desire from end  */}
+
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
 
     </Fragment>
   );

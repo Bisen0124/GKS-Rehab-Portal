@@ -67,7 +67,10 @@ import {
   Button,
   InputGroup,
   Spinner,
+  Badge,
 } from "reactstrap";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import ModalLoading from "../Common/ModalLoading";
 import { H5, Btn, P, H4 } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
@@ -98,6 +101,10 @@ import { getTranslation } from "../../utils/translator";
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
 import { useReactToPrint } from "react-to-print";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
 
 function PFA() {
   const { lang } = useLang(); // get current language from context
@@ -114,8 +121,7 @@ function PFA() {
     (item) => item.spinnerClass === "loader-37"
   );
 
-  //PFA form data
-  const [formData, setFormData] = useState({
+  const initialPFAFormData = {
     dateOfAdmission: new Date(),
     dateOfAssessment: new Date(),
     dependentToData: "",
@@ -165,7 +171,12 @@ function PFA() {
     prepared_by: "",
 
     verification: "No",
-  });
+  };
+
+  //PFA form data
+  const [formData, setFormData] = useState(initialPFAFormData);
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+  const [currentPFAUserId, setCurrentPFAUserId] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -227,7 +238,7 @@ function PFA() {
         
           return {
             id: user.user_id,
-            gks_id: user.gks_id || "N/A",
+            gks_id: user.gks_id || user.custom_code || user.uid || "N/A",
             name: user.name,
             status: userStatus,
             isPFACompleted,   // ✅ new flag
@@ -259,6 +270,14 @@ function PFA() {
   //PFA view
   const [viewModal, setViewModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+  const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+  const handleViewUserDetails = (userId) => {
+    setSelectedViewUserId(userId);
+    setViewUserDetailsModal(true);
+  };
+
   //close view data modal
   const closeUserViewModal = () => {
     setViewModal(false);
@@ -269,7 +288,6 @@ function PFA() {
 
 //Getting registred patient data into table row 
   const tableColumns = [
-  {  name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.id, sortable: true, center: true },
   { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
   {
     name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
@@ -283,16 +301,6 @@ function PFA() {
         }}
       >
         {row.name} {row.disabled && "(disabled)"}
-      </span>
-    ),
-  },
-  {
-    name: `${getTranslation('Status/स्थिति' , lang)}`,
-    selector: (row) => row.status,
-    sortable: true,
-    cell: (row) => (
-      <span style={{ color: row.disabled ? "#999" : "#000" }}>
-        {row.status}
       </span>
     ),
   },
@@ -411,6 +419,30 @@ function PFA() {
 
     return (
       <div className="d-flex gap-2">
+        {/* View User Details Icon */}
+        <span
+          onClick={() => handleViewUserDetails(row.id)}
+          style={{ cursor: "pointer" }}
+          title={getTranslation("View/देखना", lang)}
+        >
+          <svg
+            style={{ color: "#d56337" }}
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="feather feather-eye"
+          >
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </span>
+
         {/* Show Edit only if not discharged and readmission */}
         {row.dischargeStatus === 0 && row.isReadmission === 1 && (
           <span
@@ -459,12 +491,11 @@ function PFA() {
 
 {row.dischargeStatus === 0 && row.isReadmission === 0 && (
   <span
-    onClick={() => (row.isPFACompleted ? null : toggle(row.id))}
+    onClick={() => toggle(row.id)}
     style={{
-      cursor: row.isPFACompleted ? "not-allowed" : "pointer",
-      opacity: row.isPFACompleted ? 0.5 : 1,
+      cursor: "pointer",
     }}
-    title={row.isPFACompleted ? getTranslation("PFA Completed/पीएफए ​​पूरा हुआ",lang) : getTranslation("Create PFA/पीएफए ​​बनाएं",lang)}
+    title={getTranslation("Create PFA/पीएफए ​​बनाएं",lang)}
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -494,8 +525,6 @@ function PFA() {
 ];
 
 const tablePFAPatientListColumns = [
-  { name: `${getTranslation('User ID/उपयोगकर्ता आईडी' , lang)}`, selector: (row) => row.user_id, sortable: true, center: true },
-  { name: "PFA ID/रोगी का प्रथम मूल्यांकन आईडी", selector: (row) => row.pfa_id, sortable: true, center: true },
   { name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`, selector: (row) => row.gks_id, sortable: true, center: true },
   { name: `${getTranslation('Patient Phone/मरीज़ का फ़ोन' , lang)}`, selector: (row) => row.phone, sortable: true, center: true },
   { name: `${getTranslation('Email/ईमेल' , lang)}`, selector: (row) => row.email, sortable: true, center: true },
@@ -743,14 +772,25 @@ const tablePFAPatientListColumns = [
   const toggle = async (userId = null) => {
     // Always open modal
     setModal(true);
+    const targetUserId = userId || currentPFAUserId;
+    if (userId) setCurrentPFAUserId(userId);
   
-    if (userId) {
+    if (targetUserId) {
+      const saved = loadDraft("pfa", targetUserId);
+      if (saved && saved.data) {
+        setFormData(saved.data);
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData(initialPFAFormData);
+        setDraftTimestamp(null);
+      }
+
       const branch_id = selectedBranch;
       const token = localStorage.getItem("Authorization");
   
       try {
         const response = await fetch(
-          `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branch_id}`,
+          `https://gks-yjdc.onrender.com/api/users/${targetUserId}?branch_id=${branch_id}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -897,6 +937,10 @@ const tablePFAPatientListColumns = [
       }
       // ✅ Success Case
   setIsLoading(false);
+  const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.[0]?.id || selectedUser?.user_id || selectedUser?.id || currentPFAUserId;
+  clearDraft("pfa", userTargetId);
+  setDraftTimestamp(null);
+
   Swal.fire({
     icon: "success",
     title: getTranslation("PFA Created Successfully/PFA सफलतापूर्वक बनाया गया",lang),
@@ -1534,9 +1578,23 @@ const parseDateString = (dateStr) => {
     // Add a temporary class to scale fonts if needed
     element.classList.add("pdf-scale");
 
+    const patientName =
+      selectedUser?.name ||
+      selectedUser?.patient_name ||
+      "Patient";
+    const gksId =
+      selectedUser?.custom_code ||
+      selectedUser?.gks_id ||
+      selectedUser?.uid ||
+      selectedUser?.user_id ||
+      selectedUser?.id ||
+      "";
+    const safeName = String(patientName).trim().replace(/\s+/g, "_");
+    const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
     const opt = {
       margin: [10, 10, 10, 10], // top, left, bottom, right
-      filename: `user_data_${selectedUser.name}_${selectedUser.user_id}.pdf`,
+      filename: `patient_${safeName}_${safeId || "pfa_report"}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -1596,7 +1654,7 @@ const parseDateString = (dateStr) => {
               name: item.user?.name,
               phone: item.user?.phone,
               email: item.user?.email,
-              gks_id: item.user?.gks_id,
+              gks_id: item.user?.gks_id || item.user?.custom_code || item.user?.uid || item.gks_id || item.custom_code || item.uid || "N/A",
     
               entry_id: item.entry?.entry_id,
               visit_no: item.entry?.visit_no,
@@ -1711,8 +1769,8 @@ const parseDateString = (dateStr) => {
                         className="p-0"
                       />
                     </div>
-                    <div className="row pb-2">
-                      <div className="col-md-4">
+                    <div className="row pb-3 align-items-center">
+                      <div className="col-md-5 col-12 mb-2 mb-md-0">
                         <InputGroup>
                           <Input
                             className="form-control"
@@ -1725,6 +1783,14 @@ const parseDateString = (dateStr) => {
                             <i className="fa fa-search"></i>
                           </span>
                         </InputGroup>
+                      </div>
+                      <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                        <TableExportButtons
+                          data={filteredData}
+                          columns={tableColumns}
+                          filename="PFA_Registration_List"
+                          title={getTranslation("Patient First Assessment (PFA) Registration List / रोगी प्रथम मूल्यांकन पंजीकरण सूची", lang)}
+                        />
                       </div>
                     </div>
                     {stillLoading ? (
@@ -1769,8 +1835,8 @@ const parseDateString = (dateStr) => {
                         className="p-0"
                       />
                     </div>
-                    <div className="row pb-2">
-                      <div className="col-md-4">
+                    <div className="row pb-3 align-items-center">
+                      <div className="col-md-5 col-12 mb-2 mb-md-0">
                         <InputGroup>
                           <Input
                             className="form-control"
@@ -1783,6 +1849,14 @@ const parseDateString = (dateStr) => {
                             <i className="fa fa-search"></i>
                           </span>
                         </InputGroup>
+                      </div>
+                      <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                        <TableExportButtons
+                          data={pfaFilterData}
+                          columns={tablePFAPatientListColumns}
+                          filename="All_PFA_Patient_List"
+                          title={getTranslation("All Patient First Assessment (PFA) List / सभी रोगी प्रथम मूल्यांकन (पीएफए) सूची", lang)}
+                        />
                       </div>
                     </div>
                     {stillLoading ? (
@@ -1840,13 +1914,15 @@ const parseDateString = (dateStr) => {
           >
             {selectedUser && selectedUser.length > 0 ? (
               <>
-                {/* <p><strong>Name:</strong> {selectedUser[0].name}</p>
-                <p><strong>Email:</strong> {selectedUser[0].gender}</p>
-                <p>
-                  <strong>DOB:</strong>{" "}
-                  {selectedUser[0]?.dob ? new Date(selectedUser[0].dob).toLocaleDateString("en-IN") : ""}
-                </p> */}
-
+                <DraftNoticeBanner
+                  draftTimestamp={draftTimestamp}
+                  formKey="pfa"
+                  targetId={selectedUser?.[0]?.user_id || selectedUser?.[0]?.id || selectedUser?.user_id || selectedUser?.id || currentPFAUserId}
+                  onDiscard={() => {
+                    setFormData(initialPFAFormData);
+                    setDraftTimestamp(null);
+                  }}
+                />
                 {/* add more fields as needed */}
                 <Form className="theme-form" onSubmit={handleSubmit}>
                   <PatientCommonInfo
@@ -1860,50 +1936,24 @@ const parseDateString = (dateStr) => {
                     }}
                   />
 
-                  <div className="row px-3 pt-4 pb-3">
+                  <div className="row g-3 px-3 pt-4 pb-2">
                     {/*Date of Assessment section/परीक्षण की तारीख :*/}
-                    <div className="col-md-6">
-                      <FormGroup className="form-group row">
-                        <Label className="col-sm-12 col-form-label  col-xl-6">
+                    <div className="col-12 col-md-6">
+                      <FormGroup className="mb-3">
+                        <Label>
                           {getTranslation(dateOfAssessment,lang)}
                         </Label>
-                        <Col xl="5" sm="12">
-                          <div className="input-group">
-                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                              className="form-control digits"
-                              selected={formData.dateOfAssessment}
-                              onChange={(date) =>
-                                handleAssesmentDateChange(
-                                  "dateOfAssessment",
-                                  date
-                                )
-                              }
-                            />
-                          </div>
-                        </Col>
+                        <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
+                          className="form-control digits"
+                          selected={safeDate(formData.dateOfAssessment)}
+                          onChange={(date) =>
+                            handleAssesmentDateChange(
+                              "dateOfAssessment",
+                              date
+                            )
+                          }
+                        />
                       </FormGroup>
-                    </div>{" "}
-                    {/*Date of Admission section/प्रवेश की तिथि :*/}
-                    <div className="col-md-6">
-                      {/* <FormGroup className="form-group row">
-                        <Label className="col-sm-12 col-form-label  col-xl-6">
-                          {dateOfAdmission}
-                        </Label>
-                        <Col xl="5" sm="12">
-                          <div className="input-group">
-                            <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                              className="form-control digits"
-                              selected={formData.dateOfAdmission}
-                              onChange={(date) =>
-                                handleAssesmentDateChange(
-                                  "dateOfAdmission",
-                                  date
-                                )
-                              }
-                            />
-                          </div>
-                        </Col>
-                      </FormGroup> */}
                     </div>
                   </div>
                   <div className="row px-3">
@@ -2031,34 +2081,34 @@ const parseDateString = (dateStr) => {
                         <tbody>
   {[
     {
-      id: "5",
+      id: "1",
       question: getTranslation(anyMedicalHistory, lang),
       name: "medicalConfirmationData",
       type: "yesno",
     },
     {
-      id: "6",
+      id: "2",
       question: getTranslation(anyBloodTransfusionHistory, lang),
       name: "bloodConfirmationData",
       type: "yesno",
     },
     {
-      id: "7",
+      id: "3",
       question: getTranslation(Weight, lang),
       name: "weight",
     },
     {
-      id: "8",
+      id: "4",
       question: getTranslation(PulseRate, lang),
       name: "pulse_rate",
     },
     {
-      id: "9",
+      id: "5",
       question: getTranslation(Bloodpressure, lang),
       name: "blood_pressure",
     },
     {
-      id: "10",
+      id: "6",
       question: getTranslation(Temperature, lang),
       name: "temperature",
     },
@@ -2224,29 +2274,32 @@ const parseDateString = (dateStr) => {
                                 return (
                                   <td
                                     key={inputId}
-                                    className="radio radio-primary"
+                                    className="text-center align-middle"
                                   >
-                                    <Input
-                                      id={inputId}
-                                      type="radio"
-                                      name={`complication_${key}`}
-                                      value={value}
-                                      checked={
-                                        formData.complications[key] === value
-                                      }
-                                      onChange={() =>
-                                        setFormData((prev) => ({
-                                          ...prev,
-                                          complications: {
-                                            ...prev.complications,
-                                            [key]: value,
-                                          },
-                                        }))
-                                      }
-                                    />
-                                    <Label for={inputId}>
-                                      {value === getTranslation("Yes/हाँ",lang) ? getTranslation("Yes/हाँ",lang) : getTranslation("No/नहीं",lang)}
-                                    </Label>
+                                    <div className="form-check form-check-inline m-0">
+                                      <Input
+                                        id={inputId}
+                                        type="radio"
+                                        className="form-check-input"
+                                        name={`complication_${key}`}
+                                        value={value}
+                                        checked={
+                                          formData.complications[key] === value
+                                        }
+                                        onChange={() =>
+                                          setFormData((prev) => ({
+                                            ...prev,
+                                            complications: {
+                                              ...prev.complications,
+                                              [key]: value,
+                                            },
+                                          }))
+                                        }
+                                      />
+                                      <Label for={inputId} className="form-check-label">
+                                        {value === getTranslation("Yes/हाँ",lang) ? getTranslation("Yes/हाँ",lang) : getTranslation("No/नहीं",lang)}
+                                      </Label>
+                                    </div>
                                   </td>
                                 );
                               })}
@@ -2299,30 +2352,33 @@ const parseDateString = (dateStr) => {
                                 return (
                                   <td
                                     key={inputId}
-                                    className="radio radio-primary"
+                                    className="text-center align-middle"
                                   >
-                                    <Input
-                                      id={inputId}
-                                      type="radio"
-                                      name={`neuro_${option.key}`}
-                                      value={value}
-                                      checked={
-                                        formData.neurological[option.key] ===
-                                        value
-                                      }
-                                      onChange={() =>
-                                        setFormData((prev) => ({
-                                          ...prev,
-                                          neurological: {
-                                            ...prev.neurological,
-                                            [option.key]: value,
-                                          },
-                                        }))
-                                      }
-                                    />
-                                    <Label for={inputId}>
-                                      {value === getTranslation("Yes/हाँ",lang) ? getTranslation("Yes/हाँ",lang) : getTranslation("No/नहीं",lang)}
-                                    </Label>
+                                    <div className="form-check form-check-inline m-0">
+                                      <Input
+                                        id={inputId}
+                                        type="radio"
+                                        className="form-check-input"
+                                        name={`neuro_${option.key}`}
+                                        value={value}
+                                        checked={
+                                          formData.neurological[option.key] ===
+                                          value
+                                        }
+                                        onChange={() =>
+                                          setFormData((prev) => ({
+                                            ...prev,
+                                            neurological: {
+                                              ...prev.neurological,
+                                              [option.key]: value,
+                                            },
+                                          }))
+                                        }
+                                      />
+                                      <Label for={inputId} className="form-check-label">
+                                        {value === getTranslation("Yes/हाँ",lang) ? getTranslation("Yes/हाँ",lang) : getTranslation("No/नहीं",lang)}
+                                      </Label>
+                                    </div>
                                   </td>
                                 );
                               })}
@@ -2517,8 +2573,16 @@ const parseDateString = (dateStr) => {
                         </div>
                       </div>
                     </div>
-                    {/* Submit */}
-                    <div className="col-md-12 mt-3 mb-3">
+                    {/* Submit & Save Draft */}
+                    <div className="col-md-12 mt-3 mb-3 d-flex align-items-center gap-2 flex-wrap">
+                      <SaveDraftButton
+                        formKey="pfa"
+                        targetId={selectedUser?.[0]?.user_id || selectedUser?.[0]?.id || selectedUser?.user_id || selectedUser?.id || currentPFAUserId}
+                        formData={formData}
+                        onDraftSaved={() => setDraftTimestamp(Date.now())}
+                        style={{ height: "38px", padding: "6px 16px" }}
+                      />
+
                       <Button
                         color="primary"
                         type="submit"
@@ -2548,348 +2612,596 @@ const parseDateString = (dateStr) => {
           </CommonModal>
 
           {/* PFA view data modal */}
+          {/* PFA view data modal */}
           <CommonModal
             isOpen={viewModal}
             title={
-              getTranslation("View First Physical Assessment / पहला शारीरिक मूल्यांकन देखें",lang)
+              getTranslation("View First Physical Assessment / पहला शारीरिक मूल्यांकन देखें", lang)
             }
             toggler={closeUserViewModal}
-            maxWidth="1200px"
+            maxWidth="1100px"
           >
-            <Col sm="12">
-              <div className="table-responsive p-4" ref={pdfRef}>
-                <h4
-                  style={{
-                    textAlign: "center",
-                    textDecoration: "underline",
-                    padding: "20px 0",
-                  }}
-                >
-                  {getTranslation("First Physical Assessment / प्रथम शारीरिक मूल्यांकन",lang)}
-                </h4>
-                <Table size="sm" className="table-bordered">
-                  <tbody style={{ fontSize: "14px" }}>
-                    {isLoading ? (
-                      <tr>
-                        <td colSpan="2" className="text-center">
-                          <div className="loader-box">
-                            <Spinner
-                              className={
-                                selectedSpinner?.spinnerClass ||
-                                "spinner-border"
-                              }
-                            />
+            <div className="p-3 p-md-4 print-area" ref={pdfRef} style={{ background: "#f8fafc" }}>
+              {isLoading ? (
+                <ModalLoading message={getTranslation("Loading Physical Assessment details... / विवरण लोड हो रहा है...", lang)} />
+              ) : selectedUser ? (
+                <div>
+                  {/* Header Profile Banner Card with Profile Photo & GKS ID */}
+                  {(() => {
+                    const patientName = selectedUser.name || selectedUser.patient_name || "Patient";
+                    const gksId = selectedUser.custom_code || selectedUser.gks_id || selectedUser.uid || selectedUser.user_id || selectedUser.id || "";
+                    const profilePic = selectedUser.profile_pic || selectedUser.profile_image || selectedUser.image || "";
+                    const initial = typeof patientName === "string" && patientName.trim() ? patientName.trim().charAt(0).toUpperCase() : "P";
+
+                    return (
+                      <div
+                        className="card shadow-sm border-0 mb-4"
+                        style={{
+                          borderRadius: "16px",
+                          background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                          borderLeft: "6px solid #24695c",
+                          border: "1px solid #e2e8f0",
+                        }}
+                      >
+                        <div className="card-body p-4">
+                          <div className="d-flex flex-column flex-sm-row align-items-center gap-4">
+                            {profilePic ? (
+                              <img
+                                src={profilePic}
+                                crossOrigin="anonymous"
+                                alt="Patient Profile"
+                                style={{
+                                  width: "90px",
+                                  height: "90px",
+                                  borderRadius: "50%",
+                                  objectFit: "cover",
+                                  border: "3px solid #24695c",
+                                  boxShadow: "0 4px 12px rgba(36, 105, 92, 0.2)",
+                                }}
+                              />
+                            ) : (
+                              <div
+                                style={{
+                                  width: "90px",
+                                  height: "90px",
+                                  borderRadius: "50%",
+                                  background: "#eaf2f0",
+                                  color: "#24695c",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontSize: "32px",
+                                  fontWeight: "700",
+                                  border: "3px solid #24695c",
+                                  boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+                                }}
+                              >
+                                {initial}
+                              </div>
+                            )}
+
+                            <div className="text-center text-sm-start flex-grow-1">
+                              <div className="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-2 mb-1">
+                                <h3 className="mb-0 fw-bold text-dark" style={{ fontSize: "1.4rem" }}>
+                                  {patientName}
+                                </h3>
+                                {gksId && (
+                                  <Badge
+                                    style={{
+                                      borderRadius: "10px",
+                                      fontSize: "12.5px",
+                                      fontWeight: "700",
+                                      backgroundColor: "#24695c",
+                                      color: "#ffffff",
+                                      padding: "5px 12px",
+                                      letterSpacing: "0.4px",
+                                    }}
+                                  >
+                                    GKS ID: {gksId}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="d-flex flex-wrap align-items-center justify-content-center justify-content-sm-start gap-3 mt-2 text-muted" style={{ fontSize: "13px" }}>
+                                {selectedUser.phone && <span>📞 {selectedUser.phone}</span>}
+                                {selectedUser.email && <span>✉️ {selectedUser.email}</span>}
+                                {selectedUser.gender && <span>👤 {selectedUser.gender}</span>}
+                                {selectedUser.date_of_assessment && (
+                                  <span>📅 Assessment: {new Date(selectedUser.date_of_assessment).toLocaleDateString()}</span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </td>
-                      </tr>
-                    ) : selectedUser ? (
-                      <>
-                        <tr className="fw-bold">
-                          <td colSpan="2" className="p-3">
-                            {getTranslation("Date of Assessment / मूल्यांकन की तारीख:",lang)}
-                          </td>
-                          <td colSpan="2" className="p-3">
-                            {new Date(
-                              selectedUser.date_of_assessment
-                            ).toLocaleDateString()}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td colSpan="2" className="fw-semibold p-3">
-                            {getTranslation("Name of Patient / मरीज का नाम:",lang)}
-                          </td>
-                          <td colSpan="2" className="p-3">
-                            <span colSpan="2" className="fw-normal">
-                              {selectedUser.name}
-                            </span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td colSpan="2" className="fw-semibold p-3">
-                            {getTranslation("Age / उम्र:",lang)}
-                          </td>
-                          <td colSpan="2" className="p-3">
-                            <span colSpan="2" className="fw-normal">
-                              {selectedUser.age}
-                            </span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td colSpan="2" className="fw-semibold p-3">
-                            {getTranslation("Dependent To / निर्भरता का प्रकार:",lang)}
-                          </td>
-                          <td colSpan="2" className="p-3">
-                            <span colSpan="2" className="fw-normal">
-                              {selectedUser.dependent_to}
-                            </span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td colSpan="2" className="fw-semibold p-3">
-                            {getTranslation("Substance Use Pattern / उपयोग का पैटर्न:",lang)}
-                          </td>
-                          <td colSpan="2" className="p-3">
-                            <span colSpan="2" className="fw-normal">
-                              {selectedUser.substance_use_pattern}
-                            </span>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td colSpan="2" className="fw-semibold p-3">
-                            {getTranslation("Last 30 Days Quantity / पिछले 30 दिनों की मात्रा:",lang)}
-                          </td>
-                          <td colSpan="2" className="p-3">
-                            <span colSpan="2" className="fw-normal">
-                              {selectedUser.last_30_days_quantity}
-                            </span>
-                          </td>
-                        </tr>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
-                        <br />
-                        <br />
-                        <tr className="table-secondary text-center fw-bold">
-                          <td colSpan="4" className="p-3">
-                            {getTranslation("General Physical Examination / सामान्य शारीरिक परीक्षण",lang)}
-                          </td>
-                        </tr>
-                        {[
-                          {
-                            label: getTranslation("Weight / वजन",lang),
-                            value: selectedUser.weight,
-                          },
-                          {
-                            label: getTranslation("Pulse Rate / पल्स रेट",lang),
-                            value: selectedUser.pulse_rate,
-                          },
-                          {
-                            label: getTranslation("Blood pressure / रक्तचाप",lang),
-                            value: selectedUser.blood_pressure,
-                          },
-                          {
-                            label: getTranslation("Temperature / तापमान",lang),
-                            value: selectedUser.temperature,
-                          },
-                          {
-                            label: getTranslation("Medical History / चिकित्सा इतिहास",lang),
-                            value: selectedUser.medical_history,
-                          },
-                          {
-                            label:
-                              getTranslation("Blood Transfusion History / रक्त संक्रमण इतिहास",lang),
-                            value: selectedUser.blood_transfusion_history,
-                          },
-                          {
-                            label: getTranslation("Medical or Blood History Details / चिकित्सा या रक्त इतिहास विवरण",lang),
-                            value:
-                              selectedUser.medical_or_blood_history_details,
-                          },
-                        ].map((item, i) => (
-                          <tr key={i}>
-                            <td colSpan="2" className="fw-semibold p-3">
-                              {item.label}
-                            </td>
-                            <td colSpan="2" className="p-3">
-                              {item.value || "—"}
-                            </td>
-                          </tr>
-                        ))}
-
-                        <br />
-                        <br />
-
-                        <tr className="table-secondary text-center fw-bold">
-                          <td colSpan="4" className="p-3">
-                            {getTranslation("Complication Details / जटिलता विवरण",lang)}
-                          </td>
-                        </tr>
-                        {[
-                          {
-                            label: getTranslation("Ulcers / अल्सर",lang),
-                            value: selectedUser.ulcer,
-                          },
-                          {
-                            label: getTranslation("Respiratory Problem / श्वसन समस्या",lang),
-                            value: selectedUser.respiratory_problem,
-                          },
-                          {
-                            label: getTranslation("Jaundice / पीलिया",lang),
-                            value: selectedUser.jaundice,
-                          },
-                          {
-                            label: getTranslation("Haematemesis / मलैना",lang),
-                            value: selectedUser.haematemesis,
-                          },
-                          {
-                            label: getTranslation("Abdominal Complaints / पेट की शिकायतें",lang),
-                            value: selectedUser.abdominal_complaints,
-                          },
-                          {
-                            label: getTranslation("Cardiovascular / हृदय संबंधी",lang),
-                            value: selectedUser.cardiovascular,
-                          },
-                          {
-                            label: getTranslation("Complication Description / जटिलता विवरण",lang),
-                            value: selectedUser.complication_description,
-                          },
-                        ].map((item, i) => (
-                          <tr key={i}>
-                            <td colSpan="2" className="fw-semibold p-3">
-                              {item.label}
-                            </td>
-                            <td colSpan="2" className="p-3">
-                              {item.value || "—"}
-                            </td>
-                          </tr>
-                        ))}
-
-                        <br />
-                        <br />
-
-                        <tr
-                          className="table-secondary text-center fw-bold"
-                          style={{
-                            pageBreakInside: "avoid",
-                            border: "1px solid #ccc",
-                            padding: "10px",
-                          }}
-                        >
-                          <td colSpan="4" className="p-3">
-                            {getTranslation("Neurological / न्यूरोलॉजिकल",lang)}
-                          </td>
-                        </tr>
-                        {[
-                          {
-                            label: getTranslation("Seizure / फिट्स",lang),
-                            value: selectedUser.seizure,
-                          },
-                          {
-                            label: getTranslation("Epilepsy / मिर्गी",lang),
-                            value: selectedUser.epilepsy,
-                          },
-                          {
-                            label: getTranslation("Delirium / भ्रम",lang),
-                            value: selectedUser.delirium,
-                          },
-                          {
-                            label: getTranslation("Trembling / कांपना",lang),
-                            value: selectedUser.trembling,
-                          },
-                          {
-                            label: getTranslation("Memory Loss / स्मृति हानि",lang),
-                            value: selectedUser.memory_loss,
-                          },
-                          {
-                            label: getTranslation("Neuropathy / स्नायु रोग",lang),
-                            value: selectedUser.neuropathy,
-                          },
-                          {
-                            label: getTranslation("Blackout / बेहोशी",lang),
-                            value: selectedUser.blackout,
-                          },
-                          {
-                            label: getTranslation("Neuro Description / न्यूरो विवरण",lang),
-                            value: selectedUser.neuro_description,
-                          },
-                        ].map((item, i) => (
-                          <tr
-                            key={i}
-                            style={{
-                              pageBreakInside: "avoid",
-                              border: "1px solid #ccc",
-                              padding: "10px",
-                            }}
-                          >
-                            <td colSpan="2" className="fw-semibold p-3">
-                              {item.label}
-                            </td>
-                            <td colSpan="2" className="p-3">
-                              {item.value || "—"}
-                            </td>
-                          </tr>
-                        ))}
-
-                        <br />
-                        <br />
-
-                        <tr>
-                          <td colSpan="2" className="fw-semibold p-3">
-                            {getTranslation("Nutritional Status / पोषण स्थिति:",lang)}
-                          </td>
-                          <td colSpan="2" className="p-3">
-                            {selectedUser.nutritional_status}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td colSpan="2" className="fw-semibold p-3">
-                            {getTranslation("Lymphadenopathy (mention): / लिम्फैडेनोपैथी (उल्लेख):",lang)}
-                          </td>
-                          <td colSpan="2" className="p-3">
-                            {selectedUser.lymphadenopathy}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td colSpan="2" className="fw-semibold p-3">
-                            {getTranslation("Other Findings / अन्य खोज:",lang)}
-                          </td>
-                          <td colSpan="2" className="p-3">
-                            {selectedUser.other_findings}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td colSpan="2" className="fw-semibold p-3">
-                            {getTranslation("Consent: / सहमति:",lang)}
-                          </td>
-                          <td colSpan="2" className="p-3">
-                            {selectedUser.consent}
-                          </td>
-                        </tr>
-                        <tr>
-                          <td className="fw-semibold p-3">{getTranslation("Consent Name:/सहमति नाम:",lang)}</td>
-                          <td className="p-3">{selectedUser.consent_name}</td>
-                          <td className="fw-semibold p-3">{getTranslation("Relationship:/संबंध:",lang)}</td>
-                          <td className="p-3">
-                            {selectedUser.consent_relationship}
-                          </td>
-                        </tr>
-                        <tr className="table-light fw-bold">
-                          <td colSpan="1" className="fw-semibold p-3">
-                            {getTranslation("Prepared by:/द्वारा तैयार:",lang)}{" "}
-                          </td>
-                          <td className="p-3" colSpan="3">
-                            {selectedUser.prepared_by}
-                          </td>
-                        </tr>
-                      </>
-                    ) : (
-                      <tr>
-                        <td colSpan="2" className="text-center">
-                         {getTranslation(" No data available / कोई डेटा मौजूद नहीं",lang)}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </Table>
-              </div>
-              <div style={{ margin: "0 20px 20px 20px" }}>
-                <button
-                  disabled={pfaDownload}
-                  id="download-btn"
-                  className="btn btn-primary"
-                  onClick={handleDownloadPDF}
-                >
-                  {pfaDownload
-                    ? getTranslation("Your PFA is being downloaded.../ आपका PFA डाउनलोड हो रहा है...",lang)
-                    : getTranslation("Download Your First Physical Assessment (PFA) / अपना प्रथम शारीरिक मूल्यांकन डाउनलोड करें",lang)}
-                </button>
-                 <button
-                      id="download-btn"
-                      className="btn btn-primary mx-3"
-                      onClick={handlePrint}
+                  {/* Card 1: Patient & Physical Vitals */}
+                  <div
+                    className="card shadow-sm border-0 mb-4"
+                    style={{
+                      borderRadius: "14px",
+                      overflow: "hidden",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div
+                      className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                      style={{
+                        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                        borderLeft: "5px solid #d56337",
+                      }}
                     >
-                       {getTranslation("Print Your Data/अपना डेटा प्रिंट करें", lang)}
-                    </button>
-              </div>
-            </Col>
+                      <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                        🩺 {getTranslation("Patient & Physical Vitals / रोगी एवं शारीरिक विवरण", lang)}
+                      </h6>
+                      <Badge color="light" className="text-muted border px-2 py-1">
+                        📅 {selectedUser.date_of_assessment ? new Date(selectedUser.date_of_assessment).toLocaleDateString() : "-"}
+                      </Badge>
+                    </div>
+                    <div className="card-body p-3 p-md-4">
+                      <div className="row g-3">
+                        <div className="col-12 col-sm-6 col-lg-4">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Name of Patient / मरीज का नाम:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark text-capitalize mt-1" style={{ fontSize: "13.5px" }}>
+                              👤 {selectedUser.name || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-3 col-lg-2">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Age / उम्र:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.age ? `${selectedUser.age} Yrs` : "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-3 col-lg-2">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Weight / वजन", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              ⚖️ {selectedUser.weight ? `${selectedUser.weight} kg` : "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-2">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Pulse Rate / पल्स रेट", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              ❤️ {selectedUser.pulse_rate ? `${selectedUser.pulse_rate} bpm` : "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-2">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Blood pressure / रक्तचाप", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              🩸 {selectedUser.blood_pressure || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Temperature / तापमान", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              🌡️ {selectedUser.temperature ? `${selectedUser.temperature} °F` : "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12 col-sm-6 col-lg-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Nutritional Status / पोषण स्थिति:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.nutritional_status || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12 col-sm-6 col-lg-6">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Lymphadenopathy (mention): / लिम्फैडेनोपैथी (उल्लेख):", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.lymphadenopathy || "-"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: Substance Dependency */}
+                  <div
+                    className="card shadow-sm border-0 mb-4"
+                    style={{
+                      borderRadius: "14px",
+                      overflow: "hidden",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div
+                      className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                      style={{
+                        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                        borderLeft: "5px solid #d56337",
+                      }}
+                    >
+                      <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                        ⚠️ {getTranslation("Substance Dependency / पदार्थ निर्भरता", lang)}
+                      </h6>
+                    </div>
+                    <div className="card-body p-3 p-md-4">
+                      <div className="row g-3">
+                        <div className="col-12 col-md-4">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Dependent To / निर्भरता का प्रकार:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.dependent_to || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12 col-md-4">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Substance Use Pattern / उपयोग का पैटर्न:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.substance_use_pattern || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12 col-md-4">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Last 30 Days Quantity / पिछले 30 दिनों की मात्रा:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.last_30_days_quantity || "-"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Medical History & Complications */}
+                  <div
+                    className="card shadow-sm border-0 mb-4"
+                    style={{
+                      borderRadius: "14px",
+                      overflow: "hidden",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div
+                      className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                      style={{
+                        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                        borderLeft: "5px solid #d56337",
+                      }}
+                    >
+                      <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                        🏥 {getTranslation("Medical History & Complications / चिकित्सा इतिहास एवं जटिलताएं", lang)}
+                      </h6>
+                    </div>
+                    <div className="card-body p-3 p-md-4">
+                      <div className="row g-3">
+                        <div className="col-12 col-md-6">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Medical History / चिकित्सा इतिहास", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.medical_history || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12 col-md-6">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Blood Transfusion History / रक्त संक्रमण इतिहास", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.blood_transfusion_history || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-md-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Ulcers / अल्सर", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.ulcer || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-md-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Respiratory Problem / श्वसन समस्या", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.respiratory_problem || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-md-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Jaundice / पीलिया", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.jaundice || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-md-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Haematemesis / मलैना", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.haematemesis || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-md-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Abdominal Complaints / पेट की शिकायतें", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.abdominal_complaints || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-md-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Cardiovascular / हृदय संबंधी", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.cardiovascular || "-"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Neurological Symptoms */}
+                  <div
+                    className="card shadow-sm border-0 mb-4"
+                    style={{
+                      borderRadius: "14px",
+                      overflow: "hidden",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div
+                      className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                      style={{
+                        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                        borderLeft: "5px solid #d56337",
+                      }}
+                    >
+                      <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                        🧠 {getTranslation("Neurological Examination / न्यूरोलॉजिकल परीक्षण", lang)}
+                      </h6>
+                    </div>
+                    <div className="card-body p-3 p-md-4">
+                      <div className="row g-3">
+                        <div className="col-6 col-sm-4 col-lg-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Seizure / फिट्स", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.seizure || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Epilepsy / मिर्गी", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.epilepsy || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Delirium / भ्रम", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.delirium || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Trembling / कांपना", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.trembling || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Memory Loss / स्मृति हानि", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.memory_loss || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Neuropathy / स्नायु रोग", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.neuropathy || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-3">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Blackout / बेहोशी", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.blackout || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Other Findings / अन्य खोज:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.other_findings || "-"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 5: Consent & Signatures */}
+                  <div
+                    className="card shadow-sm border-0 mb-4"
+                    style={{
+                      borderRadius: "14px",
+                      overflow: "hidden",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div
+                      className="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between"
+                      style={{
+                        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                        borderLeft: "5px solid #d56337",
+                      }}
+                    >
+                      <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
+                        📝 {getTranslation("Consent & Staff Signatures / सहमति एवं हस्ताक्षर", lang)}
+                      </h6>
+                    </div>
+                    <div className="card-body p-3 p-md-4">
+                      <div className="row g-3">
+                        <div className="col-12 col-sm-4">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Consent: / सहमति:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.consent || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12 col-sm-4">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Consent Name:/सहमति नाम:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.consent_name || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12 col-sm-4">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Relationship:/संबंध:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.consent_relationship || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Prepared by:/द्वारा तैयार:", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              ✍️ {selectedUser.prepared_by || "-"}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-5">
+                  <p className="text-muted mb-0">
+                    {getTranslation("No data available / कोई डेटा मौजूद नहीं", lang)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Actions */}
+            <ModalActionButtons
+              onClose={closeUserViewModal}
+              onPrint={handlePrint}
+              onDownload={handleDownloadPDF}
+              isDownloading={pfaDownload}
+              downloadText={getTranslation("Download PDF / डाउनलोड करें", lang)}
+            />
           </CommonModal>
 
           {/* Readmission PFA Edit Modal */}
@@ -2917,9 +3229,7 @@ const parseDateString = (dateStr) => {
                           <div className="input-group">
                             <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
                               className="form-control digits"
-                              selected={PFAeditData.date_of_assessment instanceof Date && !isNaN(PFAeditData.date_of_assessment)
-                            ? PFAeditData.date_of_assessment
-                            : null }
+                              selected={safeDate(PFAeditData?.date_of_assessment)}
                               onChange={(date) =>
   setPFAeditData({
     ...PFAeditData,
@@ -3093,34 +3403,34 @@ const parseDateString = (dateStr) => {
                       <tbody>
   {[
     {
-      id: "5",
+      id: "1",
       question: getTranslation(anyMedicalHistory, lang),
       name: "medical_history",
       type: "yesno", // added type
     },
     {
-      id: "6",
+      id: "2",
       question: getTranslation(anyBloodTransfusionHistory, lang),
       name: "blood_transfusion_history",
       type: "yesno", // added type
     },
     {
-      id: "7",
+      id: "3",
       question: getTranslation(Weight, lang),
       name: "weight",
     },
     {
-      id: "8",
+      id: "4",
       question: getTranslation(PulseRate, lang),
       name: "pulse_rate",
     },
     {
-      id: "9",
+      id: "5",
       question: getTranslation(Bloodpressure, lang),
       name: "blood_pressure",
     },
     {
-      id: "10",
+      id: "6",
       question: getTranslation(Temperature, lang),
       name: "temperature",
     },
@@ -3292,15 +3602,14 @@ const parseDateString = (dateStr) => {
                           <tr key={key}>
                             <td>{index + 1}</td>
                             <td>{label}</td>
-                            <td colSpan="2">
-                              <div className="radio radio-primary d-flex gap-3">
-                                {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
-                                  const inputId = `complication_${key}_${value}`;
-                                  return (
-                                    <div
-                                      key={inputId}
-                                      className="form-check form-check-inline"
-                                    >
+                              {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
+                                const inputId = `complication_${key}_${value}`;
+                                return (
+                                  <td
+                                    key={inputId}
+                                    className="text-center align-middle"
+                                  >
+                                    <div className="form-check form-check-inline m-0">
                                       <Input
                                         id={inputId}
                                         type="radio"
@@ -3313,10 +3622,6 @@ const parseDateString = (dateStr) => {
                                           ]?.toString() === value.toString()
                                         }
                                         onChange={() => {
-                                          console.log(
-                                            `Setting complication ${key} to:`,
-                                            value
-                                          );
                                           setPFAeditData((prev) => ({
                                             ...prev,
                                             complications: {
@@ -3326,22 +3631,20 @@ const parseDateString = (dateStr) => {
                                           }));
                                         }}
                                       />
-
                                       <Label
                                         className="form-check-label"
-                                        for={inputId}
+                                        htmlFor={inputId}
                                       >
                                         {value}
                                       </Label>
                                     </div>
-                                  );
-                                })}
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
 
                     <div className="col-md-12">
                       <FormGroup className="mb-0">
@@ -3394,37 +3697,38 @@ const parseDateString = (dateStr) => {
                             {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
                               const inputId = `neuro_${option.key}_${value}`;
                               return (
-                                <td key={inputId}>
-                                  <div className="radio radio-primary d-flex gap-3">
-                                    <div className="form-check form-check-inline">
-                                      <Input
-                                        id={inputId}
-                                        type="radio"
-                                        className="form-check-input"
-                                        name={`neuro_${option.key}`}
-                                        value={value}
-                                        checked={
-                                          PFAeditData?.neurological?.[
-                                            option.key
-                                          ]?.toString() === value.toString()
-                                        }
-                                        onChange={() =>
-                                          setPFAeditData((prev) => ({
-                                            ...prev,
-                                            neurological: {
-                                              ...prev.neurological,
-                                              [option.key]: value,
-                                            },
-                                          }))
-                                        }
-                                      />
-                                      <Label
-                                        className="form-check-label"
-                                        htmlFor={inputId}
-                                      >
-                                        {value}
-                                      </Label>
-                                    </div>
+                                <td
+                                  key={inputId}
+                                  className="text-center align-middle"
+                                >
+                                  <div className="form-check form-check-inline m-0">
+                                    <Input
+                                      id={inputId}
+                                      type="radio"
+                                      className="form-check-input"
+                                      name={`neuro_${option.key}`}
+                                      value={value}
+                                      checked={
+                                        PFAeditData?.neurological?.[
+                                          option.key
+                                        ]?.toString() === value.toString()
+                                      }
+                                      onChange={() =>
+                                        setPFAeditData((prev) => ({
+                                          ...prev,
+                                          neurological: {
+                                            ...prev.neurological,
+                                            [option.key]: value,
+                                          },
+                                        }))
+                                      }
+                                    />
+                                    <Label
+                                      className="form-check-label"
+                                      htmlFor={inputId}
+                                    >
+                                      {value}
+                                    </Label>
                                   </div>
                                 </td>
                               );
@@ -3719,7 +4023,7 @@ const parseDateString = (dateStr) => {
                   <div className="input-group">
                   <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
   className="form-control digits"
-  selected={PFAeditData?.date_of_assessment} // Always Date object or null
+  selected={safeDate(PFAeditData?.date_of_assessment)} // Always Date object or null
   onChange={(date) =>
     setPFAeditData({
       ...PFAeditData,
@@ -3896,34 +4200,34 @@ const parseDateString = (dateStr) => {
               <tbody>
   {[
     {
-      id: "5",
+      id: "1",
       question: getTranslation(anyMedicalHistory, lang),
       name: "medical_history",
       type: "yesno", // added type
     },
     {
-      id: "6",
+      id: "2",
       question: getTranslation(anyBloodTransfusionHistory, lang),
       name: "blood_transfusion_history",
       type: "yesno", // added type
     },
     {
-      id: "7",
+      id: "3",
       question: getTranslation(Weight, lang),
       name: "weight",
     },
     {
-      id: "8",
+      id: "4",
       question: getTranslation(PulseRate, lang),
       name: "pulse_rate",
     },
     {
-      id: "9",
+      id: "5",
       question: getTranslation(Bloodpressure, lang),
       name: "blood_pressure",
     },
     {
-      id: "10",
+      id: "6",
       question: getTranslation(Temperature, lang),
       name: "temperature",
     },
@@ -4087,48 +4391,44 @@ const parseDateString = (dateStr) => {
         <tr key={key}>
           <td>{index + 1}</td>
           <td>{label}</td>
-          <td colSpan="2">
-            <div className="radio radio-primary d-flex gap-3">
-              {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
-                const inputId = `complication_${key}_${value}`;
-                return (
-                  <div
-                    key={inputId}
-                    className="form-check form-check-inline"
-                  >
-                    <Input
-                      id={inputId}
-                      type="radio"
-                      className="form-check-input"
-                      name={`complication_${key}`}
-                      value={value}
-                      checked={
-                        PFAeditData?.[key]?.toString() === value.toString()
-                      }
-                      onChange={() => {
-                        console.log(`Setting complication ${key} to:`, value);
-                        setPFAeditData((prev) => ({
-                          ...prev,
-                          [key]: value, // store directly in flat structure
-                        }));
-                      }}
-                    />
-
-                    <Label
-                      className="form-check-label"
-                      for={inputId}
-                    >
-                      {value}
-                    </Label>
-                  </div>
-                );
-              })}
-            </div>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </Table>
+                              {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
+                                const inputId = `complication_${key}_${value}`;
+                                return (
+                                  <td
+                                    key={inputId}
+                                    className="text-center align-middle"
+                                  >
+                                    <div className="form-check form-check-inline m-0">
+                                      <Input
+                                        id={inputId}
+                                        type="radio"
+                                        className="form-check-input"
+                                        name={`complication_${key}`}
+                                        value={value}
+                                        checked={
+                                          PFAeditData?.[key]?.toString() === value.toString()
+                                        }
+                                        onChange={() => {
+                                          setPFAeditData((prev) => ({
+                                            ...prev,
+                                            [key]: value, // store directly in flat structure
+                                          }));
+                                        }}
+                                      />
+                                      <Label
+                                        className="form-check-label"
+                                        htmlFor={inputId}
+                                      >
+                                        {value}
+                                      </Label>
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </Table>
 
   <div className="col-md-12">
     <FormGroup className="mb-0 mt-4 mb-4">
@@ -4182,32 +4482,33 @@ const parseDateString = (dateStr) => {
           {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
             const inputId = `neuro_${option.key}_${value}`;
             return (
-              <td key={inputId}>
-                <div className="radio radio-primary d-flex gap-3">
-                  <div className="form-check form-check-inline">
-                    <Input
-                      id={inputId}
-                      type="radio"
-                      className="form-check-input"
-                      name={`neuro_${option.key}`}
-                      value={value}
-                      checked={
-                        PFAeditData?.[option.key]?.toString() === value.toString()
-                      }
-                      onChange={() =>
-                        setPFAeditData((prev) => ({
-                          ...prev,
-                          [option.key]: value, // store in flat structure
-                        }))
-                      }
-                    />
-                    <Label
-                      className="form-check-label"
-                      htmlFor={inputId}
-                    >
-                      {value}
-                    </Label>
-                  </div>
+              <td
+                key={inputId}
+                className="text-center align-middle"
+              >
+                <div className="form-check form-check-inline m-0">
+                  <Input
+                    id={inputId}
+                    type="radio"
+                    className="form-check-input"
+                    name={`neuro_${option.key}`}
+                    value={value}
+                    checked={
+                      PFAeditData?.[option.key]?.toString() === value.toString()
+                    }
+                    onChange={() =>
+                      setPFAeditData((prev) => ({
+                        ...prev,
+                        [option.key]: value, // store in flat structure
+                      }))
+                    }
+                  />
+                  <Label
+                    className="form-check-label"
+                    htmlFor={inputId}
+                  >
+                    {value}
+                  </Label>
                 </div>
               </td>
             );
@@ -4480,6 +4781,13 @@ const parseDateString = (dateStr) => {
           </CommonModal>
         </div>
       </div>
+
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
     </Fragment>
 
    

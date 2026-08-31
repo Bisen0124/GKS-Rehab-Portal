@@ -31,6 +31,13 @@ import PatientCommonInfo from "../../CustomHook/PatientCommonInfo";
 import { useBranch } from "../../contexts/BranchContext";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
+import UserDetailsModal from "../Common/UserDetailsModal";
+import TableExportButtons from "../Common/TableExportButtons";
+import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
+import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import ModalActionButtons from "../Common/ModalActionButtons";
+import html2pdf from "html2pdf.js";
+import { useReactToPrint } from "react-to-print";
 
 const BASE_URL = "https://gks-yjdc.onrender.com";
 
@@ -69,6 +76,13 @@ function PersonalDetails() {
   // ─── Modal states ────────────────────────────────────────────────────────────
   const [modal, setModal] = useState(false);         // Create / Edit modal
   const [viewModal, setViewModal] = useState(false); // View (read-only) modal
+  const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
+  const [selectedViewUserId, setSelectedViewUserId] = useState(null);
+
+  const handleViewUserDetails = (userId) => {
+    setSelectedViewUserId(userId);
+    setViewUserDetailsModal(true);
+  };
 
   // ─── Loading states ───────────────────────────────────────────────────────────
   const [isLoading, setIsLoading] = useState(false);
@@ -82,6 +96,35 @@ function PersonalDetails() {
 
   // ─── View-modal data ──────────────────────────────────────────────────────────
   const [viewData, setViewData] = useState(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const pdfRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    content: () => pdfRef.current,
+    documentTitle: `Personal_Details_${selectedUser?.name || "Patient"}`,
+  });
+
+  const handleDownloadPDF = () => {
+    const element = pdfRef.current;
+    if (!element) return;
+    setIsDownloading(true);
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: `Personal_Details_${selectedUser?.name || "Patient"}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    };
+    html2pdf()
+      .set(opt)
+      .from(element)
+      .save()
+      .then(() => setIsDownloading(false))
+      .catch((err) => {
+        console.error("PDF download error:", err);
+        setIsDownloading(false);
+      });
+  };
 
   // ─── Create / Edit form state ─────────────────────────────────────────────────
   const [formData, setFormData] = useState(initialFormData);
@@ -248,12 +291,6 @@ function PersonalDetails() {
   // ─── Table 1 columns (Registered Patient List) ───────────────────────────────
   const tableColumns = [
     {
-      name: `${getTranslation("User ID/उपयोगकर्ता आईडी", lang)}`,
-      selector: (row) => row.id,
-      sortable: true,
-      center: true,
-    },
-    {
       name: `${getTranslation("GKS ID/GKS आईडी", lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
@@ -275,16 +312,6 @@ function PersonalDetails() {
       ),
     },
     {
-      name: `${getTranslation("Status/स्थिति", lang)}`,
-      selector: (row) => row.status,
-      sortable: true,
-      cell: (row) => (
-        <span style={{ color: row.disabled ? "#999" : "#000" }}>
-          {row.status}
-        </span>
-      ),
-    },
-    {
       name: `${getTranslation("Action/क्रिया", lang)}`,
       center: true,
       cell: (row) => {
@@ -292,6 +319,30 @@ function PersonalDetails() {
 
         return (
           <div className="d-flex gap-2">
+            {/* View User Details Icon */}
+            <span
+              onClick={() => handleViewUserDetails(row.id)}
+              style={{ cursor: "pointer" }}
+              title={getTranslation("View/देखना", lang)}
+            >
+              <svg
+                style={{ color: "#d56337" }}
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="feather feather-eye"
+              >
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </span>
+
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
               <span
                 style={{ cursor: "pointer" }}
@@ -305,55 +356,30 @@ function PersonalDetails() {
             )}
 
             {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-              row.isCBTCompleted ? (
-                <>
-                  <span
-                    onClick={() => editPDHandler(row.id)}
-                    style={{ cursor: "pointer" }}
-                    title={getTranslation(
-                      "Edit Personal Data Form/व्यक्तिगत डेटा फ़ॉर्म संपादित करें",
-                      lang
-                    )}
-                  >
-                    ✏️
-                  </span>
-                  <span
-                    onClick={() => deletePDHandler(row.id)}
-                    style={{ cursor: "pointer" }}
-                    title={getTranslation(
-                      "Delete Personal Data Form/व्यक्तिगत डेटा फ़ॉर्म हटाएँ",
-                      lang
-                    )}
-                  >
-                    🗑️
-                  </span>
-                </>
-              ) : (
-                <span
-                  onClick={() => createPDHandler(row.id)}
-                  style={{ cursor: "pointer" }}
-                  title={getTranslation(
-                    "Create Personal Data Form/व्यक्तिगत डेटा फ़ॉर्म बनाएँ",
-                    lang
-                  )}
+              <span
+                onClick={() => createPDHandler(row.id)}
+                style={{ cursor: "pointer" }}
+                title={getTranslation(
+                  "Create Personal Data Form/व्यक्तिगत डेटा फ़ॉर्म बनाएँ",
+                  lang
+                )}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <line x1="12" y1="8" x2="12" y2="16" />
-                    <line x1="8" y1="12" x2="16" y2="12" />
-                  </svg>
-                </span>
-              )
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <line x1="12" y1="8" x2="12" y2="16" />
+                  <line x1="8" y1="12" x2="16" y2="12" />
+                </svg>
+              </span>
             )}
           </div>
         );
@@ -363,12 +389,6 @@ function PersonalDetails() {
 
   // ─── Table 2 columns (All PD Entries List) ───────────────────────────────────
   const tablePDPatientListColumns = [
-    {
-      name: `${getTranslation("User ID/उपयोगकर्ता आईडी", lang)}`,
-      selector: (row) => row.user_id,
-      sortable: true,
-      center: true,
-    },
     {
       name: "PD ID/व्यक्तिगत विवरण आईडी",
       selector: (row) => row.personal_details_id,
@@ -560,12 +580,23 @@ function PersonalDetails() {
     }
   };
 
+  const [draftTimestamp, setDraftTimestamp] = useState(null);
+
   // ─── CREATE flow ──────────────────────────────────────────────────────────────
   const createPDHandler = async (userId = null) => {
     resetForm();
     setCurrentUserId(userId);
     setModal(true);
-    if (userId) await fetchUserCommonInfo(userId);
+    if (userId) {
+      const saved = loadDraft("personal_details", userId);
+      if (saved && saved.data) {
+        setFormData(saved.data);
+        setDraftTimestamp(saved.savedAt);
+      } else {
+        setDraftTimestamp(null);
+      }
+      await fetchUserCommonInfo(userId);
+    }
   };
 
   // ─── EDIT flow ────────────────────────────────────────────────────────────────
@@ -682,6 +713,11 @@ function PersonalDetails() {
         showConfirmButton: false,
       });
 
+      if (!isEditMode && currentUserId) {
+        clearDraft("personal_details", currentUserId);
+        setDraftTimestamp(null);
+      }
+
       closeAllModal();
       fetchUsers();
       fetchAllPDEntries();
@@ -790,8 +826,8 @@ function PersonalDetails() {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -807,6 +843,14 @@ function PersonalDetails() {
                           <i className="fa fa-search" />
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={filteredData}
+                        columns={tableColumns}
+                        filename="Personal_Details_Registration_List"
+                        title={getTranslation("Personal Details Registration List / व्यक्तिगत विवरण पंजीकरण सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -852,8 +896,8 @@ function PersonalDetails() {
                       className="p-0"
                     />
                   </div>
-                  <div className="row pb-2">
-                    <div className="col-md-4">
+                  <div className="row pb-3 align-items-center">
+                    <div className="col-md-5 col-12 mb-2 mb-md-0">
                       <InputGroup>
                         <Input
                           className="form-control"
@@ -869,6 +913,14 @@ function PersonalDetails() {
                           <i className="fa fa-search" />
                         </span>
                       </InputGroup>
+                    </div>
+                    <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+                      <TableExportButtons
+                        data={pdFilterData}
+                        columns={tablePDPatientListColumns}
+                        filename="All_Personal_Details_List"
+                        title={getTranslation("All Patient Personal Details (PD) List / सभी रोगी व्यक्तिगत विवरण (पीडी) सूची", lang)}
+                      />
                     </div>
                   </div>
                   {stillLoading ? (
@@ -921,6 +973,17 @@ function PersonalDetails() {
         maxWidth="1200px"
       >
         <div className="cbt__wrapper">
+          {!isEditMode && (
+            <DraftNoticeBanner
+              draftTimestamp={draftTimestamp}
+              formKey="personal_details"
+              targetId={currentUserId}
+              onDiscard={() => {
+                resetForm();
+                setDraftTimestamp(null);
+              }}
+            />
+          )}
           <Form className="theme-form" onSubmit={handleFormSubmit}>
             <PatientCommonInfo
               selectedUser={selectedUser}
@@ -1082,7 +1145,17 @@ function PersonalDetails() {
               </div>
             </div>
 
-            <div className="d-flex gap-3 mt-4 mb-3 px-3">
+            <div className="d-flex align-items-center gap-3 mt-4 mb-3 px-3 flex-wrap">
+              {!isEditMode && (
+                <SaveDraftButton
+                  formKey="personal_details"
+                  targetId={currentUserId}
+                  formData={formData}
+                  onDraftSaved={() => setDraftTimestamp(Date.now())}
+                  style={{ height: "38px", padding: "6px 16px" }}
+                />
+              )}
+
               <Button color="primary" type="submit" disabled={isLoading}>
                 {isLoading ? (
                   <span
@@ -1127,114 +1200,125 @@ function PersonalDetails() {
       >
         <Col sm="12">
           <div className="table-responsive p-4">
-            <h4
-              style={{
-                textAlign: "center",
-                textDecoration: "underline",
-                padding: "20px 0",
-              }}
-            >
-              {getTranslation(
-                "Personal Details Form / व्यक्तिगत विवरण फ़ॉर्म",
-                lang
-              )}
-            </h4>
-
-            <Table size="sm" className="table-bordered">
-              <tbody style={{ fontSize: "14px" }}>
-                {viewLoading ? (
-                  <tr>
-                    <td colSpan="2" className="text-center py-4">
-                      <Spinner className="spinner-border" />
-                    </td>
-                  </tr>
-                ) : viewData ? (
-                  <>
-                    {[
-                      {
-                        label: getTranslation(
-                          "Date of Form Filling / फॉर्म भरने की तिथि",
-                          lang
-                        ),
-                        value: viewData.date_of_form_filling
-                          ? new Date(
-                              viewData.date_of_form_filling
-                            ).toLocaleDateString("en-IN")
-                          : "—",
-                      },
-                      {
-                        label: getTranslation(
-                          "Duration of Interview / साक्षात्कार की अवधि",
-                          lang
-                        ),
-                        value: viewData.duration_of_interview || "—",
-                      },
-                      {
-                        label: getTranslation("Occupation / व्यवसाय", lang),
-                        value: viewData.occupation || "—",
-                      },
-                      {
-                        label: getTranslation(
-                          "Marital Status / वैवाहिक स्थिति",
-                          lang
-                        ),
-                        value: viewData.marital_status || "—",
-                      },
-                      {
-                        label: getTranslation(
-                          "Father's Name / पिता का नाम",
-                          lang
-                        ),
-                        value: viewData.father_name || "—",
-                      },
-                      {
-                        label: getTranslation(
-                          "Father's Occupation / पिता का पेशा",
-                          lang
-                        ),
-                        value: viewData.father_occupation || "—",
-                      },
-                      {
-                        label: getTranslation("Religion / धर्म", lang),
-                        value: viewData.religion || "—",
-                      },
-                      {
-                        label: getTranslation(
-                          "Living Situation / रहने की स्थिति",
-                          lang
-                        ),
-                        value: viewData.living_situation || "—",
-                      },
-                    ].map((item, i) => (
-                      <tr key={i}>
-                        <td className="fw-semibold p-3" style={{ width: "40%" }}>
-                          {item.label}
-                        </td>
-                        <td className="p-3">{item.value}</td>
-                      </tr>
-                    ))}
-                  </>
-                ) : (
-                  <tr>
-                    <td colSpan="2" className="text-center py-4">
-                      {getTranslation(
-                        "No data available / कोई डेटा मौजूद नहीं",
-                        lang
-                      )}
-                    </td>
-                  </tr>
+            <div ref={pdfRef} id="personal-details-pdf" className="p-3">
+              <h4
+                style={{
+                  textAlign: "center",
+                  textDecoration: "underline",
+                  padding: "10px 0 20px 0",
+                }}
+              >
+                {getTranslation(
+                  "Personal Details Form / व्यक्तिगत विवरण फ़ॉर्म",
+                  lang
                 )}
-              </tbody>
-            </Table>
+              </h4>
+
+              <Table size="sm" className="table-bordered">
+                <tbody style={{ fontSize: "14px" }}>
+                  {viewLoading ? (
+                    <tr>
+                      <td colSpan="2" className="text-center py-4">
+                        <Spinner className="spinner-border" />
+                      </td>
+                    </tr>
+                  ) : viewData ? (
+                    <>
+                      {[
+                        {
+                          label: getTranslation(
+                            "Date of Form Filling / फॉर्म भरने की तिथि",
+                            lang
+                          ),
+                          value: viewData.date_of_form_filling
+                            ? new Date(
+                                viewData.date_of_form_filling
+                              ).toLocaleDateString("en-IN")
+                            : "—",
+                        },
+                        {
+                          label: getTranslation(
+                            "Duration of Interview / साक्षात्कार की अवधि",
+                            lang
+                          ),
+                          value: viewData.duration_of_interview || "—",
+                        },
+                        {
+                          label: getTranslation("Occupation / व्यवसाय", lang),
+                          value: viewData.occupation || "—",
+                        },
+                        {
+                          label: getTranslation(
+                            "Marital Status / वैवाहिक स्थिति",
+                            lang
+                          ),
+                          value: viewData.marital_status || "—",
+                        },
+                        {
+                          label: getTranslation(
+                            "Father's Name / पिता का नाम",
+                            lang
+                          ),
+                          value: viewData.father_name || "—",
+                        },
+                        {
+                          label: getTranslation(
+                            "Father's Occupation / पिता का पेशा",
+                            lang
+                          ),
+                          value: viewData.father_occupation || "—",
+                        },
+                        {
+                          label: getTranslation("Religion / धर्म", lang),
+                          value: viewData.religion || "—",
+                        },
+                        {
+                          label: getTranslation(
+                            "Living Situation / रहने की स्थिति",
+                            lang
+                          ),
+                          value: viewData.living_situation || "—",
+                        },
+                      ].map((item, i) => (
+                        <tr key={i}>
+                          <td className="fw-semibold p-3" style={{ width: "40%" }}>
+                            {item.label}
+                          </td>
+                          <td className="p-3">{item.value}</td>
+                        </tr>
+                      ))}
+                    </>
+                  ) : (
+                    <tr>
+                      <td colSpan="2" className="text-center py-4">
+                        {getTranslation(
+                          "No data available / कोई डेटा मौजूद नहीं",
+                          lang
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
+            </div>
           </div>
 
-          <div style={{ margin: "0 20px 20px 20px" }}>
-            <Button color="secondary" onClick={closeViewModal}>
-              {getTranslation("Close / बंद करें", lang)}
-            </Button>
-          </div>
+          <ModalActionButtons
+            onClose={closeViewModal}
+            onPrint={handlePrint}
+            onDownload={handleDownloadPDF}
+            isDownloading={isDownloading}
+            downloadText={getTranslation("Download PDF / डाउनलोड करें", lang)}
+          />
         </Col>
       </CommonModal>
+
+      {/* View user details modal */}
+      <UserDetailsModal
+        isOpen={viewUserDetailsModal}
+        userId={selectedViewUserId}
+        toggler={() => setViewUserDetailsModal(false)}
+      />
     </Fragment>
   );
 }

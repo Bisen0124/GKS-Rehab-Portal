@@ -48,10 +48,10 @@ import PatientCommonInfo from "../../CustomHook/PatientCommonInfo";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import html2pdf from "html2pdf.js";
-
 import { useBranch } from "../../contexts/BranchContext";
-
 import { Btn, H5, Breadcrumbs, H4 } from "../../AbstractElements";
+import PatientViewHeader from "../Common/PatientViewHeader";
+import TableExportButtons from "../Common/TableExportButtons";
 
 const GetPFAReports = () => {
   //Branches selection
@@ -73,18 +73,6 @@ const GetPFAReports = () => {
   const [stillLoading, setstillLoading] = useState(true);
   //Get all PFA  entries
   const tablePFAPatientListColumns = [
-    {
-      name: "User ID",
-      selector: (row) => row.user_id,
-      sortable: true,
-      center: true,
-    },
-    {
-      name: "PFA ID",
-      selector: (row) => row.pfa_id,
-      sortable: true,
-      center: true,
-    },
     {
       name: "GKS ID",
       selector: (row) => row.gks_id,
@@ -337,9 +325,23 @@ const GetPFAReports = () => {
     // Add a temporary class to scale fonts if needed
     element.classList.add("pdf-scale");
 
+    const patientName =
+      selectedUser?.name ||
+      selectedUser?.patient_name ||
+      "Patient";
+    const gksId =
+      selectedUser?.custom_code ||
+      selectedUser?.gks_id ||
+      selectedUser?.uid ||
+      selectedUser?.user_id ||
+      selectedUser?.id ||
+      "";
+    const safeName = String(patientName).trim().replace(/\s+/g, "_");
+    const safeId = String(gksId).trim().replace(/\s+/g, "_");
+
     const opt = {
       margin: [10, 10, 10, 10], // top, left, bottom, right
-      filename: `user_data_${selectedUser.name}_${selectedUser.user_id}.pdf`,
+      filename: `patient_${safeName}_${safeId || "pfa_report"}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
       html2canvas: {
         scale: 2,
@@ -487,8 +489,8 @@ const GetPFAReports = () => {
               className="p-0"
             />
           </div>
-          <div className="row pb-2">
-            <div className="col-md-4">
+          <div className="row pb-3 align-items-center">
+            <div className="col-md-5 col-12 mb-2 mb-md-0">
               <InputGroup>
                 <Input
                   className="form-control"
@@ -501,6 +503,14 @@ const GetPFAReports = () => {
                   <i className="fa fa-search"></i>
                 </span>
               </InputGroup>
+            </div>
+            <div className="col-md-7 col-12 d-flex justify-content-md-end justify-content-start">
+              <TableExportButtons
+                data={pfaFilterData}
+                columns={tablePFAPatientListColumns}
+                filename="PFA_Reports_List"
+                title="All Patient First Assessment (PFA) Reports List"
+              />
             </div>
           </div>
           {stillLoading ? (
@@ -541,7 +551,9 @@ const GetPFAReports = () => {
         maxWidth="1200px"
       >
         <Col sm="12">
-          <div className="table-responsive p-4" ref={pdfRef}>
+          <div className="table-responsive p-4" ref={pdfRef} style={{ background: "#f8fafc" }}>
+            {selectedUser && <PatientViewHeader data={selectedUser} />}
+
             <h4
               style={{
                 textAlign: "center",
@@ -551,7 +563,7 @@ const GetPFAReports = () => {
             >
               First Physical Assessment / प्रथम शारीरिक मूल्यांकन
             </h4>
-            <Table size="sm" className="table-bordered">
+            <Table size="sm" className="table-bordered bg-white">
               <tbody style={{ fontSize: "14px" }}>
                 {isLoading ? (
                   <tr>
