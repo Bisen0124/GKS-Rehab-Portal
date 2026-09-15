@@ -61,13 +61,13 @@ const PatientViewHeader = ({ data = {} }) => {
     <div
       className="card shadow-sm border-0 mb-4 patient-view-header"
       style={{
-        borderRadius: "16px",
-        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-        borderLeft: "6px solid #24695c",
+        borderRadius: "14px",
+        background: "#ffffff",
+        borderLeft: "5px solid #24695c",
         border: "1px solid #e2e8f0",
       }}
     >
-      <div className="card-body p-4">
+      <div className="card-body p-3 p-md-4">
         <div className="d-flex flex-column flex-sm-row align-items-center gap-4">
           {profilePic ? (
             <img
@@ -75,8 +75,8 @@ const PatientViewHeader = ({ data = {} }) => {
               crossOrigin="anonymous"
               alt="Patient Profile"
               style={{
-                width: "84px",
-                height: "84px",
+                width: "80px",
+                height: "80px",
                 borderRadius: "50%",
                 objectFit: "cover",
                 border: "3px solid #24695c",
@@ -87,8 +87,8 @@ const PatientViewHeader = ({ data = {} }) => {
           ) : (
             <div
               style={{
-                width: "84px",
-                height: "84px",
+                width: "80px",
+                height: "80px",
                 borderRadius: "50%",
                 background: "#eaf2f0",
                 color: "#24695c",
@@ -117,7 +117,7 @@ const PatientViewHeader = ({ data = {} }) => {
                     borderRadius: "10px",
                     fontSize: "12px",
                     fontWeight: "700",
-                    backgroundColor: "#24695c",
+                    backgroundColor: "#b47b48",
                     color: "#ffffff",
                     padding: "5px 12px",
                     letterSpacing: "0.4px",

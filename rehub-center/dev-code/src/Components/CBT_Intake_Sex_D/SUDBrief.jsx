@@ -62,6 +62,7 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
@@ -641,7 +642,54 @@ function SUDBrief() {
   const [isLoading, setIsLoading] = useState(false);
   const SubmitSUDBriefFormHandler = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: formData.dateOfAssessment,
+      },
+      {
+        label: getTranslation("Dependent to (Primary Substance) / पदार्थ जिस पर निर्भर हैं", lang),
+        value: formData.dependent_to,
+      },
+      {
+        label: getTranslation("Daily Quantity / दैनिक मात्रा", lang),
+        value: formData.substance_daily_quantity,
+      },
+      {
+        label: getTranslation("First Time Used / पहली बार उपयोग", lang),
+        value: formData.used_first_time,
+      },
+      {
+        label: getTranslation("Duration of Regular Use / नियमित उपयोग की अवधि", lang),
+        value: formData.duration_of_regular_use,
+      },
+      {
+        label: getTranslation("Chief Complaints / मुख्य शिकायतें", lang),
+        value: formData.chief_complaints,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true); // Start loader
+
+    const cleanedTreatmentRecords = (rows || [])
+      .map((r) => ({
+        treatment_year: String(r.treatment_year || "").trim(),
+        treatment_place: String(r.treatment_place || "").trim(),
+        treatment_duration: String(r.treatment_duration || "").trim(),
+        days_of_sobriety: String(r.days_of_sobriety || "").trim(),
+      }))
+      .filter(
+        (r) =>
+          r.treatment_year ||
+          r.treatment_place ||
+          r.treatment_duration ||
+          r.days_of_sobriety
+      );
 
     const payload = {
       user_id: selectedUser?.user_id, // ✅ corrected
@@ -654,7 +702,7 @@ function SUDBrief() {
       recurrence_of_substance_use:
         parseInt(formData.recurrence_of_substance_use) || 0,
       how_many_times: parseInt(formData.how_many_times) || 0,
-      treatment_records: rows,
+      treatment_records: cleanedTreatmentRecords,
     };
 
     try {
@@ -672,9 +720,17 @@ function SUDBrief() {
         }
       );
 
-      if (!response.ok) throw new Error("API call failed");
-
       const data = await response.json();
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(
+          data,
+          lang,
+          getTranslation("SUD Brief Submission Failed / SUD संक्षिप्त सबमिशन विफल", lang)
+        );
+        return;
+      }
+
       setIsLoading(false);
       const userTargetId = selectedUser?.user_id || selectedUser?.id || currentSUDBriefUserId;
       clearDraft("sud_brief", userTargetId);
@@ -694,7 +750,7 @@ function SUDBrief() {
       Swal.fire({
         icon: "error",
         title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-        text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+        text: err?.message || getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   };
@@ -1012,12 +1068,20 @@ const handleSUDBriefUpdate = async () => {
     prior_treatment: SUDBriefEditData?.prior_treatment || "",
     how_many_times: SUDBriefEditData?.how_many_times || null,
     treatment_records:
-      SUDBriefEditData?.treatment_records?.map((t) => ({
-        treatment_year: t.treatment_year || "",
-        treatment_place: t.treatment_place || "",
-        treatment_duration: t.treatment_duration || "",
-        days_of_sobriety: t.days_of_sobriety || "",
-      })) || [],
+      (SUDBriefEditData?.treatment_records || [])
+        .map((t) => ({
+          treatment_year: String(t.treatment_year || "").trim(),
+          treatment_place: String(t.treatment_place || "").trim(),
+          treatment_duration: String(t.treatment_duration || "").trim(),
+          days_of_sobriety: String(t.days_of_sobriety || "").trim(),
+        }))
+        .filter(
+          (t) =>
+            t.treatment_year ||
+            t.treatment_place ||
+            t.treatment_duration ||
+            t.days_of_sobriety
+        ),
     substance_stop_tried: SUDBriefEditData?.substance_stop_tried || "",
     coping_mechanisms: SUDBriefEditData?.coping_mechanisms || "",
     work_after_stop: SUDBriefEditData?.work_after_stop || "",
@@ -1048,9 +1112,17 @@ const handleSUDBriefUpdate = async () => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Failed to update SUD assessment. Check console for details./SUD मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।", lang)
+      );
+      return;
+    }
+
     console.log("✅ SUD Update Response:", data);
     console.log("📦 SUD Update Payload Sent:", payload);
 
@@ -1070,7 +1142,7 @@ const handleSUDBriefUpdate = async () => {
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to update SUD assessment. Check console for details./SUD मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
+      text: err?.message || getTranslation("Failed to update SUD assessment. Check console for details./SUD मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
     });
   }
 };

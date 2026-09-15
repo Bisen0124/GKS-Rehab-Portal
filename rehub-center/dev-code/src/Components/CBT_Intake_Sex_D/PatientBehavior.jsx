@@ -45,6 +45,7 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 import { useReactToPrint } from "react-to-print";
@@ -666,6 +667,50 @@ const normalizeValue = (item) => {
 
 const handlePBFormSubmit = async (e) => {
   e.preventDefault();
+
+  const compulsoryFieldDefinitions = [
+    {
+      label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+      value: formData.dateOfAssessment,
+    },
+    {
+      label: getTranslation("Most Important Thing in Life / जीवन में सबसे महत्वपूर्ण चीज", lang),
+      value: formData.mostImportantThingLife,
+    },
+    {
+      label: getTranslation("Life Aim / जीवन का लक्ष्य", lang),
+      value: formData.lifeAim,
+    },
+    {
+      label: getTranslation("Current Mental Status / वर्तमान मानसिक स्थिति", lang),
+      value: formData.mentalStatus,
+    },
+    {
+      label: getTranslation("Discharge Plan / डिस्चार्ज के बाद की योजना", lang),
+      value: formData.dischargePlan,
+    },
+    {
+      label: getTranslation("Family Expectations / परिवार की अपेक्षाएं", lang),
+      value: formData.familyExpectations,
+    },
+    {
+      label: getTranslation("Attitude During Interview / साक्षात्कार के दौरान रवैया", lang),
+      value: formData.attitude,
+    },
+    {
+      label: getTranslation("Patient Mental Stage / रोगी की मानसिक अवस्था", lang),
+      value: formData.mentalStage,
+    },
+    {
+      label: getTranslation("Prepared By / द्वारा तैयार", lang),
+      value: formData.prepared_by,
+    },
+  ];
+
+  if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+    return;
+  }
+
   console.log("Form Data:", formData);
 
   // 🛠️ Construct payload in correct format (matching API structure)
@@ -749,9 +794,17 @@ const handlePBFormSubmit = async (e) => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Failed to submit Patient Behaviour. Check console for error./रोगी व्यवहार प्रपत्र बनाएँ सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.", lang)
+      );
+      return;
+    }
+
     setIsLoading(false);
     const userTargetId = selectedUser?.user_id || selectedUser?.id || currentPBUserId;
     clearDraft("patient_behavior", userTargetId);
@@ -759,19 +812,19 @@ const handlePBFormSubmit = async (e) => {
 
     Swal.fire({
       icon: "success",
-      title: getTranslation("IRF Created Successfully/IRF सफलतापूर्वक बनाया गया",lang),
-      text: getTranslation("The IRF assessment was submitted successfully./आईआरएफ मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
+      title: getTranslation("Patient Behavior Created Successfully/रोगी व्यवहार सफलतापूर्वक बनाया गया",lang),
+      text: getTranslation("The Patient Behavior assessment was submitted successfully./रोगी व्यवहार मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
     }).then(() => setIsPatientBehaviourModalOpen(false));
 
-    console.log("✅ IRF Data:", data);
+    console.log("✅ PB Data:", data);
   } catch (err) {
-    console.error("❌ IRF Submit Error:", err);
+    console.error("❌ PB Submit Error:", err);
     setIsLoading(false);
 
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to submit Patient Behaviour. Check console for error./रोगी व्यवहार प्रपत्र बनाएँ सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+      text: err?.message || getTranslation("Failed to submit Patient Behaviour. Check console for error./रोगी व्यवहार प्रपत्र बनाएँ सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };
@@ -1082,9 +1135,17 @@ const handlePBUpdate = async () => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Failed to update Patient Behavior assessment. Check console for details./रोगी व्यवहार मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें.", lang)
+      );
+      return;
+    }
+
     console.log("✅ PB Update Response:", data);
     console.log("📦 PB Update Payload Sent:", payload);
 
@@ -1104,7 +1165,7 @@ const handlePBUpdate = async () => {
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to update Patient Behavior assessment. Check console for details./रोगी व्यवहार मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
+      text: err?.message || getTranslation("Failed to update Patient Behavior assessment. Check console for details./रोगी व्यवहार मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें.",lang),
     });
   }
 };
@@ -1343,15 +1404,25 @@ const handlePBReadmissionFormSubmit = async (e) => {
     nervous_anxiety_without_substance: PBPrefillData?.nervous_anxiety_without_substance || "No",
     concentrate_work_after_substance: PBPrefillData?.concentrate_work_after_substance || "No",
     better_feelings_after_substance: PBPrefillData?.better_feelings_after_substance || "No",
-    financial_responsibility_ahead: PBPrefillData?.financial_responsibility_ahead || "No",
-    guilty_ashamed_substance_abuse: PBPrefillData?.guilty_ashamed_substance_abuse || "No",
-    avoid_people_places: PBPrefillData?.avoid_people_places || "No",
-    substance_making_life_sad: PBPrefillData?.substance_making_life_sad || "No",
-    sleeping_eating_problems: PBPrefillData?.sleeping_eating_problems || "No",
-    stop_control_substance_abuse: PBPrefillData?.stop_control_substance_abuse || "No",
-    bad_result_abuse_substance: PBPrefillData?.bad_result_abuse_substance || "No",
+    violent_towards_others: PBPrefillData?.violent_towards_others || "No",
+    breaks_promises: PBPrefillData?.breaks_promises || "No",
+    steals: PBPrefillData?.steals || "No",
+    lies: PBPrefillData?.lies || "No",
+    cheats: PBPrefillData?.cheats || "No",
+    suspicious_nature: PBPrefillData?.suspicious_nature || "No",
+    remorse_after_misbehavior:
+      PBPrefillData?.remorse_after_misbehavior || "No",
+    impulsive_actions: PBPrefillData?.impulsive_actions || "No",
+    blames_others: PBPrefillData?.blames_others || "No",
+    avoids_responsibilities:
+      PBPrefillData?.avoids_responsibilities || "No",
+    overspending: PBPrefillData?.overspending || "No",
+    gambling: PBPrefillData?.gambling || "No",
+    bad_result_abuse_substance:
+      PBPrefillData?.bad_result_abuse_substance || "No",
     talked_tried_suicide: PBPrefillData?.talked_tried_suicide || "No",
-    substance_dependent_think: PBPrefillData?.substance_dependent_think || "No",
+    substance_dependent_think:
+      PBPrefillData?.substance_dependent_think || "No",
 
     // ✅ Footer fields
     consent: PBPrefillData?.consent || "No",
@@ -1377,16 +1448,24 @@ const handlePBReadmissionFormSubmit = async (e) => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Failed to submit Readmission Form. Check console for error./पुनः प्रवेश फ़ॉर्म सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.", lang)
+      );
+      return;
+    }
+
     setIsLoading(false);
 
     Swal.fire({
       icon: "success",
-      title: "Readmission Form Created Successfully",
-      text: "The patient readmission behavior assessment was submitted successfully.",
-    }).then(() => setIsPatientBehaviourModalOpen(false));
+      title: getTranslation("Patient Behavior Readmission Created Successfully/रोगी व्यवहार पुनः प्रवेश सफलतापूर्वक बनाया गया", lang),
+      text: getTranslation("The patient readmission behavior assessment was submitted successfully./रोगी पुनः प्रवेश व्यवहार मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया था।", lang),
+    }).then(() => setPBPrefillModal(false));
 
     console.log("✅ Readmission Data:", data);
   } catch (err) {
@@ -1396,7 +1475,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to submit Readmission Form. Check console for error./पुनः प्रवेश फ़ॉर्म सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+      text: err?.message || getTranslation("Failed to submit Readmission Form. Check console for error./पुनः प्रवेश फ़ॉर्म सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };

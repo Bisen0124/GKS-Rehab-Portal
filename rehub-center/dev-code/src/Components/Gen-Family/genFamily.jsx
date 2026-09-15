@@ -187,6 +187,7 @@ import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import { useReactToPrint } from "react-to-print";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 function GenFamily() {
 
@@ -1652,6 +1653,22 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
   //General Family Submit Handler
   const handleGeneralFamilySubmit = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Form Filling / फॉर्म भरने की तिथि", lang),
+        value: formData.dateOfFormFilling,
+      },
+      {
+        label: getTranslation("UID / यूआईडी", lang),
+        value: formData.genUID,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     console.log("Gen Form Data: ", formData);
     const payload = {
       user_id: selectedUser[0].user_id,
@@ -1846,11 +1863,7 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
 
       if (!response.ok) {
         setIsLoading(false);
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Submission Failed/सबमिशन विफल",lang),
-          text: result.message || getTranslation("Server error/सर्वर त्रुटि",lang),
-        });
+        showApiErrorAlert(result, lang);
         return;
       }
 
@@ -2485,17 +2498,7 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
 
       if (!response.ok) {
         setIsLoading(false);
-        const errorMsg =
-          result.errors && Array.isArray(result.errors) && result.errors.length > 0
-            ? result.errors.map((e) => e.message || e.msg || JSON.stringify(e)).join("\n")
-            : (result.message || getTranslation("Server error/सर्वर त्रुटि", lang));
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल", lang),
-          text: errorMsg,
-        }).then(() => {
-          setIsLoading(false);
-        });
+        showApiErrorAlert(result, lang, getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल", lang));
         return;
       }
       // ✅ Success Case
@@ -2942,17 +2945,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
       if (!response.ok) {
         setIsLoading(false);
-        const errorMsg =
-          result.errors && Array.isArray(result.errors) && result.errors.length > 0
-            ? result.errors.map((e) => e.message || e.msg || JSON.stringify(e)).join("\n")
-            : (result.message || getTranslation("Server error/सर्वर त्रुटि", lang));
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल", lang),
-          text: errorMsg,
-        }).then(() => {
-          setIsLoading(false);
-        });
+        showApiErrorAlert(result, lang, getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल", lang));
         return;
       }
       // ✅ Success Case
@@ -3010,7 +3003,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
             }}
           />
           {/* <h5>{patientPersonalInformation}</h5> */}
-          <Form className="theme-form" onSubmit={handleGeneralFamilySubmit}>
+          <Form className="theme-form" noValidate onSubmit={handleGeneralFamilySubmit}>
 
             {/*Patient Name and sex/age section*/}
             <PatientCommonInfo
@@ -6513,7 +6506,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
         maxWidth="1200px"
       >
         {GenfamiltEditData ? (
-          <form className="theme-form" onSubmit={(e) => {
+          <form className="theme-form" noValidate onSubmit={(e) => {
             e.preventDefault();
             handleGenFamilyReadmission();
           }}>
@@ -10187,7 +10180,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
         maxWidth="1200px"
       >
         {GenfamiltEditData ? (
-          <form className="theme-form" onSubmit={(e) => {
+          <form className="theme-form" noValidate onSubmit={(e) => {
             e.preventDefault();
             handleUpdateIndividualGenFammilyData();
           }}>

@@ -10,7 +10,8 @@ import { useReactToPrint } from "react-to-print";
 import { toast } from "react-toastify";
 import ModalActionButtons from "./ModalActionButtons";
 
-const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler }) => {
+const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onClose }) => {
+  const handleClose = toggler || toggle || onClose || (() => {});
   const { lang } = useLang();
   const { selectedBranch } = useBranch();
   const branchId =
@@ -190,7 +191,7 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler }) => {
         "Patient Register View Data / रोगी रजिस्टर डेटा देखें",
         lang
       )}
-      toggler={toggler}
+      toggler={handleClose}
       maxWidth="1100px"
     >
       <div className="p-3 p-md-4 print-area" ref={pdfRef} style={{ background: "#f8fafc" }}>
@@ -299,8 +300,8 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler }) => {
                         </p>
                       </div>
 
-                  {(selectedUser.admission_form_url || selectedUser.admission_form) && (
-                    <div className="mt-2 mt-sm-0">
+                  <div className="mt-2 mt-sm-0 d-flex align-items-center gap-2 flex-wrap">
+                    {(selectedUser.admission_form_url || selectedUser.admission_form) && (
                       <a
                         href={selectedUser.admission_form_url || selectedUser.admission_form}
                         target="_blank"
@@ -331,8 +332,26 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler }) => {
                         </svg>
                         {getTranslation("View Admission Form / प्रवेश फॉर्म देखें", lang)}
                       </a>
-                    </div>
-                  )}
+                    )}
+                    <Button
+                      color="secondary"
+                      outline
+                      size="sm"
+                      onClick={handleClose}
+                      className="d-inline-flex align-items-center gap-1 shadow-sm px-3"
+                      style={{
+                        borderRadius: "8px",
+                        fontWeight: "600",
+                        padding: "8px 16px",
+                        borderColor: "#cbd5e1",
+                        color: "#334155",
+                        backgroundColor: "#ffffff",
+                      }}
+                    >
+                      <i className="fa fa-times me-1 text-danger" />
+                      {getTranslation("Close / बंद करें", lang)}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -547,7 +566,7 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler }) => {
 
       {/* Modern Modal Footer Actions */}
       <ModalActionButtons
-        onClose={toggler}
+        onClose={handleClose}
         onPrint={handlePrint}
         onDownload={handleDownloadPDF}
         isDownloading={isDownloading}

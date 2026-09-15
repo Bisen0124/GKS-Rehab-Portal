@@ -67,6 +67,7 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 import { useReactToPrint } from "react-to-print";
 
@@ -397,11 +398,12 @@ function FDA() {
   const [currentFDAUserId, setCurrentFDAUserId] = useState(null);
 
   const handleRadioChange = (key, value) => {
+    const normalizedValue = value === "Yes" || value === "हाँ" ? "Yes" : (value === "No" || value === "नहीं" ? "No" : value);
     setFormData((prev) => ({
       ...prev,
       addiction: {
         ...prev.addiction,
-        [key]: value,
+        [key]: normalizedValue,
       },
     }));
   };
@@ -444,8 +446,8 @@ function FDA() {
         if (row.dischargeStatus === 1) {
           return null;
         }
+
         return (
-          //Showing action buttons on register user list on FDA page
           <div className="d-flex gap-2">
             {/* View User Details Icon */}
             <span
@@ -576,13 +578,33 @@ function FDA() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: formData.dateOfAssessment,
+      },
+      {
+        label: getTranslation("Prepared By / द्वारा तैयार", lang),
+        value: formData.prepared_by,
+      },
+      ...fdaAdsiction.map(({ key, label }) => ({
+        label: getTranslation(label, lang),
+        value: formData.addiction?.[key],
+      })),
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true); // Start loader
   
     const payload = {
       user_id: selectedUser?.user_id, // ✅ corrected
       date_of_assessment: formData.dateOfAssessment?.toISOString(),
       substance_type_id: 1,
-      addiction_severity_rating: Object.values(formData.addiction).filter((v) => v === "Yes").length,
+      addiction_severity_rating: Object.values(formData.addiction || {}).filter((v) => v === "Yes").length,
       remarks: formData.remarks,
       prepared_by: formData.prepared_by,
       ...formData.addiction,
@@ -603,9 +625,14 @@ function FDA() {
         }
       );
   
-      if (!response.ok) throw new Error("API call failed");
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(data, lang, getTranslation("FDA Creation Failed / एफडीए निर्माण विफल", lang));
+        return;
+      }
   
-      const data = await response.json();
       setIsLoading(false);
       const userTargetId = selectedUser?.user_id || selectedUser?.id || currentFDAUserId;
       clearDraft("fda", userTargetId);
@@ -724,6 +751,25 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
 
   //FDA Readmission Hanlder
   const handleFDAReadmission = async () => {
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: FDAEditData?.date_of_assessment,
+      },
+      {
+        label: getTranslation("Prepared By / द्वारा तैयार", lang),
+        value: FDAEditData?.prepared_by,
+      },
+      ...fdaAdsiction.map(({ key, label }) => ({
+        label: getTranslation(label, lang),
+        value: FDAEditData?.addictionSeverity?.[key],
+      })),
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true); // Start loading
 
     const payload = {
@@ -740,14 +786,15 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       losing_interest: FDAEditData?.addictionSeverity?.losing_interest,
       increasing_tolerance: FDAEditData?.addictionSeverity?.increasing_tolerance,
       experiencing_withdrawal: FDAEditData?.addictionSeverity?.experiencing_withdrawal,
-      addiction_severity_rating: FDAEditData?.addictionSeverity?.addiction_severity_rating,
+      addiction_severity_rating: Object.values(FDAEditData?.addictionSeverity || {}).filter((v) => v === "Yes").length,
       remarks: FDAEditData?.remarks || "",
       prepared_by: FDAEditData?.prepared_by || ""
     };
 
     try {
+      const branch_id = selectedBranch;
       const token = localStorage.getItem("Authorization");
-      const response = await fetch("https://gks-yjdc.onrender.com/api/fda/create-assessment", {
+      const response = await fetch(`https://gks-yjdc.onrender.com/api/fda/create-assessment?branch_id=${branch_id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -757,9 +804,14 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) throw new Error("API call failed");
+      const data = await response.json().catch(() => null);
 
-      const data = await response.json();
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(data, lang, getTranslation("FDA Readmission Failed / एफडीए पुनः प्रवेश विफल", lang));
+        return;
+      }
+
       setIsLoading(false);
       Swal.fire({
         icon: "success",
@@ -767,12 +819,13 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         text: getTranslation("The FDA Reassessment was submitted successfully./FDA पुनः प्रवेश सफलतापूर्वक बनाया गया",lang),
       }).then(() => {
         // This runs after the user clicks "OK"
-        setModal(false);
+        setFDAReadmissionModal(false);
       });
       console.log("FAD Readmission Data", data);
       console.log("FAD Readmission Payload", payload);
     } catch (err) {
       console.error(err);
+      setIsLoading(false);
       Swal.fire({
         icon: "error",
         title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
@@ -973,6 +1026,21 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         console.error("FDA ID is not available yet.");
         return;
       }
+
+      const compulsoryFieldDefinitions = [
+        {
+          label: getTranslation("Prepared By / द्वारा तैयार", lang),
+          value: FDAEditData?.prepared_by,
+        },
+        ...fdaAdsiction.map(({ key, label }) => ({
+          label: getTranslation(label, lang),
+          value: FDAEditData?.addictionSeverity?.[key],
+        })),
+      ];
+
+      if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+        return;
+      }
     
       console.log("FDAEditData.fda_id:", viewFDAData.fda_id);
       setIsLoading(true);
@@ -991,7 +1059,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         losing_interest: FDAEditData?.addictionSeverity?.losing_interest,
         increasing_tolerance: FDAEditData?.addictionSeverity?.increasing_tolerance,
         experiencing_withdrawal: FDAEditData?.addictionSeverity?.experiencing_withdrawal,
-        addiction_severity_rating: FDAEditData?.addictionSeverity?.addiction_severity_rating,
+        addiction_severity_rating: Object.values(FDAEditData?.addictionSeverity || {}).filter((v) => v === "Yes").length,
         remarks: FDAEditData?.remarks || "",
         prepared_by: FDAEditData?.prepared_by || ""
       };
@@ -1011,9 +1079,14 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
           body: JSON.stringify(payload),
         });
   
-        if (!response.ok) throw new Error("API call failed");
-  
-        const data = await response.json();
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok) {
+          setIsLoading(false);
+          showApiErrorAlert(data, lang, getTranslation("FDA Update Failed / एफडीए अद्यतन विफल", lang));
+          return;
+        }
+
         setIsLoading(false);
         Swal.fire({
           icon: "success",
@@ -1021,18 +1094,17 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
           text: getTranslation("FDA has been update successfully!/एफडीए को सफलतापूर्वक अद्यतन किया गया है!",lang),
         }).then(() => {
           // This runs after the user clicks "OK"
-          setFDAeditModal(true)
+          setFDAeditModal(false);
         });
         console.log("FAD Update Data", data);
         console.log("FAD Update Payload", payload);
       } catch (err) {
         console.error(err);
+        setIsLoading(false);
         Swal.fire({
           icon: "error",
           title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
           text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
-        }).then(()=>{
-          setIsLoading(false); // Start loading
         });
       }
     }
@@ -1219,7 +1291,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
             setDraftTimestamp(null);
           }}
         />
-        <Form className="theme-form" onSubmit={handleSubmit}>
+        <Form className="theme-form" noValidate onSubmit={handleSubmit}>
           <PatientCommonInfo
             selectedUser={selectedUser}
             labels={{
@@ -1385,7 +1457,10 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                     <td>{index + 1}</td>
                     <td>{getTranslation(label,lang)}</td>
                     {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
-                      const inputId = `addiction_${key}_${value}`;
+                      const isYes = value.startsWith("Yes") || value.includes("हाँ");
+                      const rawValue = isYes ? "Yes" : "No";
+                      const inputId = `addiction_${key}_${rawValue}`;
+                      const isChecked = formData.addiction?.[key] === rawValue || formData.addiction?.[key] === value;
                       return (
                         <td key={inputId} className="radio radio-primary">
                           <Input
@@ -1393,9 +1468,9 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                             type="radio"
                             className="form-check-input"
                             name={`addiction_${key}`}
-                            value={value}
-                            checked={formData.addiction[key] === value}
-                            onChange={() => handleRadioChange(key, value)}
+                            value={rawValue}
+                            checked={isChecked}
+                            onChange={() => handleRadioChange(key, rawValue)}
                           />
                           <Label className="form-check-label" for={inputId}>{value}</Label>
                         </td>
@@ -1469,7 +1544,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         toggler={closeUserViewModal}
         maxWidth="1200px"
       >
-        <form onSubmit={(e) => {
+        <form noValidate onSubmit={(e) => {
           e.preventDefault();
           handleFDAReadmission();
         }}>
@@ -1514,23 +1589,26 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                     <td>{index + 1}</td>
                     <td>{getTranslation(label,lang)}</td>
                     {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
-                      const inputId = `addiction_${key}_${value}`;
+                      const isYes = value.startsWith("Yes") || value.includes("हाँ");
+                      const rawValue = isYes ? "Yes" : "No";
+                      const inputId = `readmission_addiction_${key}_${rawValue}`;
                       const currentValue = FDAEditData?.addictionSeverity?.[key] || "";
+                      const isChecked = currentValue === rawValue || currentValue === value;
 
                       return (
                         <td key={inputId} className="radio radio-primary">
                           <Input
                             id={inputId}
                             type="radio"
-                            name={`addiction_${key}`}
-                            value={value}
-                            checked={currentValue === value}
+                            name={`readmission_addiction_${key}`}
+                            value={rawValue}
+                            checked={isChecked}
                             onChange={() =>
                               setFDAEditData((prev) => ({
                                 ...prev,
                                 addictionSeverity: {
                                   ...prev.addictionSeverity,
-                                  [key]: value,
+                                  [key]: rawValue,
                                 },
                               }))
                             }
@@ -1972,7 +2050,7 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
         toggler={closeUserViewModal}
         maxWidth="1200px"
       >
-        <form onSubmit={(e) => {
+        <form noValidate onSubmit={(e) => {
           e.preventDefault();
           handleFDAindividualAssessment();
            
@@ -2017,8 +2095,11 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   <tr key={key}>
                     <td>{index + 1}</td>
                     <td>{getTranslation(label,lang)}</td>
-                    {[getTranslation("Yes/हाँ",lang), getTranslation("No/नहीं",lang)].map((value) => {
-                      const inputId = `addiction_${key}_${value}`;
+                    {[
+                      { label: getTranslation("Yes/हाँ", lang), rawValue: "Yes" },
+                      { label: getTranslation("No/नहीं", lang), rawValue: "No" },
+                    ].map(({ label: displayLabel, rawValue }) => {
+                      const inputId = `addiction_${key}_${rawValue}_edit`;
                       const currentValue = FDAEditData?.addictionSeverity?.[key] || "";
 
                       return (
@@ -2026,20 +2107,20 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                           <Input
                             id={inputId}
                             type="radio"
-                            name={`addiction_${key}`}
-                            value={value}
-                            checked={currentValue === value}
+                            name={`addiction_${key}_edit`}
+                            value={rawValue}
+                            checked={currentValue === rawValue}
                             onChange={() =>
                               setFDAEditData((prev) => ({
                                 ...prev,
                                 addictionSeverity: {
                                   ...prev.addictionSeverity,
-                                  [key]: value,
+                                  [key]: rawValue,
                                 },
                               }))
                             }
                           />
-                          <Label for={inputId}>{value}</Label>
+                          <Label for={inputId}>{displayLabel}</Label>
                         </td>
                       );
                     })}

@@ -119,6 +119,7 @@ import UserDetailsModal from "../Common/UserDetailsModal";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 const Detoxification = () => {
 
@@ -708,6 +709,26 @@ const Detoxification = () => {
   // Submit detoxification form handler start
   const handleDetoxSubmit = async (e) => {
     e.preventDefault(); // prevent page reload
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Is Detoxified? / क्या यह विषमुक्त है?", lang),
+        value: formData.is_detoxified,
+      },
+      ...(formData.is_detoxified === "yes"
+        ? [
+            {
+              label: getTranslation("Start Date / प्रारंभ तिथि", lang),
+              value: formData.start_date,
+            },
+          ]
+        : []),
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -759,11 +780,7 @@ const Detoxification = () => {
         });
       } else {
         console.error("Error Response:", result);
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Submission Failed/सबमिशन विफल",lang),
-          text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
-        });
+        showApiErrorAlert(result, lang, getTranslation("Submission Failed/सबमिशन विफल", lang));
       }
     } catch (error) {
       console.error("Fetch Error:", error);
@@ -923,6 +940,26 @@ const Detoxification = () => {
 // Update Detox Form Data Handler start
 const updateDetoxHandler = async (e) => {
   e.preventDefault();
+
+  const compulsoryFieldDefinitions = [
+    {
+      label: getTranslation("Is Detoxified? / क्या यह विषमुक्त है?", lang),
+      value: editDetoxData?.is_detoxified,
+    },
+    ...(editDetoxData?.is_detoxified === "Yes" || editDetoxData?.is_detoxified === "yes"
+      ? [
+          {
+            label: getTranslation("Start Date / प्रारंभ तिथि", lang),
+            value: editDetoxData?.start_date,
+          },
+        ]
+      : []),
+  ];
+
+  if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+    return;
+  }
+
   setIsLoading(true);
 
   // Prepare payload from editDetoxData
@@ -981,11 +1018,7 @@ const updateDetoxHandler = async (e) => {
       setEditDetoxModal(false);
     } else {
       console.error("Error Response:", result);
-      Swal.fire({
-        icon: "error",
-        title: getTranslation("Update Failed/भार बढ़ाना विफल हुवा",lang),
-        text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
-      });
+      showApiErrorAlert(result, lang, getTranslation("Detoxification Update Failed / विषहरण अद्यतन विफल", lang));
     }
   } catch (error) {
     console.error("Fetch Error:", error);
@@ -1133,6 +1166,26 @@ const toISODate = (date) => {
 // Submit detoxification readmission form handler start
 const handleDetoxReadmissionSubmit = async (e) => {
   e.preventDefault();
+
+  const compulsoryFieldDefinitions = [
+    {
+      label: getTranslation("Is Detoxified? / क्या यह विषमुक्त है?", lang),
+      value: DetoxPrefillData?.is_detoxified,
+    },
+    ...(DetoxPrefillData?.is_detoxified === "yes" || DetoxPrefillData?.is_detoxified === "Yes"
+      ? [
+          {
+            label: getTranslation("Start Date / प्रारंभ तिथि", lang),
+            value: DetoxPrefillData?.start_date,
+          },
+        ]
+      : []),
+  ];
+
+  if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+    return;
+  }
+
   setIsLoading(true);
 
   try {
@@ -1186,11 +1239,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
       });
     } else {
       console.error("Error Response:", result);
-      Swal.fire({
-        icon: "error",
-        title: getTranslation("Submission Failed/सबमिशन विफल",lang),
-        text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
-      });
+      showApiErrorAlert(result, lang, getTranslation("Detoxification Readmission Failed / विषहरण पुनः प्रवेश विफल", lang));
     }
   } catch (error) {
     console.error("Fetch Error:", error);
@@ -1401,7 +1450,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
               setDraftTimestamp(null);
             }}
           />
-          <Form className="theme-form" onSubmit={handleDetoxSubmit}>
+          <Form className="theme-form" noValidate onSubmit={handleDetoxSubmit}>
             {/* Patient name and date of assessment */}
             <PatientCommonInfo
               selectedUser={selectedUser}
@@ -1813,6 +1862,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
   <div className="sd__wrapper">
     <Form
       className="theme-form"
+      noValidate
       onSubmit={updateDetoxHandler}
     >
       {/* Patient Info */}
@@ -2038,7 +2088,7 @@ const handleDetoxReadmissionSubmit = async (e) => {
   maxWidth="1200px"
 >
   <div className="sd__wrapper">
-    <Form className="theme-form" onSubmit={handleDetoxReadmissionSubmit}>
+    <Form className="theme-form" noValidate onSubmit={handleDetoxReadmissionSubmit}>
       {/* Patient Info */}
       {/* <PatientCommonInfo
         selectedUser={selectedUser}

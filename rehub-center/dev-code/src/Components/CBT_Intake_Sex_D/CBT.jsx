@@ -117,6 +117,7 @@ import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
 import UserDetailsModal from "../Common/UserDetailsModal";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 import { useReactToPrint } from "react-to-print";
 
@@ -675,6 +676,22 @@ function CBT() {
 
   const handleSubmitCBT = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: startDateOfAssessment,
+      },
+      {
+        label: getTranslation("Prepared By / द्वारा तैयार", lang),
+        value: preparedBy,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true);
 
     const payload = {
@@ -707,9 +724,10 @@ function CBT() {
     //Create CBT POST API
 
     try {
+      const branch_id = selectedBranch;
       const token = localStorage.getItem("Authorization");
       const response = await fetch(
-        "https://gks-yjdc.onrender.com/api/cbt/create-assessment",
+        `https://gks-yjdc.onrender.com/api/cbt/create-assessment?branch_id=${branch_id}`,
         {
           method: "POST",
           headers: {
@@ -721,32 +739,36 @@ function CBT() {
       );
 
       const result = await response.json();
-      if (response.ok) {
-        const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentCBTUserId;
-        clearDraft("cbt", userTargetId);
-        setDraftTimestamp(null);
-
-        Swal.fire({
-          icon: "success",
-          title: getTranslation("CBT Assessment Success!/सीबीटी मूल्यांकन सफल!",lang),
-          text: getTranslation("CBT Assessment submitted successfully/CBT मूल्यांकन सफलतापूर्वक सबमिट किया गया",lang),
-        }).then(() => {
-          // This runs after the user clicks "OK"
-          setModal(false);
-        });
-        console.log("CBT Success:", result);
-      } else {
+      if (!response.ok) {
         setIsLoading(false);
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Error submitting CBT!/सीबीटी सबमिट करने में त्रुटि!",lang),
-          text: getTranslation("Error submitting CBT Assessment/CBT मूल्यांकन सबमिट करने में त्रुटि",lang),
-        });
-        console.error("CBT Error:", result);
-
+        showApiErrorAlert(
+          result,
+          lang,
+          getTranslation("Error submitting CBT!/सीबीटी सबमिट करने में त्रुटि!", lang)
+        );
+        return;
       }
+
+      const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentCBTUserId;
+      clearDraft("cbt", userTargetId);
+      setDraftTimestamp(null);
+
+      Swal.fire({
+        icon: "success",
+        title: getTranslation("CBT Assessment Success!/सीबीटी मूल्यांकन सफल!",lang),
+        text: getTranslation("CBT Assessment submitted successfully/CBT मूल्यांकन सफलतापूर्वक सबमिट किया गया",lang),
+      }).then(() => {
+        // This runs after the user clicks "OK"
+        setModal(false);
+      });
+      console.log("CBT Success:", result);
     } catch (error) {
       console.error("Fetch error:", error);
+      Swal.fire({
+        icon: "error",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि", lang),
+        text: error?.message || getTranslation("Error submitting CBT!/सीबीटी सबमिट करने में त्रुटि!", lang),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -886,9 +908,10 @@ function CBT() {
     console.log("CBT Payload =>", payload);
   //Readmission CBT API
     try {
+      const branch_id = selectedBranch;
       const token = localStorage.getItem("Authorization");
       const response = await fetch(
-        "https://gks-yjdc.onrender.com/api/cbt/create-assessment",
+        `https://gks-yjdc.onrender.com/api/cbt/create-assessment?branch_id=${branch_id}`,
         {
           method: "POST",
           headers: {
@@ -903,24 +926,29 @@ function CBT() {
 
       console.log("readmission cbt result", result);
 
-      if (response.ok) {
-        Swal.fire({
-          icon: "success",
-          title: getTranslation("CBT Readmission Assessment Success!/सीबीटी पुनः प्रवेश मूल्यांकन सफल!",lang),
-          text: getTranslation("CBT Readmission Assessment Created successfully/CBT पुनः प्रवेश मूल्यांकन सफलतापूर्वक बनाया गया",lang),
-        }).then(() => {
-          setCBTpreefillModal(false); // Close the modal
-        });
-      } else {
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Error submitting CBT!/सीबीटी सबमिट करने में त्रुटि!",lang),
-          text: getTranslation("Error Readmission CBT Assessment/त्रुटि पुनः प्रवेश सीबीटी मूल्यांकन",lang),
-        });
-        console.error("CBT Error:", result);
+      if (!response.ok) {
+        showApiErrorAlert(
+          result,
+          lang,
+          getTranslation("Error submitting CBT!/सीबीटी सबमिट करने में त्रुटि!", lang)
+        );
+        return;
       }
+
+      Swal.fire({
+        icon: "success",
+        title: getTranslation("CBT Readmission Assessment Success!/सीबीटी पुनः प्रवेश मूल्यांकन सफल!",lang),
+        text: getTranslation("CBT Readmission Assessment Created successfully/CBT पुनः प्रवेश मूल्यांकन सफलतापूर्वक बनाया गया",lang),
+      }).then(() => {
+        setCBTpreefillModal(false); // Close the modal
+      });
     } catch (error) {
       console.error("Fetch error:", error);
+      Swal.fire({
+        icon: "error",
+        title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि", lang),
+        text: error?.message || getTranslation("Error submitting CBT!/सीबीटी सबमिट करने में त्रुटि!", lang),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -1104,12 +1132,32 @@ const token = localStorage.getItem("Authorization");
       : "",
 
     orientation_score: CBTindividuallUpdateData.orientation_score || 0,
+    user_id: CBTindividuallUpdateData.user_id || "",
+    date_of_assessment: CBTindividuallUpdateData.date_of_assessment || "",
+
+    day_score: CBTindividuallUpdateData.day_score || 0,
+    date_score: CBTindividuallUpdateData.date_score || 0,
+    month_score: CBTindividuallUpdateData.month_score || 0,
+    year_score: CBTindividuallUpdateData.year_score || 0,
+    state_score: CBTindividuallUpdateData.state_score || 0,
+    district_score: CBTindividuallUpdateData.district_score || 0,
+    city_score: CBTindividuallUpdateData.city_score || 0,
+    hospital_name_score: CBTindividuallUpdateData.hospital_name_score || 0,
+    floor_score: CBTindividuallUpdateData.floor_score || 0,
+    room_number_score: CBTindividuallUpdateData.room_number_score || 0,
+    ward_number_score: CBTindividuallUpdateData.ward_number_score || 0,
+
+    identify_season_score: CBTindividuallUpdateData.identify_season_score || 0,
     word_recall_score: CBTindividuallUpdateData.word_recall_score || 0,
-    months_backwards_score: CBTindividuallUpdateData.months_backwards_score || 0,
-    serial_3_score: CBTindividuallUpdateData.serial_3_score || 0,
-    serial_7_score: CBTindividuallUpdateData.serial_7_score || 0,
-    backward_counting_score: CBTindividuallUpdateData.backward_counting_score || 0,
-    dinner_question_score: CBTindividuallUpdateData.dinner_question_score || 0,
+    subtract_numbers_score: CBTindividuallUpdateData.subtract_numbers_score || 0,
+    recall_three_words_score: CBTindividuallUpdateData.recall_three_words_score || 0,
+    identify_objects_score: CBTindividuallUpdateData.identify_objects_score || 0,
+    repetition_score: CBTindividuallUpdateData.repetition_score || 0,
+    complex_command_score: CBTindividuallUpdateData.complex_command_score || 0,
+    read_and_obey_score: CBTindividuallUpdateData.read_and_obey_score || 0,
+    write_sentence_score: CBTindividuallUpdateData.write_sentence_score || 0,
+    copy_design_score: CBTindividuallUpdateData.copy_design_score || 0,
+    sleep_score: CBTindividuallUpdateData.sleep_score || 0,
     breakfast_question_score: CBTindividuallUpdateData.breakfast_question_score || 0,
     independence_day_score: CBTindividuallUpdateData.independence_day_score || 0,
     object_naming_score: CBTindividuallUpdateData.object_naming_score || 0,
@@ -1144,24 +1192,29 @@ const token = localStorage.getItem("Authorization");
 
     console.log("Updated cbt result", result);
 
-    if (response.ok) {
-      Swal.fire({
-        icon: "success",
-        title: getTranslation("CBT Assessment Update!/सीबीटी मूल्यांकन अद्यतन!",lang),
-        text: getTranslation("CBT Assessment has been update/सीबीटी मूल्यांकन अद्यतन किया गया है/सीबीटी मूल्यांकन अद्यतन/सीबीटी मूल्यांकन अद्यतन किया गया है",lang),
-      }).then(() => {
-        setCBTindividuallUpdateDataModal(false); // Close the modal
-      });
-    } else {
-      Swal.fire({
-        icon: "error",
-        title: getTranslation("Error Updating CBT!/सीबीटी अपडेट करने में त्रुटि!",lang),
-        text: getTranslation("Error Updating CBT Assessment/CBT मूल्यांकन अपडेट करते समय त्रुटि",lang),
-      });
-      console.error("CBT Error:", result);
+    if (!response.ok) {
+      showApiErrorAlert(
+        result,
+        lang,
+        getTranslation("Error Updating CBT!/सीबीटी अपडेट करने में त्रुटि!", lang)
+      );
+      return;
     }
+
+    Swal.fire({
+      icon: "success",
+      title: getTranslation("CBT Assessment Update!/सीबीटी मूल्यांकन अद्यतन!",lang),
+      text: getTranslation("CBT Assessment has been update/सीबीटी मूल्यांकन अद्यतन किया गया है/सीबीटी मूल्यांकन अद्यतन/सीबीटी मूल्यांकन अद्यतन किया गया है",lang),
+    }).then(() => {
+      setCBTindividuallUpdateDataModal(false); // Close the modal
+    });
   } catch (error) {
     console.error("Fetch error:", error);
+    Swal.fire({
+      icon: "error",
+      title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि", lang),
+      text: error?.message || getTranslation("Error Updating CBT!/सीबीटी अपडेट करने में त्रुटि!", lang),
+    });
   } finally {
     setIsLoading(false);
   }

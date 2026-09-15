@@ -38,6 +38,7 @@ import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import { useReactToPrint } from "react-to-print";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 const FirstExamination = () => {
   const { lang } = useLang();
@@ -657,6 +658,38 @@ const FirstExamination = () => {
   // Submit New FE
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: formData.dateOfAssessment,
+      },
+      {
+        label: getTranslation("Weight / वजन", lang),
+        value: formData.weight,
+      },
+      {
+        label: getTranslation("Pulse Rate / नाड़ी की दर", lang),
+        value: formData.pulse_rate,
+      },
+      {
+        label: getTranslation("Blood Pressure / रक्तचाप", lang),
+        value: formData.blood_pressure,
+      },
+      {
+        label: getTranslation("SpO2 / एसपीओ2", lang),
+        value: formData.spo2_percentage,
+      },
+      {
+        label: getTranslation("Location / स्थान", lang),
+        value: formData.location,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true);
 
     const payload = {
@@ -691,7 +724,13 @@ const FirstExamination = () => {
         },
       );
 
-      if (!response.ok) throw new Error("API call failed");
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(result, lang, getTranslation("FE Creation Failed / एफई निर्माण विफल", lang));
+        return;
+      }
 
       setIsLoading(false);
       const userTargetId = getPFAUserId(selectedUser) || currentFEUserId;
@@ -828,6 +867,37 @@ const FirstExamination = () => {
   const handleFEUpdate = async () => {
     if (!FEEditData?.first_eval_id) return;
 
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: FEEditData?.date_of_assessment,
+      },
+      {
+        label: getTranslation("Weight / वजन", lang),
+        value: FEEditData?.weight,
+      },
+      {
+        label: getTranslation("Pulse Rate / नाड़ी की दर", lang),
+        value: FEEditData?.pulse_rate,
+      },
+      {
+        label: getTranslation("Blood Pressure / रक्तचाप", lang),
+        value: FEEditData?.blood_pressure,
+      },
+      {
+        label: getTranslation("SpO2 / एसपीओ2", lang),
+        value: FEEditData?.spo2_percentage,
+      },
+      {
+        label: getTranslation("Location / स्थान", lang),
+        value: FEEditData?.location,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true);
     const payload = {
       user_id: selectedUser?.user_id,
@@ -864,7 +934,13 @@ const FirstExamination = () => {
         },
       );
 
-      if (!response.ok) throw new Error("API call failed");
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(result, lang, getTranslation("FE Update Failed / एफई अद्यतन विफल", lang));
+        return;
+      }
 
       setIsLoading(false);
       Swal.fire({
@@ -879,26 +955,28 @@ const FirstExamination = () => {
       setIsLoading(false);
       Swal.fire({
         icon: "error",
-        title: "Unexpected Error",
+        title: getTranslation("Error/त्रुटि", lang),
         text: getTranslation(
-          "Failed to update First Evaluation assessment.",
+          "Failed to update assessment./मूल्यांकन अद्यतन करने में विफल.",
           lang,
         ),
       });
     }
   };
 
-  // Prefill FE Modal (Readmission)
-  const [FEPrefillData, setFEPrefillData] = useState({});
+  // Pre-fill readmission modal with latest existing FE
   const [FEPrefillModal, setFEPrefillModal] = useState(false);
+  const [FEPrefillData, setFEPrefillData] = useState(null);
 
   const handleFEprefill = async (prefillFEID = null) => {
     if (typeof prefillFEID === "object" && prefillFEID !== null) {
-      prefillFEID = prefillFEID.first_eval_id || prefillFEID.intake_fe_id;
+      prefillFEID = prefillFEID.first_eval_id || prefillFEID.intake_fe_id || prefillFEID.recent_first_eval_id;
     }
 
     if (!prefillFEID) return;
 
+    setFEPrefillModal(true);
+    setFEPrefillData(null);
     const token = localStorage.getItem("Authorization");
     const branch_id = selectedBranch;
 
@@ -906,23 +984,16 @@ const FirstExamination = () => {
       const response = await fetch(
         `https://gks-yjdc.onrender.com/api/first-evaluation/assessment/${prefillFEID}?branch_id=${branch_id}`,
         {
-          method: "GET",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `${token}`,
           },
         },
       );
-
       const data = await response.json();
-      const latestAssessment = data.data || null;
+      const latestAssessment = data?.assessment || data?.data;
 
       if (latestAssessment) {
-        setFEPrefillModal(true);
-        setSelectedUser([latestAssessment]);
-
         setFEPrefillData({
-          first_eval_id: latestAssessment.first_eval_id,
           user_id: latestAssessment.user_id,
           date_of_assessment: latestAssessment.date_of_assessment
             ? new Date(latestAssessment.date_of_assessment)
@@ -946,6 +1017,38 @@ const FirstExamination = () => {
 
   const handleReadmissionSubmit = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: FEPrefillData?.date_of_assessment,
+      },
+      {
+        label: getTranslation("Weight / वजन", lang),
+        value: FEPrefillData?.weight,
+      },
+      {
+        label: getTranslation("Pulse Rate / नाड़ी की दर", lang),
+        value: FEPrefillData?.pulse_rate,
+      },
+      {
+        label: getTranslation("Blood Pressure / रक्तचाप", lang),
+        value: FEPrefillData?.blood_pressure,
+      },
+      {
+        label: getTranslation("SpO2 / एसपीओ2", lang),
+        value: FEPrefillData?.spo2_percentage,
+      },
+      {
+        label: getTranslation("Location / स्थान", lang),
+        value: FEPrefillData?.location,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true);
 
     const payload = {
@@ -983,7 +1086,13 @@ const FirstExamination = () => {
         },
       );
 
-      if (!response.ok) throw new Error("API call failed");
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(result, lang, getTranslation("FE Readmission Failed / एफई पुनः प्रवेश विफल", lang));
+        return;
+      }
 
       setIsLoading(false);
       Swal.fire({
@@ -1173,7 +1282,7 @@ const FirstExamination = () => {
               setDraftTimestamp(null);
             }}
           />
-          <form onSubmit={handleSubmit}>
+          <form noValidate onSubmit={handleSubmit}>
             <div className="col-12 col-md-6 mb-3">
               <label className="form-label">
                 {getTranslation("Date of Assessment/मूल्यांकन की तिथि", lang)}
@@ -1267,7 +1376,6 @@ const FirstExamination = () => {
                   className="form-control"
                   value={formData.location}
                   onChange={handleChange}
-                  required
                 />
               </div>
               <div className="col-md-6">
@@ -1523,6 +1631,7 @@ const FirstExamination = () => {
       >
         <div className="row px-3 pt-4 pb-3">
           <form
+            noValidate
             onSubmit={(e) => {
               e.preventDefault();
               handleFEUpdate();
@@ -1622,7 +1731,6 @@ const FirstExamination = () => {
                       location: e.target.value,
                     }))
                   }
-                  required
                 />
               </div>
               <div className="col-md-6">
@@ -1689,7 +1797,7 @@ const FirstExamination = () => {
         maxWidth="1200px"
       >
         <div className="row px-3 pt-4 pb-3">
-          <form onSubmit={handleReadmissionSubmit}>
+          <form noValidate onSubmit={handleReadmissionSubmit}>
             <div className="col-12 col-md-6 mb-3">
               <label className="form-label">
                 {getTranslation("Date of Assessment/मूल्यांकन की तिथि", lang)}

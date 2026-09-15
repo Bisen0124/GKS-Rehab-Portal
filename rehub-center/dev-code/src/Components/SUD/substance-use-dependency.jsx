@@ -73,6 +73,7 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 import { useReactToPrint } from "react-to-print";
 
@@ -542,6 +543,26 @@ function SUD() {
     };
     const handleSubmitSUD = async (e) => {
         e.preventDefault();
+
+        const compulsoryFieldDefinitions = [
+            {
+                label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+                value: formData.sudDateOfAssessment,
+            },
+            {
+                label: getTranslation("Consent / सहमति", lang),
+                value: formData.consent,
+            },
+            {
+                label: getTranslation("Signature / हस्ताक्षर", lang),
+                value: formData.SUDsignature,
+            },
+        ];
+
+        if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+            return;
+        }
+
         setIsLoading(true); // Start loader
 
         const payload = {
@@ -568,12 +589,19 @@ function SUD() {
                 body: JSON.stringify(payload),
             });
 
-            if (!response.ok) {
-                throw new Error("Failed to submit form data.");
-            }
-
             const result = await response.json();
             console.log("API Response:", result);
+
+            if (!response.ok) {
+                setIsLoading(false);
+                showApiErrorAlert(
+                    result,
+                    lang,
+                    getTranslation("SUD Submission Failed / एसयूडी सबमिशन विफल", lang)
+                );
+                return;
+            }
+
             // ✅ Success Case
             setIsLoading(false);
             const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentSUDUserId;
@@ -594,7 +622,7 @@ function SUD() {
             Swal.fire({
                 icon: "error",
                 title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-                text: getTranslation("SUD failed! Unknown error occurred./SUD विफल! अज्ञात त्रुटि हुई.",lang),
+                text: error?.message || getTranslation("SUD failed! Unknown error occurred./SUD विफल! अज्ञात त्रुटि हुई.",lang),
             });
         }
     };
@@ -709,6 +737,25 @@ function SUD() {
 
 
     const handleSUDReadmission = async () => {
+        const compulsoryFieldDefinitions = [
+            {
+                label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+                value: SUDselectedUser?.date_of_assessment,
+            },
+            {
+                label: getTranslation("Consent / सहमति", lang),
+                value: SUDselectedUser?.consent,
+            },
+            {
+                label: getTranslation("Signature / हस्ताक्षर", lang),
+                value: SUDselectedUser?.signature,
+            },
+        ];
+
+        if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+            return;
+        }
+
         setIsLoading(true);
 
         const payload = {
@@ -753,14 +800,12 @@ function SUD() {
 
 
             if (!response.ok) {
-                Swal.fire({
-                    icon: "error",
-                    title: getTranslation("SUD Failed/SUD विफल",lang),
-                    text: getTranslation("The SUD readmission has been failed!/एसयूडी पुनः प्रवेश असफल हो गया है!",lang),
-                }).then(() => {
-                    // This runs after the user clicks "OK"
-                    setModal(false);
-                });
+                showApiErrorAlert(
+                    result,
+                    lang,
+                    getTranslation("SUD Readmission Failed / एसयूडी पुनः प्रवेश विफल", lang)
+                );
+                return;
             } else {
                 Swal.fire({
                     icon: "success",
@@ -774,35 +819,31 @@ function SUD() {
             }
         } catch (error) {
             console.error("Fetch error:", error);
+            Swal.fire({
+                icon: "error",
+                title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि", lang),
+                text: error?.message || getTranslation("SUD Readmission Failed/एसयूडी पुनः प्रवेश विफल", lang),
+            });
         } finally {
             setIsLoading(false);
         }
     };
 
 
-    //View SUD form data handler
+
+    // View INDIVIDUAL SDA DATA VIEW
+    const [viewSUDData, setViewSUDData] = useState([]);
     const [viewSUDmodal, setviewSUDmodal] = useState(false);
-    const [viewSUDData, setviewSUDdata] = useState(null);
+    const [SUDindiviualEditmodal, setSUDindiviualEditmodal] = useState(false);
 
-    const viewSUDdataHandler = async (SUDId) => {
-        setviewSUDmodal(true);
-        console.log("SUDId =>", SUDId);
-
-        if (typeof SUDId === "object" && SUDId !== null) {
-            SUDId = SUDId.sda_id;
-        }
-
-        if (!SUDId) {
-            console.error("Invalid SUD ID provided");
-            return
-        }
+    const viewSUDdataHandler = async (sda_id) => {
         setIsLoading(true);
-        const token = localStorage.getItem("Authorization");
-        const branch_id = selectedBranch;
-
         try {
+            const token = localStorage.getItem("Authorization");
+            const branch_id = selectedBranch;
+
             const response = await fetch(
-                `https://gks-yjdc.onrender.com/api/sda/assessment/${SUDId}?branch_id=${branch_id}`,
+                `https://gks-yjdc.onrender.com/api/sda/get-recent-sda-entry/${sda_id}?branch_id=${branch_id}`,
                 {
                     method: "GET",
                     headers: {
@@ -812,52 +853,36 @@ function SUD() {
                 }
             );
 
-            const data = await response.json();
-
             if (!response.ok) {
-                console.error("Fetch error:", data);
-                return;
+                throw new Error("Failed to fetch user details");
             }
 
-            const ViewSUDDataEntry = data.assessment || null;
+            const data = await response.json();
+            console.log("View SUD single entry data:", data);
 
-            if (!ViewSUDDataEntry) {
-                console.warn("No SUD assessment data found.");
-                return;
-            }
-
-            setviewSUDdata(ViewSUDDataEntry); // ✅ Correct
-            console.log("SUD Data Fetched:", ViewSUDDataEntry); // ✅ Log the correct data
+            setViewSUDData(data.data || data); // Save the fetched data to state
+            setviewSUDmodal(true); // Open the modal
         } catch (error) {
-            console.error("Fetch error:", error);
+            console.error("Error fetching user details:", error);
+            Swal.fire({
+                icon: "error",
+                title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि", lang),
+                text: error?.message || "Failed to fetch user details",
+            });
         } finally {
             setIsLoading(false);
         }
-    }
+    };
 
-
-    //Edit SUD form data handler
-    const [SUDindiviualEditmodal,setSUDindiviualEditmodal]=useState(false);
-    const handleSUDEdit = async (editSUDID) => {
-        setSUDindiviualEditmodal(true);
-
-        if (typeof editSUDID === "object" && editSUDID !== null) {
-            editSUDID = editSUDID.fda_id;
-        }
-
-        if (!editSUDID) {
-            console.error("Invalid editSUDID provided");
-            return;
-        }
-
-        console.log("editSUDID =>", editSUDID);
-
-        const token = localStorage.getItem("Authorization");
-        const branch_id = selectedBranch;
-
+    // Pre-fill data by SDA_ID on edit icon click
+    const handleSUDEdit = async (sda_id) => {
+        setIsLoading(true);
         try {
+            const token = localStorage.getItem("Authorization");
+            const branch_id = selectedBranch;
+
             const response = await fetch(
-                `https://gks-yjdc.onrender.com/api/sda/assessment/${editSUDID}?branch_id=${branch_id}`,
+                `https://gks-yjdc.onrender.com/api/sda/get-recent-sda-entry/${sda_id}?branch_id=${branch_id}`,
                 {
                     method: "GET",
                     headers: {
@@ -867,30 +892,21 @@ function SUD() {
                 }
             );
 
-            const data = await response.json();
-
             if (!response.ok) {
-                console.error("User fetch error:", data);
-                return;
+                throw new Error("Failed to fetch SUD details");
             }
 
-            console.log("SUD EDIT =>", data.assessment)
-
-            const latestAssessment = data.assessment || data;
-
-            console.log("SUD Edit Data => ", latestAssessment);
-
-            if (!latestAssessment) {
-                console.warn("No assessment found for this SUD ID.");
-                return;
-            }
+            const data = await response.json();
+            const assessmentData = data.data || data;
 
             setSUDselectedUser({
-                user_id: latestAssessment.user_id,
-                date_of_assessment: latestAssessment.date_of_assessment
-                    ? parseDateString(latestAssessment.date_of_assessment)
+                sda_id: assessmentData.sda_id || assessmentData.id || sda_id,
+                user_id: assessmentData.user_id,
+                patient_name: assessmentData.patient_name || assessmentData.name,
+                date_of_assessment: assessmentData.date_of_assessment
+                    ? parseDateString(assessmentData.date_of_assessment)
                     : "",
-                substance_details: latestAssessment.substance_details.map((item) => ({
+                substance_details: (assessmentData.substance_details || assessmentData.substances || []).map((item) => ({
                     substance_id: item.substance_id,
                     substance_name: item.substance_name,
                     ever_used: item.ever_used,
@@ -900,26 +916,49 @@ function SUD() {
                     usual_dose: item.usual_dose,
                     remarks: item.remarks,
                 })),
-                consent: latestAssessment.consent,
-                signature: latestAssessment.signature
+                consent: assessmentData.consent,
+                signature: assessmentData.signature,
             });
-
-            console.log("signature=>", SUDselectedUser.signature)
-            console.log("consent=>", SUDselectedUser.consent)
-
+            setSUDindiviualEditmodal(true);
         } catch (error) {
-            console.error("Fetch error:", error);
+            console.error("Error fetching SUD details:", error);
+            Swal.fire({
+                icon: "error",
+                title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि", lang),
+                text: error?.message || "Failed to fetch SUD details",
+            });
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    //Update edit form data handler
+    // After pre-fill update the individual SDA assessment
     const handleEditIndividualSUD = async () => {
+        const compulsoryFieldDefinitions = [
+            {
+                label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+                value: SUDselectedUser?.date_of_assessment,
+            },
+            {
+                label: getTranslation("Consent / सहमति", lang),
+                value: SUDselectedUser?.consent,
+            },
+            {
+                label: getTranslation("Signature / हस्ताक्षर", lang),
+                value: SUDselectedUser?.signature,
+            },
+        ];
+
+        if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+            return;
+        }
+
         setIsLoading(true);
 
         const payload = {
             user_id: SUDselectedUser?.user_id,
             date_of_assessment: SUDselectedUser?.date_of_assessment,
-            // patient_name: SUDselectedUser?.name,
+            patient_name: SUDselectedUser?.patient_name,
             substance_details: SUDselectedUser?.substance_details?.map((item) => ({
                 substance_id: item.substance_id,
                 substance_name: item.substance_name,
@@ -934,16 +973,14 @@ function SUD() {
             signature: SUDselectedUser?.signature,
         };
 
-
         console.log("Updated SUD form payload... =>", payload);
 
-
-        // Now you can send the payload
         try {
             const token = localStorage.getItem("Authorization");
             const branch_id = selectedBranch;
+            const sdaId = SUDselectedUser?.sda_id;
 
-            const response = await fetch(`https://gks-yjdc.onrender.com/api/sda/update-assessment/${viewSUDData.sda_id}?branch_id=${branch_id}`, {
+            const response = await fetch(`https://gks-yjdc.onrender.com/api/sda/update-assessment/${sdaId}?branch_id=${branch_id}`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -956,21 +993,18 @@ function SUD() {
 
             console.log("Updated SUD form result =>", result);
 
-
             if (!response.ok) {
-                Swal.fire({
-                    icon: "error",
-                    title: getTranslation("SUD Failed/SUD विफल",lang),
-                    text: getTranslation("The SUD updation has been failed!/SUD अद्यतनीकरण विफल हो गया है!",lang),
-                }).then(() => {
-                    // This runs after the user clicks "OK"
-                    setSUDindiviualEditmodal(false);
-                });
+                showApiErrorAlert(
+                    result,
+                    lang,
+                    getTranslation("SUD Update Failed / एसयूडी अद्यतन विफल", lang)
+                );
+                return;
             } else {
                 Swal.fire({
                     icon: "success",
-                    title: getTranslation("SUD update Success/SUD अद्यतन सफल",lang),
-                    text: getTranslation("The SUD update has been successfully created./SUD अद्यतन सफलतापूर्वक बनाया गया है.",lang),
+                    title: getTranslation("SUD update Success/SUD अद्यतन सफल", lang),
+                    text: getTranslation("The SUD update has been successfully created./SUD अद्यतन सफलतापूर्वक बनाया गया है.", lang),
                 }).then(() => {
                     // This runs after the user clicks "OK"
                     setSUDindiviualEditmodal(false);
@@ -979,6 +1013,11 @@ function SUD() {
             }
         } catch (error) {
             console.error("Fetch error:", error);
+            Swal.fire({
+                icon: "error",
+                title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि", lang),
+                text: error?.message || getTranslation("SUD update failed!/एसयूडी अद्यतन विफल!", lang),
+            });
         } finally {
             setIsLoading(false);
         }
@@ -1224,7 +1263,7 @@ function SUD() {
                             setDraftTimestamp(null);
                         }}
                     />
-                    <Form onSubmit={handleSubmitSUD} className="theme-form">
+                    <Form noValidate onSubmit={handleSubmitSUD} className="theme-form">
                         <PatientCommonInfo
                             selectedUser={selectedUser}
                             labels={{
@@ -1416,7 +1455,7 @@ function SUD() {
                 toggler={closeSUDmodal}
                 maxWidth="1200px"
             >
-                <form onSubmit={(e) => {
+                <form noValidate onSubmit={(e) => {
                     e.preventDefault();
                     handleSUDReadmission();
                 }}>
@@ -1755,7 +1794,7 @@ function SUD() {
                 toggler={closeSUDmodal}
                 maxWidth="1200px"
             >
-                <form onSubmit={(e) => {
+                <form noValidate onSubmit={(e) => {
                     e.preventDefault();
                     handleEditIndividualSUD();
                 }}>

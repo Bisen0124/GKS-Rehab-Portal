@@ -66,6 +66,7 @@ import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import { useReactToPrint } from "react-to-print";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 const BloodAnalysis = () => {
 
@@ -700,6 +701,26 @@ const handleAssesmentDateChange = (name, date) => {
 
 const SubmitBAFormHandler = async (e) => {
   e.preventDefault();
+
+  const compulsoryFieldDefinitions = [
+    {
+      label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+      value: formData.date_of_assessment,
+    },
+    {
+      label: getTranslation("Package Type / पैकेज प्रकार", lang),
+      value: formData.package_type_id,
+    },
+    {
+      label: getTranslation("Severity / गंभीरता", lang),
+      value: formData.severity_id,
+    },
+  ];
+
+  if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+    return;
+  }
+
   setIsLoading(true);
 
   try {
@@ -734,9 +755,14 @@ const SubmitBAFormHandler = async (e) => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
+    const data = await response.json().catch(() => null);
 
-    const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(data, lang, getTranslation("Blood Analysis Creation Failed / रक्त विश्लेषण निर्माण विफल", lang));
+      return;
+    }
+
     setIsLoading(false);
 
     clearDraft("blood_analysis", selectedUser?.user_id || selectedUser?.id);
@@ -946,6 +972,26 @@ const handleBAindividualEdit = async (editBAID = null) => {
 // ✅ Update BA Form Data Handler start
 const updateBAHandler = async (e) => {
   e.preventDefault();
+
+  const compulsoryFieldDefinitions = [
+    {
+      label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+      value: BAEditData?.date_of_assessment,
+    },
+    {
+      label: getTranslation("Package Type / पैकेज प्रकार", lang),
+      value: BAEditData?.package_type_id,
+    },
+    {
+      label: getTranslation("Severity / गंभीरता", lang),
+      value: BAEditData?.severity_id,
+    },
+  ];
+
+  if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+    return;
+  }
+
   setIsLoading(true);
 
   const payload = {
@@ -986,31 +1032,28 @@ const updateBAHandler = async (e) => {
       }
     );
 
-    const result = await response.json();
+    const result = await response.json().catch(() => null);
 
-    if (response.ok) {
-      Swal.fire({
-        icon: "success",
-        title: getTranslation("Blood Analysis Updated/रक्त विश्लेषण अद्यतन",lang),
-        text: getTranslation("The blood analysis form has been successfully updated./रक्त विश्लेषण प्रपत्र सफलतापूर्वक अद्यतन कर दिया गया है।",lang),
-      });
-    } else {
-      console.error("Error Response:", result);
-      Swal.fire({
-        icon: "error",
-        title: getTranslation("Update Failed/भार बढ़ाना विफल हुवा",lang),
-        text: result.message || getTranslation("There was an error updating the form./फ़ॉर्म को अपडेट करते समय एक त्रुटि हुई.",lang),
-      });
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(result, lang, getTranslation("Blood Analysis Update Failed / रक्त विश्लेषण अद्यतन विफल", lang));
+      return;
     }
+
+    setIsLoading(false);
+    Swal.fire({
+      icon: "success",
+      title: getTranslation("Blood Analysis Updated/रक्त विश्लेषण अद्यतन",lang),
+      text: getTranslation("The blood analysis form has been successfully updated./रक्त विश्लेषण प्रपत्र सफलतापूर्वक अद्यतन कर दिया गया है।",lang),
+    });
   } catch (error) {
     console.error("Fetch Error:", error);
+    setIsLoading(false);
     Swal.fire({
       icon: "error",
       title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
       text: getTranslation("A network or server issue occurred./नेटवर्क या सर्वर संबंधी समस्या उत्पन्न हुई.",lang),
     });
-  } finally {
-    setIsLoading(false);
   }
 };
 
@@ -1023,8 +1066,6 @@ const [BAPrefillData, setBAPrefillData] = useState({});
 const [BAPrefillModal, setBAPrefillModal] = useState(false);
 
 const handleBAprefill = async (prefillBAID = null) => {
-  setBAPrefillData(true);
-  // Normalize ID if object
   if (typeof prefillBAID === "object" && prefillBAID !== null) {
     prefillBAID = prefillBAID.blood_analysis_id || prefillBAID.id;
   }
@@ -1150,6 +1191,26 @@ const handleBAprefill = async (prefillBAID = null) => {
 // ✅ Submit BA Readmission form handler start
 const SubmitBAReadmissionFormHandler = async (e) => {
   e.preventDefault();
+
+  const compulsoryFieldDefinitions = [
+    {
+      label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+      value: BAPrefillData?.date_of_assessment,
+    },
+    {
+      label: getTranslation("Package Type / पैकेज प्रकार", lang),
+      value: BAPrefillData?.package_type_id,
+    },
+    {
+      label: getTranslation("Severity / गंभीरता", lang),
+      value: BAPrefillData?.severity_id,
+    },
+  ];
+
+  if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+    return;
+  }
+
   setIsLoading(true);
 
   try {
@@ -1193,9 +1254,14 @@ const SubmitBAReadmissionFormHandler = async (e) => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
+    const data = await response.json().catch(() => null);
 
-    const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(data, lang, getTranslation("Blood Analysis Readmission Failed / रक्त विश्लेषण पुनः प्रवेश विफल", lang));
+      return;
+    }
+
     setIsLoading(false);
 
     Swal.fire({
@@ -1456,7 +1522,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
         setDraftTimestamp(null);
       }}
     />
-    <form onSubmit={SubmitBAFormHandler}>
+    <form noValidate onSubmit={SubmitBAFormHandler}>
       {/*Date of Assessment section/परीक्षण की तारीख :*/}
       <div className="col-md-6">
                       <FormGroup className="form-group row">
@@ -1489,7 +1555,6 @@ const SubmitBAReadmissionFormHandler = async (e) => {
           className="form-control"
           value={formData.package_type_id}
           onChange={handlePackageChange}
-          required
         >
           <option value="">Select Package</option>
           {packages.map((pkg) => (
@@ -1551,7 +1616,6 @@ const SubmitBAReadmissionFormHandler = async (e) => {
           className="form-control"
           value={formData.severity_id}
           onChange={handleSeverityChange}
-          required
         >
           <option value="">Select Severity</option>
           {severity.map((sev) => (
@@ -1850,7 +1914,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
   /> */}
 
   <div className="row px-3 pt-4 pb-3">
-    <form onSubmit={updateBAHandler}>
+    <form noValidate onSubmit={updateBAHandler}>
       {/* Date of Assessment */}
       <div className="col-md-6">
         <FormGroup className="form-group row">
@@ -1888,7 +1952,6 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               package_type_id: e.target.value,
             })
           }
-          required
         >
           <option value="">Select Package</option>
           {packages.map((pkg) => (
@@ -1995,7 +2058,6 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               severity_id: e.target.value,
             })
           }
-          required
         >
           <option value="">Select Severity</option>
           {severity.map((sev) => (
@@ -2048,7 +2110,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
   /> */}
 
   <div className="row px-3 pt-4 pb-3">
-    <form onSubmit={SubmitBAReadmissionFormHandler}>
+    <form noValidate onSubmit={SubmitBAReadmissionFormHandler}>
       {/* Date of Assessment */}
       <div className="col-md-6">
         <FormGroup className="form-group row">
@@ -2086,7 +2148,6 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               package_type_id: e.target.value,
             })
           }
-          required
         >
           <option value="">Select Package</option>
           {packages.map((pkg) => (
@@ -2193,7 +2254,6 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               severity_id: e.target.value,
             })
           }
-          required
         >
           <option value="">Select Severity</option>
           {severity.map((sev) => (

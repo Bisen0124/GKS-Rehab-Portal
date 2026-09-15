@@ -55,6 +55,7 @@ import UserDetailsModal from "../Common/UserDetailsModal";
 import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
@@ -82,26 +83,85 @@ function Register() {
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
 
-  const handleImageChange = (e) => {
+  // Client-side image compressor: Reduces multi-MB camera images to ~100KB in <50ms for lightning-fast uploads
+  const compressImageFile = (file, maxWidth = 800, quality = 0.82) => {
+    return new Promise((resolve) => {
+      if (!file || !file.type.startsWith("image/")) {
+        return resolve(file);
+      }
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const elem = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+
+          elem.width = width;
+          elem.height = height;
+          const ctx = elem.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          elem.toBlob(
+            (blob) => {
+              if (!blob) return resolve(file);
+              const cleanFileName = file.name.replace(/\.[^/.]+$/, ".jpg");
+              const compressedFile = new File([blob], cleanFileName, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            },
+            "image/jpeg",
+            quality
+          );
+        };
+        img.onerror = () => resolve(file);
+      };
+      reader.onerror = () => resolve(file);
+    });
+  };
+
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
 
     if (!file) return;
 
-    // File type validation
-    if (!file.type.startsWith("image/")) {
-      setError("Only image files are allowed");
+    // Allowed image formats: JPEG, JPG, PNG, WEBP (Server requirement)
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const fileExt = file.name.split(".").pop()?.toLowerCase();
+    const allowedExts = ["jpg", "jpeg", "png", "webp"];
+
+    if (!allowedTypes.includes(file.type?.toLowerCase()) && !allowedExts.includes(fileExt)) {
+      const msg = getTranslation(
+        `Profile picture must be JPEG, PNG, or WebP. (${file.name || file.type} is not supported) / केवल JPEG, PNG और WebP प्रारूप समर्थित हैं।`,
+        lang
+      );
+      setError(msg);
+      toast.error(msg);
+      setImage(null);
+      setPreview(null);
+      e.target.value = "";
       return;
     }
 
-    // File size validation (2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setError("Image size must be less than 2MB");
-      return;
+    try {
+      const compressed = await compressImageFile(file);
+      setError("");
+      setImage(compressed);
+      setPreview(URL.createObjectURL(compressed));
+    } catch (compressErr) {
+      setError("");
+      setImage(file);
+      setPreview(URL.createObjectURL(file));
     }
-
-    setError("");
-    setImage(file);
-    setPreview(URL.createObjectURL(file));
   };
 
   //Patient admission form (PDF) upload
@@ -114,18 +174,29 @@ function Register() {
 
     if (!file) return;
 
-    // File type validation - allow pdf/image
-    if (
-      file.type !== "application/pdf" &&
-      !file.type.startsWith("image/")
-    ) {
-      setAdmissionFormError("Only PDF or image files are allowed");
+    // File type validation - PDF required
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+
+    if (!isPdf) {
+      const msg = getTranslation("Admission form must be a PDF file / प्रवेश फ़ॉर्म केवल PDF फ़ाइल होना चाहिए", lang);
+      setAdmissionFormError(msg);
+      toast.error(msg);
+      setAdmissionForm(null);
+      setAdmissionFormName("");
+      e.target.value = "";
       return;
     }
 
-    // File size validation (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setAdmissionFormError("File size must be less than 5MB");
+    // File size validation (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      const msg = getTranslation("File size must be less than 10MB / फ़ाइल का आकार 10MB से कम होना चाहिए", lang);
+      setAdmissionFormError(msg);
+      toast.error(msg);
+      setAdmissionForm(null);
+      setAdmissionFormName("");
+      e.target.value = "";
       return;
     }
 
@@ -147,6 +218,7 @@ function Register() {
 
   //loading
   const [isLoading, setIsLoading] = useState(false);
+  const [isRegisterSubmitting, setIsRegisterSubmitting] = useState(false);
 
   //email error state
   const [emailError, setEmailError] = useState("");
@@ -278,40 +350,17 @@ function Register() {
         label: getTranslation("Patient Address / रोगी का पता", lang),
         value: formData.address,
       },
+      {
+        label: getTranslation("Patient Profile Image / रोगी का प्रोफ़ाइल फ़ोटो", lang),
+        value: image,
+      },
+      {
+        label: getTranslation("Admission Form (PDF) / प्रवेश फ़ॉर्म (पीडीएफ)", lang),
+        value: admissionForm,
+      },
     ];
 
-    const missingFields = [];
-
-    for (const field of compulsoryFieldDefinitions) {
-      const val = field.value;
-      const isEmpty =
-        val === null ||
-        val === undefined ||
-        (typeof val === "string" && val.trim() === "") ||
-        (typeof val === "number" && isNaN(val));
-
-      if (isEmpty) {
-        missingFields.push(field.label);
-      }
-    }
-
-    if (missingFields.length > 0) {
-      const missingListHtml = `<div style="text-align: left; margin-top: 10px; font-size: 14px;"><p style="margin-bottom: 8px; font-weight: 600;">${getTranslation(
-        "Please fill the following compulsory field(s): / कृपया निम्नलिखित अनिवार्य फ़ील्ड भरें:",
-        lang
-      )}</p><ul style="padding-left: 20px; margin-bottom: 0; line-height: 1.6;">${missingFields
-        .map((f) => `<li>${f}</li>`)
-        .join("")}</ul></div>`;
-
-      Swal.fire({
-        icon: "warning",
-        title: getTranslation(
-          "Required field(s) missing! / आवश्यक फ़ील्ड खाली हैं!",
-          lang
-        ),
-        html: missingListHtml,
-        confirmButtonText: getTranslation("OK / ठीक है", lang),
-      });
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
       return;
     }
 
@@ -367,7 +416,7 @@ function Register() {
       return;
     }
   
-    setIsLoading(true);
+    setIsRegisterSubmitting(true);
   
     const formatDate = (date) => {
       return date instanceof Date && !isNaN(date.getTime())
@@ -409,15 +458,18 @@ function Register() {
       if (image) {
         payload.append("profile_pic", image);
       } else {
-        payload.append("profile_pic", ""); // optional
+        payload.append("profile_pic", "");
       }
   
       if (admissionForm) {
         payload.append("admission_form_url", admissionForm);
       } else {
-        payload.append("admission_form_url", ""); // optional
+        payload.append("admission_form_url", "");
       }
   
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
       const response = await fetch(
         `https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`,
         {
@@ -426,46 +478,69 @@ function Register() {
             Authorization: `${token}`, // ❗ DO NOT set Content-Type manually
           },
           body: payload,
+          signal: controller.signal,
         }
       );
+      clearTimeout(timeoutId);
   
       const result = await response.json();
   
       if (!response.ok) {
-        if (result.error === "Email already exists") {
+        let errorMsg = result.message || result.error || "";
+        if (result.details?.stack && typeof result.details.stack === "string") {
+          const firstLine = result.details.stack.split("\n")[0].replace(/^Error:\s*/i, "").trim();
+          if (firstLine && !firstLine.includes("Internal Server Error") && !firstLine.includes("An unexpected error occurred")) {
+            errorMsg = firstLine;
+          }
+        }
+        if (result.details?.message && result.details.message !== "An unexpected error occurred") {
+          errorMsg = result.details.message;
+        }
+
+        const lowerErr = (errorMsg + " " + (result.error || "") + " " + (result.message || "")).toLowerCase();
+
+        if (lowerErr.includes("email") && lowerErr.includes("exist")) {
           Swal.fire({
             icon: "warning",
             title: getTranslation(
               "Email is already exists/ईमेल पहले से मौजूद है",
               lang
             ),
+            text: getTranslation("This email address is already registered. / यह ईमेल पहले से पंजीकृत है।", lang),
+            confirmButtonText: getTranslation("OK / ठीक है", lang),
           });
-        } else if (
-          result.error ===
-          getTranslation(
-            "Phone number already exists/फ़ोन नंबर पहले से मौजूद है",
-            lang
-          )
-        ) {
+        } else if (lowerErr.includes("phone") && lowerErr.includes("exist")) {
           Swal.fire({
             icon: "warning",
             title: getTranslation(
-              "Phone is already exist/फ़ोन पहले से मौजूद है",
+              "Primary Phone Already Registered / प्राथमिक फ़ोन नंबर पहले से पंजीकृत है",
               lang
             ),
+            text: getTranslation(
+              "Patient Relative Primary Phone Number already exists! Please enter a different primary phone number. / रोगी के संबंधी का प्राथमिक फ़ोन नंबर पहले से मौजूद है! कृपया कोई अन्य प्राथमिक फ़ोन नंबर दर्ज करें।",
+              lang
+            ),
+            confirmButtonText: getTranslation("OK / ठीक है", lang),
           });
-        } else {
+        } else if (lowerErr.includes("profile picture must be") || lowerErr.includes("jpeg, png, or webp")) {
           Swal.fire({
             icon: "error",
-            title: getTranslation("Registration Failed / पंजीकरण विफल", lang),
-            text: result.message || result.error || getTranslation("Server error/सर्वर त्रुटि", lang),
+            title: getTranslation("Unsupported Image Format / असमर्थित छवि प्रारूप", lang),
+            text: getTranslation(
+              `${errorMsg} / प्रोफ़ाइल फ़ोटो केवल JPEG, PNG या WebP प्रारूप में होनी चाहिए।`,
+              lang
+            ),
+            confirmButtonText: getTranslation("OK / ठीक है", lang),
           });
+        } else {
+          showApiErrorAlert(result, lang, getTranslation("Registration Failed / पंजीकरण विफल", lang));
         }
       } else {
         Swal.fire({
           title: getTranslation("Good job!/अच्छा काम!", lang),
           text: getTranslation("Registration successful!/सफल पंजीकरण!", lang),
           icon: "success",
+          confirmButtonText: getTranslation("OK / ठीक है", lang),
         }).then(() => {
           clearDraft("patient_registration", "new");
           setDraftTimestamp(null);
@@ -487,14 +562,29 @@ function Register() {
       }
     } catch (error) {
       console.error("Fetch Error:", error);
-      alert(
-        getTranslation(
-          "Registration failed! Unknown error./पंजीकरण विफल! अज्ञात त्रुटि.",
-          lang
-        )
-      );
+      if (error.name === "AbortError") {
+        Swal.fire({
+          icon: "warning",
+          title: getTranslation("Server is Waking Up / सर्वर सक्रिय हो रहा है", lang),
+          text: getTranslation(
+            "The backend server is hosted on Render and took longer to wake from idle sleep. Please click 'Patient Register' again to complete registration. / बैकएंड सर्वर को सक्रिय होने में समय लगा। कृपया पुनः 'रोगी रजिस्टर' पर क्लिक करें।",
+            lang
+          ),
+          confirmButtonText: getTranslation("OK / ठीक है", lang),
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: getTranslation("Registration Failed / पंजीकरण विफल", lang),
+          text: getTranslation(
+            "Registration failed! Unknown error./पंजीकरण विफल! अज्ञात त्रुटि.",
+            lang
+          ),
+          confirmButtonText: getTranslation("OK / ठीक है", lang),
+        });
+      }
     } finally {
-      setIsLoading(false);
+      setIsRegisterSubmitting(false);
     }
   };
 
@@ -503,11 +593,14 @@ function Register() {
   const [draftTimestamp, setDraftTimestamp] = useState(null);
   const toggle = () => {
     if (!modal) {
+      setIsRegisterSubmitting(false);
       const saved = loadDraft("patient_registration", "new");
       if (saved && saved.data) {
         setFormData(saved.data);
         setDraftTimestamp(saved.savedAt);
       }
+    } else {
+      setIsRegisterSubmitting(false);
     }
     setModal(!modal);
   };
@@ -527,11 +620,10 @@ function Register() {
       return;
     }
 
-    // Set state immediately so modal opens with loading screen
+    // Set state immediately so modal opens with user ID
     setSelectedUserId(userId);
     setSelectedUser(null);
     setViewModal(true);
-    setIsLoading(true);
 
     const token = localStorage.getItem("Authorization");
 
@@ -583,8 +675,6 @@ function Register() {
       }
     } catch (error) {
       console.error("Fetch error:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -951,13 +1041,7 @@ function Register() {
         fetchUsers();
       } else {
         const errorData = await response.json();
-        // Show error SweetAlert
-        Swal.fire({
-          title: getTranslation("Failed to update user/उपयोगकर्ता अपडेट करने में विफल",lang),
-          text: errorData.message || "Unknown error occurred",
-          icon: "error",
-          confirmButtonText: getTranslation("OK/ठीक है",lang),
-        });
+        showApiErrorAlert(errorData, lang, getTranslation("Failed to update user/उपयोगकर्ता अपडेट करने में विफल", lang));
       }
     } catch (err) {
       console.error("Error updating user:", err);
@@ -1025,12 +1109,9 @@ function Register() {
             : "N/A",
         }));
 
-        setTimeout(() => {
-          setData(formatted);
-          setFilteredData(formatted);
-          setstillLoading(false);
-          console.log("data", data);
-        }, 1000); // You can reduce the delay to 1s if 3s is too much
+        setData(formatted);
+        setFilteredData(formatted);
+        setstillLoading(false);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -1627,7 +1708,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
               setDraftTimestamp(null);
             }}
           />
-          <Form onSubmit={handleSubmit}>
+          <Form noValidate onSubmit={handleSubmit}>
             <div className="row g-3">
               {/* Date of Admission */}
               <div className="col-md-6">
@@ -1949,11 +2030,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
-              {/* Patient Photo Upload with Camera Icon */}
+              {/* Patient Photo Upload with Modern Camera Icon */}
               <div className="col-md-6">
                 <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  {getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि", lang)}
-                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>({getTranslation("Optional / वैकल्पिक", lang)})</span>
+                  {getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि अपलोड करें", lang)} <span className="text-danger">*</span>
                 </Label>
                 <div className="d-flex align-items-center gap-2">
                   {preview && (
@@ -1961,77 +2041,96 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       src={preview}
                       alt="Preview"
                       style={{
-                        width: "42px",
-                        height: "42px",
+                        width: "40px",
+                        height: "40px",
                         borderRadius: "50%",
                         objectFit: "cover",
-                        border: "2px solid #e2e8f0",
+                        border: "2px solid #1E6554",
                         flexShrink: 0,
                       }}
                     />
                   )}
-                  <div className="position-relative flex-grow-1">
+                  <div className="position-relative flex-grow-1" style={{ display: "flex", alignItems: "center" }}>
                     <Input
                       id="patientPhotoInput"
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp"
                       capture="environment"
                       onChange={handleImageChange}
                       className="form-control"
-                      style={{ borderRadius: "8px", height: "40px", paddingRight: "40px" }}
+                      style={{ borderRadius: "8px", height: "40px", paddingRight: "38px" }}
                     />
                     <label
                       htmlFor="patientPhotoInput"
-                      className="position-absolute end-0 top-50 translate-middle-y me-2 mb-0 d-flex align-items-center justify-content-center"
+                      className="d-flex align-items-center justify-content-center"
                       style={{
+                        position: "absolute",
+                        right: "6px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
                         cursor: "pointer",
-                        width: "30px",
-                        height: "30px",
+                        width: "28px",
+                        height: "28px",
                         borderRadius: "6px",
-                        background: "#f1f5f9",
-                        border: "1px solid #cbd5e1",
-                        fontSize: "14px",
+                        background: "#e6f4ea",
+                        border: "1px solid #bbf7d0",
+                        transition: "all 0.2s ease-in-out",
+                        margin: 0,
+                        zIndex: 2,
                       }}
                       title={getTranslation("Take or choose photo / फ़ोटो लें या चुनें", lang)}
                     >
-                      📷
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E6554" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                      </svg>
                     </label>
                   </div>
                 </div>
                 {error && <small className="text-danger d-block mt-1">{error}</small>}
               </div>
 
-              {/* Admission Form Upload with Camera Icon */}
+              {/* Admission Form Upload with Modern PDF/Doc Icon */}
               <div className="col-md-6">
                 <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  {getTranslation("Upload Admission Form (PDF / Image) / प्रवेश फॉर्म अपलोड करें", lang)}
-                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>({getTranslation("Optional / वैकल्पिक", lang)})</span>
+                  {getTranslation("Upload Admission Form (PDF) / प्रवेश फ़ॉर्म (पीडीएफ) अपलोड करें", lang)} <span className="text-danger">*</span>
                 </Label>
-                <div className="position-relative">
+                <div className="position-relative" style={{ display: "flex", alignItems: "center" }}>
                   <Input
                     id="admissionFormInput"
                     type="file"
-                    accept="application/pdf,image/*"
-                    capture="environment"
+                    accept="application/pdf"
                     onChange={handleAdmissionFormChange}
                     className="form-control"
-                    style={{ borderRadius: "8px", height: "40px", paddingRight: "40px" }}
+                    style={{ borderRadius: "8px", height: "40px", paddingRight: "38px" }}
                   />
                   <label
                     htmlFor="admissionFormInput"
-                    className="position-absolute end-0 top-50 translate-middle-y me-2 mb-0 d-flex align-items-center justify-content-center"
+                    className="d-flex align-items-center justify-content-center"
                     style={{
+                      position: "absolute",
+                      right: "6px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
                       cursor: "pointer",
-                      width: "30px",
-                      height: "30px",
+                      width: "28px",
+                      height: "28px",
                       borderRadius: "6px",
-                      background: "#f1f5f9",
-                      border: "1px solid #cbd5e1",
-                      fontSize: "14px",
+                      background: "#fef3c7",
+                      border: "1px solid #fde68a",
+                      transition: "all 0.2s ease-in-out",
+                      margin: 0,
+                      zIndex: 2,
                     }}
-                    title={getTranslation("Capture or select document / दस्तावेज़ कैप्चर करें या चुनें", lang)}
+                    title={getTranslation("Select PDF document / पीडीएफ दस्तावेज़ चुनें", lang)}
                   >
-                    📷
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
                   </label>
                 </div>
                 {admissionFormName && (
@@ -2192,7 +2291,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
               <Button
                 color="primary"
                 type="submit"
-                disabled={isLoading}
+                disabled={isRegisterSubmitting}
                 style={{
                   borderRadius: "8px",
                   backgroundColor: "#d56337",
@@ -2202,8 +2301,11 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   minWidth: "160px",
                 }}
               >
-                {isLoading ? (
-                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                {isRegisterSubmitting ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    {getTranslation("Registering... / पंजीकरण हो रहा है...", lang)}
+                  </>
                 ) : (
                   getTranslation("Patient Register / रोगी रजिस्टर", lang)
                 )}
@@ -2231,6 +2333,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
         {showEditModal && (
           <div className="p-3 p-md-4" style={{ backgroundColor: "#ffffff" }}>
             <Form
+              noValidate
               onSubmit={(e) => {
                 e.preventDefault();
                 handleUpdateSubmit();
@@ -2634,16 +2737,6 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
               {/* Modal Footer Actions */}
               <div className="d-flex justify-content-end gap-2 pt-4 mt-4 border-top">
                 <Button
-                  color="light"
-                  type="button"
-                  className="border fw-semibold px-4"
-                  onClick={() => setShowEditModal(false)}
-                  style={{ borderRadius: "8px" }}
-                >
-                  {getTranslation("Cancel / रद्द करें", lang)}
-                </Button>
-
-                <Button
                   color="primary"
                   type="submit"
                   disabled={isLoading}
@@ -2677,7 +2770,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
         maxWidth="500px"
       >
         {reregisterModal && (
-          <Form onSubmit={handleReRegister}>
+          <Form noValidate onSubmit={handleReRegister}>
             <div className="col-md-12 pt-3 pb-3">
               <Label>{wardDetails}</Label>
               <div className="radio radio-primary d-flex gap-3">

@@ -115,6 +115,7 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
@@ -721,6 +722,30 @@ function RelationshipFamily() {
   // IRF Submit handler start
   const SubmitIRFFormHandler = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: formData.dateOfAssessment,
+      },
+      {
+        label: getTranslation("Relationship Status / रिश्ते की स्थिति", lang),
+        value: formData.relationship_status,
+      },
+      {
+        label: getTranslation("Head of Family / परिवार का मुखिया", lang),
+        value: formData.head_of_family,
+      },
+      {
+        label: getTranslation("Relationships with Family / परिवार के साथ संबंध", lang),
+        value: formData.relationships_with_family,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true); // Start loader
 
     // 🛠️ Construct payload in correct format
@@ -883,9 +908,17 @@ function RelationshipFamily() {
         }
       );
 
-      if (!response.ok) throw new Error("API call failed");
-
       const data = await response.json();
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(
+          data,
+          lang,
+          getTranslation("Failed to submit IRF. Check console for error./IRF सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.", lang)
+        );
+        return;
+      }
+
       setIsLoading(false);
       const userTargetId = selectedUser?.user_id || selectedUser?.id || currentIRFUserId;
       clearDraft("relationship_family", userTargetId);
@@ -905,7 +938,7 @@ function RelationshipFamily() {
       Swal.fire({
         icon: "error",
         title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-        text: getTranslation("Failed to submit IRF. Check console for error./IRF सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+        text: err?.message || getTranslation("Failed to submit IRF. Check console for error./IRF सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   };
@@ -1158,9 +1191,17 @@ const handleIRFUpdate = async () => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Failed to update IRF assessment. Check console for details./Failed to update IRF assessment. Check console for details.", lang)
+      );
+      return;
+    }
+
     console.log("✅ IRF Update Response:", data);
     console.log("📦 IRF Update Payload Sent:", payload);
 
@@ -1180,33 +1221,31 @@ const handleIRFUpdate = async () => {
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to update IRF assessment. Check console for details./Failed to update IRF assessment. Check console for details.",lang),
+      text: err?.message || getTranslation("Failed to update IRF assessment. Check console for details./Failed to update IRF assessment. Check console for details.",lang),
     });
   }
 };
 
 
 
-// ✅ Prefill IRF form handler start
+//Prefill IRF form data by IRF id handler start
 const [IRFPrefillData, setIRFPrefillData] = useState({});
 const [IRFPrefillModal, setIRFPrefillModal] = useState(false);
 
 const handleIRFprefill = async (prefillIRFID = null) => {
-  // Normalize ID if object
+  setIRFPrefillModal(true);
+  console.log("IRF Readmission Modal Opened");
+
   if (typeof prefillIRFID === "object" && prefillIRFID !== null) {
-    prefillIRFID = prefillIRFID.irf_id || prefillIRFID.entry_id;
+    prefillIRFID = prefillIRFID.irf_id; // ✅ use IRF ID
   }
 
   if (!prefillIRFID) {
-    Swal.fire({
-      icon: "warning",
-      title: getTranslation("Missing IRF ID/गुम IRF ID",lang),
-      text: getTranslation("No valid IRF ID was provided for prefill./प्रीफिल के लिए कोई वैध IRF ID प्रदान नहीं की गई।",lang),
-    });
+    console.error("Invalid prefillIRFID provided");
     return;
   }
 
-  console.log("IRF ID For Prefill:", prefillIRFID);
+  console.log("IRF ID For Readmission Prefill:", prefillIRFID);
   const token = localStorage.getItem("Authorization");
 
   try {
@@ -1223,35 +1262,24 @@ const handleIRFprefill = async (prefillIRFID = null) => {
     );
 
     const data = await response.json();
-    console.log("Raw IRF API Response:", data);
 
     if (!response.ok) {
-      Swal.fire({
-        icon: "error",
-        title: "Fetch Failed",
-        text: data.message || "Unable to fetch IRF data for prefill.",
-      });
+      console.error("User fetch error:", data);
       return;
     }
 
     const latestAssessment = data.data || null;
+
     if (!latestAssessment) {
-      Swal.fire({
-        icon: "info",
-        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
-        text: getTranslation("No IRF data available for this ID./इस आईडी के लिए कोई IRF डेटा उपलब्ध नहीं है।",lang),
-      });
+      console.warn("No IRF record found for this ID.");
       return;
     }
 
-    // ✅ Open modal only when we have valid data
-    setIRFPrefillModal(true);
+    setSelectedUser(latestAssessment);
+    console.log("Selected IRF User for readmission:", latestAssessment);
 
-    // ✅ Wrap in array so PatientCommonInfo works
-    setSelectedUser([latestAssessment]);
-
-    // ✅ Build mapped data for IRF
-    const mappedData = {
+    // Map fetched API data into state for inputs
+    setIRFPrefillData({
       irf_id: latestAssessment.irf_id,
       user_id: latestAssessment.user_id,
       entry_id: latestAssessment.entry_id,
@@ -1259,16 +1287,34 @@ const handleIRFprefill = async (prefillIRFID = null) => {
       visit_no: latestAssessment.visit_no,
 
       date_of_assessment: latestAssessment.date_of_assessment
-        ? new Date(latestAssessment.date_of_assessment)
-        : null,
+        ? new Date(latestAssessment.date_of_assessment).toISOString().split("T")[0]
+        : "",
 
-      relationship_status: latestAssessment.relationship_status || "",
+      marital_status: latestAssessment.marital_status || "",
       marriage_arrangement: latestAssessment.marriage_arrangement || "",
-      after_marriage_status: latestAssessment.after_marriage_status || "",
-      family_members: latestAssessment.family_members || [],
-
-      disorder_desc: latestAssessment.disorder_desc || "",
-      family_history_details: latestAssessment.family_history_details || {},
+      post_marriage_life: latestAssessment.post_marriage_life || "",
+      living_status: latestAssessment.living_status || "",
+      family_conflict_interference:
+        latestAssessment.family_conflict_interference || "",
+      family_conflict_details: latestAssessment.family_conflict_details || "",
+      physical_illness_father_side:
+        latestAssessment.physical_illness_father_side || "",
+      physical_illness_mother_side:
+        latestAssessment.physical_illness_mother_side || "",
+      any_other_physical_illness:
+        latestAssessment.any_other_physical_illness || "",
+      substance_dependence_father_side:
+        latestAssessment.substance_dependence_father_side || "",
+      substance_dependence_mother_side:
+        latestAssessment.substance_dependence_mother_side || "",
+      any_other_substance_dependence:
+        latestAssessment.any_other_substance_dependence || "",
+      psychiatric_problem_father_side:
+        latestAssessment.psychiatric_problem_father_side || "",
+      psychiatric_problem_mother_side:
+        latestAssessment.psychiatric_problem_mother_side || "",
+      any_other_psychiatric_problem:
+        latestAssessment.any_other_psychiatric_problem || "",
       any_other_father_side_mention:
         latestAssessment.any_other_father_side_mention || "",
       any_other_mother_side_mention:
@@ -1281,69 +1327,49 @@ const handleIRFprefill = async (prefillIRFID = null) => {
         latestAssessment.family_behavior_with_patient || "",
       head_of_family: latestAssessment.head_of_family || "",
       family_relationships: latestAssessment.family_relationships || "",
-
-      status: latestAssessment.status || "Pending",
-
-      // ✅ Patient details
-      patient_name: latestAssessment.name || "",
-      dob: latestAssessment.dob || "",
-      gender: latestAssessment.gender || "",
-      phone: latestAssessment.phone || "",
-      email: latestAssessment.email || "",
-      admit_date: latestAssessment.admit_date || "",
-      ward_name: latestAssessment.ward_name || "",
-    };
-
-    setIRFPrefillData(mappedData);
-
-    console.log("Mapped IRF Prefill Data:", mappedData);
-  } catch (error) {
-    console.error("Prefill fetch error:", error);
-    Swal.fire({
-      icon: "error",
-      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
-      text: getTranslation("Unable to fetch IRF data due to a network issue./नेटवर्क समस्या के कारण IRF डेटा प्राप्त करने में असमर्थ।",lang),
     });
+
+    console.log("✅ Final Prefilled Readmission IRF Data:", latestAssessment);
+  } catch (error) {
+    console.error("Fetch error:", error);
   }
 };
-// ✅ Prefill IRF form handler end
 
 
-
-// IRF readmission submit start
+// IRF readmission submit handler start
 const SubmitIRFReadmissionFormHandler = async (e) => {
   e.preventDefault();
-  setIsLoading(true); // Start loader
+  setIsLoading(true);
 
-  // 🛠️ Construct payload in correct format
   const payload = {
-    user_id: IRFPrefillData?.user_id,
-    date_of_assessment: IRFPrefillData?.date_of_assessment
-      ? new Date(IRFPrefillData.date_of_assessment).toISOString().split("T")[0] // "YYYY-MM-DD"
-      : null,
-
-    relationship_status: IRFPrefillData.relationship_status || "",
+    user_id: selectedUser?.user_id || "",
+    branch_id: selectedBranch,
+    date_of_assessment: IRFPrefillData.date_of_assessment || "",
+    marital_status: IRFPrefillData.marital_status || "",
     marriage_arrangement: IRFPrefillData.marriage_arrangement || "",
-    after_marriage_status: IRFPrefillData.after_marriage_status || "",
-
-    // ✅ Array of family members
-    family_members:
-      IRFPrefillData.family_members?.map((member) => ({
-        name: member.name || "",
-        relation: member.relation || "",
-        age: member.age || "",
-        living_status: member.living_status || "",
-        physical_disorder: member.physical_disorder || "",
-      })) || [],
-
-    disorder_desc: IRFPrefillData.disorder_desc || "",
-
-    // ✅ Family History Details (structured)
-    family_history_details: IRFPrefillData.family_history_details || {
-      father_side: {},
-      mother_side: {},
-    },
-
+    post_marriage_life: IRFPrefillData.post_marriage_life || "",
+    living_status: IRFPrefillData.living_status || "",
+    family_conflict_interference:
+      IRFPrefillData.family_conflict_interference || "",
+    family_conflict_details: IRFPrefillData.family_conflict_details || "",
+    physical_illness_father_side:
+      IRFPrefillData.physical_illness_father_side || "",
+    physical_illness_mother_side:
+      IRFPrefillData.physical_illness_mother_side || "",
+    any_other_physical_illness:
+      IRFPrefillData.any_other_physical_illness || "",
+    substance_dependence_father_side:
+      IRFPrefillData.substance_dependence_father_side || "",
+    substance_dependence_mother_side:
+      IRFPrefillData.substance_dependence_mother_side || "",
+    any_other_substance_dependence:
+      IRFPrefillData.any_other_substance_dependence || "",
+    psychiatric_problem_father_side:
+      IRFPrefillData.psychiatric_problem_father_side || "",
+    psychiatric_problem_mother_side:
+      IRFPrefillData.psychiatric_problem_mother_side || "",
+    any_other_psychiatric_problem:
+      IRFPrefillData.any_other_psychiatric_problem || "",
     any_other_father_side_mention:
       IRFPrefillData.any_other_father_side_mention || "",
     any_other_mother_side_mention:
@@ -1376,16 +1402,24 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Failed to submit IRF. Check console for error./IRF सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.", lang)
+      );
+      return;
+    }
+
     setIsLoading(false);
 
     Swal.fire({
       icon: "success",
       title: getTranslation("IRF Created Successfully/IRF सफलतापूर्वक बनाया गया",lang),
       text: getTranslation("The IRF assessment was submitted successfully./आईआरएफ मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
-    }).then(() => setIsIRFModalOpen(false));
+    }).then(() => setIRFPrefillModal(false));
 
     console.log("✅ IRF Data:", data);
   } catch (err) {
@@ -1395,7 +1429,7 @@ const SubmitIRFReadmissionFormHandler = async (e) => {
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to submit IRF. Check console for error./IRF सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+      text: err?.message || getTranslation("Failed to submit IRF. Check console for error./IRF सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };

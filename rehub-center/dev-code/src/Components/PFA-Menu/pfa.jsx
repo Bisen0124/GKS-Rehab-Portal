@@ -105,6 +105,7 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 function PFA() {
   const { lang } = useLang(); // get current language from context
@@ -825,51 +826,43 @@ const tablePFAPatientListColumns = [
     e.preventDefault();
     setIsLoading(true); // Start loader
 
-    const requiredFields = [
-      formData.dependentToData,
-      formData.substanceUsePatternData,
-      formData.last30DaysQuantityData,
-      formData.medicalConfirmationData,
-      formData.bloodConfirmationData,
-      formData.weight,
-      formData.pulse_rate,
-      formData.blood_pressure,
-      formData.temperature,
-      formData.bloodTransfusionHistoryData,
-      formData.complications.ulcer,
-      formData.complications.respiratory_problem,
-      formData.complications.jaundice,
-      formData.complications.haematemesis,
-      formData.complications.abdominal_complaints,
-      formData.complications.cardiovascular,
-      formData.complication_description,
-      formData.neurological.delirium,
-      formData.neurological.seizure,
-      formData.neurological.blackout,
-      formData.neurological.memory_loss,
-      formData.neurological.trembling,
-      formData.neurological.epilepsy,
-      formData.neurological.neuropathy,
-      formData.neuro_description,
-      formData.other_findings,
-      formData.consent,
-      formData.consent_name,
-      formData.consent_relationship,
-      formData.consent_signature,
-      formData.prepared_by,
+    const compulsoryFieldDefinitions = [
+      { label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang), value: formData.dateOfAssessment },
+      { label: getTranslation("Dependent To / पर निर्भर", lang), value: formData.dependentToData },
+      { label: getTranslation("Substance Use Pattern / मादक पदार्थ उपयोग पैटर्न", lang), value: formData.substanceUsePatternData },
+      { label: getTranslation("Last 30 Days Quantity / पिछले 30 दिनों की मात्रा", lang), value: formData.last30DaysQuantityData },
+      { label: getTranslation("Medical History / चिकित्सा इतिहास", lang), value: formData.medicalConfirmationData },
+      { label: getTranslation("Blood Transfusion History / रक्त आधान इतिहास", lang), value: formData.bloodConfirmationData },
+      { label: getTranslation("Weight / वजन", lang), value: formData.weight },
+      { label: getTranslation("Pulse Rate / नाड़ी की दर", lang), value: formData.pulse_rate },
+      { label: getTranslation("Blood Pressure / रक्तचाप", lang), value: formData.blood_pressure },
+      { label: getTranslation("Temperature / तापमान", lang), value: formData.temperature },
+      { label: getTranslation("Blood / Medical History Details / विवरण", lang), value: formData.bloodTransfusionHistoryData },
+      { label: getTranslation("Complications (Ulcer) / अल्सर", lang), value: formData.complications?.ulcer },
+      { label: getTranslation("Complications (Respiratory) / श्वसन समस्या", lang), value: formData.complications?.respiratory_problem },
+      { label: getTranslation("Complications (Jaundice) / पीलिया", lang), value: formData.complications?.jaundice },
+      { label: getTranslation("Complications (Haematemesis) / रक्त वमन", lang), value: formData.complications?.haematemesis },
+      { label: getTranslation("Complications (Abdominal) / पेट की शिकायतें", lang), value: formData.complications?.abdominal_complaints },
+      { label: getTranslation("Complications (Cardiovascular) / हृदय संबंधी", lang), value: formData.complications?.cardiovascular },
+      { label: getTranslation("Complication Description / जटिलता विवरण", lang), value: formData.complication_description },
+      { label: getTranslation("Neurological (Delirium) / प्रलाप", lang), value: formData.neurological?.delirium },
+      { label: getTranslation("Neurological (Seizure) / दौरा", lang), value: formData.neurological?.seizure },
+      { label: getTranslation("Neurological (Blackout) / बेहोशी", lang), value: formData.neurological?.blackout },
+      { label: getTranslation("Neurological (Memory Loss) / स्मृति हानि", lang), value: formData.neurological?.memory_loss },
+      { label: getTranslation("Neurological (Trembling) / कंपकंपी", lang), value: formData.neurological?.trembling },
+      { label: getTranslation("Neurological (Epilepsy) / मिर्गी", lang), value: formData.neurological?.epilepsy },
+      { label: getTranslation("Neurological (Neuropathy) / न्यूरोपैथी", lang), value: formData.neurological?.neuropathy },
+      { label: getTranslation("Neurological Description / न्यूरोलॉजिकल विवरण", lang), value: formData.neuro_description },
+      { label: getTranslation("Other Findings / अन्य निष्कर्ष", lang), value: formData.other_findings },
+      { label: getTranslation("Consent / सहमति", lang), value: formData.consent },
+      { label: getTranslation("Consent Name / सहमति देने वाले का नाम", lang), value: formData.consent_name },
+      { label: getTranslation("Consent Relationship / संबंध", lang), value: formData.consent_relationship },
+      { label: getTranslation("Consent Signature / हस्ताक्षर", lang), value: formData.consent_signature },
+      { label: getTranslation("Prepared By / द्वारा तैयार", lang), value: formData.prepared_by },
     ];
 
-    const allFieldsFilled = requiredFields.every(
-      (field) => field !== "" && field !== null && field !== undefined
-    );
-
-    if (!allFieldsFilled) {
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
       setIsLoading(false);
-      Swal.fire({
-        icon: "warning",
-        title: getTranslation("Missing Fields/लापता फ़ील्ड",lang),
-        text: getTranslation("Please fill all required fields before submitting./सबमिट करने से पहले कृपया सभी ज़रूरी फ़ील्ड भरें।",lang),
-      });
       return;
     }
 
@@ -925,14 +918,7 @@ const tablePFAPatientListColumns = [
 
       if (!response.ok) {
         setIsLoading(false);
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Submission Failed/सबमिशन विफल",lang),
-          text: result.message || getTranslation("Server error/सर्वर त्रुटि",lang),
-        }).then(() => {
-  // This runs after the user clicks "OK"
-  setModal(false);
-});
+        showApiErrorAlert(result, lang);
         return;
       }
       // ✅ Success Case
@@ -1285,14 +1271,7 @@ const parseDateString = (dateStr) => {
 
       if (!response.ok) {
         setIsLoading(false);
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल",lang),
-          text: result.message || getTranslation("Server error/सर्वर त्रुटि",lang),
-        }).then(() => {
-  // This runs after the user clicks "OK"
-  setModal(false);
-});
+        showApiErrorAlert(result, lang, getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल", lang));
         return;
       }
       // ✅ Success Case

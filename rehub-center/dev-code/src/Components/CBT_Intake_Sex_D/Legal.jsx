@@ -116,6 +116,7 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
@@ -603,6 +604,30 @@ function Legal() {
 
   const SubmitLegalFormHandler = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: formData.dateOfAssessment,
+      },
+      {
+        label: getTranslation("Domestic Violence Case / घरेलू हिंसा का मामला", lang),
+        value: formData.domestic_violence_case,
+      },
+      {
+        label: getTranslation("Any Criminal Case / कोई आपराधिक मामला", lang),
+        value: formData.any_criminal_case,
+      },
+      {
+        label: getTranslation("Current Case Status / वर्तमान केस की स्थिति", lang),
+        value: formData.current_case_status,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true); // Start loader
 
     const payload = {
@@ -639,9 +664,17 @@ function Legal() {
         }
       );
 
-      if (!response.ok) throw new Error("API call failed");
-
       const data = await response.json();
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(
+          data,
+          lang,
+          getTranslation("Failed to submit Legal History. Check console for error./कानूनी इतिहास सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.", lang)
+        );
+        return;
+      }
+
       setIsLoading(false);
       const userTargetId = selectedUser?.user_id || selectedUser?.id || currentLegalUserId;
       clearDraft("legal", userTargetId);
@@ -661,7 +694,7 @@ function Legal() {
       Swal.fire({
         icon: "error",
         title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-        text: getTranslation("Failed to submit Legal History. Check console for error./कानूनी इतिहास सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+        text: err?.message || getTranslation("Failed to submit Legal History. Check console for error./कानूनी इतिहास सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   };
@@ -872,9 +905,17 @@ const handleLegalUpdate = async () => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Failed to update Legal History. Check console for details./कानूनी इतिहास अपडेट करने में विफल. विवरण के लिए कंसोल देखें.", lang)
+      );
+      return;
+    }
+
     console.log("✅ Legal History Update Response:", data);
     console.log("📦 Payload Sent:", payload);
 
@@ -894,7 +935,7 @@ const handleLegalUpdate = async () => {
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to update Legal History. Check console for details./कानूनी इतिहास अपडेट करने में विफल. विवरण के लिए कंसोल देखें.",lang),
+      text: err?.message || getTranslation("Failed to update Legal History. Check console for details./कानूनी इतिहास अपडेट करने में विफल. विवरण के लिए कंसोल देखें.",lang),
     });
   }
 };
@@ -905,21 +946,19 @@ const [LegalPrefillData, setLegalPrefillData] = useState({});
 const [LegalPrefillModal, setLegalPrefillModal] = useState(false);
 
 const handleLegalPreFill = async (prefillLegalID = null) => {
-  // Normalize ID if object
+  setLegalPrefillModal(true);
+  console.log("Legal Readmission Modal Opened");
+
   if (typeof prefillLegalID === "object" && prefillLegalID !== null) {
-    prefillLegalID = prefillLegalID.ilh_id || prefillLegalID.entry_id;
+    prefillLegalID = prefillLegalID.ilh_id; // ✅ correct key for Legal
   }
 
   if (!prefillLegalID) {
-    Swal.fire({
-      icon: "warning",
-      title: getTranslation("Missing Legal ID/कानूनी आईडी गुम होना",lang),
-      text: getTranslation("No valid Legal History ID was provided for prefill./प्रीफ़िल के लिए कोई वैध कानूनी इतिहास आईडी प्रदान नहीं की गई थी।",lang),
-    });
+    console.error("Invalid prefillLegalID provided");
     return;
   }
 
-  console.log("Legal ID For Prefill:", prefillLegalID);
+  console.log("Legal ID For Readmission Prefill:", prefillLegalID);
   const token = localStorage.getItem("Authorization");
 
   try {
@@ -936,102 +975,58 @@ const handleLegalPreFill = async (prefillLegalID = null) => {
     );
 
     const data = await response.json();
-    console.log("Raw Legal API Response:", data);
 
     if (!response.ok) {
-      Swal.fire({
-        icon: "error",
-        title: getTranslation("Fetch Failed/प्राप्त करना विफल",lang),
-        text: data.message || getTranslation("Unable to fetch Legal data for prefill./प्रीफ़िल के लिए कानूनी डेटा प्राप्त करने में असमर्थ.",lang),
-      });
+      console.error("User fetch error:", data);
       return;
     }
 
     const latestAssessment = data.data || null;
+
     if (!latestAssessment) {
-      Swal.fire({
-        icon: "info",
-        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
-        text: getTranslation("No Legal data available for this ID./इस आईडी के लिए कोई कानूनी डेटा उपलब्ध नहीं है।",lang),
-      });
+      console.warn("No legal history found for this ID.");
       return;
     }
 
-    // ✅ Open modal only when we have valid data
-    setLegalPrefillModal(true);
+    setSelectedUser(latestAssessment);
+    console.log("Selected Legal User for readmission:", latestAssessment);
 
-    // ✅ Wrap in array so PatientCommonInfo works
-    setSelectedUser([latestAssessment]);
-
-    // ✅ Build mapped data for Legal History
-    const mappedData = {
-      ilh_id: latestAssessment.ilh_id,
+    setLegalPrefillData({
       user_id: latestAssessment.user_id,
       entry_id: latestAssessment.entry_id,
       branch_id: latestAssessment.branch_id,
       visit_no: latestAssessment.visit_no,
 
       date_of_assessment: latestAssessment.date_of_assessment
-        ? new Date(latestAssessment.date_of_assessment)
-        : null,
+        ? new Date(latestAssessment.date_of_assessment).toISOString().split("T")[0]
+        : "",
 
       domestic_violence_case: latestAssessment.domestic_violence_case || "",
-      reason_behind_domestic_violence:
-        latestAssessment.reason_behind_domestic_violence || "",
-      drug_status_quantity_at_time:
-        latestAssessment.drug_status_quantity_at_time || "",
+      reason_behind_domestic_violence: latestAssessment.reason_behind_domestic_violence || "",
+      drug_status_quantity_at_time: latestAssessment.drug_status_quantity_at_time || "",
       any_criminal_case: latestAssessment.any_criminal_case || "",
       case_details_specify: latestAssessment.case_details_specify || "",
       current_case_status: latestAssessment.current_case_status || "",
-      drug_status_quantity_current:
-        latestAssessment.drug_status_quantity_current || "",
+      drug_status_quantity_current: latestAssessment.drug_status_quantity_current || "",
       jail_period_duration: latestAssessment.jail_period_duration || "",
-
-      status: latestAssessment.status || "Pending",
-
-      // ✅ Patient details
-      patient_name: latestAssessment.name || "",
-      dob: latestAssessment.dob ? new Date(latestAssessment.dob) : null,
-      gender: latestAssessment.gender || "",
-      phone: latestAssessment.phone || "",
-      email: latestAssessment.email || "",
-      admit_date: latestAssessment.admit_date
-        ? new Date(latestAssessment.admit_date)
-        : null,
-      ward_name: latestAssessment.ward_name || "",
-      address: latestAssessment.address || "",
-      gks_id: latestAssessment.gks_id || "",
-    };
-
-    setLegalPrefillData(mappedData);
-
-    console.log("Mapped Legal Prefill Data:", mappedData);
-  } catch (error) {
-    console.error("Prefill fetch error:", error);
-    Swal.fire({
-      icon: "error",
-      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
-      text: getTranslation("Unable to fetch Legal data due to a network issue./नेटवर्क समस्या के कारण कानूनी डेटा प्राप्त करने में असमर्थ.",lang),
     });
+
+    console.log("✅ Final Prefilled Readmission Legal Data:", latestAssessment);
+  } catch (error) {
+    console.error("Fetch error:", error);
   }
 };
-// Prefill Legal History form handler end
 
 
 // Legal readmission form handler start
 const SubmitLegalReadmissionFormHandler = async (e) => {
   e.preventDefault();
-  setIsLoading(true); // Start loader
+  setIsLoading(true);
 
   const payload = {
-    user_id: LegalPrefillData?.user_id, // ✅ corrected
-    date_of_assessment: LegalPrefillData.date_of_assessment
-      ? new Date(LegalPrefillData.date_of_assessment)
-          .toISOString()
-          .split("T")[0] // YYYY-MM-DD
-      : null,
-
-    // ✅ Map LegalPrefillData fields to correct API keys
+    user_id: selectedUser?.user_id || "",
+    branch_id: selectedBranch,
+    date_of_assessment: LegalPrefillData.date_of_assessment || "",
     domestic_violence_case: LegalPrefillData.domestic_violence_case || "",
     reason_behind_domestic_violence:
       LegalPrefillData.reason_behind_domestic_violence || "",
@@ -1061,9 +1056,17 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Failed to submit Legal History. Check console for error./कानूनी इतिहास सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.", lang)
+      );
+      return;
+    }
+
     setIsLoading(false);
 
     Swal.fire({
@@ -1080,7 +1083,7 @@ const SubmitLegalReadmissionFormHandler = async (e) => {
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to submit Legal History. Check console for error./कानूनी इतिहास सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+      text: err?.message || getTranslation("Failed to submit Legal History. Check console for error./कानूनी इतिहास सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };

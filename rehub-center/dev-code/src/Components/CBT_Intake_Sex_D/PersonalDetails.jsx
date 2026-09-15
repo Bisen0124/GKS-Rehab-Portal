@@ -36,13 +36,16 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 import html2pdf from "html2pdf.js";
 import { useReactToPrint } from "react-to-print";
 
 const BASE_URL = "https://gks-yjdc.onrender.com";
 
-const initialFormData = {
-  date_of_form_filling: "",
+const getTodayDate = () => new Date().toISOString().split("T")[0];
+
+const getInitialFormData = () => ({
+  date_of_form_filling: getTodayDate(),
   occupation: "",
   father_name: "",
   father_occupation: "",
@@ -50,7 +53,9 @@ const initialFormData = {
   religion: "",
   duration_of_interview: "",
   living_situation: "",
-};
+});
+
+const initialFormData = getInitialFormData();
 
 //Pull a scalar error message out of any backend response shape (message, error, errors[])
 const extractErrorMessage = (result, response) => {
@@ -241,7 +246,7 @@ function PersonalDetails() {
     if (!branchId) return;
     const token = localStorage.getItem("Authorization");
 
-    fetch(`${BASE_URL}/api/personal-details/all-entries`, {
+    fetch(`${BASE_URL}/api/personal-details/all-entries?branch_id=${branchId}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
@@ -521,7 +526,7 @@ function PersonalDetails() {
 
     try {
       const response = await fetch(
-        `${BASE_URL}/api/personal-details/latest-assessment/${userId}`,
+        `${BASE_URL}/api/personal-details/latest-assessment/${userId}?branch_id=${branchId}`,
         { method: "GET", headers: getAuthHeaders() }
       );
       const result = await response.json();
@@ -549,7 +554,7 @@ function PersonalDetails() {
 
   // ─── Reset form ───────────────────────────────────────────────────────────────
   const resetForm = () => {
-    setFormData(initialFormData);
+    setFormData(getInitialFormData());
     setIsEditMode(false);
     setPersonalDetailsId(null);
   };
@@ -593,6 +598,7 @@ function PersonalDetails() {
         setFormData(saved.data);
         setDraftTimestamp(saved.savedAt);
       } else {
+        setFormData(getInitialFormData());
         setDraftTimestamp(null);
       }
       await fetchUserCommonInfo(userId);
@@ -608,7 +614,7 @@ function PersonalDetails() {
 
     try {
       const response = await fetch(
-        `${BASE_URL}/api/personal-details/latest-assessment/${userId}`,
+        `${BASE_URL}/api/personal-details/latest-assessment/${userId}?branch_id=${branchId}`,
         { method: "GET", headers: getAuthHeaders() }
       );
       const result = await response.json();
@@ -621,7 +627,7 @@ function PersonalDetails() {
       setFormData({
         date_of_form_filling: record.date_of_form_filling
           ? record.date_of_form_filling.split("T")[0]
-          : "",
+          : getTodayDate(),
         occupation: record.occupation || "",
         father_name: record.father_name || "",
         father_occupation: record.father_occupation || "",
@@ -656,15 +662,30 @@ function PersonalDetails() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.date_of_form_filling) {
-      Swal.fire({
-        icon: "warning",
-        title: getTranslation("Missing field/आवश्यक जानकारी छूट गई", lang),
-        text: getTranslation(
-          "Date of Form Filling is required/फॉर्म भरने की तिथि आवश्यक है",
-          lang
-        ),
-      });
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Form Filling / फॉर्म भरने की तिथि", lang),
+        value: formData.date_of_form_filling,
+      },
+      {
+        label: getTranslation("Occupation / व्यवसाय", lang),
+        value: formData.occupation,
+      },
+      {
+        label: getTranslation("Marital Status / वैवाहिक स्थिति", lang),
+        value: formData.marital_status,
+      },
+      {
+        label: getTranslation("Father's Name / पिता का नाम", lang),
+        value: formData.father_name,
+      },
+      {
+        label: getTranslation("Living Situation / रहने की स्थिति", lang),
+        value: formData.living_situation,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
       return;
     }
 
@@ -672,12 +693,12 @@ function PersonalDetails() {
     try {
       const isUpdate = isEditMode && personalDetailsId;
       const url = isUpdate
-        ? `${BASE_URL}/api/personal-details/update-assessment/${personalDetailsId}`
-        : `${BASE_URL}/api/personal-details/create-assessment`;
+        ? `${BASE_URL}/api/personal-details/update-assessment/${personalDetailsId}?branch_id=${branchId}`
+        : `${BASE_URL}/api/personal-details/create-assessment?branch_id=${branchId}`;
 
       const payload = isUpdate
-        ? { ...formData }
-        : { user_id: currentUserId, ...formData };
+        ? { branch_id: branchId, ...formData }
+        : { user_id: currentUserId, branch_id: branchId, ...formData };
 
       const response = await fetch(url, {
         method: isUpdate ? "PUT" : "POST",
@@ -692,9 +713,8 @@ function PersonalDetails() {
       console.log("Response:", result);
 
       if (!response.ok) {
-        throw new Error(
-          result.message || result.error || JSON.stringify(result)
-        );
+        showApiErrorAlert(result, lang, getTranslation("Failed to save personal details / व्यक्तिगत विवरण सहेजने में विफल", lang));
+        return;
       }
 
       Swal.fire({
@@ -752,7 +772,7 @@ function PersonalDetails() {
 
     try {
       const lookupResponse = await fetch(
-        `${BASE_URL}/api/personal-details/latest-assessment/${userId}`,
+        `${BASE_URL}/api/personal-details/latest-assessment/${userId}?branch_id=${branchId}`,
         { method: "GET", headers: getAuthHeaders() }
       );
       const lookupResult = await lookupResponse.json();
@@ -765,7 +785,7 @@ function PersonalDetails() {
       const idToDelete = lookupResult.data.personal_details_id;
 
       const deleteResponse = await fetch(
-        `${BASE_URL}/api/personal-details/delete-assessment/${idToDelete}`,
+        `${BASE_URL}/api/personal-details/delete-assessment/${idToDelete}?branch_id=${branchId}`,
         { method: "DELETE", headers: getAuthHeaders() }
       );
       const deleteResult = await deleteResponse.json();
@@ -984,7 +1004,7 @@ function PersonalDetails() {
               }}
             />
           )}
-          <Form className="theme-form" onSubmit={handleFormSubmit}>
+          <Form className="theme-form" noValidate onSubmit={handleFormSubmit}>
             <PatientCommonInfo
               selectedUser={selectedUser}
               labels={{
@@ -1013,7 +1033,6 @@ function PersonalDetails() {
                     name="date_of_form_filling"
                     value={formData.date_of_form_filling}
                     onChange={handleInputChange}
-                    required
                   />
                 </FormGroup>
               </div>
@@ -1174,14 +1193,6 @@ function PersonalDetails() {
                     lang
                   )
                 )}
-              </Button>
-              <Button
-                color="secondary"
-                type="button"
-                onClick={closeAllModal}
-                disabled={isLoading}
-              >
-                {getTranslation("Cancel/रद्द करें", lang)}
               </Button>
             </div>
           </Form>

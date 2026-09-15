@@ -152,7 +152,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Brief Intervantion/संक्षिप्त हस्तक्षेप",
+        "title": "Brief Intervention/संक्षिप्त हस्तक्षेप",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/Brief_Intervation/BriefIntervation`
@@ -177,9 +177,9 @@ export const MENUITEMS = [
         "title": "Reports/रिपोर्टों",
         "icon": "icon-class",
         "type": "sub",
-        "path": `${process.env.PUBLIC_URL}/Reports/CbtIntakeSexD`,
+        "path": `${process.env.PUBLIC_URL}/Reports/Combined-Forms-Report`,
         children: [
-          { path: `${process.env.PUBLIC_URL}/Reports/PFA-Report`, title: "PFA Report/पीएफए ​​रिपोर्ट", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/Reports/Combined-Forms-Report`, title: "All Forms Report/सभी फॉर्म रिपोर्ट", type: "link" },
         ],
       }
     ]

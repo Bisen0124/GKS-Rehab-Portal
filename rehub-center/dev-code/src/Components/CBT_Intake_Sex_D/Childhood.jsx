@@ -118,6 +118,7 @@ import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
 import UserDetailsModal from "../Common/UserDetailsModal";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 import { useReactToPrint } from "react-to-print";
 
@@ -608,6 +609,42 @@ function Childhood() {
 
   const SubmitChildhoodFormHandler = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: formData.dateOfAssessment,
+      },
+      {
+        label: getTranslation("Parenting History / परवरिश का इतिहास", lang),
+        value: formData.parenting_history,
+      },
+      {
+        label: getTranslation("Family Disputes in Childhood / बचपन में पारिवारिक विवाद", lang),
+        value: formData.family_dispute_childhood,
+      },
+      {
+        label: getTranslation("Education Status / शिक्षा की स्थिति", lang),
+        value: formData.education_status,
+      },
+      {
+        label: getTranslation("Occupational Status / व्यावसायिक स्थिति", lang),
+        value: formData.occupational_status,
+      },
+      {
+        label: getTranslation("Why are you here? / आप यहाँ क्यों हैं?", lang),
+        value: formData.why_here,
+      },
+      {
+        label: getTranslation("Why did family send you? / परिवार ने आपको क्यों भेजा?", lang),
+        value: formData.why_family_sent,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true);
     const payload = {
       user_id: selectedUser?.user_id,
@@ -650,9 +687,17 @@ function Childhood() {
         }
       );
 
-      if (!response.ok) throw new Error("API call failed");
-
       const data = await response.json();
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(
+          data,
+          lang,
+          getTranslation("Childhood Assessment Submission Failed / बचपन का मूल्यांकन सबमिशन विफल", lang)
+        );
+        return;
+      }
+
       setIsLoading(false);
       const userTargetId = selectedUser?.user_id || selectedUser?.id || currentChildhoodUserId;
       clearDraft("childhood", userTargetId);
@@ -672,7 +717,7 @@ function Childhood() {
       Swal.fire({
         icon: "error",
         title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-        text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+        text: err?.message || getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   };
@@ -908,9 +953,17 @@ function Childhood() {
         }
       );
 
-      if (!response.ok) throw new Error("API call failed");
-
       const data = await response.json();
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(
+          data,
+          lang,
+          getTranslation("Failed to update Childhood assessment. Check console for details./बचपन का आकलन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।", lang)
+        );
+        return;
+      }
+
       console.log("✅ Childhood Update Response:", data);
       console.log("📦 Childhood Update Payload Sent:", payload);
 
@@ -930,7 +983,7 @@ function Childhood() {
       Swal.fire({
         icon: "error",
         title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-        text: getTranslation("Failed to update Childhood assessment. Check console for details./बचपन का आकलन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
+        text: err?.message || getTranslation("Failed to update Childhood assessment. Check console for details./बचपन का आकलन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
       });
     }
   };
@@ -938,27 +991,24 @@ function Childhood() {
 
 
 
-// ✅ Prefill Childhood form handler start
+//Prefill Childhood History form data by ID handler start
 const [ChildhoodPrefillData, setChildhoodPrefillData] = useState({});
 const [ChildhoodPrefillModal, setChildhoodPrefillModal] = useState(false);
 
 const handleChildhoodPreFill = async (prefillChildhoodID = null) => {
-  // Normalize ID if object
+  setChildhoodPrefillModal(true);
+  console.log("Childhood Readmission Modal Opened");
+
   if (typeof prefillChildhoodID === "object" && prefillChildhoodID !== null) {
-    prefillChildhoodID =
-      prefillChildhoodID.intake_childhood_id || prefillChildhoodID.entry_id;
+    prefillChildhoodID = prefillChildhoodID.intake_childhood_id; // ✅ correct key
   }
 
   if (!prefillChildhoodID) {
-    Swal.fire({
-      icon: "warning",
-      title: getTranslation("Missing Childhood ID/गुमशुदा बचपन की आईडी",lang),
-      text: getTranslation("No valid Childhood ID was provided for prefill./प्रीफिल के लिए कोई वैध चाइल्डहुड आईडी प्रदान नहीं की गई।",lang),
-    });
+    console.error("Invalid prefillChildhoodID provided");
     return;
   }
 
-  console.log("Childhood ID For Prefill:", prefillChildhoodID);
+  console.log("Childhood ID For Readmission Prefill:", prefillChildhoodID);
   const token = localStorage.getItem("Authorization");
 
   try {
@@ -975,35 +1025,24 @@ const handleChildhoodPreFill = async (prefillChildhoodID = null) => {
     );
 
     const data = await response.json();
-    console.log("Raw Childhood API Response:", data);
 
     if (!response.ok) {
-      Swal.fire({
-        icon: "error",
-        title: getTranslation("Fetch Failed/प्राप्त करना विफल",lang),
-        text: data.message || getTranslation("Unable to fetch Childhood data for prefill./प्रीफ़िल के लिए बचपन का डेटा प्राप्त करने में असमर्थ.",lang),
-      });
+      console.error("User fetch error:", data);
       return;
     }
 
     const latestAssessment = data.data || null;
+
     if (!latestAssessment) {
-      Swal.fire({
-        icon: "info",
-        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
-        text: getTranslation("No Childhood data available for this ID./इस आईडी के लिए कोई बचपन संबंधी डेटा उपलब्ध नहीं है।",lang),
-      });
+      console.warn("No childhood history found for this ID.");
       return;
     }
 
-    // ✅ Open modal only when we have valid data
-    setChildhoodPrefillModal(true);
+    setSelectedUser(latestAssessment);
+    console.log("Selected Childhood User for readmission:", latestAssessment);
 
-    // ✅ Wrap in array so PatientCommonInfo works
-    setSelectedUser([latestAssessment]);
-
-    // ✅ Build mapped data for Childhood Assessment
-    const mappedData = {
+    // Map fetched API data into state for inputs
+    setChildhoodPrefillData({
       intake_childhood_id: latestAssessment.intake_childhood_id,
       user_id: latestAssessment.user_id,
       entry_id: latestAssessment.entry_id,
@@ -1011,55 +1050,38 @@ const handleChildhoodPreFill = async (prefillChildhoodID = null) => {
       visit_no: latestAssessment.visit_no,
 
       date_of_assessment: latestAssessment.date_of_assessment
-        ? new Date(latestAssessment.date_of_assessment)
-        : null,
+        ? new Date(latestAssessment.date_of_assessment).toISOString().split("T")[0]
+        : "",
 
+      childhood_history: latestAssessment.childhood_history || "",
+      birth_condition: latestAssessment.birth_condition || "",
       parenting_history: latestAssessment.parenting_history || "",
-      family_dispute_childhood: latestAssessment.family_dispute_childhood || "",
-      sociality_born_living: latestAssessment.sociality_born_living || "",
+      any_conflict_between_parents:
+        latestAssessment.any_conflict_between_parents || "",
+      relationship_with_parents:
+        latestAssessment.relationship_with_parents || "",
       high_risk_behavior: latestAssessment.high_risk_behavior || "",
-      impact_substance_movies: latestAssessment.impact_substance_movies || "",
-      abuse_history_types: latestAssessment.abuse_history_types || [],
-      abuse_history_description:
-        latestAssessment.abuse_history_description || "",
+      high_risk_behavior_impact:
+        latestAssessment.high_risk_behavior_impact || "",
+      has_anyone_abused_patient:
+        latestAssessment.has_anyone_abused_patient || "",
       education_status: latestAssessment.education_status || "",
+      educational_details: latestAssessment.educational_details || "",
       occupational_status: latestAssessment.occupational_status || "",
-      dropout_reason: latestAssessment.dropout_reason || "",
-      study_work_details: latestAssessment.study_work_details || "",
+      if_dropout_reason: latestAssessment.if_dropout_reason || "",
+      academic_work_details: latestAssessment.academic_work_details || "",
       hobbies: latestAssessment.hobbies || "",
       extra_skills: latestAssessment.extra_skills || "",
       achievement_life: latestAssessment.achievement_life || "",
       why_here: latestAssessment.why_here || "",
       why_family_sent: latestAssessment.why_family_sent || "",
-      status: latestAssessment.status || "Pending",
-
-      // ✅ Patient details
-      patient_name: latestAssessment.name || "",
-      dob: latestAssessment.dob ? new Date(latestAssessment.dob) : null,
-      gender: latestAssessment.gender || "",
-      phone: latestAssessment.phone || "",
-      email: latestAssessment.email || "",
-      admit_date: latestAssessment.admit_date
-        ? new Date(latestAssessment.admit_date)
-        : null,
-      ward_name: latestAssessment.ward_name || "",
-      address: latestAssessment.address || "",
-      gks_id: latestAssessment.gks_id || "",
-    };
-
-    setChildhoodPrefillData(mappedData);
-
-    console.log("Mapped Childhood Prefill Data:", mappedData);
-  } catch (error) {
-    console.error("Prefill fetch error:", error);
-    Swal.fire({
-      icon: "error",
-      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
-      text: getTranslation("Unable to fetch Childhood data due to a network issue./नेटवर्क समस्या के कारण बचपन का डेटा प्राप्त करने में असमर्थ.",lang),
     });
+
+    console.log("✅ Final Prefilled Readmission Childhood Data:", latestAssessment);
+  } catch (error) {
+    console.error("Fetch error:", error);
   }
 };
-// ✅ Prefill Childhood form handler end
 
 
 // Readmission childhood form handler start
@@ -1068,29 +1090,26 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
   setIsLoading(true);
 
   const payload = {
-    user_id: ChildhoodPrefillData?.user_id,
-
-    date_of_assessment: ChildhoodPrefillData?.date_of_assessment
-      ? new Date(ChildhoodPrefillData.date_of_assessment)
-          .toISOString()
-          .split("T")[0]
-      : null,
-
+    user_id: selectedUser?.user_id || "",
+    branch_id: selectedBranch,
+    date_of_assessment: ChildhoodPrefillData.date_of_assessment || "",
+    childhood_history: ChildhoodPrefillData?.childhood_history || "",
+    birth_condition: ChildhoodPrefillData?.birth_condition || "",
     parenting_history: ChildhoodPrefillData?.parenting_history || "",
-    family_dispute_childhood:
-      ChildhoodPrefillData?.family_dispute_childhood || "",
-    sociality_born_living: ChildhoodPrefillData?.sociality_born_living || "",
+    any_conflict_between_parents:
+      ChildhoodPrefillData?.any_conflict_between_parents || "",
+    relationship_with_parents:
+      ChildhoodPrefillData?.relationship_with_parents || "",
     high_risk_behavior: ChildhoodPrefillData?.high_risk_behavior || "",
-    impact_substance_movies:
-      ChildhoodPrefillData?.impact_substance_movies || "",
-    abuse_history_types: ChildhoodPrefillData?.abuse_history_types || [], // if checkboxes
-    abuse_history_description:
-      ChildhoodPrefillData?.abuse_history_description || "",
-
+    high_risk_behavior_impact:
+      ChildhoodPrefillData?.high_risk_behavior_impact || "",
+    has_anyone_abused_patient:
+      ChildhoodPrefillData?.has_anyone_abused_patient || "",
     education_status: ChildhoodPrefillData?.education_status || "",
+    educational_details: ChildhoodPrefillData?.educational_details || "",
     occupational_status: ChildhoodPrefillData?.occupational_status || "",
-    dropout_reason: ChildhoodPrefillData?.dropout_reason || "",
-    study_work_details: ChildhoodPrefillData?.study_work_details || "",
+    if_dropout_reason: ChildhoodPrefillData?.if_dropout_reason || "",
+    academic_work_details: ChildhoodPrefillData?.academic_work_details || "",
     hobbies: ChildhoodPrefillData?.hobbies || "",
     extra_skills: ChildhoodPrefillData?.extra_skills || "",
     achievement_life: ChildhoodPrefillData?.achievement_life || "",
@@ -1114,16 +1133,24 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Childhood Re-Assessment Submission Failed / बचपन का पुनर्मूल्यांकन सबमिशन विफल", lang)
+      );
+      return;
+    }
+
     setIsLoading(false);
 
     Swal.fire({
       icon: "success",
       title: getTranslation("Childhood Re-Assessment Created Successfully/बचपन का पुनर्मूल्यांकन सफलतापूर्वक बनाया गया",lang),
       text: getTranslation("The childhood re-Assessment was submitted successfully./बचपन का पुनः मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
-    }).then(() => setIsChildhoodModalOpen(false));
+    }).then(() => setChildhoodPrefillModal(false));
 
     console.log("Childhood API Data", data);
     console.log("Childhood Payload Sent", payload);
@@ -1133,7 +1160,7 @@ const SubmitChildhoodReadmissonFormHandler = async (e) => {
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+      text: err?.message || getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };

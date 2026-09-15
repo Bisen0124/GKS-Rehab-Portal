@@ -115,6 +115,7 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
 import { useReactToPrint } from "react-to-print";
@@ -649,6 +650,22 @@ function SexualDesire() {
   //Submit sexual desire form handler
   const submitSDdataHandler = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: startDateOfAssessment,
+      },
+      {
+        label: getTranslation("Prepared By / द्वारा तैयार", lang),
+        value: forData.prepared,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true);
 
     const payload = {
@@ -707,30 +724,31 @@ function SexualDesire() {
       });
 
       const result = await response.json();
-      if (response.ok) {
-        const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentSDUserId;
-        clearDraft("sexual_desire", userTargetId);
-        setDraftTimestamp(null);
-
-        Swal.fire({
-          icon: "success",
-          title: getTranslation("Sexual History Submitted/यौन इतिहास प्रस्तुत किया गया",lang),
-          text: getTranslation("The sexual desire form has been submitted successfully./यौन इच्छा प्रपत्र सफलतापूर्वक प्रस्तुत कर दिया गया है।",lang),
-        }).then(() => setModal(false));
-      } else {
-        console.error("Error Response:", result);
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Submission Failed/सबमिशन विफल",lang),
-          text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
-        });
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(
+          result,
+          lang,
+          getTranslation("Submission Failed/सबमिशन विफल", lang)
+        );
+        return;
       }
+
+      const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentSDUserId;
+      clearDraft("sexual_desire", userTargetId);
+      setDraftTimestamp(null);
+
+      Swal.fire({
+        icon: "success",
+        title: getTranslation("Sexual History Submitted/यौन इतिहास प्रस्तुत किया गया",lang),
+        text: getTranslation("The sexual desire form has been submitted successfully./यौन इच्छा प्रपत्र सफलतापूर्वक प्रस्तुत कर दिया गया है।",lang),
+      }).then(() => setModal(false));
     } catch (error) {
       console.error("Fetch Error:", error);
       Swal.fire({
         icon: "error",
         title: getTranslation("Error/गलती",lang),
-        text: getTranslation("Network or server issue occurred./नेटवर्क या सर्वर समस्या उत्पन्न हुई.",lang),
+        text: error?.message || getTranslation("Network or server issue occurred./नेटवर्क या सर्वर समस्या उत्पन्न हुई.",lang),
       });
     } finally {
       setIsLoading(false);
@@ -878,26 +896,27 @@ function SexualDesire() {
       });
 
       const result = await response.json();
-      if (response.ok) {
-        Swal.fire({
-          icon: "success",
-          title: getTranslation("Sexual History Readmission Created/यौन इतिहास पुनः प्रवेश बनाया गया",lang),
-          text: getTranslation("The sexual desire form readmission has been created successfully./यौन इच्छा प्रपत्र पुनः प्रवेश सफलतापूर्वक बनाया गया है।",lang),
-        });
-      } else {
-        console.error("Error Response:", result);
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Submission Failed/सबमिशन विफल",lang),
-          text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
-        });
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(
+          result,
+          lang,
+          getTranslation("Submission Failed/सबमिशन विफल", lang)
+        );
+        return;
       }
+
+      Swal.fire({
+        icon: "success",
+        title: getTranslation("Sexual History Readmission Created/यौन इतिहास पुनः प्रवेश बनाया गया",lang),
+        text: getTranslation("The sexual desire form readmission has been created successfully./यौन इच्छा प्रपत्र पुनः प्रवेश सफलतापूर्वक बनाया गया है।",lang),
+      }).then(() => setprefillSDModal(false));
     } catch (error) {
       console.error("Fetch Error:", error);
       Swal.fire({
         icon: "error",
         title: getTranslation("Error/गलती",lang),
-        text: getTranslation("Network or server issue occurred./नेटवर्क या सर्वर समस्या उत्पन्न हुई.",lang),
+        text: error?.message || getTranslation("Network or server issue occurred./नेटवर्क या सर्वर समस्या उत्पन्न हुई.",lang),
       });
     } finally {
       setIsLoading(false);
@@ -1088,7 +1107,7 @@ function SexualDesire() {
       alcohol_drugs_ejaculation_effect: editindividualSDData?.sexualData?.alcohol_drugs_ejaculation_effect || "",
       frequency_comparison_past: editindividualSDData?.sexualData?.frequency_comparison_past || "",
       heterosexual_homosexual_activity: editindividualSDData?.sexualData?.heterosexual_homosexual_activity || "",
-  
+
       // Consent & Signature
       consent: editindividualSDData?.consent || "",
       prepared_by: editindividualSDData?.prepared || "",
@@ -1114,26 +1133,27 @@ function SexualDesire() {
   
       const result = await response.json();
   
-      if (response.ok) {
-        Swal.fire({
-          icon: "success",
-          title: getTranslation("Sexual History Updated/यौन इतिहास अद्यतन",lang),
-          text: getTranslation("The sexual desire form has been successfully updated./यौन इच्छा प्रपत्र को सफलतापूर्वक अद्यतन कर दिया गया है।",lang),
-        });
-      } else {
-        console.error("Error Response:", result);
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Update Failed/भार बढ़ाना विफल हुवा",lang),
-          text: result.message || getTranslation("There was an error submitting the form./फ़ॉर्म जमा करने में एक त्रुटि हुई थी।",lang),
-        });
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(
+          result,
+          lang,
+          getTranslation("Update Failed/भार बढ़ाना विफल हुवा", lang)
+        );
+        return;
       }
+
+      Swal.fire({
+        icon: "success",
+        title: getTranslation("Sexual History Updated/यौन इतिहास अद्यतन",lang),
+        text: getTranslation("The sexual desire form has been successfully updated./यौन इच्छा प्रपत्र को सफलतापूर्वक अद्यतन कर दिया गया है।",lang),
+      }).then(() => seteditindividualModal(false));
     } catch (error) {
       console.error("Fetch Error:", error);
       Swal.fire({
         icon: "error",
         title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
-        text: getTranslation("A network or server issue occurred./नेटवर्क या सर्वर संबंधी समस्या उत्पन्न हुई.",lang),
+        text: error?.message || getTranslation("A network or server issue occurred./नेटवर्क या सर्वर संबंधी समस्या उत्पन्न हुई.",lang),
       });
     } finally {
       setIsLoading(false);

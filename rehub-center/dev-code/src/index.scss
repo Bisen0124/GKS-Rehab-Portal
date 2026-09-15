@@ -1,17 +1,6 @@
 @import './assets/scss/app.scss';
 
 
-//custome css start
-.register__wrapper,.pfa__wrapper
-{
-
-    H5{
-        // border-bottom: 1px solid #e1e7e9;
-        // margin: 0 0 24px 0;
-        padding: 0 0 12px 0;
-      }
-
-}
 
 //PFA Modal CSS
 
@@ -96,35 +85,108 @@
   }
 }
 
+/* ==========================================================================
+   Universal Page, Card & Section Header Theme (PFA Heading Style)
+   ========================================================================== */
+
+/* Universal Heading Style (Matches PFA Reference Design across all pages) */
+.header-card-title,
+.header-card-heading h5,
+.header-card-heading h4,
+.card-header h4,
+.card-header h5,
+.card-header H4,
+.card-header H5,
+.datatables .card-header h5,
+.datatables .card-header h4,
+.datatables h5.card-title,
+.card-header .card-title,
+.section-title,
+.form-section-title,
+.modal form h4,
+.modal form h5,
+.modal .theme-form h4,
+.modal .theme-form h5,
+.theme-form h4,
+.theme-form h5,
+.genFamily__wrapper h4,
+.genFamily__wrapper h5,
+.pfa__wrapper h4,
+.pfa__wrapper h5,
+.register__wrapper h4,
+.register__wrapper h5 {
+  font-size: 15.5px !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  margin-top: 0 !important;
+  margin-bottom: 14px !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  letter-spacing: -0.01em !important;
+  text-transform: none !important;
+
+  &::before {
+    content: "" !important;
+    display: inline-block !important;
+    width: 4px !important;
+    height: 16px !important;
+    background: #d56337 !important;
+    border-radius: 4px !important;
+    flex-shrink: 0 !important;
+  }
+}
+
+/* Margin adjustment for subheadings inside form bodies */
+.modal form h4:not(:first-child),
+.modal form h5:not(:first-child),
+.modal .theme-form h4:not(:first-child),
+.modal .theme-form h5:not(:first-child),
+.theme-form h4:not(:first-child),
+.theme-form h5:not(:first-child),
+.genFamily__wrapper form h4:not(:first-child),
+.genFamily__wrapper form h5:not(:first-child),
+.pfa__wrapper form h4:not(:first-child),
+.pfa__wrapper form h5:not(:first-child),
+.section-title:not(:first-child) {
+  margin-top: 24px !important;
+}
+
+/* Exclude navigation, dropdowns, modal headers, alerts & custom headers from receiving orange bar */
+.modal-header h4,
+.modal-header h5,
+.modal-header h6,
+.modal-header .modal-title,
+.swal2-modal h2,
+.swal2-modal h3,
+.swal2-modal h4,
+.swal2-modal h5,
+.swal2-title,
+.sidebar-wrapper h4,
+.sidebar-wrapper h5,
+.sidebar-wrapper h6,
+.nav h4,
+.nav h5,
+.dropdown-menu h4,
+.dropdown-menu h5 {
+  border-bottom: none !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  &::before {
+    display: none !important;
+    content: none !important;
+  }
+}
+
 /* Modal Form Wrapper & Sections */
 .modal form, 
 .modal .theme-form, 
 .genFamily__wrapper, 
-.pfa__wrapper {
-  
-  /* Section Headings */
-  h4, h5, .section-title {
-    font-size: 15.5px !important;
-    font-weight: 700 !important;
-    color: #1e293b !important;
-    margin-top: 24px !important;
-    margin-bottom: 14px !important;
-    padding-bottom: 8px !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    letter-spacing: -0.01em;
-
-    &::before {
-      content: "";
-      display: inline-block;
-      width: 4px;
-      height: 16px;
-      background: #d56337;
-      border-radius: 4px;
-    }
-  }
+.pfa__wrapper,
+.register__wrapper {
 
   /* Form Labels */
   label, 
@@ -866,4 +928,10 @@ span.Discharge {
       }
     }
   }
+}
+
+
+label.d-flex.align-items-center.justify-content-center {
+  display: flex !important;
+  justify-content: center !important;
 }

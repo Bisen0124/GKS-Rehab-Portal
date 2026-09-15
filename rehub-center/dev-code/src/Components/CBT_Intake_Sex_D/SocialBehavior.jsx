@@ -116,6 +116,7 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
+import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
@@ -595,6 +596,34 @@ function SocialBehavior() {
 
   const SubmitSocialFormHandler = async (e) => {
     e.preventDefault();
+
+    const compulsoryFieldDefinitions = [
+      {
+        label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang),
+        value: formData.dateOfAssessment,
+      },
+      {
+        label: getTranslation("Social Behavior / सामाजिक व्यवहार", lang),
+        value: formData.social_behavior,
+      },
+      {
+        label: getTranslation("With Whom Spend Time / किसके साथ समय बिताते हैं", lang),
+        value: formData.with_whom_spend_time,
+      },
+      {
+        label: getTranslation("How Many Friends / कितने दोस्त हैं", lang),
+        value: formData.how_many_friends,
+      },
+      {
+        label: getTranslation("Well Wisher Person / शुभचिंतक व्यक्ति", lang),
+        value: formData.well_wisher_person,
+      },
+    ];
+
+    if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
+      return;
+    }
+
     setIsLoading(true);
 
     const payload = {
@@ -628,9 +657,17 @@ function SocialBehavior() {
         }
       );
 
-      if (!response.ok) throw new Error("API call failed");
-
       const data = await response.json();
+      if (!response.ok) {
+        setIsLoading(false);
+        showApiErrorAlert(
+          data,
+          lang,
+          getTranslation("Failed to submit Social Behavior. Check console for error./सामाजिक व्यवहार सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.", lang)
+        );
+        return;
+      }
+
       setIsLoading(false);
       const userTargetId = selectedUser?.user_id || selectedUser?.id || currentSocialUserId;
       clearDraft("social_behavior", userTargetId);
@@ -650,7 +687,7 @@ function SocialBehavior() {
       Swal.fire({
         icon: "error",
         title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-        text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+        text: err?.message || getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
       });
     }
   };
@@ -865,9 +902,17 @@ const handleSocialBehaviorUpdate = async () => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Failed to update Social Behavior assessment. Check console for details./सामाजिक व्यवहार मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।", lang)
+      );
+      return;
+    }
+
     console.log("✅ Social Behavior Update Response:", data);
     console.log("📦 Payload Sent:", payload);
 
@@ -887,7 +932,7 @@ const handleSocialBehaviorUpdate = async () => {
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to update Social Behavior assessment. Check console for details./सामाजिक व्यवहार मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
+      text: err?.message || getTranslation("Failed to update Social Behavior assessment. Check console for details./सामाजिक व्यवहार मूल्यांकन अपडेट करने में विफल। विवरण के लिए कंसोल देखें।",lang),
     });
   }
 };
@@ -900,21 +945,19 @@ const [SBPrefillData, setSBPrefillData] = useState({});
 const [SBPrefillModal, setSBPrefillModal] = useState(false);
 
 const handleSBPreFill = async (prefillSBID = null) => {
-  // Normalize ID if object
+  setSBPrefillModal(true);
+  console.log("Social Behavior Readmission Modal Opened");
+
   if (typeof prefillSBID === "object" && prefillSBID !== null) {
-    prefillSBID = prefillSBID.isb_id || prefillSBID.entry_id;
+    prefillSBID = prefillSBID.isb_id; // ✅ use ISB ID
   }
 
   if (!prefillSBID) {
-    Swal.fire({
-      icon: "warning",
-      title: getTranslation("Missing Social Behavior ID/सामाजिक व्यवहार आईडी गुम है",lang),
-      text: getTranslation("No valid Social Behavior ID was provided for prefill./प्रीफ़िल के लिए कोई वैध सामाजिक व्यवहार आईडी प्रदान नहीं की गई थी.",lang),
-    });
+    console.error("Invalid prefillSBID provided");
     return;
   }
 
-  console.log("Social Behavior ID For Prefill:", prefillSBID);
+  console.log("Social Behavior ID For Readmission Prefill:", prefillSBID);
   const token = localStorage.getItem("Authorization");
 
   try {
@@ -931,35 +974,24 @@ const handleSBPreFill = async (prefillSBID = null) => {
     );
 
     const data = await response.json();
-    console.log("Raw Social Behavior API Response:", data);
 
     if (!response.ok) {
-      Swal.fire({
-        icon: "error",
-        title: "Fetch Failed",
-        text: data.message || "Unable to fetch Social Behavior data for prefill.",
-      });
+      console.error("User fetch error:", data);
       return;
     }
 
     const latestAssessment = data.data || null;
+
     if (!latestAssessment) {
-      Swal.fire({
-        icon: "info",
-        title: getTranslation("No Data Found/डाटा प्राप्त नहीं हुआ",lang),
-        text: getTranslation("No Social Behavior data available for this ID./इस आईडी के लिए कोई सामाजिक व्यवहार डेटा उपलब्ध नहीं है।",lang),
-      });
+      console.warn("No Social Behavior record found for this ID.");
       return;
     }
 
-    // ✅ Open modal only when we have valid data
-    setSBPrefillModal(true);
+    setSelectedUser(latestAssessment);
+    console.log("Selected Social Behavior User for readmission:", latestAssessment);
 
-    // ✅ Wrap in array so PatientCommonInfo works
-    setSelectedUser([latestAssessment]);
-
-    // ✅ Build mapped data for Social Behavior Assessment
-    const mappedData = {
+    // Map fetched API data into state for inputs
+    setSBPrefillData({
       isb_id: latestAssessment.isb_id,
       user_id: latestAssessment.user_id,
       entry_id: latestAssessment.entry_id,
@@ -967,46 +999,22 @@ const handleSBPreFill = async (prefillSBID = null) => {
       visit_no: latestAssessment.visit_no,
 
       date_of_assessment: latestAssessment.date_of_assessment
-        ? new Date(latestAssessment.date_of_assessment)
-        : null,
+        ? new Date(latestAssessment.date_of_assessment).toISOString().split("T")[0]
+        : "",
 
-      social_behavior: latestAssessment.social_behavior || "",
-      with_whom_spend_time: latestAssessment.with_whom_spend_time || "",
-      how_many_friends: latestAssessment.how_many_friends || "",
+      spend_free_time: latestAssessment.spend_free_time || "",
+      friends_count: latestAssessment.friends_count || "",
       their_social_status: latestAssessment.their_social_status || "",
       substance_dependent_friends_count:
         latestAssessment.substance_dependent_friends_count || "",
       well_wisher_person: latestAssessment.well_wisher_person || "",
-      status: latestAssessment.status || "Pending",
-
-      // ✅ Patient details
-      patient_name: latestAssessment.name || "",
-      dob: latestAssessment.dob ? new Date(latestAssessment.dob) : null,
-      gender: latestAssessment.gender || "",
-      phone: latestAssessment.phone || "",
-      email: latestAssessment.email || "",
-      admit_date: latestAssessment.admit_date
-        ? new Date(latestAssessment.admit_date)
-        : null,
-      ward_name: latestAssessment.ward_name || "",
-      address: latestAssessment.address || "",
-      gks_id: latestAssessment.gks_id || "",
-    };
-
-    setSBPrefillData(mappedData);
-
-    console.log("Mapped Social Behavior Prefill Data:", mappedData);
-  } catch (error) {
-    console.error("Prefill fetch error:", error);
-    Swal.fire({
-      icon: "error",
-      title: getTranslation("Network Error/नेटवर्क त्रुटि",lang),
-      text: getTranslation("Unable to fetch Social Behavior data due to a network issue./नेटवर्क समस्या के कारण सामाजिक व्यवहार डेटा प्राप्त करने में असमर्थ.",lang),
     });
+
+    console.log("✅ Final Prefilled Readmission Social Behavior Data:", latestAssessment);
+  } catch (error) {
+    console.error("Fetch error:", error);
   }
 };
-// Prefill Social Behavior form handler end
-
 
 
 // Social behaviour readmission form handler start
@@ -1015,15 +1023,11 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
   setIsLoading(true);
 
   const payload = {
-    user_id: SBPrefillData?.user_id,
-    date_of_assessment: SBPrefillData?.date_of_assessment
-      ? new Date(SBPrefillData.date_of_assessment).toISOString().split("T")[0]
-      : null,
-
-    // ✅ Use SBPrefillData instead of formData
-    social_behavior: SBPrefillData?.social_behavior || "",
-    with_whom_spend_time: SBPrefillData?.with_whom_spend_time || "",
-    how_many_friends: SBPrefillData?.how_many_friends || "",
+    user_id: selectedUser?.user_id || "",
+    branch_id: selectedBranch,
+    date_of_assessment: SBPrefillData.date_of_assessment || "",
+    spend_free_time: SBPrefillData?.spend_free_time || "",
+    friends_count: SBPrefillData?.friends_count || "",
     their_social_status: SBPrefillData?.their_social_status || "",
     substance_dependent_friends_count:
       SBPrefillData?.substance_dependent_friends_count || "",
@@ -1045,16 +1049,24 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
       }
     );
 
-    if (!response.ok) throw new Error("API call failed");
-
     const data = await response.json();
+    if (!response.ok) {
+      setIsLoading(false);
+      showApiErrorAlert(
+        data,
+        lang,
+        getTranslation("Failed to submit Readmission Social Behavior. Check console for error./पुनः प्रवेश सामाजिक व्यवहार सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.", lang)
+      );
+      return;
+    }
+
     setIsLoading(false);
 
     Swal.fire({
       icon: "success",
       title: getTranslation("Readmission Social Behavior Created Successfully/पुनः प्रवेश सामाजिक व्यवहार सफलतापूर्वक बनाया गया",lang),
       text: getTranslation("The Readmission Social Behavior assessment was submitted successfully./पुनः प्रवेश सामाजिक व्यवहार मूल्यांकन सफलतापूर्वक प्रस्तुत किया गया।",lang),
-    }).then(() => setIsSocialModalOpen(false));
+    }).then(() => setSBPrefillModal(false));
 
     console.log("✅ Social Behavior Response:", data);
     console.log("📦 Payload Sent:", payload);
@@ -1064,7 +1076,7 @@ const SubmitSocialReadmissionFormHandler = async (e) => {
     Swal.fire({
       icon: "error",
       title: getTranslation("Unexpected Error/अप्रत्याशित त्रुटि",lang),
-      text: getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
+      text: err?.message || getTranslation("Failed to submit. Check console for error./सबमिट करने में विफल. त्रुटि के लिए कंसोल की जाँच करें.",lang),
     });
   }
 };

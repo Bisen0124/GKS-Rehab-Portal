@@ -223,7 +223,7 @@ import DischargeFollowUp from "../Components/Discharge_followup/DischargeFollowU
 import SexualDesire from "../Components/CBT_Intake_Sex_D/SexualDesire";
 
 //Report menus
-import GetPFAReports from "../Components/Reports/PFA-Report";
+import CombinedFormsReport from "../Components/Reports/CombinedFormsReport";
 
 
 
@@ -467,8 +467,9 @@ export const routes = [
 
 
       //Reports 
-      // PFA
-      { path: `${process.env.PUBLIC_URL}/Reports/PFA-Report`, Component : <GetPFAReports/>},
+      // All Forms Combined Report
+      { path: `${process.env.PUBLIC_URL}/Reports/Combined-Forms-Report`, Component : <CombinedFormsReport/>},
+      { path: `${process.env.PUBLIC_URL}/Reports/PFA-Report`, Component : <CombinedFormsReport/>},
 
    
 
