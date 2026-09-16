@@ -1,4 +1,4 @@
-import React, { Fragment, useState, useEffect, useRef } from "react";
+import React, { Fragment, useState, useEffect, useRef, useCallback } from "react";
 import {
   dateOfAdmission,
   patientRelativeName,
@@ -52,6 +52,7 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 import UserDetailsModal from "../Common/UserDetailsModal";
+import WardManagementModal from "../Common/WardManagementModal";
 import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
@@ -77,6 +78,11 @@ function Register() {
   const selectedSpinner = Data.find(
     (item) => item.spinnerClass === "loader-37"
   );
+
+  // Ward dynamic data & management modal state
+  const [wardList, setWardList] = useState(wardOptions);
+  const [isWardsLoading, setIsWardsLoading] = useState(false);
+  const [wardModalOpen, setWardModalOpen] = useState(false);
 
   //Patient file upload 
   const [image, setImage] = useState(null);
@@ -392,7 +398,8 @@ function Register() {
 
     if (
       formData.email &&
-      !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email)
+      formData.email.trim() &&
+      !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email.trim())
     ) {
       Swal.fire({
         icon: "warning",
@@ -433,7 +440,9 @@ function Register() {
   
       payload.append("date_of_admission", formatDate(formData.date_of_admission));
       payload.append("name", formData.patientName);
-      payload.append("email", formData.email);
+      if (formData.email && formData.email.trim()) {
+        payload.append("email", formData.email.trim());
+      }
       payload.append("relative_name", formData.patientRelativeName);
       payload.append("phone", formData.phone);
       payload.append("gender", formData.gender);
@@ -1120,10 +1129,53 @@ function Register() {
       });
   };
 
-  // ✅ Step 2: Run this once when component mounts
+  // ✅ Fetch active ward types from API
+  const fetchWards = useCallback(async (targetBranch = branchId) => {
+    if (!targetBranch) return;
+    setIsWardsLoading(true);
+    const authToken = localStorage.getItem("Authorization");
+    try {
+      const res = await fetch(
+        `https://gks-yjdc.onrender.com/api/wards?branch_id=${targetBranch}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${authToken}`,
+            "x-target-branch": String(targetBranch),
+          },
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data.wards)
+          ? data.wards
+          : Array.isArray(data)
+          ? data
+          : [];
+        if (list.length > 0) {
+          setWardList(list);
+        } else {
+          setWardList(wardOptions);
+        }
+      } else {
+        setWardList(wardOptions);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch wards, using fallback:", err);
+      setWardList(wardOptions);
+    } finally {
+      setIsWardsLoading(false);
+    }
+  }, [branchId]);
+
+  // ✅ Step 2: Run when branch changes
   useEffect(() => {
     fetchUsers();
-  }, [branchId]);
+    fetchWards();
+  }, [branchId, fetchWards]);
 
   // ✅ Define table columns
   const tableColumns = [
@@ -2001,32 +2053,84 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
 
               {/* Wards Details */}
               <div className="col-md-6">
-                <Label className="form-label fw-semibold text-dark mb-1 d-block" style={{ fontSize: "13px" }}>
-                  <Translated text={wardDetails} /> <span className="text-danger">*</span>
-                </Label>
-                <div className="d-flex align-items-center gap-3" style={{ height: "40px" }}>
-                  {wardOptions.map((option) => (
-                    <div key={option.ward_type_id} className="form-check form-check-inline m-0">
-                      <Input
-                        type="radio"
-                        id={`wards-${option.ward_type_id}`}
-                        name="ward"
-                        value={option.ward_name}
-                        checked={formData.ward_type_id === option.ward_type_id}
-                        onChange={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            ward_type_id: option.ward_type_id,
-                            ward_name: option.ward_name,
-                          }))
-                        }
-                        className="form-check-input"
-                      />
-                      <Label for={`wards-${option.ward_type_id}`} className="form-check-label ms-1" style={{ cursor: "pointer", fontSize: "14px" }}>
-                        {option.ward_name}
-                      </Label>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                    <Translated text={wardDetails} /> <span className="text-danger">*</span>
+                  </Label>
+                  <Button
+                    color="light"
+                    size="sm"
+                    type="button"
+                    onClick={() => setWardModalOpen(true)}
+                    className="border py-0.5 px-2 shadow-sm d-flex align-items-center gap-1"
+                    style={{
+                      fontSize: "11.5px",
+                      borderRadius: "6px",
+                      fontWeight: 600,
+                      color: "#24695c",
+                      borderColor: "#24695c",
+                    }}
+                    title={getTranslation("Manage Ward Types / वार्ड प्रकार प्रबंधन", lang)}
+                  >
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                    <span>+ {getTranslation("Manage Wards / वार्ड प्रबंधन", lang)}</span>
+                  </Button>
+                </div>
+                <div className="d-flex align-items-center flex-wrap gap-3 py-1" style={{ minHeight: "40px" }}>
+                  {isWardsLoading ? (
+                    <div className="d-flex align-items-center gap-2 text-muted small">
+                      <Spinner size="sm" color="primary" />
+                      <span>{getTranslation("Loading wards... / वार्ड लोड हो रहे हैं...", lang)}</span>
                     </div>
-                  ))}
+                  ) : (
+                    wardList.map((option) => {
+                      const optId = option.ward_type_id || option.id;
+                      const optName = option.ward_name || option.name;
+                      return (
+                        <div key={optId} className="form-check form-check-inline m-0">
+                          <Input
+                            type="radio"
+                            id={`wards-${optId}`}
+                            name="ward"
+                            value={optName}
+                            checked={String(formData.ward_type_id) === String(optId)}
+                            onChange={() =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                ward_type_id: optId,
+                                ward_name: optName,
+                              }))
+                            }
+                            className="form-check-input"
+                          />
+                          <Label
+                            for={`wards-${optId}`}
+                            className="form-check-label ms-1"
+                            style={{ cursor: "pointer", fontSize: "14px" }}
+                          >
+                            {optName}
+                            {option.price_rate ? (
+                              <span className="text-muted extra-small ms-1" style={{ fontSize: "11px" }}>
+                                (₹{Number(option.price_rate).toLocaleString("en-IN")})
+                              </span>
+                            ) : null}
+                          </Label>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
@@ -2772,29 +2876,36 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
         {reregisterModal && (
           <Form noValidate onSubmit={handleReRegister}>
             <div className="col-md-12 pt-3 pb-3">
-              <Label>{wardDetails}</Label>
-              <div className="radio radio-primary d-flex gap-3">
-                {wardOptions.map((option) => (
-                  <div key={option.ward_type_id}>
-                    <Input
-                      type="radio"
-                      id={`wards-${option.ward_type_id}`}
-                      name="ward"
-                      value={option.ward_name}
-                      checked={formData.ward_type_id === option.ward_type_id}
-                      onChange={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          ward_type_id: option.ward_type_id,
-                          ward_name: option.ward_name,
-                        }))
-                      }
-                    />
-                    <Label for={`wards-${option.ward_type_id}`}>
-                      {option.ward_name}
-                    </Label>
-                  </div>
-                ))}
+              <Label><Translated text={wardDetails} /></Label>
+              <div className="radio radio-primary d-flex flex-wrap gap-3">
+                {(wardList && wardList.length > 0 ? wardList : wardOptions).map((option) => {
+                  const optId = option.ward_type_id || option.id;
+                  const optName = option.ward_name || option.name;
+                  return (
+                    <div key={optId} className="d-flex align-items-center">
+                      <Input
+                        type="radio"
+                        id={`rereg-wards-${optId}`}
+                        name="rereg-ward"
+                        value={optName}
+                        checked={String(formData.ward_type_id) === String(optId)}
+                        onChange={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            ward_type_id: optId,
+                            ward_name: optName,
+                          }))
+                        }
+                      />
+                      <Label for={`rereg-wards-${optId}`} className="mb-0 ms-1 cursor-pointer">
+                        {optName}
+                        {option.price_rate ? (
+                          <span className="text-muted small ms-1">(₹{option.price_rate})</span>
+                        ) : null}
+                      </Label>
+                    </div>
+                  );
+                })}
               </div>
 
               <Button
@@ -2817,6 +2928,16 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
           </Form>
         )}
       </CommonModal>
+
+      {/* Ward Management Modal */}
+      {wardModalOpen && (
+        <WardManagementModal
+          isOpen={wardModalOpen}
+          toggle={() => setWardModalOpen(false)}
+          branchId={branchId}
+          onWardsUpdated={() => fetchWards(branchId)}
+        />
+      )}
     </Fragment>
   );
 }
