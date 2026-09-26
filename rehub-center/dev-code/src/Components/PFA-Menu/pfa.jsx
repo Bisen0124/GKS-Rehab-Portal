@@ -135,6 +135,9 @@ function PFA() {
     pulse_rate: "",
     blood_pressure: "",
     temperature: "",
+    spo2: "",
+    sugar: "",
+    hb: "",
 
     lymphadenopathy: "",
 
@@ -555,6 +558,25 @@ const tablePFAPatientListColumns = [
     ),
   },
   {
+    name: `${getTranslation('Verification / सत्यापन' , lang)}`,
+    selector: (row) => row.verification,
+    sortable: true,
+    center: true,
+    cell: (row) => {
+      const isVerified = row.verification === "Yes";
+      return (
+        <span
+          className={`badge ${isVerified ? "bg-success" : "bg-warning text-dark"} p-2`}
+          style={{ fontSize: "11px", fontWeight: "600" }}
+        >
+          {isVerified
+            ? `✓ ${getTranslation("Verified / सत्यापित", lang)}`
+            : `⏳ ${getTranslation("Pending / लंबित", lang)}`}
+        </span>
+      );
+    },
+  },
+  {
     name: `${getTranslation('Action/क्रिया' , lang)}`,
     center: true,
     cell: (row) => (
@@ -685,8 +707,16 @@ const tablePFAPatientListColumns = [
         return;
       }
   
-      setSelectedUser(latestAssessment);
-      console.log("Selected User Assessment:", latestAssessment);
+      const assessmentData = latestAssessment ? {
+        ...latestAssessment,
+        spo2: latestAssessment.spo2 ?? latestAssessment.health_metrics?.spo2,
+        sugar: latestAssessment.sugar ?? latestAssessment.health_metrics?.sugar,
+        hb: latestAssessment.hb ?? latestAssessment.health_metrics?.hb,
+        verification: latestAssessment.verification ?? latestAssessment.consent?.verification ?? "No",
+      } : null;
+
+      setSelectedUser(assessmentData);
+      console.log("Selected User Assessment:", assessmentData);
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
@@ -857,7 +887,6 @@ const tablePFAPatientListColumns = [
       { label: getTranslation("Consent / सहमति", lang), value: formData.consent },
       { label: getTranslation("Consent Name / सहमति देने वाले का नाम", lang), value: formData.consent_name },
       { label: getTranslation("Consent Relationship / संबंध", lang), value: formData.consent_relationship },
-      { label: getTranslation("Consent Signature / हस्ताक्षर", lang), value: formData.consent_signature },
       { label: getTranslation("Prepared By / द्वारा तैयार", lang), value: formData.prepared_by },
     ];
 
@@ -878,6 +907,9 @@ const tablePFAPatientListColumns = [
       pulse_rate: Number(formData.pulse_rate) || 0,
       blood_pressure: formData.blood_pressure || "", // usually string like "120/80"
       temperature: Number(formData.temperature) || 0,
+      spo2: formData.spo2 !== "" && formData.spo2 !== null && formData.spo2 !== undefined ? Number(formData.spo2) : null,
+      sugar: formData.sugar !== "" && formData.sugar !== null && formData.sugar !== undefined ? Number(formData.sugar) : null,
+      hb: formData.hb !== "" && formData.hb !== null && formData.hb !== undefined ? Number(formData.hb) : null,
       lymphadenopathy: formData.lymphadenopathy,
       blood_transfusion_history: formData.bloodConfirmationData,
       medical_or_blood_history_details: formData.bloodTransfusionHistoryData,
@@ -887,10 +919,10 @@ const tablePFAPatientListColumns = [
       neuro_description: formData.neuro_description,
       other_findings: formData.other_findings,
       consent: formData.consent,
-      verification: formData.verification,
+      verification: formData.verification || "No",
       consent_name: formData.consent_name,
       consent_relationship: formData.consent_relationship,
-      consent_signature: formData.consent_signature,
+      consent_signature: formData.consent_signature || "",
       prepared_by: formData.prepared_by,
       nutritional_status: formData.nutritional_status,
     };
@@ -1111,6 +1143,9 @@ const parseDateString = (dateStr) => {
       pulse_rate: Number(latestAssessment?.pulse_rate) || 0,
       blood_pressure: latestAssessment?.blood_pressure || "",
       temperature: Number(latestAssessment?.temperature) || 0,
+      spo2: latestAssessment?.spo2 ?? latestAssessment?.health_metrics?.spo2 ?? "",
+      sugar: latestAssessment?.sugar ?? latestAssessment?.health_metrics?.sugar ?? "",
+      hb: latestAssessment?.hb ?? latestAssessment?.health_metrics?.hb ?? "",
       lymphadenopathy: latestAssessment?.lymphadenopathy || "",
     
       medical_or_blood_history_details:
@@ -1174,6 +1209,9 @@ const parseDateString = (dateStr) => {
       pulse_rate: Number(PFAeditData.pulse_rate) || 0,
       blood_pressure: PFAeditData.blood_pressure,
       temperature: Number(PFAeditData?.temperature) || 0,
+      spo2: PFAeditData.spo2 !== "" && PFAeditData.spo2 !== null && PFAeditData.spo2 !== undefined ? Number(PFAeditData.spo2) : null,
+      sugar: PFAeditData.sugar !== "" && PFAeditData.sugar !== null && PFAeditData.sugar !== undefined ? Number(PFAeditData.sugar) : null,
+      hb: PFAeditData.hb !== "" && PFAeditData.hb !== null && PFAeditData.hb !== undefined ? Number(PFAeditData.hb) : null,
       lymphadenopathy: PFAeditData.lymphadenopathy,
 
       // Complications
@@ -1390,6 +1428,10 @@ const parseDateString = (dateStr) => {
       setPFAeditData({
         pfa_id: pfaId,
         ...latestAssessment,
+        spo2: latestAssessment.spo2 ?? latestAssessment.health_metrics?.spo2 ?? "",
+        sugar: latestAssessment.sugar ?? latestAssessment.health_metrics?.sugar ?? "",
+        hb: latestAssessment.hb ?? latestAssessment.health_metrics?.hb ?? "",
+        verification: latestAssessment.verification ?? latestAssessment.consent?.verification ?? "No",
         date_of_assessment: latestAssessment.date_of_assessment
           ? new Date(latestAssessment.date_of_assessment) // Convert string → Date object
           : null,
@@ -1430,6 +1472,9 @@ const parseDateString = (dateStr) => {
       pulse_rate: Number(PFAeditData.pulse_rate) || 0,
       blood_pressure: PFAeditData.blood_pressure,
       temperature: Number(PFAeditData.temperature) || 0,
+      spo2: PFAeditData.spo2 !== "" && PFAeditData.spo2 !== null && PFAeditData.spo2 !== undefined ? Number(PFAeditData.spo2) : null,
+      sugar: PFAeditData.sugar !== "" && PFAeditData.sugar !== null && PFAeditData.sugar !== undefined ? Number(PFAeditData.sugar) : null,
+      hb: PFAeditData.hb !== "" && PFAeditData.hb !== null && PFAeditData.hb !== undefined ? Number(PFAeditData.hb) : null,
       lymphadenopathy: PFAeditData.lymphadenopathy,
   
       // Complications - flat
@@ -1669,20 +1714,23 @@ const parseDateString = (dateStr) => {
               blackout: item.neurological_conditions?.blackout,
               neuro_description: item.neurological_conditions?.neuro_description,
     
-              weight: item.health_metrics?.weight,
-              pulse_rate: item.health_metrics?.pulse_rate,
-              blood_pressure: item.health_metrics?.blood_pressure,
-              temperature: item.health_metrics?.temperature,
-              lymphadenopathy: item.health_metrics?.lymphadenopathy,
-              nutritional_status: item.health_metrics?.nutritional_status,
-              other_findings: item.health_metrics?.other_findings,
+              weight: item.health_metrics?.weight ?? item.weight,
+              pulse_rate: item.health_metrics?.pulse_rate ?? item.pulse_rate,
+              blood_pressure: item.health_metrics?.blood_pressure ?? item.blood_pressure,
+              temperature: item.health_metrics?.temperature ?? item.temperature,
+              spo2: item.health_metrics?.spo2 ?? item.spo2,
+              sugar: item.health_metrics?.sugar ?? item.sugar,
+              hb: item.health_metrics?.hb ?? item.hb,
+              lymphadenopathy: item.health_metrics?.lymphadenopathy ?? item.lymphadenopathy,
+              nutritional_status: item.health_metrics?.nutritional_status ?? item.nutritional_status,
+              other_findings: item.health_metrics?.other_findings ?? item.other_findings,
     
-              consent: item.consent?.consent,
-              consent_name: item.consent?.consent_name,
-              consent_relationship: item.consent?.consent_relationship,
-              consent_signature: item.consent?.consent_signature,
-              prepared_by: item.consent?.prepared_by,
-              verification: item.consent?.verification,
+              consent: item.consent?.consent ?? item.consent,
+              consent_name: item.consent?.consent_name ?? item.consent_name,
+              consent_relationship: item.consent?.consent_relationship ?? item.consent_relationship,
+              consent_signature: item.consent?.consent_signature ?? item.consent_signature,
+              prepared_by: item.consent?.prepared_by ?? item.prepared_by,
+              verification: item.verification || item.consent?.verification || "No",
     
               created_by: item.audit?.created_by,
               updated_by: item.audit?.updated_by,
@@ -2091,7 +2139,35 @@ const parseDateString = (dateStr) => {
       question: getTranslation(Temperature, lang),
       name: "temperature",
     },
-  ].map(({ id, question, name, type }) => (
+    {
+      id: "7",
+      question: getTranslation("SpO2 (%) / एसपीओ२ (%)", lang),
+      name: "spo2",
+      type: "number",
+      min: 0,
+      max: 100,
+      step: 1,
+      placeholder: getTranslation("0 - 100 %", lang),
+    },
+    {
+      id: "8",
+      question: getTranslation("Blood Sugar (mg/dL) / ब्लड शुगर (mg/dL)", lang),
+      name: "sugar",
+      type: "number",
+      min: 0,
+      step: "0.1",
+      placeholder: getTranslation("mg/dL (e.g. 110.5)", lang),
+    },
+    {
+      id: "9",
+      question: getTranslation("Hemoglobin (Hb g/dL) / हीमोग्लोबिन (g/dL)", lang),
+      name: "hb",
+      type: "number",
+      min: 0,
+      step: "0.1",
+      placeholder: getTranslation("g/dL (e.g. 14.2)", lang),
+    },
+  ].map(({ id, question, name, type, min, max, step, placeholder }) => (
     <tr key={id}>
       <td>{id}</td>
       <td>{question}</td>
@@ -2116,16 +2192,19 @@ const parseDateString = (dateStr) => {
           </select>
         ) : (
           <Input
-            type={["weight", "pulse_rate", "temperature"].includes(name) ? "number" : "text"}
+            type={["weight", "pulse_rate", "temperature", "spo2", "sugar", "hb"].includes(name) || type === "number" ? "number" : "text"}
             name={name}
-            value={formData[name]}
+            value={formData[name] ?? ""}
+            min={min}
+            max={max}
+            step={step}
             onChange={(e) =>
               setFormData((prevData) => ({
                 ...prevData,
                 [name]: e.target.value,
               }))
             }
-            placeholder={getTranslation("Enter details / विवरण दर्ज करें", lang)}
+            placeholder={placeholder || getTranslation("Enter details / विवरण दर्ज करें", lang)}
             className="form-control"
           />
         )}
@@ -2500,7 +2579,7 @@ const parseDateString = (dateStr) => {
                             />
                           </FormGroup>
                         </Col>
-                        <Col md="4">
+                        {/* <Col md="4">
                           <FormGroup>
                             <Label>{getTranslation(signature,lang)}</Label>
                             <Input
@@ -2511,7 +2590,7 @@ const parseDateString = (dateStr) => {
                               onChange={handleChange}
                             />
                           </FormGroup>
-                        </Col>
+                        </Col> */}
                       </Row>
                     </div>
 
@@ -2565,7 +2644,7 @@ const parseDateString = (dateStr) => {
                       <Button
                         color="primary"
                         type="submit"
-                        disabled={isLoading || formData.verification !== "Yes"}
+                        disabled={isLoading}
                       >
                         {isLoading ? (
                           <span
@@ -2775,7 +2854,7 @@ const parseDateString = (dateStr) => {
                           </div>
                         </div>
 
-                        <div className="col-6 col-sm-4 col-lg-3">
+                        <div className="col-6 col-sm-4 col-lg-2">
                           <div className="p-2 px-3 rounded-3 bg-light border">
                             <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
                               {getTranslation("Temperature / तापमान", lang)}
@@ -2786,7 +2865,40 @@ const parseDateString = (dateStr) => {
                           </div>
                         </div>
 
-                        <div className="col-12 col-sm-6 col-lg-3">
+                        <div className="col-6 col-sm-4 col-lg-2">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("SpO2 / एसपीओ२", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              🫁 {selectedUser.spo2 !== undefined && selectedUser.spo2 !== null && selectedUser.spo2 !== "" ? `${selectedUser.spo2} %` : "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-2">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Blood Sugar / ब्लड शुगर", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              🍯 {selectedUser.sugar !== undefined && selectedUser.sugar !== null && selectedUser.sugar !== "" ? `${selectedUser.sugar} mg/dL` : "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-6 col-sm-4 col-lg-2">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Hemoglobin (Hb) / हीमोग्लोबिन", lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              🧪 {selectedUser.hb !== undefined && selectedUser.hb !== null && selectedUser.hb !== "" ? `${selectedUser.hb} g/dL` : "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12 col-sm-6 col-lg-4">
                           <div className="p-2 px-3 rounded-3 bg-light border">
                             <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
                               {getTranslation("Nutritional Status / पोषण स्थिति:", lang)}
@@ -2797,7 +2909,7 @@ const parseDateString = (dateStr) => {
                           </div>
                         </div>
 
-                        <div className="col-12 col-sm-6 col-lg-6">
+                        <div className="col-12 col-sm-6 col-lg-8">
                           <div className="p-2 px-3 rounded-3 bg-light border">
                             <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
                               {getTranslation("Lymphadenopathy (mention): / लिम्फैडेनोपैथी (उल्लेख):", lang)}
@@ -3150,13 +3262,31 @@ const parseDateString = (dateStr) => {
                           </div>
                         </div>
 
-                        <div className="col-12">
+                        <div className="col-12 col-sm-6">
                           <div className="p-2 px-3 rounded-3 bg-light border">
                             <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
                               {getTranslation("Prepared by:/द्वारा तैयार:", lang)}
                             </div>
                             <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
                               ✍️ {selectedUser.prepared_by || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12 col-sm-6">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation("Verification Status / सत्यापन स्थिति", lang)}
+                            </div>
+                            <div className="mt-1">
+                              <span
+                                className={`badge ${selectedUser.verification === "Yes" ? "bg-success" : "bg-warning text-dark"} p-2`}
+                                style={{ fontSize: "12px" }}
+                              >
+                                {selectedUser.verification === "Yes"
+                                  ? `✓ ${getTranslation("Verified / सत्यापित", lang)}`
+                                  : `⏳ ${getTranslation("Pending / लंबित", lang)}`}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -3413,7 +3543,35 @@ const parseDateString = (dateStr) => {
       question: getTranslation(Temperature, lang),
       name: "temperature",
     },
-  ].map(({ id, question, name, type }) => (
+    {
+      id: "7",
+      question: getTranslation("SpO2 (%) / एसपीओ२ (%)", lang),
+      name: "spo2",
+      type: "number",
+      min: 0,
+      max: 100,
+      step: 1,
+      placeholder: getTranslation("0 - 100 %", lang),
+    },
+    {
+      id: "8",
+      question: getTranslation("Blood Sugar (mg/dL) / ब्लड शुगर (mg/dL)", lang),
+      name: "sugar",
+      type: "number",
+      min: 0,
+      step: "0.1",
+      placeholder: getTranslation("mg/dL (e.g. 110.5)", lang),
+    },
+    {
+      id: "9",
+      question: getTranslation("Hemoglobin (Hb g/dL) / हीमोग्लोबिन (g/dL)", lang),
+      name: "hb",
+      type: "number",
+      min: 0,
+      step: "0.1",
+      placeholder: getTranslation("g/dL (e.g. 14.2)", lang),
+    },
+  ].map(({ id, question, name, type, min, max, step, placeholder }) => (
     <tr key={id}>
       <td>{id}</td>
       <td>{question}</td>
@@ -3439,14 +3597,18 @@ const parseDateString = (dateStr) => {
           </select>
         ) : (
           <Input
-            type={["weight", "pulse_rate", "temperature"].includes(name) ? "number" : "text"}
+            type={["weight", "pulse_rate", "temperature", "spo2", "sugar", "hb"].includes(name) || type === "number" ? "number" : "text"}
             name={name}
-            value={PFAeditData[name] || ""}
+            value={PFAeditData[name] ?? ""}
+            min={min}
+            max={max}
+            step={step}
+            placeholder={placeholder || getTranslation("Enter details / विवरण दर्ज करें", lang)}
             onChange={(e) => {
               const { name, value, type } = e.target;
               setPFAeditData((prev) => ({
                 ...prev,
-                [name]: type === "number" ? Number(value) : value,
+                [name]: type === "number" ? (value === "" ? "" : Number(value)) : value,
               }));
             }}
           />
@@ -3894,7 +4056,7 @@ const parseDateString = (dateStr) => {
                           />
                         </FormGroup>
                       </Col>
-                      <Col md="4">
+                      {/* <Col md="4">
                         <FormGroup>
                           <Label>{getTranslation(signature,lang)}</Label>
                           <Input
@@ -3910,7 +4072,7 @@ const parseDateString = (dateStr) => {
                             }
                           />
                         </FormGroup>
-                      </Col>
+                      </Col> */}
                     </Row>
                   </div>
 
@@ -4210,7 +4372,35 @@ const parseDateString = (dateStr) => {
       question: getTranslation(Temperature, lang),
       name: "temperature",
     },
-  ].map(({ id, question, name, type }) => (
+    {
+      id: "7",
+      question: getTranslation("SpO2 (%) / एसपीओ२ (%)", lang),
+      name: "spo2",
+      type: "number",
+      min: 0,
+      max: 100,
+      step: 1,
+      placeholder: getTranslation("0 - 100 %", lang),
+    },
+    {
+      id: "8",
+      question: getTranslation("Blood Sugar (mg/dL) / ब्लड शुगर (mg/dL)", lang),
+      name: "sugar",
+      type: "number",
+      min: 0,
+      step: "0.1",
+      placeholder: getTranslation("mg/dL (e.g. 110.5)", lang),
+    },
+    {
+      id: "9",
+      question: getTranslation("Hemoglobin (Hb g/dL) / हीमोग्लोबिन (g/dL)", lang),
+      name: "hb",
+      type: "number",
+      min: 0,
+      step: "0.1",
+      placeholder: getTranslation("g/dL (e.g. 14.2)", lang),
+    },
+  ].map(({ id, question, name, type, min, max, step, placeholder }) => (
     <tr key={id}>
       <td>{id}</td>
       <td>{question}</td>
@@ -4236,14 +4426,18 @@ const parseDateString = (dateStr) => {
           </select>
         ) : (
           <Input
-            type={["weight", "pulse_rate", "temperature"].includes(name) ? "number" : "text"}
+            type={["weight", "pulse_rate", "temperature", "spo2", "sugar", "hb"].includes(name) || type === "number" ? "number" : "text"}
             name={name}
-            value={PFAeditData[name] || ""}
+            value={PFAeditData[name] ?? ""}
+            min={min}
+            max={max}
+            step={step}
+            placeholder={placeholder || getTranslation("Enter details / विवरण दर्ज करें", lang)}
             onChange={(e) => {
               const { name, value, type } = e.target;
               setPFAeditData((prev) => ({
                 ...prev,
-                [name]: type === "number" ? Number(value) : value,
+                [name]: type === "number" ? (value === "" ? "" : Number(value)) : value,
               }));
             }}
           />
@@ -4675,7 +4869,7 @@ const parseDateString = (dateStr) => {
                   />
                 </FormGroup>
               </Col>
-              <Col md="4">
+              {/* <Col md="4">
                 <FormGroup>
                   <Label>{getTranslation(signature,lang)}</Label>
                   <Input
@@ -4691,7 +4885,7 @@ const parseDateString = (dateStr) => {
                     }
                   />
                 </FormGroup>
-              </Col>
+              </Col> */}
             </Row>
           </div>
 

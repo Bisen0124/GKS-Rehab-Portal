@@ -1,9 +1,13 @@
 import React, { Fragment, useState, useEffect, useContext } from 'react';
-import { Maximize } from 'react-feather';
-import { LI, UL } from '../../../AbstractElements';
+import { Maximize, Settings } from 'react-feather';
+import { Link } from 'react-router-dom';
+import { Card } from 'reactstrap';
+import { Btn, LI, UL } from '../../../AbstractElements';
 import CustomizerContext from '../../../_helper/Customizer';
 import LogoutClass from './Logout';
 import { useBranch } from '../../../contexts/BranchContext';
+import { useLang } from '../../../contexts/LangContext';
+import { getTranslation } from '../../../utils/translator';
 
 import LanguageSwitcher from '../../../Components/LanguageSwitcher';
 
@@ -11,6 +15,7 @@ import ApiTranslated from '../../../Components/ApiTranslated';
 
 const Rightbar = () => {
   const { sidebarResponsive } = useContext(CustomizerContext);
+  const { lang } = useLang();
 
   // ✅ Global branch state from context
   const { selectedBranch, setSelectedBranch } = useBranch();
@@ -111,8 +116,8 @@ const Rightbar = () => {
             className="alert alert-info py-2 px-3 mb-0 d-inline-block superadmin-badge"
             role="alert"
             style={{
-              backgroundColor: "rgb(214, 98, 44)",
-              border: "1px solid rgb(217, 97, 54)",
+              backgroundColor: userRoleType === "SuperAdmin" ? "rgb(214, 98, 44)" : "#24695c",
+              border: userRoleType === "SuperAdmin" ? "1px solid rgb(217, 97, 54)" : "1px solid #1E6554",
               borderRadius: "8px",
             }}
           >
@@ -142,6 +147,16 @@ const Rightbar = () => {
               </select>
             </div>
           )}
+
+          {/* Settings Button */}
+          <LI attrLI={{ className: 'onhover-dropdown p-0 me-2' }}>
+            <Btn attrBtn={{ as: Card.Header, className: 'btn btn-primary-light settings-btn', color: 'default' }}>
+              <Link to={`${process.env.PUBLIC_URL}/settings`} style={{ display: 'flex', alignItems: 'center' }}>
+                <Settings style={{ marginRight: '8px' }} />
+                {getTranslation("Settings/सेटिंग्स", lang)}
+              </Link>
+            </Btn>
+          </LI>
 
           <LogoutClass />
         </UL>

@@ -5971,7 +5971,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     onChange={onChangeEventHandler}
                   />
                 </div>
-                <div className="col-md-4">
+                {/* <div className="col-md-4">
                   <Label>{getTranslation(signature,lang)}</Label>
                   <Input
                     type="text"
@@ -5980,7 +5980,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                     value={formData.signature}
                     onChange={onChangeEventHandler}
                   />
-                </div>
+                </div> */}
                 <div className="col-md-12 mt-3 mb-3">
                   <Label>{getTranslation(prepared,lang)}</Label>
                   <Input
@@ -10116,7 +10116,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       }
                     />
                   </div>
-                  <div className="col-md-4">
+                  {/* <div className="col-md-4">
                     <Label>{getTranslation(signature,lang)}</Label>
                     <Input
                       type="text"
@@ -10130,7 +10130,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         })
                       }
                     />
-                  </div>
+                  </div> */}
                   <div className="col-md-12 mt-3 mb-3">
                     <Label>{getTranslation(prepared,lang)}</Label>
                     <Input
@@ -13781,7 +13781,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                       }
                     />
                   </div>
-                  <div className="col-md-4">
+                  {/* <div className="col-md-4">
                     <Label>{getTranslation(signature,lang)}</Label>
                     <Input
                       type="text"
@@ -13795,7 +13795,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
                         })
                       }
                     />
-                  </div>
+                  </div> */}
                   <div className="col-md-12 mt-3 mb-3">
                     <Label>{getTranslation(prepared,lang)}</Label>
                     <Input

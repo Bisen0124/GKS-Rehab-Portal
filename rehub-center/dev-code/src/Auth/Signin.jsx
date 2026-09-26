@@ -83,9 +83,60 @@ const Login = ({ selected }) => {
           window.location.href = `${process.env.PUBLIC_URL}/dashboard/Home`;
         }, 1000);
       } else {
+        // ✅ Check if credentials match any created Branch Admin
+        const localAdmins = JSON.parse(localStorage.getItem("gks_branch_admins") || "[]");
+        const cleanIdent = (identifier || "").trim().toLowerCase();
+        const matchedAdmin = localAdmins.find(
+          (a) =>
+            (a.username?.toLowerCase() === cleanIdent ||
+              a.email?.toLowerCase() === cleanIdent ||
+              a.phone?.trim() === (identifier || "").trim()) &&
+            (a.password === password || (!a.password && password === "Gks@12345"))
+        );
+
+        if (matchedAdmin) {
+          if (!matchedAdmin.isActive) {
+            toast.error("This Branch Admin account is deactivated!");
+            setLoading(false);
+            return;
+          }
+
+          localStorage.setItem(
+            "Branch_Detail",
+            JSON.stringify([
+              {
+                Branch_id: matchedAdmin.branch_id,
+                Branch_name: matchedAdmin.branch_name,
+              },
+            ])
+          );
+          localStorage.setItem("Selected_Branch_ID", matchedAdmin.branch_id);
+          localStorage.setItem("login", "true");
+          localStorage.setItem("Authorization", `mock-admin-token-${matchedAdmin.id}`);
+          localStorage.setItem("user_id", matchedAdmin.id);
+          localStorage.setItem("profileURL", man);
+          localStorage.setItem("Name", matchedAdmin.name);
+          localStorage.setItem("isRoleType", "BranchAdmin");
+          localStorage.setItem("branch_admin_user", JSON.stringify(matchedAdmin));
+
+          if (rememberMe) {
+            localStorage.setItem("rememberMe", "true");
+            localStorage.setItem("rememberedIdentifier", identifier);
+          } else {
+            localStorage.removeItem("rememberMe");
+            localStorage.removeItem("rememberedIdentifier");
+          }
+
+          toast.success(`Login successful! Welcome, ${matchedAdmin.name}`);
+          setTimeout(() => {
+            window.location.href = `${process.env.PUBLIC_URL}/dashboard/Home`;
+          }, 800);
+          return;
+        }
+
         // ✅ Handle invalid login attempts
         const message = data.message?.toLowerCase();
-  
+
         if (message?.includes("password")) {
           toast.error("Invalid Password!");
         } else if (
@@ -100,6 +151,58 @@ const Login = ({ selected }) => {
       }
     } catch (error) {
       console.error("Login error:", error);
+
+      // ✅ Check local Branch Admins on network failure as well
+      const localAdmins = JSON.parse(localStorage.getItem("gks_branch_admins") || "[]");
+      const cleanIdent = (identifier || "").trim().toLowerCase();
+      const matchedAdmin = localAdmins.find(
+        (a) =>
+          (a.username?.toLowerCase() === cleanIdent ||
+            a.email?.toLowerCase() === cleanIdent ||
+            a.phone?.trim() === (identifier || "").trim()) &&
+            (a.password === password || (!a.password && password === "Gks@12345"))
+      );
+
+      if (matchedAdmin) {
+        if (!matchedAdmin.isActive) {
+          toast.error("This Branch Admin account is deactivated!");
+          setLoading(false);
+          return;
+        }
+
+        localStorage.setItem(
+          "Branch_Detail",
+          JSON.stringify([
+            {
+              Branch_id: matchedAdmin.branch_id,
+              Branch_name: matchedAdmin.branch_name,
+            },
+          ])
+        );
+        localStorage.setItem("Selected_Branch_ID", matchedAdmin.branch_id);
+        localStorage.setItem("login", "true");
+        localStorage.setItem("Authorization", `mock-admin-token-${matchedAdmin.id}`);
+        localStorage.setItem("user_id", matchedAdmin.id);
+        localStorage.setItem("profileURL", man);
+        localStorage.setItem("Name", matchedAdmin.name);
+        localStorage.setItem("isRoleType", "BranchAdmin");
+        localStorage.setItem("branch_admin_user", JSON.stringify(matchedAdmin));
+
+        if (rememberMe) {
+          localStorage.setItem("rememberMe", "true");
+          localStorage.setItem("rememberedIdentifier", identifier);
+        } else {
+          localStorage.removeItem("rememberMe");
+          localStorage.removeItem("rememberedIdentifier");
+        }
+
+        toast.success(`Login successful! Welcome, ${matchedAdmin.name}`);
+        setTimeout(() => {
+          window.location.href = `${process.env.PUBLIC_URL}/dashboard/Home`;
+        }, 800);
+        return;
+      }
+
       toast.error("Something went wrong. Please try again.");
     } finally {
       setLoading(false);

@@ -2014,7 +2014,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
 
             {/*Content section start*/}
             <div className="row mt-3 mb-3">
-              <div className="col-md-4">
+              {/* <div className="col-md-4">
                 <Label>{getTranslation(signature,lang)}</Label>
                 <Input
                   type="text"
@@ -2023,7 +2023,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
                   value={formData.signature}
                   onChange={handleInputChange}
                 />
-              </div>
+              </div> */}
 
               <div className="col-md-12 mt-3 mb-3">
                 <Label>{getTranslation(prepared,lang)}</Label>
@@ -2605,7 +2605,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
       </div>
 
       <div className="row mt-3 mb-3">
-        <div className="col-md-4">
+        {/* <div className="col-md-4">
           <Label>{getTranslation(signature,lang)}</Label>
           <Input
             type="text"
@@ -2618,7 +2618,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
               }))
             }
           />
-        </div>
+        </div> */}
 
         <div className="col-md-12 mt-3 mb-3">
           <Label>{getTranslation(prepared,lang)}</Label>
@@ -3009,7 +3009,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
       </div>
 
       <div className="row mt-3 mb-3">
-        <div className="col-md-4">
+        {/* <div className="col-md-4">
           <Label>{getTranslation(signature,lang)}</Label>
           <Input
             type="text"
@@ -3022,7 +3022,7 @@ const handlePBReadmissionFormSubmit = async (e) => {
               }))
             }
           />
-        </div>
+        </div> */}
 
         <div className="col-md-12 mt-3 mb-3">
           <Label>{getTranslation(prepared,lang)}</Label>

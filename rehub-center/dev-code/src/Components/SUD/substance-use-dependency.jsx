@@ -1400,7 +1400,7 @@ function SUD() {
                                 {getTranslation(consent,lang)}
                             </Label>
                         </div>
-                        <div className="col-md-12 px-3">
+                        {/* <div className="col-md-12 px-3">
                             <Col md="4">
                                 <FormGroup>
                                     <Label>{getTranslation(signature,lang)}</Label>
@@ -1418,7 +1418,7 @@ function SUD() {
                                     />
                                 </FormGroup>
                             </Col>
-                        </div>
+                        </div> */}
 
                         {/* Submit Button & Save Draft */}
                         <div className="d-flex align-items-center gap-3 px-3 mb-3 mt-4 flex-wrap">
@@ -1577,7 +1577,7 @@ function SUD() {
                                 </div>
                             </div>
 
-                            <div className="col-md-12">
+                            {/* <div className="col-md-12">
                                 <Col md="4">
                                     <FormGroup>
                                         <Label>{getTranslation(signature,lang)}</Label>
@@ -1595,7 +1595,7 @@ function SUD() {
                                         />
                                     </FormGroup>
                                 </Col>
-                            </div>
+                            </div> */}
 
 
                             {/* Submit Button */}
@@ -1916,7 +1916,7 @@ function SUD() {
                                 </div>
                             </div>
 
-                            <div className="col-md-12">
+                            {/* <div className="col-md-12">
                                 <Col md="4">
                                     <FormGroup>
                                         <Label>{getTranslation(signature,lang)}</Label>
@@ -1934,7 +1934,7 @@ function SUD() {
                                         />
                                     </FormGroup>
                                 </Col>
-                            </div>
+                            </div> */}
 
 
                             {/* Submit Button */}

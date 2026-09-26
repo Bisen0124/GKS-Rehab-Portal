@@ -14,8 +14,6 @@ import {
   wardOptions,
   IspatientWhatsappNo,
   whatsAppNo,
-  h4Text,
-  patientRelativesecPhoneNumber,
   pateintRelativeAddress,
 } from "../../Constant";
 import {
@@ -88,8 +86,9 @@ function Register() {
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
+  const [imageOptimizationInfo, setImageOptimizationInfo] = useState(null);
 
-  // Client-side image compressor: Reduces multi-MB camera images to ~100KB in <50ms for lightning-fast uploads
+  // Client-side image compressor & optimizer: Resizes and compresses images to <200KB for lightning-fast uploads
   const compressImageFile = (file, maxWidth = 800, quality = 0.82) => {
     return new Promise((resolve) => {
       if (!file || !file.type.startsWith("image/")) {
@@ -118,6 +117,31 @@ function Register() {
           elem.toBlob(
             (blob) => {
               if (!blob) return resolve(file);
+              // If blob is still > 1MB, do a second tighter compression pass
+              if (blob.size > 1024 * 1024) {
+                const subCanvas = document.createElement("canvas");
+                let subWidth = Math.min(width, 600);
+                let subHeight = Math.round((height * subWidth) / width);
+                subCanvas.width = subWidth;
+                subCanvas.height = subHeight;
+                const subCtx = subCanvas.getContext("2d");
+                subCtx.drawImage(elem, 0, 0, subWidth, subHeight);
+                subCanvas.toBlob(
+                  (tighterBlob) => {
+                    if (!tighterBlob) return resolve(file);
+                    const cleanFileName = file.name.replace(/\.[^/.]+$/, ".jpg");
+                    const compressedFile = new File([tighterBlob], cleanFileName, {
+                      type: "image/jpeg",
+                      lastModified: Date.now(),
+                    });
+                    resolve(compressedFile);
+                  },
+                  "image/jpeg",
+                  0.72
+                );
+                return;
+              }
+
               const cleanFileName = file.name.replace(/\.[^/.]+$/, ".jpg");
               const compressedFile = new File([blob], cleanFileName, {
                 type: "image/jpeg",
@@ -154,19 +178,81 @@ function Register() {
       toast.error(msg);
       setImage(null);
       setPreview(null);
+      setImageOptimizationInfo(null);
+      e.target.value = "";
+      return;
+    }
+
+    // High size check: Reject initial raw files larger than 10MB
+    if (file.size > 10 * 1024 * 1024) {
+      const msg = getTranslation(
+        "Image file size must be less than 10MB before optimization / छवि फ़ाइल का आकार अनुकूलन से पहले 10MB से कम होना चाहिए।",
+        lang
+      );
+      setError(msg);
+      toast.error(msg);
+      setImage(null);
+      setPreview(null);
+      setImageOptimizationInfo(null);
       e.target.value = "";
       return;
     }
 
     try {
       const compressed = await compressImageFile(file);
+
+      // Verify that compressed image does not exceed 2MB limit
+      if (compressed.size > 2 * 1024 * 1024) {
+        const msg = getTranslation(
+          "Image size exceeds 2MB limit after compression. Please choose a smaller photo. / संपीड़ित छवि 2MB की सीमा से अधिक है। कृपया एक छोटी तस्वीर चुनें।",
+          lang
+        );
+        setError(msg);
+        toast.error(msg);
+        setImage(null);
+        setPreview(null);
+        setImageOptimizationInfo(null);
+        e.target.value = "";
+        return;
+      }
+
       setError("");
       setImage(compressed);
       setPreview(URL.createObjectURL(compressed));
+      setImageOptimizationInfo({
+        originalSize: file.size,
+        compressedSize: compressed.size,
+        name: file.name,
+      });
+      toast.success(
+        getTranslation(
+          `Image optimized: ${(compressed.size / 1024).toFixed(0)} KB / छवि अनुकूलित: ${(compressed.size / 1024).toFixed(0)} KB`,
+          lang
+        ),
+        { autoClose: 2500 }
+      );
     } catch (compressErr) {
+      if (file.size > 2 * 1024 * 1024) {
+        const msg = getTranslation(
+          "Image size exceeds 2MB limit. / छवि 2MB सीमा से अधिक है।",
+          lang
+        );
+        setError(msg);
+        toast.error(msg);
+        setImage(null);
+        setPreview(null);
+        setImageOptimizationInfo(null);
+        e.target.value = "";
+        return;
+      }
       setError("");
       setImage(file);
       setPreview(URL.createObjectURL(file));
+      setImageOptimizationInfo({
+        originalSize: file.size,
+        compressedSize: file.size,
+        name: file.name,
+      });
     }
   };
 
@@ -257,7 +343,7 @@ function Register() {
     address: "",
     relativeaddress: "",
     relation_with_patient: "",
-    relative_contacts: [{ name: "", phone: "" }],
+    relative_contacts: [{ name: "", phone: "", is_whatsapp: false }],
     is_role: 4, // Default Patient role (4)
     ward_type_id: "",
     ward_name: "",
@@ -280,7 +366,7 @@ function Register() {
     }));
   };
 
-  //Handle patient relative additional contacts (name + phone pairs)
+  //Handle patient relative additional contacts (name + phone pairs + is_whatsapp)
   const handleRelativeContactChange = (index, field, value) => {
     setFormData((prev) => {
       const updatedContacts = [...prev.relative_contacts];
@@ -292,7 +378,7 @@ function Register() {
   const addRelativeContact = () => {
     setFormData((prev) => ({
       ...prev,
-      relative_contacts: [...prev.relative_contacts, { name: "", phone: "" }],
+      relative_contacts: [...prev.relative_contacts, { name: "", phone: "", is_whatsapp: false }],
     }));
   };
 
@@ -970,7 +1056,7 @@ function Register() {
   const addEditRelativeContact = () => {
     setEditData((prev) => ({
       ...prev,
-      relative_contacts: [...(prev.relative_contacts || []), { name: "", phone: "" }],
+      relative_contacts: [...(prev.relative_contacts || []), { name: "", phone: "", is_whatsapp: false }],
     }));
   };
 
@@ -1888,35 +1974,6 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
-              {/* Relative Email (Optional) */}
-              <div className="col-md-6">
-                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  <Translated text={patientRelativeEmailAddr} />
-                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>({getTranslation("Optional / वैकल्पिक", lang)})</span>
-                </Label>
-                <Input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setFormData({ ...formData, email: value });
-                    setEmailError(
-                      value &&
-                        !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value)
-                        ? "Please enter a valid email address"
-                        : ""
-                    );
-                  }}
-                  placeholder={getTranslation("Enter Email Address / ईमेल पता दर्ज करें", lang)}
-                  className="form-control"
-                  style={{ borderRadius: "8px", height: "40px" }}
-                />
-                {emailError && (
-                  <small className="text-danger d-block mt-1">{emailError}</small>
-                )}
-              </div>
-
               {/* Primary Phone */}
               <div className="col-md-6">
                 <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
@@ -1944,11 +2001,32 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 )}
               </div>
 
-              {/* Mobile number for WhatsApp/SMS communication (Manual Input) */}
+              {/* Mobile number for WhatsApp/SMS communication */}
               <div className="col-md-6">
-                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  {getTranslation("Mobile number for WhatsApp/SMS communication / व्हाट्सएप/एसएमएस संचार के लिए मोबाइल नंबर", lang)} <span className="text-danger">*</span>
-                </Label>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                    {getTranslation("Mobile number for WhatsApp / व्हाट्सएप के लिए मोबाइल नंबर", lang)} <span className="text-danger">*</span>
+                  </Label>
+                  {formData.phone && (
+                    <span
+                      className="text-primary d-inline-flex align-items-center gap-1 cursor-pointer"
+                      style={{ fontSize: "12px", cursor: "pointer", fontWeight: "500" }}
+                      onClick={() => {
+                        setFormData((prev) => ({ ...prev, whatsapp_no: prev.phone }));
+                        toast.info(
+                          getTranslation(
+                            "Copied Primary Phone to WhatsApp Number / प्राथमिक फ़ोन को व्हाट्सएप नंबर पर कॉपी किया गया",
+                            lang
+                          ),
+                          { autoClose: 2000 }
+                        );
+                      }}
+                      title="Copy from Primary Phone"
+                    >
+                      📋 {getTranslation("Same as Phone / फोन जैसा ही", lang)}
+                    </span>
+                  )}
+                </div>
                 <Input
                   type="text"
                   name="whatsapp_no"
@@ -1959,15 +2037,44 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       setFormData((prev) => ({ ...prev, whatsapp_no: value }));
                     }
                   }}
-                  placeholder={getTranslation("Enter 10-digit WhatsApp/SMS Number / 10 अंकों का व्हाट्सएप/एसएमएस नंबर दर्ज करें", lang)}
+                  placeholder={getTranslation("Enter 10-digit WhatsApp Number / 10 अंकों का व्हाट्सएप नंबर दर्ज करें", lang)}
                   maxLength={10}
                   className="form-control"
                   style={{ borderRadius: "8px", height: "40px" }}
                 />
                 {formData.whatsapp_no.length > 0 && formData.whatsapp_no.length !== 10 && (
                   <small className="text-danger d-block mt-1">
-                    {getTranslation("WhatsApp/SMS number must be 10 digits. / व्हाट्सएप/एसएमएस नंबर 10 अंकों का होना चाहिए।", lang)}
+                    {getTranslation("WhatsApp number must be 10 digits. / व्हाट्सएप नंबर 10 अंकों का होना चाहिए।", lang)}
                   </small>
+                )}
+              </div>
+
+              {/* Relative Email (Optional) */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  <Translated text={patientRelativeEmailAddr} />
+                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>({getTranslation("Optional / वैकल्पिक", lang)})</span>
+                </Label>
+                <Input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData({ ...formData, email: value });
+                    setEmailError(
+                      value &&
+                        !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value)
+                        ? "Please enter a valid email address"
+                        : ""
+                    );
+                  }}
+                  placeholder={getTranslation("Enter Email Address / ईमेल पता दर्ज करें", lang)}
+                  className="form-control"
+                  style={{ borderRadius: "8px", height: "40px" }}
+                />
+                {emailError && (
+                  <small className="text-danger d-block mt-1">{emailError}</small>
                 )}
               </div>
 
@@ -2028,31 +2135,8 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 )}
               </div>
 
-              {/* Secondary Phone (Optional) */}
-              <div className="col-md-6">
-                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  <Translated text={patientRelativesecPhoneNumber} />
-                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>({getTranslation("Optional / वैकल्पिक", lang)})</span>
-                </Label>
-                <Input
-                  type="text"
-                  name="secondary_phone"
-                  value={formData.secondary_phone}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (/^\d{0,10}$/.test(value)) {
-                      setFormData({ ...formData, secondary_phone: value });
-                    }
-                  }}
-                  placeholder={getTranslation("Secondary Phone Number / द्वितीयक फ़ोन नंबर", lang)}
-                  maxLength={10}
-                  className="form-control"
-                  style={{ borderRadius: "8px", height: "40px" }}
-                />
-              </div>
-
-              {/* Wards Details */}
-              <div className="col-md-6">
+              {/* Wards Details (Full width) */}
+              <div className="col-12">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
                     <Translated text={wardDetails} /> <span className="text-danger">*</span>
@@ -2134,11 +2218,16 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
-              {/* Patient Photo Upload with Modern Camera Icon */}
+              {/* Patient Photo Upload with Modern Camera Icon & Optimization */}
               <div className="col-md-6">
-                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  {getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि अपलोड करें", lang)} <span className="text-danger">*</span>
-                </Label>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                    {getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि अपलोड करें", lang)} <span className="text-danger">*</span>
+                  </Label>
+                  <span className="text-muted" style={{ fontSize: "11px" }}>
+                    Max 2MB (Auto-optimized)
+                  </span>
+                </div>
                 <div className="d-flex align-items-center gap-2">
                   {preview && (
                     <img
@@ -2191,6 +2280,18 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     </label>
                   </div>
                 </div>
+                {imageOptimizationInfo && image && (
+                  <div className="d-flex align-items-center justify-content-between mt-1 px-1">
+                    <small className="text-success fw-semibold" style={{ fontSize: "11.5px" }}>
+                      ✓ {getTranslation("Optimized & Ready / अनुकूलित एवं तैयार", lang)}: {(image.size / 1024).toFixed(0)} KB
+                      {imageOptimizationInfo.originalSize > image.size && (
+                        <span className="text-muted fw-normal ms-1">
+                          ({getTranslation("Saved / बचत", lang)} {Math.round((1 - image.size / imageOptimizationInfo.originalSize) * 100)}%)
+                        </span>
+                      )}
+                    </small>
+                  </div>
+                )}
                 {error && <small className="text-danger d-block mt-1">{error}</small>}
               </div>
 
@@ -2267,48 +2368,109 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   </div>
 
                   {formData.relative_contacts.map((contact, index) => (
-                    <div className="row g-2 align-items-center mb-2" key={index}>
-                      <div className="col-sm-5">
-                        <Input
-                          type="text"
-                          placeholder={getTranslation("Contact Name / संपर्क का नाम", lang)}
-                          value={contact.name}
-                          onChange={(e) => handleRelativeContactChange(index, "name", e.target.value)}
-                          className="form-control"
-                          style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
-                        />
+                    <div className="bg-white p-2 mb-2 rounded border" key={index} style={{ borderRadius: "8px" }}>
+                      <div className="row g-2 align-items-center">
+                        <div className="col-md-4 col-sm-6">
+                          <Input
+                            type="text"
+                            placeholder={getTranslation("Contact Name / संपर्क का नाम", lang)}
+                            value={contact.name}
+                            onChange={(e) => handleRelativeContactChange(index, "name", e.target.value)}
+                            className="form-control"
+                            style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
+                          />
+                        </div>
+                        <div className="col-md-4 col-sm-6">
+                          <Input
+                            type="text"
+                            placeholder={getTranslation("Phone Number / फ़ोन नंबर", lang)}
+                            value={contact.phone}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (/^\d{0,10}$/.test(value)) {
+                                handleRelativeContactChange(index, "phone", value);
+                              }
+                            }}
+                            maxLength={10}
+                            className="form-control"
+                            style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
+                          />
+                        </div>
+                        <div className="col-md-3 col-sm-8 d-flex align-items-center">
+                          <div className="form-check form-switch d-flex align-items-center gap-2 m-0">
+                            <Input
+                              type="checkbox"
+                              id={`contact-wa-${index}`}
+                              checked={!!contact.is_whatsapp}
+                              onChange={(e) => {
+                                const isChecked = e.target.checked;
+                                handleRelativeContactChange(index, "is_whatsapp", isChecked);
+                                if (isChecked) {
+                                  toast.success(
+                                    getTranslation(
+                                      `WhatsApp enabled for ${contact.name || "Relative"} (${contact.phone || "Number"}) / व्हाट्सएप संचार सक्षम किया गया`,
+                                      lang
+                                    ),
+                                    { autoClose: 2500 }
+                                  );
+                                } else {
+                                  toast.info(
+                                    getTranslation(
+                                      `WhatsApp disabled for ${contact.name || "Relative"} / व्हाट्सएप संचार अक्षम किया गया`,
+                                      lang
+                                    ),
+                                    { autoClose: 2000 }
+                                  );
+                                }
+                              }}
+                              role="switch"
+                              className="form-check-input cursor-pointer"
+                              style={{ cursor: "pointer", width: "36px", height: "18px" }}
+                            />
+                            <Label
+                              htmlFor={`contact-wa-${index}`}
+                              className={`form-check-label mb-0 small cursor-pointer fw-semibold ${
+                                contact.is_whatsapp ? "text-success" : "text-muted"
+                              }`}
+                              style={{ fontSize: "12px" }}
+                            >
+                              {contact.is_whatsapp
+                                ? getTranslation("✓ WhatsApp Enabled / व्हाट्सएप सक्रिय", lang)
+                                : getTranslation("WhatsApp? / व्हाट्सएप?", lang)}
+                            </Label>
+                          </div>
+                        </div>
+                        <div className="col-md-1 col-sm-4 text-end">
+                          {formData.relative_contacts.length > 1 && (
+                            <Button
+                              color="danger"
+                              outline
+                              type="button"
+                              size="sm"
+                              className="w-100"
+                              onClick={() => removeRelativeContact(index)}
+                              style={{ borderRadius: "6px", height: "36px", padding: "0" }}
+                              title={getTranslation("Remove / हटाएं", lang)}
+                            >
+                              ✕
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <div className="col-sm-5">
-                        <Input
-                          type="text"
-                          placeholder={getTranslation("Phone Number / फ़ोन नंबर", lang)}
-                          value={contact.phone}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (/^\d{0,10}$/.test(value)) {
-                              handleRelativeContactChange(index, "phone", value);
-                            }
-                          }}
-                          maxLength={10}
-                          className="form-control"
-                          style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
-                        />
-                      </div>
-                      <div className="col-sm-2">
-                        {formData.relative_contacts.length > 1 && (
-                          <Button
-                            color="danger"
-                            outline
-                            type="button"
-                            size="sm"
-                            className="w-100"
-                            onClick={() => removeRelativeContact(index)}
-                            style={{ borderRadius: "6px", height: "36px" }}
-                          >
-                            {getTranslation("Remove / हटाएं", lang)}
-                          </Button>
-                        )}
-                      </div>
+
+                      {contact.is_whatsapp && (
+                        <div className="mt-1 pt-1 border-top d-flex align-items-center gap-1 text-success" style={{ fontSize: "11px" }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.058-2.127-.53-1.62-.667-2.668-2.316-2.75-2.423-.081-.107-.655-.873-.655-1.666 0-.793.415-1.183.562-1.343.148-.16.323-.2.431-.2.108 0 .216.002.31.007.099.006.232-.038.363.277.135.323.461 1.127.502 1.209.041.082.069.178.014.287-.054.108-.082.176-.163.271-.082.096-.172.214-.246.287-.082.082-.167.171-.072.334.095.163.422.697.906 1.127.623.555 1.148.728 1.311.809.163.082.259.072.355-.04.096-.111.411-.479.521-.643.11-.164.219-.137.367-.082.148.055.938.442 1.1.523.162.082.27.122.31.19.04.068.04.394-.104.799z"/>
+                          </svg>
+                          <span>
+                            {getTranslation(
+                              "Patient progress & emergency updates will also be shared to this WhatsApp number. / रोगी की प्रगति और आपातकालीन अपडेट इस व्हाट्सएप नंबर पर भी साझा किए जाएंगे।",
+                              lang
+                            )}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -2696,13 +2858,28 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     )}
                     <Input
                       type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        setEditData({
-                          ...editData,
-                          profile_pic: e.target.files?.[0] || null,
-                        })
-                      }
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 10 * 1024 * 1024) {
+                          toast.error(getTranslation("Image file size must be less than 10MB before optimization / छवि फ़ाइल का आकार 10MB से कम होना चाहिए।", lang));
+                          e.target.value = "";
+                          return;
+                        }
+                        try {
+                          const compressed = await compressImageFile(file);
+                          if (compressed.size > 2 * 1024 * 1024) {
+                            toast.error(getTranslation("Image size exceeds 2MB limit after compression. / छवि 2MB सीमा से अधिक है।", lang));
+                            e.target.value = "";
+                            return;
+                          }
+                          setEditData({ ...editData, profile_pic: compressed });
+                          toast.success(getTranslation(`Image optimized: ${(compressed.size / 1024).toFixed(0)} KB / छवि अनुकूलित: ${(compressed.size / 1024).toFixed(0)} KB`, lang));
+                        } catch {
+                          setEditData({ ...editData, profile_pic: file });
+                        }
+                      }}
                       className="form-control"
                       style={{ borderRadius: "8px", height: "40px" }}
                     />
@@ -2770,46 +2947,111 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     </div>
 
                     {(editData.relative_contacts || []).map((contact, index) => (
-                      <div className="row g-2 align-items-center mb-2" key={index}>
-                        <div className="col-sm-5">
-                          <Input
-                            type="text"
-                            placeholder={getTranslation("Contact Name / नाम", lang)}
-                            value={contact.name}
-                            onChange={(e) =>
-                              handleEditRelativeContactChange(index, "name", e.target.value)
-                            }
-                            className="form-control"
-                            style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
-                          />
+                      <div className="bg-white p-2 mb-2 rounded border" key={index} style={{ borderRadius: "8px" }}>
+                        <div className="row g-2 align-items-center">
+                          <div className="col-md-4 col-sm-6">
+                            <Input
+                              type="text"
+                              placeholder={getTranslation("Contact Name / नाम", lang)}
+                              value={contact.name}
+                              onChange={(e) =>
+                                handleEditRelativeContactChange(index, "name", e.target.value)
+                              }
+                              className="form-control"
+                              style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
+                            />
+                          </div>
+                          <div className="col-md-4 col-sm-6">
+                            <Input
+                              type="text"
+                              placeholder={getTranslation("Phone Number / फ़ोन", lang)}
+                              value={contact.phone}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d{0,10}$/.test(val)) {
+                                  handleEditRelativeContactChange(index, "phone", val);
+                                }
+                              }}
+                              maxLength={10}
+                              className="form-control"
+                              style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
+                            />
+                          </div>
+                          <div className="col-md-3 col-sm-8 d-flex align-items-center">
+                            <div className="form-check form-switch d-flex align-items-center gap-2 m-0">
+                              <Input
+                                type="checkbox"
+                                id={`edit-contact-wa-${index}`}
+                                checked={!!contact.is_whatsapp}
+                                onChange={(e) => {
+                                  const isChecked = e.target.checked;
+                                  handleEditRelativeContactChange(index, "is_whatsapp", isChecked);
+                                  if (isChecked) {
+                                    toast.success(
+                                      getTranslation(
+                                        `WhatsApp enabled for ${contact.name || "Relative"} (${contact.phone || "Number"}) / व्हाट्सएप संचार सक्षम किया गया`,
+                                        lang
+                                      ),
+                                      { autoClose: 2500 }
+                                    );
+                                  } else {
+                                    toast.info(
+                                      getTranslation(
+                                        `WhatsApp disabled for ${contact.name || "Relative"} / व्हाट्सएप संचार अक्षम किया गया`,
+                                        lang
+                                      ),
+                                      { autoClose: 2000 }
+                                    );
+                                  }
+                                }}
+                                role="switch"
+                                className="form-check-input cursor-pointer"
+                                style={{ cursor: "pointer", width: "36px", height: "18px" }}
+                              />
+                              <Label
+                                htmlFor={`edit-contact-wa-${index}`}
+                                className={`form-check-label mb-0 small cursor-pointer fw-semibold ${
+                                  contact.is_whatsapp ? "text-success" : "text-muted"
+                                }`}
+                                style={{ fontSize: "12px" }}
+                              >
+                                {contact.is_whatsapp
+                                  ? getTranslation("✓ WhatsApp Enabled / व्हाट्सएप सक्रिय", lang)
+                                  : getTranslation("WhatsApp? / व्हाट्सएप?", lang)}
+                              </Label>
+                            </div>
+                          </div>
+                          <div className="col-md-1 col-sm-4 text-end">
+                            {editData.relative_contacts.length > 1 && (
+                              <Button
+                                color="danger"
+                                outline
+                                type="button"
+                                size="sm"
+                                className="w-100"
+                                onClick={() => removeEditRelativeContact(index)}
+                                style={{ borderRadius: "6px", height: "36px", padding: "0" }}
+                                title={getTranslation("Remove / हटाएं", lang)}
+                              >
+                                ✕
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div className="col-sm-5">
-                          <Input
-                            type="text"
-                            placeholder={getTranslation("Phone Number / फ़ोन", lang)}
-                            value={contact.phone}
-                            onChange={(e) =>
-                              handleEditRelativeContactChange(index, "phone", e.target.value)
-                            }
-                            className="form-control"
-                            style={{ borderRadius: "6px", height: "36px", fontSize: "13px" }}
-                          />
-                        </div>
-                        <div className="col-sm-2">
-                          {editData.relative_contacts.length > 1 && (
-                            <Button
-                              color="danger"
-                              outline
-                              type="button"
-                              size="sm"
-                              className="w-100"
-                              onClick={() => removeEditRelativeContact(index)}
-                              style={{ borderRadius: "6px", height: "36px" }}
-                            >
-                              {getTranslation("Remove / हटाएं", lang)}
-                            </Button>
-                          )}
-                        </div>
+
+                        {contact.is_whatsapp && (
+                          <div className="mt-1 pt-1 border-top d-flex align-items-center gap-1 text-success" style={{ fontSize: "11px" }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.058-2.127-.53-1.62-.667-2.668-2.316-2.75-2.423-.081-.107-.655-.873-.655-1.666 0-.793.415-1.183.562-1.343.148-.16.323-.2.431-.2.108 0 .216.002.31.007.099.006.232-.038.363.277.135.323.461 1.127.502 1.209.041.082.069.178.014.287-.054.108-.082.176-.163.271-.082.096-.172.214-.246.287-.082.082-.167.171-.072.334.095.163.422.697.906 1.127.623.555 1.148.728 1.311.809.163.082.259.072.355-.04.096-.111.411-.479.521-.643.11-.164.219-.137.367-.082.148.055.938.442 1.1.523.162.082.27.122.31.19.04.068.04.394-.104.799z"/>
+                            </svg>
+                            <span>
+                              {getTranslation(
+                                "Patient progress & emergency updates will also be shared to this WhatsApp number. / रोगी की प्रगति और आपातकालीन अपडेट इस व्हाट्सएप नंबर पर भी साझा किए जाएंगे।",
+                                lang
+                              )}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

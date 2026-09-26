@@ -19,6 +19,12 @@ const LogoutClass = () => {
 
     localStorage.removeItem("auth0_profile");
     localStorage.removeItem("Name");
+    localStorage.removeItem("isRoleType");
+    localStorage.removeItem("Selected_Branch_ID");
+    localStorage.removeItem("Branch_Detail");
+    localStorage.removeItem("branch_admin_user");
+    localStorage.removeItem("login");
+    localStorage.removeItem("Authorization");
     localStorage.setItem("authenticated", false);
     history(`${process.env.PUBLIC_URL}/login`);
   };

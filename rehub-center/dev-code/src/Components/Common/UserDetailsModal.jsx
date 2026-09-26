@@ -546,6 +546,14 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
                                 style={{ borderRadius: "8px", fontWeight: "500", fontSize: "13px" }}
                               >
                                 👤 {c.name || "Contact"} {c.phone ? `• 📞 ${c.phone}` : ""}
+                                {c.is_whatsapp && (
+                                  <span
+                                    className="badge bg-success d-inline-flex align-items-center gap-1 ms-1"
+                                    style={{ fontSize: "10.5px", fontWeight: "600", padding: "2px 6px" }}
+                                  >
+                                    WhatsApp
+                                  </span>
+                                )}
                               </Badge>
                             ))}
                           </div>

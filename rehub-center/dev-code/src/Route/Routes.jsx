@@ -225,6 +225,12 @@ import SexualDesire from "../Components/CBT_Intake_Sex_D/SexualDesire";
 //Report menus
 import CombinedFormsReport from "../Components/Reports/CombinedFormsReport";
 
+//Global Settings
+import GlobalSettings from "../Components/Settings/GlobalSettings";
+
+//Patient Billing
+import PatientBilling from "../Components/Billing/PatientBilling";
+
 
 
 export const routes = [
@@ -470,6 +476,14 @@ export const routes = [
       // All Forms Combined Report
       { path: `${process.env.PUBLIC_URL}/Reports/Combined-Forms-Report`, Component : <CombinedFormsReport/>},
       { path: `${process.env.PUBLIC_URL}/Reports/PFA-Report`, Component : <CombinedFormsReport/>},
+
+      //Global Settings
+      { path: `${process.env.PUBLIC_URL}/settings`, Component : <GlobalSettings/>},
+
+      //Patient Billing
+      { path: `${process.env.PUBLIC_URL}/billing/patient-billing`, Component: <PatientBilling /> },
+      { path: `${process.env.PUBLIC_URL}/billing`, Component: <PatientBilling /> },
+
 
    
 

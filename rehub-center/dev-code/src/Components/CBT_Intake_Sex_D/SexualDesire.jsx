@@ -1435,14 +1435,14 @@ function SexualDesire() {
                     {getTranslation(consent,lang)}
                   </Label>
                 </div>
-                <div className="col-md-12">
+                {/* <div className="col-md-12">
                   <Label>{getTranslation(signature,lang)}</Label>
                   <Input type="text" className="form-control"
                     name="signature"
                     value={forData.signature}
                     onChange={handleChange}
                   />
-                </div>
+                </div> */}
                 <div className="col-md-12">
                   <Label>{getTranslation(prepared,lang)}</Label>
                   <Input type="text" className="form-control"
@@ -1589,7 +1589,7 @@ function SexualDesire() {
                     {getTranslation(consent,lang)}
                   </Label>
                 </div>
-                <div className="col-md-12">
+                {/* <div className="col-md-12">
                   <Label>{getTranslation(signature,lang)}</Label>
                   <Input type="text" className="form-control"
                     name="signature"
@@ -1601,7 +1601,7 @@ function SexualDesire() {
                       }))
                     }}
                   />
-                </div>
+                </div> */}
 
                 <div className="col-md-12">
                   <br />
@@ -1840,7 +1840,7 @@ function SexualDesire() {
                     {getTranslation(consent,lang)}
                   </Label>
                 </div>
-                <div className="col-md-12">
+                {/* <div className="col-md-12">
                   <Label>{getTranslation(signature,lang)}</Label>
                   <Input type="text" className="form-control"
                     name="signature"
@@ -1852,7 +1852,7 @@ function SexualDesire() {
                       }))
                     }}
                   />
-                </div>
+                </div> */}
 
                 <div className="col-md-12">
                   <br />

@@ -184,6 +184,17 @@ export const MENUITEMS = [
       }
     ]
   },
+  {
+    "menucontent": "Dashboards,Widgets",
+    "Items": [
+      {
+        "title": "Settings/सेटिंग्स",
+        "icon": "icon-class",
+        "type": "link",
+        "path": `${process.env.PUBLIC_URL}/settings`
+      }
+    ]
+  },
   
 
 
