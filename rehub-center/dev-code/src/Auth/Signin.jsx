@@ -38,13 +38,14 @@ const Login = ({ selected }) => {
     setLoading(true);
   
     try {
+      const trimmedIdentifier = (identifier || "").trim();
       const response = await fetch("https://gks-yjdc.onrender.com/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          identifier: identifier,
+          identifier: trimmedIdentifier,
           password: password,
         }),
       });
@@ -141,18 +142,22 @@ const Login = ({ selected }) => {
         }
 
         // ✅ Handle invalid login attempts
-        const message = data.message?.toLowerCase();
+        console.warn("Login response from backend:", data);
+        const serverError = data.error || data.message || "";
+        const message = serverError.toLowerCase();
 
-        if (message?.includes("password")) {
+        if (message.includes("patient") && message.includes("gks id")) {
+          toast.error(serverError || "Patients must login with their GKS ID (e.g. GKS_...)");
+        } else if (message.includes("password")) {
           toast.error("Invalid Password!");
         } else if (
-          message?.includes("identifier") ||
-          message?.includes("email") ||
-          message?.includes("phone")
+          message.includes("identifier") ||
+          message.includes("email") ||
+          message.includes("phone")
         ) {
           toast.error("Invalid Email or Phone!");
         } else {
-          toast.error(data.message || "Invalid credentials!");
+          toast.error(serverError || "Invalid credentials!");
         }
       }
     } catch (error) {
