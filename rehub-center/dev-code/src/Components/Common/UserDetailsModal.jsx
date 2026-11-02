@@ -36,7 +36,18 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
       const userCopy = { ...propUser };
       if (userCopy.relative_contacts && typeof userCopy.relative_contacts === "string") {
         try {
-          userCopy.relative_contacts = JSON.parse(userCopy.relative_contacts);
+          const parsed = JSON.parse(userCopy.relative_contacts);
+          const localSaved = JSON.parse(
+            localStorage.getItem(`gks_user_relative_contacts_${userCopy.id || userCopy.user_id}`) || "[]"
+          );
+          userCopy.relative_contacts = parsed.map((c) => {
+            const matched = localSaved.find((ls) => ls.phone === c.phone);
+            const isWa =
+              c.is_whatsapp ||
+              matched?.is_whatsapp ||
+              (userCopy.whatsapp_no && c.phone && String(c.phone).trim() === String(userCopy.whatsapp_no).trim());
+            return { ...c, is_whatsapp: !!isWa };
+          });
         } catch (e) {
           userCopy.relative_contacts = [];
         }
@@ -104,7 +115,18 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
           typeof userData.relative_contacts === "string"
         ) {
           try {
-            userData.relative_contacts = JSON.parse(userData.relative_contacts);
+            const parsed = JSON.parse(userData.relative_contacts);
+            const localSaved = JSON.parse(
+              localStorage.getItem(`gks_user_relative_contacts_${userData.id || userData.user_id}`) || "[]"
+            );
+            userData.relative_contacts = parsed.map((c) => {
+              const matched = localSaved.find((ls) => ls.phone === c.phone);
+              const isWa =
+                c.is_whatsapp ||
+                matched?.is_whatsapp ||
+                (userData.whatsapp_no && c.phone && String(c.phone).trim() === String(userData.whatsapp_no).trim());
+              return { ...c, is_whatsapp: !!isWa };
+            });
           } catch (e) {
             userData.relative_contacts = [];
           }

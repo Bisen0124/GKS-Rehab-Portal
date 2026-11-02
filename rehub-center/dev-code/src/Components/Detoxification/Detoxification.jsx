@@ -233,6 +233,8 @@ const customTableStyles = {
       paddingRight: "12px",
       whiteSpace: "nowrap",
       wordBreak: "keep-all",
+      overflow: "visible",
+      textOverflow: "unset",
     },
   },
   cells: {
@@ -939,7 +941,7 @@ const Detoxification = () => {
             onClick={() => handleViewUserDetails(row.id)}
             title={getTranslation("View Patient / देखना", lang)}
           >
-            <Eye size={16} />
+            <Eye size={16} color="#475569" strokeWidth={2.2} />
           </button>
 
           <Button
@@ -961,11 +963,11 @@ const Detoxification = () => {
   // Columns for Detoxification Assessments Table
   const tableColumnsAssessments = [
     {
-      name: getTranslation("Detox ID / आईडी", lang),
+      name: <span style={{ whiteSpace: "nowrap", display: "inline-block" }}>{getTranslation("Detox ID / आईडी", lang)}</span>,
       selector: (row) => row.detox_id || row.id,
       sortable: true,
       center: true,
-      minWidth: "115px",
+      minWidth: "125px",
       cell: (row) => (
         <span
           className="badge bg-light text-dark border px-2 py-1.5 fw-bold"
@@ -1024,6 +1026,7 @@ const Detoxification = () => {
               backgroundColor: sev.badgeBg,
               border: `1px solid ${sev.badgeBorder}`,
               maxWidth: "100%",
+              whiteSpace: "nowrap",
             }}
           >
             <span
@@ -1146,7 +1149,7 @@ const Detoxification = () => {
               title={getTranslation("View Assessment / देखना", lang)}
               onClick={() => handleOpenViewModal(detoxId)}
             >
-              <Eye size={16} />
+              <Eye size={16} color="#166534" strokeWidth={2.2} />
             </button>
             <button
               type="button"
@@ -1168,7 +1171,7 @@ const Detoxification = () => {
               title={getTranslation("Edit Assessment / संपादित करें", lang)}
               onClick={() => handleOpenEditModal(detoxId)}
             >
-              <Edit2 size={16} />
+              <Edit2 size={16} color="#059669" strokeWidth={2.2} />
             </button>
             <button
               type="button"
@@ -1190,7 +1193,7 @@ const Detoxification = () => {
               title={getTranslation("Delete Assessment / हटाएं", lang)}
               onClick={() => handleDeleteAssessment(detoxId, patientName)}
             >
-              <Trash2 size={16} />
+              <Trash2 size={16} color="#dc2626" strokeWidth={2.2} />
             </button>
           </div>
         );

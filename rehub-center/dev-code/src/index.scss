@@ -722,10 +722,19 @@ button.btn-primary,
   transition: all 0.18s ease-in-out !important;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
   line-height: 1 !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
 
   svg {
     pointer-events: none;
     flex-shrink: 0;
+    width: 16px !important;
+    height: 16px !important;
+    display: block !important;
+    margin: auto !important;
+    stroke: currentColor !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   &.view,
@@ -733,11 +742,20 @@ button.btn-primary,
     background-color: #f0fdf4 !important;
     border: 1px solid #bbf7d0 !important;
     color: #166534 !important;
+
+    svg {
+      stroke: #166534 !important;
+    }
+
     &:hover {
       background-color: #dcfce7 !important;
       border-color: #86efac !important;
       color: #14532d !important;
       transform: translateY(-1px);
+
+      svg {
+        stroke: #14532d !important;
+      }
     }
   }
 
@@ -746,11 +764,20 @@ button.btn-primary,
     background-color: #ecfdf5 !important;
     border: 1px solid #a7f3d0 !important;
     color: #059669 !important;
+
+    svg {
+      stroke: #059669 !important;
+    }
+
     &:hover {
       background-color: #d1fae5 !important;
       border-color: #6ee7b7 !important;
       color: #047857 !important;
       transform: translateY(-1px);
+
+      svg {
+        stroke: #047857 !important;
+      }
     }
   }
 
@@ -759,11 +786,20 @@ button.btn-primary,
     background-color: #fef2f2 !important;
     border: 1px solid #fecaca !important;
     color: #dc2626 !important;
+
+    svg {
+      stroke: #dc2626 !important;
+    }
+
     &:hover {
       background-color: #fee2e2 !important;
       border-color: #fca5a5 !important;
       color: #b91c1c !important;
       transform: translateY(-1px);
+
+      svg {
+        stroke: #b91c1c !important;
+      }
     }
   }
 
@@ -772,11 +808,20 @@ button.btn-primary,
     background-color: #f8fafc !important;
     border: 1px solid #e2e8f0 !important;
     color: #475569 !important;
+
+    svg {
+      stroke: #475569 !important;
+    }
+
     &:hover {
       background-color: #f1f5f9 !important;
       border-color: #cbd5e1 !important;
       color: #1e293b !important;
       transform: translateY(-1px);
+
+      svg {
+        stroke: #1e293b !important;
+      }
     }
   }
 }

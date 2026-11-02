@@ -82,14 +82,32 @@ function Register() {
   const [isWardsLoading, setIsWardsLoading] = useState(false);
   const [wardModalOpen, setWardModalOpen] = useState(false);
 
+  // User data table data & search state (declared at top level)
+  const [data, setData] = useState([]);
+  const [searchText, setSearchText] = useState("");
+  const [filteredData, setFilteredData] = useState([]);
+  const token = localStorage.getItem("Authorization");
+
+  // Email duplicate check helper for patient relative email
+  const isEmailAlreadyUsed = useCallback(
+    (testEmail) => {
+      if (!testEmail || typeof testEmail !== "string" || !testEmail.trim()) return false;
+      const normalized = testEmail.trim().toLowerCase();
+      return (data || []).some(
+        (u) => u.email && typeof u.email === "string" && u.email.trim().toLowerCase() === normalized
+      );
+    },
+    [data]
+  );
+
   //Patient file upload 
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [error, setError] = useState("");
   const [imageOptimizationInfo, setImageOptimizationInfo] = useState(null);
 
-  // Client-side image compressor & optimizer: Resizes and compresses images to <200KB for lightning-fast uploads
-  const compressImageFile = (file, maxWidth = 800, quality = 0.82) => {
+  // Client-side image compressor & optimizer: Resizes and compresses images to <60KB for ultra-fast uploads
+  const compressImageFile = (file, maxWidth = 600, quality = 0.75) => {
     return new Promise((resolve) => {
       if (!file || !file.type.startsWith("image/")) {
         return resolve(file);
@@ -311,6 +329,7 @@ function Register() {
   //loading
   const [isLoading, setIsLoading] = useState(false);
   const [isRegisterSubmitting, setIsRegisterSubmitting] = useState(false);
+  const [submitStatusMessage, setSubmitStatusMessage] = useState("");
 
   //email error state
   const [emailError, setEmailError] = useState("");
@@ -509,77 +528,200 @@ function Register() {
       return;
     }
   
+    // ✅ Submit registration with auto-recovery and email fallback
+    executeRegistrationSubmission(formData);
+  };
+
+  // ✅ Auto-verification: Check if the patient was created on the backend (prevents false timeouts & duplicates)
+  const verifyPatientRegistrationOnServer = async (targetBranch, patientPhone, patientName) => {
+    try {
+      const authToken = localStorage.getItem("Authorization");
+      const branchParam = targetBranch ? `?branch_id=${targetBranch}` : "";
+      const res = await fetch(`https://gks-yjdc.onrender.com/api/users${branchParam}`, {
+        method: "GET",
+        headers: {
+          Authorization: `${authToken}`,
+        },
+      });
+      if (!res.ok) return null;
+      const resJson = await res.json();
+      const userList = Array.isArray(resJson?.data) ? resJson.data : [];
+
+      const cleanPhone = String(patientPhone || "").trim();
+      const cleanName = String(patientName || "").trim().toLowerCase();
+
+      // Priority 1: Match by phone number
+      if (cleanPhone) {
+        const byPhone = userList.find((u) => String(u.phone || "").trim() === cleanPhone);
+        if (byPhone) return byPhone;
+      }
+
+      // Priority 2: Match by exact patient name
+      if (cleanName) {
+        const byName = userList.find(
+          (u) => String(u.name || "").trim().toLowerCase() === cleanName
+        );
+        if (byName) return byName;
+      }
+
+      return null;
+    } catch (err) {
+      console.warn("Failed to verify patient registration on server:", err);
+      return null;
+    }
+  };
+
+  // ✅ Common registration success handler
+  const handleRegistrationSuccess = (createdUser = {}) => {
+    const createdUserId = createdUser?.id || createdUser?.user_id;
+    if (createdUserId) {
+      try {
+        localStorage.setItem(
+          `gks_user_relative_contacts_${createdUserId}`,
+          JSON.stringify(formData.relative_contacts)
+        );
+      } catch {
+        // ignore storage errors
+      }
+    }
+
+    Swal.fire({
+      title: getTranslation("Good job!/अच्छा काम!", lang),
+      text: getTranslation("Registration successful!/सफल पंजीकरण!", lang),
+      icon: "success",
+      confirmButtonText: getTranslation("OK / ठीक है", lang),
+    }).then(() => {
+      clearDraft("patient_registration", "new");
+      setDraftTimestamp(null);
+      setModal(false);
+
+      // ✅ Reset form including files
+      setFormData(initialFormData);
+      setPasswordError("");
+      setEmailError("");
+
+      // ✅ Reset file upload states too
+      setImage(null);
+      setPreview(null);
+      setAdmissionForm(null);
+      setAdmissionFormName("");
+
+      fetchUsers();
+    });
+  };
+
+  // ✅ Robust submission executor with 120s timeout, live progress messages, and optional email fallback
+  const executeRegistrationSubmission = async (formToSubmit) => {
     setIsRegisterSubmitting(true);
-  
+    setSubmitStatusMessage(getTranslation("Registering Patient... / रोगी पंजीकरण हो रहा है...", lang));
+
+    // Dynamic progress updates while waiting for Render wake-up & Cloudinary uploads
+    const progressTimer1 = setTimeout(() => {
+      setSubmitStatusMessage(
+        getTranslation("Uploading Patient Documents & Profile... / रोगी दस्तावेज़ और प्रोफ़ाइल अपलोड हो रहे हैं...", lang)
+      );
+    }, 7000);
+
+    const progressTimer2 = setTimeout(() => {
+      setSubmitStatusMessage(
+        getTranslation("Connecting to Server & Securing Records... / सर्वर से कनेक्ट हो रहा है...", lang)
+      );
+    }, 20000);
+
+    const progressTimer3 = setTimeout(() => {
+      setSubmitStatusMessage(
+        getTranslation("Finalizing Registration (Render waking up)... / पंजीकरण पूरा हो रहा है...", lang)
+      );
+    }, 40000);
+
+    const clearAllProgressTimers = () => {
+      clearTimeout(progressTimer1);
+      clearTimeout(progressTimer2);
+      clearTimeout(progressTimer3);
+    };
+
     const formatDate = (date) => {
       return date instanceof Date && !isNaN(date.getTime())
         ? date.toISOString().split("T")[0]
         : date || "";
     };
-  
+
     try {
       const branch_id = branchId;
-      const token = localStorage.getItem("Authorization");
-  
-      // ✅ Create FormData instead of JSON
+      const authToken = localStorage.getItem("Authorization");
+
+      // ✅ Create FormData for multipart upload
       const payload = new FormData();
-  
-      payload.append("date_of_admission", formatDate(formData.date_of_admission));
-      payload.append("name", formData.patientName);
-      if (formData.email && formData.email.trim()) {
-        payload.append("email", formData.email.trim());
+      payload.append("date_of_admission", formatDate(formToSubmit.date_of_admission));
+      payload.append("name", formToSubmit.patientName);
+
+      // Email is optional for patients: only append if non-empty
+      if (formToSubmit.email && formToSubmit.email.trim()) {
+        payload.append("email", formToSubmit.email.trim());
       }
-      payload.append("relative_name", formData.patientRelativeName);
-      payload.append("phone", formData.phone);
-      payload.append("gender", formData.gender);
-      payload.append("dob", formatDate(formData.dob));
-      payload.append("address", formData.address);
-      payload.append("password", formData.password);
-      payload.append("whatsapp_no", formData.whatsapp_no || "");
-      payload.append("isRole", 4);
-      payload.append("ward_type_id", formData.ward_type_id || "");
-      payload.append("ward_name", formData.ward_name || "");
-      payload.append("secondary_phone", formData.secondary_phone || "");
-  
-      // ✅ New fields (send empty if not available)
-      const cleanedRelativeContacts = formData.relative_contacts.filter(
-        (c) => (c.name && c.name.trim()) || (c.phone && c.phone.trim())
+
+      payload.append("relative_name", formToSubmit.patientRelativeName);
+      payload.append("phone", formToSubmit.phone);
+      payload.append("gender", formToSubmit.gender);
+      payload.append("dob", formatDate(formToSubmit.dob));
+      payload.append("address", formToSubmit.address);
+      payload.append("password", formToSubmit.password);
+
+      // Set WhatsApp number from primary or relative contact with WhatsApp enabled
+      const waContact = (formToSubmit.relative_contacts || []).find(
+        (c) => c.is_whatsapp && c.phone && c.phone.trim()
       );
+      const effectiveWhatsAppNo = formToSubmit.whatsapp_no || (waContact ? waContact.phone.trim() : "");
+      payload.append("whatsapp_no", effectiveWhatsAppNo);
+      payload.append("isRole", 4);
+      payload.append("ward_type_id", formToSubmit.ward_type_id || "");
+      payload.append("ward_name", formToSubmit.ward_name || "");
+      payload.append("secondary_phone", formToSubmit.secondary_phone || "");
+
+      // Clean relative contacts: backend Joi strictly allows only { name, phone }
+      const cleanedRelativeContacts = (formToSubmit.relative_contacts || [])
+        .filter((c) => (c.name && c.name.trim()) || (c.phone && c.phone.trim()))
+        .map((c) => ({
+          name: c.name ? c.name.trim() : "",
+          phone: c.phone ? c.phone.trim() : "",
+        }));
       payload.append("relative_contacts", JSON.stringify(cleanedRelativeContacts));
-      payload.append("relative_address", formData.relativeaddress || "");
-      payload.append("relation_with_patient", formData.relation_with_patient || "");
-  
-      // ✅ File uploads
+      payload.append("relative_address", formToSubmit.relativeaddress || "");
+      payload.append("relation_with_patient", formToSubmit.relation_with_patient || "");
+
+      // File uploads
       if (image) {
         payload.append("profile_pic", image);
       } else {
         payload.append("profile_pic", "");
       }
-  
+
       if (admissionForm) {
         payload.append("admission_form_url", admissionForm);
       } else {
         payload.append("admission_form_url", "");
       }
-  
+
+      // 120-second timeout to handle Render cold boot + Cloudinary dual file uploads
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000);
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
 
       const response = await fetch(
         `https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`,
         {
           method: "POST",
           headers: {
-            Authorization: `${token}`, // ❗ DO NOT set Content-Type manually
+            Authorization: `${authToken}`,
           },
           body: payload,
           signal: controller.signal,
         }
       );
       clearTimeout(timeoutId);
-  
+      clearAllProgressTimers();
+
       const result = await response.json();
-  
+
       if (!response.ok) {
         let errorMsg = result.message || result.error || "";
         if (result.details?.stack && typeof result.details.stack === "string") {
@@ -594,15 +736,53 @@ function Register() {
 
         const lowerErr = (errorMsg + " " + (result.error || "") + " " + (result.message || "")).toLowerCase();
 
+        // Check if patient was actually created on backend during a network retry
+        if (
+          (lowerErr.includes("email") && lowerErr.includes("exist")) ||
+          (lowerErr.includes("phone") && lowerErr.includes("exist"))
+        ) {
+          const alreadyCreatedPatient = await verifyPatientRegistrationOnServer(
+            branch_id,
+            formToSubmit.phone,
+            formToSubmit.patientName
+          );
+
+          if (alreadyCreatedPatient) {
+            handleRegistrationSuccess(alreadyCreatedPatient);
+            return;
+          }
+        }
+
         if (lowerErr.includes("email") && lowerErr.includes("exist")) {
+          // Email is optional: Offer immediate option to register without email!
           Swal.fire({
             icon: "warning",
-            title: getTranslation(
-              "Email is already exists/ईमेल पहले से मौजूद है",
+            title: getTranslation("Email Already Registered / ईमेल पहले से पंजीकृत है", lang),
+            html: `<div style="text-align: left; font-size: 13.5px; line-height: 1.5;">
+              <p style="margin-bottom: 8px;">
+                ${getTranslation("The email", lang)} <b>${formToSubmit.email}</b> ${getTranslation(
+              "is already registered with another account in the system.",
               lang
-            ),
-            text: getTranslation("This email address is already registered. / यह ईमेल पहले से पंजीकृत है।", lang),
-            confirmButtonText: getTranslation("OK / ठीक है", lang),
+            )}
+              </p>
+              <p style="color: #64748b; margin-bottom: 0;">
+                ${getTranslation(
+                  "Since email is optional for patient registration, would you like to register this patient without this email?",
+                  lang
+                )}
+              </p>
+            </div>`,
+            showCancelButton: true,
+            confirmButtonColor: "#22c55e",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: getTranslation("Register Without Email / बिना ईमेल के रजिस्टर करें", lang),
+            cancelButtonText: getTranslation("Change Email / ईमेल बदलें", lang),
+          }).then((choice) => {
+            if (choice.isConfirmed) {
+              const updatedForm = { ...formToSubmit, email: "" };
+              setFormData(updatedForm);
+              executeRegistrationSubmission(updatedForm);
+            }
           });
         } else if (lowerErr.includes("phone") && lowerErr.includes("exist")) {
           Swal.fire({
@@ -631,32 +811,24 @@ function Register() {
           showApiErrorAlert(result, lang, getTranslation("Registration Failed / पंजीकरण विफल", lang));
         }
       } else {
-        Swal.fire({
-          title: getTranslation("Good job!/अच्छा काम!", lang),
-          text: getTranslation("Registration successful!/सफल पंजीकरण!", lang),
-          icon: "success",
-          confirmButtonText: getTranslation("OK / ठीक है", lang),
-        }).then(() => {
-          clearDraft("patient_registration", "new");
-          setDraftTimestamp(null);
-          setModal(false);
-  
-          // ✅ Reset form including files
-          setFormData(initialFormData);
-          setPasswordError("");
-          setEmailError("");
-  
-          // ✅ Reset file upload states too
-          setImage(null);
-          setPreview(null);
-          setAdmissionForm(null);
-          setAdmissionFormName("");
-  
-          fetchUsers();
-        });
+        handleRegistrationSuccess(result?.data || {});
       }
     } catch (error) {
+      clearAllProgressTimers();
       console.error("Fetch Error:", error);
+
+      // On timeout (AbortError) or network glitch, verify if the backend actually completed the registration!
+      const alreadyCreatedPatient = await verifyPatientRegistrationOnServer(
+        branchId,
+        formToSubmit.phone,
+        formToSubmit.patientName
+      );
+
+      if (alreadyCreatedPatient) {
+        handleRegistrationSuccess(alreadyCreatedPatient);
+        return;
+      }
+
       if (error.name === "AbortError") {
         Swal.fire({
           icon: "warning",
@@ -679,7 +851,9 @@ function Register() {
         });
       }
     } finally {
+      clearAllProgressTimers();
       setIsRegisterSubmitting(false);
+      setSubmitStatusMessage("");
     }
   };
 
@@ -689,6 +863,18 @@ function Register() {
   const toggle = () => {
     if (!modal) {
       setIsRegisterSubmitting(false);
+      setSubmitStatusMessage("");
+
+      // ✅ Pre-warm the backend on Render in background while user fills the form
+      if (branchId) {
+        fetch(`https://gks-yjdc.onrender.com/api/users?branch_id=${branchId}`, {
+          method: "GET",
+          headers: {
+            Authorization: `${token}`,
+          },
+        }).catch(() => {});
+      }
+
       const saved = loadDraft("patient_registration", "new");
       if (saved && saved.data) {
         setFormData(saved.data);
@@ -696,6 +882,7 @@ function Register() {
       }
     } else {
       setIsRegisterSubmitting(false);
+      setSubmitStatusMessage("");
     }
     setModal(!modal);
   };
@@ -1007,7 +1194,23 @@ function Register() {
         }
       }
       if (!parsedRelativeContacts.length) {
-        parsedRelativeContacts = [{ name: "", phone: "" }];
+        parsedRelativeContacts = [{ name: "", phone: "", is_whatsapp: false }];
+      } else {
+        try {
+          const localSaved = JSON.parse(
+            localStorage.getItem(`gks_user_relative_contacts_${user.user_id || user.id}`) || "[]"
+          );
+          parsedRelativeContacts = parsedRelativeContacts.map((c) => {
+            const matched = localSaved.find((ls) => ls.phone === c.phone);
+            const isWa =
+              c.is_whatsapp ||
+              matched?.is_whatsapp ||
+              (user.whatsapp_no && c.phone && String(c.phone).trim() === String(user.whatsapp_no).trim());
+            return { name: c.name || "", phone: c.phone || "", is_whatsapp: !!isWa };
+          });
+        } catch {
+          // ignore
+        }
       }
 
       // Handle null/undefined safely and set editData
@@ -1078,10 +1281,19 @@ function Register() {
         : date || "";
     };
 
-    // Make sure you match your form fields to the API payload structure
-    const cleanedEditContacts = (editData.relative_contacts || []).filter(
-      (c) => (c.name && c.name.trim()) || (c.phone && c.phone.trim())
+    // ✅ Set WhatsApp number from primary or relative contact with WhatsApp enabled
+    const waEditContact = (editData.relative_contacts || []).find(
+      (c) => c.is_whatsapp && c.phone && c.phone.trim()
     );
+    const effectiveEditWhatsAppNo = editData.whatsapp_no || (waEditContact ? waEditContact.phone.trim() : "");
+
+    // Clean relative contacts: backend Joi strictly allows only { name, phone }
+    const cleanedEditContacts = (editData.relative_contacts || [])
+      .filter((c) => (c.name && c.name.trim()) || (c.phone && c.phone.trim()))
+      .map((c) => ({
+        name: c.name ? c.name.trim() : "",
+        phone: c.phone ? c.phone.trim() : "",
+      }));
 
     const updatedData = new FormData();
     updatedData.append("name", editData.name || "");
@@ -1092,7 +1304,7 @@ function Register() {
     updatedData.append("dob", formatDate(editData.dob));
     updatedData.append("phone", editData.phone || "");
     updatedData.append("secondary_phone", editData.secondary_phone || "");
-    updatedData.append("whatsapp_no", editData.whatsapp_no || "");
+    updatedData.append("whatsapp_no", effectiveEditWhatsAppNo);
     updatedData.append("isRole", editData.is_role || "");
     updatedData.append("relative_address", editData.relativeaddress || "");
     updatedData.append("relation_with_patient", editData.relation_with_patient || "");
@@ -1123,6 +1335,16 @@ function Register() {
       );
 
       if (response.ok) {
+        if (editData?.id) {
+          try {
+            localStorage.setItem(
+              `gks_user_relative_contacts_${editData.id}`,
+              JSON.stringify(editData.relative_contacts)
+            );
+          } catch {
+            // ignore
+          }
+        }
         // Show success SweetAlert
         Swal.fire({
           title: getTranslation("Good job!/अच्छा काम!",lang),
@@ -1152,15 +1374,7 @@ function Register() {
     }
   };
 
-  //User data table data
-  const [data, setData] = useState([]);
-  //Search filter on register datalist
-  const [searchText, setSearchText] = useState("");
-  const [filteredData, setFilteredData] = useState([]);
-
   // ✅ Fetching user data from API
-  // ✅ Token outside useEffect so it's always accessible
-  const token = localStorage.getItem("Authorization");
 
   // ✅ Step 1: Move this into a reusable function
   const [stillLoading, setstillLoading] = useState(true);
@@ -2065,16 +2279,24 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     setEmailError(
                       value &&
                         !/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(value)
-                        ? "Please enter a valid email address"
+                        ? getTranslation("Please enter a valid email address / कृपया एक वैध ईमेल पता दर्ज करें", lang)
                         : ""
                     );
                   }}
-                  placeholder={getTranslation("Enter Email Address / ईमेल पता दर्ज करें", lang)}
+                  placeholder={getTranslation("Enter Email Address (Optional) / ईमेल पता दर्ज करें (वैकल्पिक)", lang)}
                   className="form-control"
                   style={{ borderRadius: "8px", height: "40px" }}
                 />
-                {emailError && (
+                {emailError ? (
                   <small className="text-danger d-block mt-1">{emailError}</small>
+                ) : isEmailAlreadyUsed(formData.email) ? (
+                  <small className="text-warning d-block mt-1 fw-medium" style={{ fontSize: "11.5px" }}>
+                    ⚠️ {getTranslation("This email is already in use by another user. Since email is optional, you can leave it blank or use a different email. / यह ईमेल पहले से उपयोग में है। चूँकि ईमेल वैकल्पिक है, आप इसे खाली छोड़ सकते हैं।", lang)}
+                  </small>
+                ) : (
+                  <small className="text-muted d-block mt-1" style={{ fontSize: "11px" }}>
+                    {getTranslation("Optional: Leave blank if patient relative does not have an email. / वैकल्पिक: यदि संबंधी के पास ईमेल नहीं है तो खाली छोड़ दें।", lang)}
+                  </small>
                 )}
               </div>
 
@@ -2564,13 +2786,13 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   borderColor: "#d56337",
                   fontWeight: "600",
                   padding: "8px 24px",
-                  minWidth: "160px",
+                  minWidth: "180px",
                 }}
               >
                 {isRegisterSubmitting ? (
                   <>
                     <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                    {getTranslation("Registering... / पंजीकरण हो रहा है...", lang)}
+                    {submitStatusMessage || getTranslation("Registering... / पंजीकरण हो रहा है...", lang)}
                   </>
                 ) : (
                   getTranslation("Patient Register / रोगी रजिस्टर", lang)

@@ -68,7 +68,7 @@ const CombinedFormsReport = () => {
       }).then((res) => (res.ok ? res.json() : null)).catch(() => null);
 
       // 2. Fetch Dashboard Summary
-      const summaryPromise = fetch(`${BASE_URL}/api/dashboard/summary?branch_id=${branchId}`, {
+      const summaryPromise = fetch(`${BASE_URL}/api/dashboard?branch_id=${branchId}`, {
         method: "GET",
         headers,
       }).then((res) => (res.ok ? res.json() : null)).catch(() => null);

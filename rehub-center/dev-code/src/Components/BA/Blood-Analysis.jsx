@@ -124,6 +124,8 @@ const customTableStyles = {
       paddingRight: "12px",
       whiteSpace: "nowrap",
       wordBreak: "keep-all",
+      overflow: "visible",
+      textOverflow: "unset",
     },
   },
   cells: {
@@ -684,25 +686,22 @@ const BloodAnalysis = () => {
 
     const handleUploadReportSubmit = async (e) => {
       e.preventDefault();
-      if (!uploadFormData.report_file_path && !uploadFormData.report_file) {
-        toast.warning(getTranslation("Please select a report file / कृपया रिपोर्ट फ़ाइल चुनें", lang));
+      if (!uploadFormData.report_file || !(uploadFormData.report_file instanceof File)) {
+        toast.warning(getTranslation("Please select a valid report file (PDF, JPEG, or PNG, max 10 MB) / कृपया एक मान्य रिपोर्ट फ़ाइल चुनें (अधिकतम 10 MB)", lang));
+        return;
+      }
+      if (uploadFormData.report_file.size > 10 * 1024 * 1024) {
+        toast.error(getTranslation("Report file size exceeds 10 MB limit / फ़ाइल का आकार 10 MB से अधिक है", lang));
         return;
       }
       const obsId = selectedObservationForUpload?.blood_analysis_id || selectedObservationForUpload?.id;
-      const token = localStorage.getItem("Authorization");
+      const token = localStorage.getItem("Authorization") || "";
+      const rawToken = token.startsWith("Bearer ") ? token.slice(7).trim() : token.trim();
       const branch_id = selectedBranch;
 
       try {
         const formDataPayload = new FormData();
-        if (uploadFormData.report_file instanceof File) {
-          formDataPayload.append("report_file", uploadFormData.report_file);
-        } else if (uploadFormData.report_file) {
-          formDataPayload.append("report_file", uploadFormData.report_file);
-        } else {
-          // If only report_file_path exists, create a placeholder blob
-          const dummyBlob = new Blob(["Lab observation report content"], { type: "application/pdf" });
-          formDataPayload.append("report_file", dummyBlob, uploadFormData.report_file_path || "report.pdf");
-        }
+        formDataPayload.append("report_file", uploadFormData.report_file, uploadFormData.report_file.name);
 
         if (uploadFormData.remarks) {
           formDataPayload.append("remarks", uploadFormData.remarks);
@@ -713,8 +712,7 @@ const BloodAnalysis = () => {
           {
             method: "PUT",
             headers: {
-              Authorization: `${token}`,
-              // IMPORTANT: Do NOT set Content-Type header so browser sets multipart/form-data boundary automatically!
+              ...(rawToken ? { Authorization: rawToken } : {}),
             },
             body: formDataPayload,
           }
@@ -725,7 +723,9 @@ const BloodAnalysis = () => {
             `https://gks-yjdc.onrender.com/api/blood-analysis/upload-report/${obsId}?branch_id=${branch_id}`,
             {
               method: "PUT",
-              headers: { Authorization: `${token}` },
+              headers: {
+                ...(rawToken ? { Authorization: rawToken } : {}),
+              },
               body: formDataPayload,
             }
           );
@@ -762,7 +762,10 @@ const BloodAnalysis = () => {
             return;
           }
 
-          showApiErrorAlert(data, lang, getTranslation("Report Upload Failed / रिपोर्ट अपलोड विफल", lang));
+          const detailMsg = Array.isArray(data?.details) && data.details[0]?.message
+            ? data.details[0].message
+            : data?.error || data?.message || getTranslation("Report file is required (PDF, JPEG or PNG, max 10 MB)", lang);
+          toast.error(detailMsg);
           return;
         }
 
@@ -1060,7 +1063,7 @@ const BloodAnalysis = () => {
       {
         name: getTranslation("SLA Tracking / एसएलए स्थिति", lang),
         sortable: true,
-        minWidth: "180px",
+        minWidth: "185px",
         center: true,
         selector: (row) => {
           const sla = getSLAInfo(row);
@@ -1072,10 +1075,16 @@ const BloodAnalysis = () => {
             <Badge
               color={sla.color}
               className="px-2.5 py-1.5 d-inline-flex align-items-center gap-1 shadow-sm"
-              style={{ fontSize: "11px", whiteSpace: "nowrap" }}
+              style={{
+                fontSize: "11px",
+                whiteSpace: "nowrap",
+                maxWidth: "165px",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
             >
               {sla.isOverdue ? <AlertCircle size={12} /> : <Clock size={12} />}
-              <span>{sla.text}</span>
+              <span className="text-truncate">{sla.text}</span>
             </Badge>
           );
         },
@@ -1109,7 +1118,7 @@ const BloodAnalysis = () => {
                 onClick={() => viewBAFormData(row.blood_analysis_id || row.id)}
                 title={getTranslation("View Observation / विवरण देखें", lang)}
               >
-                <Eye size={16} />
+                <Eye size={16} color="#166534" strokeWidth={2.2} />
               </button>
 
               {/* Step 1: Collect Sample (Scheduled) */}
@@ -1122,7 +1131,7 @@ const BloodAnalysis = () => {
                   onClick={() => handleCollectSample(row)}
                   title={getTranslation("Collect Sample (48h SLA) / नमूना एकत्र करें", lang)}
                 >
-                  <Activity size={13} />
+                  <Activity size={13} color="#212529" strokeWidth={2.2} />
                   <span>{getTranslation("Collect Sample", lang)}</span>
                 </Button>
               )}
@@ -1133,11 +1142,11 @@ const BloodAnalysis = () => {
                   color="info"
                   size="sm"
                   className="py-1 px-2.5 d-inline-flex align-items-center gap-1 text-white shadow-sm fw-semibold"
-                  style={{ borderRadius: "7px", fontSize: "12px", height: "32px" }}
+                  style={{ borderRadius: "7px", fontSize: "12px", height: "32px", backgroundColor: "#0284c7", borderColor: "#0284c7" }}
                   onClick={() => handleOpenUploadModal(row)}
                   title={getTranslation("Upload Report (72h SLA) / रिपोर्ट अपलोड करें", lang)}
                 >
-                  <Upload size={13} />
+                  <Upload size={13} color="#ffffff" strokeWidth={2.2} />
                   <span>{getTranslation("Upload Report", lang)}</span>
                 </Button>
               )}
@@ -1152,7 +1161,7 @@ const BloodAnalysis = () => {
                   onClick={() => handleOpenReviewModal(row)}
                   title={getTranslation("Review Report & Next Follow-up / समीक्षा", lang)}
                 >
-                  <CheckCircle size={13} />
+                  <CheckCircle size={13} color="#ffffff" strokeWidth={2.2} />
                   <span>{getTranslation("Review", lang)}</span>
                 </Button>
               )}
@@ -1179,7 +1188,7 @@ const BloodAnalysis = () => {
                   onClick={() => handleDeleteObservation(row.blood_analysis_id || row.id, row.name)}
                   title={getTranslation("Delete Observation / हटाएं", lang)}
                 >
-                  <Trash2 size={16} />
+                  <Trash2 size={16} color="#dc2626" strokeWidth={2.2} />
                 </button>
               )}
             </div>
@@ -1300,7 +1309,7 @@ const BloodAnalysis = () => {
               title={getTranslation("View Patient / देखना", lang)}
               onClick={() => handleViewUserDetails(row.id)}
             >
-              <Eye size={16} />
+              <Eye size={16} color="#475569" strokeWidth={2.2} />
             </button>
             <Button
               color="primary"
@@ -1493,7 +1502,7 @@ const BloodAnalysis = () => {
                   title={getTranslation("View Observation / विवरण देखें", lang)}
                   onClick={() => handleViewPatientObservation(row)}
                 >
-                  <Eye size={16} />
+                  <Eye size={16} color="#475569" strokeWidth={2.2} />
                 </button>
               )}
 
@@ -1707,9 +1716,10 @@ const BloodAnalysis = () => {
 
      // Helper to auto-provision Item Type "Medical Observations" and standard items if missing in branch
      const ensureMedicalObservationPackages = async (branchId, token) => {
+       const rawToken = token ? (token.startsWith("Bearer ") ? token.slice(7).trim() : token.trim()) : "";
        const authHeaders = {
          "Content-Type": "application/json",
-         Authorization: `${token}`,
+         ...(rawToken ? { Authorization: rawToken } : {}),
        };
 
        try {
@@ -1727,12 +1737,16 @@ const BloodAnalysis = () => {
          let json = await res?.json().catch(() => null);
          let list = Array.isArray(json?.data) ? json.data : Array.isArray(json) ? json : [];
          if (list.length > 0) {
-           return list.map((item) => ({
-             package_type_id: item.package_type_id || item.item_id || item.id,
+           const mapped = list.map((item) => ({
+             package_type_id: Number(item.package_type_id || item.item_id || item.id),
              package_name: item.package_name || item.item_name || item.name,
-             original_amount: item.original_amount || item.amount || item.price,
+             original_amount: Number(item.original_amount || item.amount || item.price) || 0,
              package_description: item.package_description || item.description || "",
            }));
+           try {
+             localStorage.setItem(`gks_med_packages_${branchId}`, JSON.stringify(mapped));
+           } catch (e) {}
+           return mapped;
          }
 
          // 2. Fetch all item types to find "Medical Observations"
@@ -1747,14 +1761,14 @@ const BloodAnalysis = () => {
            ).catch(() => null);
          }
          const typesJson = await typesRes?.json().catch(() => null);
-         const typesList = Array.isArray(typesJson?.data) ? typesJson.data : Array.isArray(typesJson) ? typesJson : [];
+         let typesList = Array.isArray(typesJson?.data) ? typesJson.data : Array.isArray(typesJson) ? typesJson : [];
 
          let medType = typesList.find(
            (t) => (t.item_type_name || t.name || "").toLowerCase().trim() === "medical observations"
          );
 
          // If not found, create "Medical Observations" item type
-         if (!medType) {
+         if (!medType || !medType.id) {
            const createTypeRes = await fetch(
              `https://gks-yjdc.onrender.com/api/item-types?branch_id=${branchId}`,
              {
@@ -1764,7 +1778,20 @@ const BloodAnalysis = () => {
              }
            ).catch(() => null);
            const createdTypeJson = await createTypeRes?.json().catch(() => null);
-           medType = createdTypeJson?.data || createdTypeJson;
+           if (createTypeRes?.ok && (createdTypeJson?.data?.id || createdTypeJson?.id)) {
+             medType = createdTypeJson.data || createdTypeJson;
+           } else {
+             // Re-check all item types in case it already existed (409)
+             const recheck = await fetch(
+               `https://gks-yjdc.onrender.com/api/item-types/all?branch_id=${branchId}`,
+               { method: "GET", headers: authHeaders }
+             ).catch(() => null);
+             const recheckJson = await recheck?.json().catch(() => null);
+             const recheckList = Array.isArray(recheckJson?.data) ? recheckJson.data : Array.isArray(recheckJson) ? recheckJson : [];
+             medType = recheckList.find(
+               (t) => (t.item_type_name || t.name || "").toLowerCase().includes("medical observation")
+             );
+           }
          }
 
          const typeId = medType?.id || medType?.item_type_id;
@@ -1801,12 +1828,16 @@ const BloodAnalysis = () => {
            const refetchJson = await refetchRes?.json().catch(() => null);
            const refetchList = Array.isArray(refetchJson?.data) ? refetchJson.data : Array.isArray(refetchJson) ? refetchJson : [];
            if (refetchList.length > 0) {
-             return refetchList.map((item) => ({
-               package_type_id: item.package_type_id || item.item_id || item.id,
+             const mapped = refetchList.map((item) => ({
+               package_type_id: Number(item.package_type_id || item.item_id || item.id),
                package_name: item.package_name || item.item_name || item.name,
-               original_amount: item.original_amount || item.amount || item.price,
+               original_amount: Number(item.original_amount || item.amount || item.price) || 0,
                package_description: item.package_description || item.description || "",
              }));
+             try {
+               localStorage.setItem(`gks_med_packages_${branchId}`, JSON.stringify(mapped));
+             } catch (e) {}
+             return mapped;
            }
          }
        } catch (err) {
@@ -1817,17 +1848,26 @@ const BloodAnalysis = () => {
 
      useEffect(() => {
       const fetchPackages = async () => {
-        const token = localStorage.getItem("Authorization");
+        const token = localStorage.getItem("Authorization") || "";
+        const rawToken = token.startsWith("Bearer ") ? token.slice(7).trim() : token.trim();
         const branch_id = selectedBranch;
   
         try {
+          const cached = localStorage.getItem(`gks_med_packages_${branch_id}`);
+          if (cached) {
+            try {
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed) && parsed.length > 0) setPackages(parsed);
+            } catch (e) {}
+          }
+
           let res = await fetch(
             `https://gks-yjdc.onrender.com/api/medical-observations/package-types?branch_id=${branch_id}`,
             {
               method: "GET",
               headers: {
                 "Content-Type": "application/json",
-                Authorization: `${token}`,
+                ...(rawToken ? { Authorization: rawToken } : {}),
               },
             }
           );
@@ -1838,7 +1878,7 @@ const BloodAnalysis = () => {
                 method: "GET",
                 headers: {
                   "Content-Type": "application/json",
-                  Authorization: `${token}`,
+                  ...(rawToken ? { Authorization: rawToken } : {}),
                 },
               }
             );
@@ -1849,15 +1889,18 @@ const BloodAnalysis = () => {
   
           if (list.length > 0) {
             const normalized = list.map(item => ({
-              package_type_id: item.package_type_id || item.item_id || item.id,
+              package_type_id: Number(item.package_type_id || item.item_id || item.id),
               package_name: item.package_name || item.item_name || item.name,
-              original_amount: item.original_amount || item.amount || item.price,
+              original_amount: Number(item.original_amount || item.amount || item.price) || 0,
               package_description: item.package_description || item.description || "",
             }));
             setPackages(normalized);
+            try {
+              localStorage.setItem(`gks_med_packages_${branch_id}`, JSON.stringify(normalized));
+            } catch (e) {}
           } else {
             // Auto-provision if empty
-            const provisioned = await ensureMedicalObservationPackages(branch_id, token);
+            const provisioned = await ensureMedicalObservationPackages(branch_id, rawToken);
             if (provisioned && provisioned.length > 0) {
               setPackages(provisioned);
             } else {
@@ -4030,10 +4073,17 @@ const SubmitBAReadmissionFormHandler = async (e) => {
               </Label>
               <Input
                 type="file"
+                id="modalReportFileInput"
                 accept=".pdf,.png,.jpg,.jpeg"
+                required
                 onChange={(e) => {
                   const file = e.target.files[0];
                   if (file) {
+                    if (file.size > 10 * 1024 * 1024) {
+                      toast.error(getTranslation("Report file size exceeds 10 MB limit / फ़ाइल का आकार 10 MB से अधिक है", lang));
+                      e.target.value = "";
+                      return;
+                    }
                     setUploadFormData((prev) => ({
                       ...prev,
                       report_file: file,
