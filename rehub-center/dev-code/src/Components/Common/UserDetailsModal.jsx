@@ -179,6 +179,8 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
         return "BranchOperator";
       case 4:
         return getTranslation("Patient/मरीज़", lang);
+      case 5:
+        return "LabOperator";
       default:
         return "User";
     }

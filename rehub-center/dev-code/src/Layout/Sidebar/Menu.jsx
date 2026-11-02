@@ -86,7 +86,7 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
-        "title": "Blood Analysis/रक्त विश्लेषण",
+        "title": "Medical Observations/चिकित्सा अवलोकन",
         "icon": "icon-class",
         "type": "link",
         "path": `${process.env.PUBLIC_URL}/BA/Blood-Analysis`
@@ -190,8 +190,19 @@ export const MENUITEMS = [
       {
         "title": "Settings/सेटिंग्स",
         "icon": "icon-class",
-        "type": "link",
-        "path": `${process.env.PUBLIC_URL}/settings`
+        "type": "sub",
+        "path": `${process.env.PUBLIC_URL}/settings`,
+        children: [
+          { path: `${process.env.PUBLIC_URL}/settings/branch-admins`, title: "Branch Admins/शाखा व्यवस्थापक", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/settings/branches`, title: "Branch Management/शाखा प्रबंधन", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/settings/branch-operators`, title: "Branch Operators/शाखा ऑपरेटर", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/settings/detox-substances`, title: "Detox Substances/डिटॉक्स पदार्थ", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/settings/detox-parameters`, title: "Assessment Parameters/मूल्यांकन पैरामीटर", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/settings/detox-severity`, title: "Severity Benchmarks/गंभीरता बेंचमार्क", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/settings/patient-billing`, title: "Patient Billing/मरीज बिलिंग", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/settings/items-master`, title: "Bill Items Master/बिल आइटम मास्टर", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/settings/item-types`, title: "Bill Item Types/आइटम प्रकार", type: "link" },
+        ],
       }
     ]
   },

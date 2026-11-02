@@ -185,7 +185,7 @@ import GenFamily from '../Components/Gen-Family/genFamily';
 //Registration
 import Register from "../Components/registeration/register";
 //FPA
-import FPA from '../Components/FPA/First-Physical-Assessment';
+// import FPA from '../Components/FPA/First-Physical-Assessment';
 //FE
 import FE from '../Components/FE/First-Examination';
 //BA
@@ -227,9 +227,14 @@ import CombinedFormsReport from "../Components/Reports/CombinedFormsReport";
 
 //Global Settings
 import GlobalSettings from "../Components/Settings/GlobalSettings";
+import DetoxSubstances from "../Components/Settings/DetoxSubstances";
+import DetoxParameters from "../Components/Settings/DetoxParameters";
+import DetoxSeverity from "../Components/Settings/DetoxSeverity";
 
-//Patient Billing
+//Patient Billing & Accounting
 import PatientBilling from "../Components/Billing/PatientBilling";
+import BillItemTypes from "../Components/Billing/BillItemTypes";
+import BillItemsMaster from "../Components/Billing/BillItemsMaster";
 
 
 
@@ -477,11 +482,24 @@ export const routes = [
       { path: `${process.env.PUBLIC_URL}/Reports/Combined-Forms-Report`, Component : <CombinedFormsReport/>},
       { path: `${process.env.PUBLIC_URL}/Reports/PFA-Report`, Component : <CombinedFormsReport/>},
 
-      //Global Settings
+      //Global Settings & Administration
       { path: `${process.env.PUBLIC_URL}/settings`, Component : <GlobalSettings/>},
+      { path: `${process.env.PUBLIC_URL}/settings/branch-admins`, Component: <GlobalSettings initialTab="branch_admins" /> },
+      { path: `${process.env.PUBLIC_URL}/settings/branches`, Component: <GlobalSettings initialTab="branches" /> },
+      { path: `${process.env.PUBLIC_URL}/settings/branch-operators`, Component: <GlobalSettings initialTab="branch_operators" /> },
+      { path: `${process.env.PUBLIC_URL}/settings/detox-substances`, Component: <DetoxSubstances /> },
+      { path: `${process.env.PUBLIC_URL}/settings/detox-parameters`, Component: <DetoxParameters /> },
+      { path: `${process.env.PUBLIC_URL}/settings/detox-severity`, Component: <DetoxSeverity /> },
 
-      //Patient Billing
+      //Settings - Billing Sub-modules
+      { path: `${process.env.PUBLIC_URL}/settings/patient-billing`, Component: <PatientBilling /> },
+      { path: `${process.env.PUBLIC_URL}/settings/items-master`, Component: <BillItemsMaster /> },
+      { path: `${process.env.PUBLIC_URL}/settings/item-types`, Component: <BillItemTypes /> },
+
+      //Billing & Accounting aliases
       { path: `${process.env.PUBLIC_URL}/billing/patient-billing`, Component: <PatientBilling /> },
+      { path: `${process.env.PUBLIC_URL}/billing/items-master`, Component: <BillItemsMaster /> },
+      { path: `${process.env.PUBLIC_URL}/billing/item-types`, Component: <BillItemTypes /> },
       { path: `${process.env.PUBLIC_URL}/billing`, Component: <PatientBilling /> },
 
 

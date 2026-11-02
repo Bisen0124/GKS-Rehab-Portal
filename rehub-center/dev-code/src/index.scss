@@ -707,6 +707,80 @@ button.btn-primary,
   }
 }
 
+/* Action Table Icon Buttons (View, Edit, Delete, Neutral) */
+.btn-action-icon {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 7px !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease-in-out !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+  line-height: 1 !important;
+
+  svg {
+    pointer-events: none;
+    flex-shrink: 0;
+  }
+
+  &.view,
+  &.btn-action-view {
+    background-color: #f0fdf4 !important;
+    border: 1px solid #bbf7d0 !important;
+    color: #166534 !important;
+    &:hover {
+      background-color: #dcfce7 !important;
+      border-color: #86efac !important;
+      color: #14532d !important;
+      transform: translateY(-1px);
+    }
+  }
+
+  &.edit,
+  &.btn-action-edit {
+    background-color: #ecfdf5 !important;
+    border: 1px solid #a7f3d0 !important;
+    color: #059669 !important;
+    &:hover {
+      background-color: #d1fae5 !important;
+      border-color: #6ee7b7 !important;
+      color: #047857 !important;
+      transform: translateY(-1px);
+    }
+  }
+
+  &.delete,
+  &.btn-action-delete {
+    background-color: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    color: #dc2626 !important;
+    &:hover {
+      background-color: #fee2e2 !important;
+      border-color: #fca5a5 !important;
+      color: #b91c1c !important;
+      transform: translateY(-1px);
+    }
+  }
+
+  &.neutral,
+  &.btn-action-neutral {
+    background-color: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #475569 !important;
+    &:hover {
+      background-color: #f1f5f9 !important;
+      border-color: #cbd5e1 !important;
+      color: #1e293b !important;
+      transform: translateY(-1px);
+    }
+  }
+}
+
 .modal .common__info__header{
 background-color: #ffffff !important;
 }

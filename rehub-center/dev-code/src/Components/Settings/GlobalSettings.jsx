@@ -20,6 +20,7 @@ import {
   Spinner,
   Table,
 } from "reactstrap";
+import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
 import {
@@ -42,19 +43,12 @@ import {
   Mail,
   MapPin,
   Calendar,
-  Layers,
-  FileText,
-  CreditCard,
 } from "react-feather";
 
 import HeaderCard from "../Common/Component/HeaderCard";
 import { useBranch } from "../../contexts/BranchContext";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
-import BillingSettings from "./BillingSettings";
-import PatientBilling from "../Billing/PatientBilling";
-import { getItemTypes, getItemsMaster } from "../../Services/billingMasterService";
-import { getAllBills } from "../../Services/patientBillingService";
 
 import {
   DEFAULT_CENTER,
@@ -76,9 +70,11 @@ import {
   toggleBranchOperatorStatus,
 } from "../../Services/adminManagementService";
 
-const GlobalSettings = () => {
+const GlobalSettings = ({ initialTab }) => {
   const { lang } = useLang();
   const { selectedBranch } = useBranch();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // Role detection from logged in session
   const storedRoleType = localStorage.getItem("isRoleType") || "SuperAdmin";
@@ -88,27 +84,27 @@ const GlobalSettings = () => {
   const currentBranchName = branchDetail[0]?.Branch_name || "";
 
   // Tab State
-  const [activeTab, setActiveTab] = useState(isSuperAdmin ? "branch_admins" : "branch_operators");
-  const [billingTypeFilter, setBillingTypeFilter] = useState("all");
+  const resolveTab = useCallback(() => {
+    if (!isSuperAdmin) return "branch_operators";
+    if (initialTab) return initialTab;
+    const path = (location.pathname || "").toLowerCase();
+    if (path.includes("branch-admin")) return "branch_admins";
+    if (path.includes("branch-operator")) return "branch_operators";
+    if (path.includes("branche")) return "branches";
+    return "branch_admins";
+  }, [initialTab, isSuperAdmin, location.pathname]);
+
+  const [activeTab, setActiveTab] = useState(resolveTab);
+
+  useEffect(() => {
+    setActiveTab(resolveTab());
+  }, [resolveTab]);
 
   // Data states
   const [branches, setBranches] = useState([]);
   const [isBranchesLoading, setIsBranchesLoading] = useState(false);
   const [branchAdmins, setBranchAdmins] = useState([]);
   const [branchOperators, setBranchOperators] = useState([]);
-
-  // Counts for Billing Tabs
-  const itemTypesCount = useMemo(() => {
-    return getItemTypes(isSuperAdmin ? null : selectedBranch).length;
-  }, [isSuperAdmin, selectedBranch]);
-
-  const itemsMasterCount = useMemo(() => {
-    return getItemsMaster(isSuperAdmin ? null : selectedBranch).length;
-  }, [isSuperAdmin, selectedBranch]);
-
-  const patientBillsCount = useMemo(() => {
-    return getAllBills().length;
-  }, []);
 
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
@@ -727,7 +723,10 @@ const GlobalSettings = () => {
                   marginBottom: "-1px",
                   transition: "all 0.15s ease",
                 }}
-                onClick={() => setActiveTab("branch_admins")}
+                onClick={() => {
+                  setActiveTab("branch_admins");
+                  navigate(`${process.env.PUBLIC_URL}/settings/branch-admins`);
+                }}
               >
                 <Shield size={16} color={activeTab === "branch_admins" ? "#24695c" : "#64748b"} />
                 <span>{getTranslation("Branch Admins / व्यवस्थापक", lang)}</span>
@@ -756,7 +755,10 @@ const GlobalSettings = () => {
                   marginBottom: "-1px",
                   transition: "all 0.15s ease",
                 }}
-                onClick={() => setActiveTab("branches")}
+                onClick={() => {
+                  setActiveTab("branches");
+                  navigate(`${process.env.PUBLIC_URL}/settings/branches`);
+                }}
               >
                 <GitBranch size={16} color={activeTab === "branches" ? "#24695c" : "#64748b"} />
                 <span>{getTranslation("Branch Management / शाखाएं (API)", lang)}</span>
@@ -773,121 +775,37 @@ const GlobalSettings = () => {
                 </span>
               </button>
             </>
-          ) : (
-            /* Tab: Branch Operators (BranchAdmin Only) */
-            <button
-              type="button"
-              className="d-flex align-items-center gap-2 border-0 bg-transparent py-3 px-3 fw-bold"
+          ) : null}
+
+          {/* Tab: Branch Operators (Both Roles) */}
+          <button
+            type="button"
+            className="d-flex align-items-center gap-2 border-0 bg-transparent py-3 px-3 fw-bold"
+            style={{
+              cursor: "pointer",
+              fontSize: "13.5px",
+              color: activeTab === "branch_operators" ? "#24695c" : "#64748b",
+              borderBottom: activeTab === "branch_operators" ? "2.5px solid #24695c" : "2.5px solid transparent",
+              marginBottom: "-1px",
+              transition: "all 0.15s ease",
+            }}
+            onClick={() => {
+              setActiveTab("branch_operators");
+              navigate(`${process.env.PUBLIC_URL}/settings/branch-operators`);
+            }}
+          >
+            <Users size={16} color={activeTab === "branch_operators" ? "#24695c" : "#64748b"} />
+            <span>{getTranslation("Branch Operators / शाखा ऑपरेटर", lang)}</span>
+            <span
+              className="rounded-pill ms-1 fw-bold"
               style={{
-                cursor: "pointer",
-                fontSize: "13.5px",
+                fontSize: "11px",
+                padding: "2px 7px",
+                backgroundColor: activeTab === "branch_operators" ? "#e6f4f1" : "#f1f5f9",
                 color: activeTab === "branch_operators" ? "#24695c" : "#64748b",
-                borderBottom: activeTab === "branch_operators" ? "2.5px solid #24695c" : "2.5px solid transparent",
-                marginBottom: "-1px",
-                transition: "all 0.15s ease",
-              }}
-              onClick={() => setActiveTab("branch_operators")}
-            >
-              <Users size={16} color={activeTab === "branch_operators" ? "#24695c" : "#64748b"} />
-              <span>{getTranslation("Branch Operators / शाखा ऑपरेटर", lang)}</span>
-              <span
-                className="rounded-pill ms-1 fw-bold"
-                style={{
-                  fontSize: "11px",
-                  padding: "2px 7px",
-                  backgroundColor: activeTab === "branch_operators" ? "#e6f4f1" : "#f1f5f9",
-                  color: activeTab === "branch_operators" ? "#24695c" : "#64748b",
-                }}
-              >
-                {branchOperators.length}
-              </span>
-            </button>
-          )}
-
-          {/* Tab 3: Bill Item Types (Both Roles) */}
-          <button
-            type="button"
-            className="d-flex align-items-center gap-2 border-0 bg-transparent py-3 px-3 fw-bold"
-            style={{
-              cursor: "pointer",
-              fontSize: "13.5px",
-              color: activeTab === "billing_types" ? "#24695c" : "#64748b",
-              borderBottom: activeTab === "billing_types" ? "2.5px solid #24695c" : "2.5px solid transparent",
-              marginBottom: "-1px",
-              transition: "all 0.15s ease",
-            }}
-            onClick={() => setActiveTab("billing_types")}
-          >
-            <Layers size={16} color={activeTab === "billing_types" ? "#24695c" : "#64748b"} />
-            <span>{getTranslation("Bill Item Types / आइटम प्रकार", lang)}</span>
-            <span
-              className="rounded-pill ms-1 fw-bold"
-              style={{
-                fontSize: "11px",
-                padding: "2px 7px",
-                backgroundColor: activeTab === "billing_types" ? "#e6f4f1" : "#f1f5f9",
-                color: activeTab === "billing_types" ? "#24695c" : "#64748b",
               }}
             >
-              {itemTypesCount}
-            </span>
-          </button>
-
-          {/* Tab 4: Bill Items Master (Both Roles) */}
-          <button
-            type="button"
-            className="d-flex align-items-center gap-2 border-0 bg-transparent py-3 px-3 fw-bold"
-            style={{
-              cursor: "pointer",
-              fontSize: "13.5px",
-              color: activeTab === "billing_master" ? "#24695c" : "#64748b",
-              borderBottom: activeTab === "billing_master" ? "2.5px solid #24695c" : "2.5px solid transparent",
-              marginBottom: "-1px",
-              transition: "all 0.15s ease",
-            }}
-            onClick={() => setActiveTab("billing_master")}
-          >
-            <FileText size={16} color={activeTab === "billing_master" ? "#24695c" : "#64748b"} />
-            <span>{getTranslation("Bill Items Master / बिलिंग दर सूची", lang)}</span>
-            <span
-              className="rounded-pill ms-1 fw-bold"
-              style={{
-                fontSize: "11px",
-                padding: "2px 7px",
-                backgroundColor: activeTab === "billing_master" ? "#e6f4f1" : "#f1f5f9",
-                color: activeTab === "billing_master" ? "#24695c" : "#64748b",
-              }}
-            >
-              {itemsMasterCount}
-            </span>
-          </button>
-
-          {/* Tab 5: Patient Billing (Both Roles) */}
-          <button
-            type="button"
-            className="d-flex align-items-center gap-2 border-0 bg-transparent py-3 px-3 fw-bold"
-            style={{
-              cursor: "pointer",
-              fontSize: "13.5px",
-              color: activeTab === "patient_billing" ? "#24695c" : "#64748b",
-              borderBottom: activeTab === "patient_billing" ? "2.5px solid #24695c" : "2.5px solid transparent",
-              marginBottom: "-1px",
-              transition: "all 0.15s ease",
-            }}
-            onClick={() => setActiveTab("patient_billing")}
-          >
-            <CreditCard size={16} color={activeTab === "patient_billing" ? "#24695c" : "#64748b"} />
-            <span>{getTranslation("Patient Billing / मरीज बिलिंग", lang)}</span>
-            <span
-              className="rounded-pill ms-1 fw-bold"
-              style={{
-                fontSize: "11px",
-                padding: "2px 7px",
-                backgroundColor: activeTab === "patient_billing" ? "#e6f4f1" : "#f1f5f9",
-                color: activeTab === "patient_billing" ? "#24695c" : "#64748b",
-              }}
-            >
-              {patientBillsCount}
+              {branchOperators.length}
             </span>
           </button>
         </div>
@@ -906,7 +824,7 @@ const GlobalSettings = () => {
             </Button>
           )}
 
-          {activeTab === "branch_operators" && !isSuperAdmin && (
+          {activeTab === "branch_operators" && (
             <Button
               color="primary"
               className="d-flex align-items-center py-1.5 px-3 shadow-sm fw-bold"
@@ -1405,50 +1323,10 @@ const GlobalSettings = () => {
             </Card>
           </TabPane>
         )}
-
-        {/* ================================================================= */}
-        {/* TAB 3: Bill Item Types (Both SuperAdmin & BranchAdmin) */}
-        {/* ================================================================= */}
-        <TabPane tabId="billing_types">
-          <BillingSettings
-            isSuperAdmin={isSuperAdmin}
-            branches={branches}
-            selectedBranch={selectedBranch}
-            currentBranchName={currentBranchName}
-            lang={lang}
-            viewMode="types"
-            onSwitchToMaster={(typeId) => {
-              setBillingTypeFilter(String(typeId));
-              setActiveTab("billing_master");
-            }}
-          />
-        </TabPane>
-
-        {/* ================================================================= */}
-        {/* TAB 4: Bill Items Master (Both SuperAdmin & BranchAdmin) */}
-        {/* ================================================================= */}
-        <TabPane tabId="billing_master">
-          <BillingSettings
-            isSuperAdmin={isSuperAdmin}
-            branches={branches}
-            selectedBranch={selectedBranch}
-            currentBranchName={currentBranchName}
-            lang={lang}
-            viewMode="master"
-            defaultTypeFilter={billingTypeFilter}
-          />
-        </TabPane>
-
-        {/* ================================================================= */}
-        {/* TAB 5: Patient Billing (Registered Patients Table, Discount, Payments) */}
-        {/* ================================================================= */}
-        <TabPane tabId="patient_billing">
-          <PatientBilling isTabMode={true} />
-        </TabPane>
       </TabContent>
 
       {/* ===================================================================== */}
-      {/* MODAL: Create / Edit Branch Admin & Operator with Form Authority Matrix */}
+      {/* MODAL: Create / Edit Branch Admin & Operator */}
       {/* ===================================================================== */}
       {(adminModalOpen || operatorModalOpen) && (
         <Modal

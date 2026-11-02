@@ -65,7 +65,9 @@ const Login = ({ selected }) => {
         localStorage.setItem("user_id", user.user_id);
         localStorage.setItem("profileURL", man);
         localStorage.setItem("Name", user.name);
-        localStorage.setItem("isRoleType", user.isRoleType);
+        const resolvedRoleType = user.isRoleType || (Number(user.isRole) === 5 ? "LabOperator" : Number(user.isRole) === 3 ? "BranchOperator" : Number(user.isRole) === 2 ? "BranchAdmin" : "SuperAdmin");
+        localStorage.setItem("isRoleType", resolvedRoleType);
+        localStorage.setItem("isRole", String(user.isRole || (resolvedRoleType === "LabOperator" ? 5 : 1)));
   
         // ✅ Handle Remember Me
         if (rememberMe) {
@@ -78,10 +80,14 @@ const Login = ({ selected }) => {
   
         toast.success("Login successful!");
   
-        // ✅ Redirect to dashboard after short delay
+        // ✅ Redirect to dashboard or Lab requests for Lab Operator
         setTimeout(() => {
-          window.location.href = `${process.env.PUBLIC_URL}/dashboard/Home`;
-        }, 1000);
+          if (resolvedRoleType === "LabOperator" || Number(user.isRole) === 5) {
+            window.location.href = `${process.env.PUBLIC_URL}/BA/Blood-Analysis`;
+          } else {
+            window.location.href = `${process.env.PUBLIC_URL}/dashboard/Home`;
+          }
+        }, 800);
       } else {
         // ✅ Check if credentials match any created Branch Admin
         const localAdmins = JSON.parse(localStorage.getItem("gks_branch_admins") || "[]");

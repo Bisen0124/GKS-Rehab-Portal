@@ -9,6 +9,15 @@ export const DEFAULT_CENTER = {
   address: "Bhopal, Madhya Pradesh",
 };
 
+// Role Definitions
+export const ROLES = {
+  SUPER_ADMIN: 1,
+  BRANCH_ADMIN: 2,
+  BRANCH_OPERATOR: 3,
+  PATIENT: 4,
+  LAB_OPERATOR: 5,
+};
+
 // Form Modules List for Permissions Matrix
 export const FORM_MODULES_LIST = [
   {
@@ -37,9 +46,9 @@ export const FORM_MODULES_LIST = [
   },
   {
     id: "blood_analysis",
-    name: "Blood Analysis / रक्त विश्लेषण",
-    path: "/Blood-Analysis/blood-analysis",
-    description: "Laboratory investigations and pathology reports",
+    name: "Medical Observations / चिकित्सा अवलोकन (Blood Analysis)",
+    path: "/BA/Blood-Analysis",
+    description: "Laboratory investigations, sample collection, pathology reports",
   },
   {
     id: "detoxification",
@@ -577,5 +586,154 @@ export const toggleBranchOperatorStatus = async (id) => {
     return op;
   });
   saveBranchOperators(updated);
+  return true;
+};
+
+// ============================================================================
+// 4. LAB OPERATOR CRUD (Role 5 - Responsible for Sample Collection & Reports)
+// ============================================================================
+const INITIAL_LAB_OPERATORS = [
+  {
+    id: 301,
+    name: "Ramesh Kumar (Lab)",
+    username: "ramesh.lab",
+    email: "ramesh.lab@gksrehab.com",
+    phone: "9876543210",
+    address: "Bhopal, Madhya Pradesh",
+    branch_id: 1,
+    branch_name: "Bhopal Main Branch",
+    center_id: 1,
+    center_name: DEFAULT_CENTER.center_name,
+    role: "LabOperator",
+    isRole: 5,
+    created_by_admin: "SuperAdmin",
+    date_created: "2026-10-01",
+    isActive: true,
+  },
+];
+
+export const getLabOperators = (branchId = null) => {
+  const data = localStorage.getItem("gks_lab_operators");
+  let operators = INITIAL_LAB_OPERATORS;
+  if (data) {
+    try {
+      operators = JSON.parse(data);
+    } catch {
+      operators = INITIAL_LAB_OPERATORS;
+    }
+  } else {
+    localStorage.setItem("gks_lab_operators", JSON.stringify(INITIAL_LAB_OPERATORS));
+  }
+
+  if (branchId) {
+    return operators.filter((op) => String(op.branch_id) === String(branchId));
+  }
+  return operators;
+};
+
+export const saveLabOperators = (operators) => {
+  localStorage.setItem("gks_lab_operators", JSON.stringify(operators));
+};
+
+export const createLabOperator = async (operatorData) => {
+  const current = getLabOperators();
+  const newOp = {
+    id: Date.now(),
+    name: operatorData.name,
+    username: operatorData.username || operatorData.email?.split("@")[0] || `lab_${Date.now()}`,
+    email: operatorData.email || "",
+    phone: operatorData.phone || "",
+    address: operatorData.address || "",
+    password: operatorData.password || "Lab@1234",
+    branch_id: Number(operatorData.branch_id),
+    branch_name: operatorData.branch_name || "Assigned Branch",
+    center_id: operatorData.center_id || 1,
+    center_name: operatorData.center_name || DEFAULT_CENTER.center_name,
+    role: "LabOperator",
+    isRole: 5,
+    created_by_admin: operatorData.created_by_admin || "Branch Admin",
+    date_created: operatorData.date_created || new Date().toISOString().split("T")[0],
+    isActive: true,
+  };
+
+  try {
+    const res = await fetch(`${BASE_URL}/api/users?branch_id=${newOp.branch_id}`, {
+      method: "POST",
+      headers: getAuthHeaders(newOp.branch_id),
+      body: JSON.stringify({
+        name: newOp.name,
+        relative_name: operatorData.relative_name || "N/A",
+        email: newOp.email,
+        gender: operatorData.gender || "Male",
+        address: newOp.address,
+        dob: operatorData.dob || "1995-01-01",
+        phone: newOp.phone,
+        password: newOp.password,
+        isRole: 5,
+      }),
+    });
+    const json = await res.json().catch(() => null);
+    if (res.ok && json?.data?.id) {
+      newOp.id = json.data.id;
+    }
+  } catch (err) {
+    console.warn("Real API create lab operator fallback to local storage:", err);
+  }
+
+  const updated = [newOp, ...current];
+  saveLabOperators(updated);
+  return newOp;
+};
+
+export const updateLabOperator = async (id, operatorData) => {
+  const current = getLabOperators();
+  const updated = current.map((op) => {
+    if (op.id === Number(id)) {
+      return {
+        ...op,
+        ...operatorData,
+        branch_id: Number(operatorData.branch_id || op.branch_id),
+      };
+    }
+    return op;
+  });
+
+  try {
+    await fetch(`${BASE_URL}/api/users/${id}?branch_id=${operatorData.branch_id || 1}`, {
+      method: "PUT",
+      headers: getAuthHeaders(operatorData.branch_id || 1),
+      body: JSON.stringify({
+        name: operatorData.name,
+        relative_name: operatorData.relative_name || "N/A",
+        email: operatorData.email,
+        gender: operatorData.gender || "Male",
+        address: operatorData.address,
+        isRole: 5,
+      }),
+    });
+  } catch (err) {
+    console.warn("Real API update lab operator fallback to local storage:", err);
+  }
+
+  saveLabOperators(updated);
+  return true;
+};
+
+export const deleteLabOperator = async (id) => {
+  const current = getLabOperators();
+  const updated = current.filter((op) => op.id !== Number(id));
+  saveLabOperators(updated);
+  return true;
+};
+
+export const toggleLabOperatorStatus = async (id) => {
+  const current = getLabOperators();
+  const updated = current.map((op) => {
+    if (op.id === Number(id)) {
+      return { ...op, isActive: !op.isActive };
+    }
+    return op;
+  });
+  saveLabOperators(updated);
   return true;
 };
