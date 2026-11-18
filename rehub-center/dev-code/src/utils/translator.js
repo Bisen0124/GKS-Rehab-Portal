@@ -6,7 +6,14 @@ export function splitBilingual(text) {
   const trailing = trailingMatch ? trailingMatch[1].charAt(0) : "";
   const core = s.replace(/([:：*]+)\s*$/, "").trim();
 
-  const idx = core.indexOf("/");
+  // Only split on the bilingual "/" separator right before Devanagari (Hindi) text,
+  // so English units & terms containing "/" (like "mg/dL", "g/dL", "WhatsApp/SMS", "PDF/Image") stay intact.
+  const firstDevanagariIdx = core.search(/[\u0900-\u097F]/);
+  let idx = -1;
+  if (firstDevanagariIdx !== -1) {
+    idx = core.lastIndexOf("/", firstDevanagariIdx);
+  }
+
   if (idx === -1) {
     const cleanCore = core.replace(/[:：]+$/, "").trim();
     return { en: cleanCore + trailing, hi: cleanCore + trailing };

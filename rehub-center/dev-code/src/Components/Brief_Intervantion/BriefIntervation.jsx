@@ -19,7 +19,7 @@ import HeaderCard from "../Common/Component/HeaderCard";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import html2pdf from "html2pdf.js";
-import { useReactToPrint } from "react-to-print";
+import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 
 // Custom Hooks & Contexts
 import useCalculateAge from "../../CustomHook/useCalculateAge";
@@ -117,10 +117,7 @@ function BriefIntervation() {
   const [isDownloading, setIsDownloading] = useState(false);
   const pdfRef = useRef();
 
-  const handlePrint = useReactToPrint({
-    content: () => pdfRef.current,
-    documentTitle: `Brief_Intervention_${viewData?.patient_name || "Patient"}`,
-  });
+  const handlePrint = () => printElementAsPdf(pdfRef.current);
 
   const handleDownloadPDF = () => {
     const element = pdfRef.current;

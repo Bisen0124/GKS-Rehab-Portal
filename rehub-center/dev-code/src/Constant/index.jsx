@@ -1435,7 +1435,7 @@ export const genralPhysicalExamination = "Genral Physical Examination / सा�
 export const Observation = "Observation / अवलोकन";
 export const anyMedicalHistory = "Any Medical History / कोई भी चिकित्सा इतिहास";
 export const anyBloodTransfusionHistory = "Any Blood Transfusion History / ब्लड ट्रांसफ्यूजन इतिहास";
-export const mentionIfAny = "Mention if any Medical or Blood Transfsion History /यदि कोई चिकित्सा या ब्लड ट्रांसफ्यूज इतिहास हो तो उल्लेख करें ";
+export const mentionIfAny = "Mention if any Medical or Blood Transfusion History / यदि कोई चिकित्सा या ब्लड ट्रांसफ्यूजन इतिहास हो तो उल्लेख करें";
 
 //section 3
 export const tableNumber2 = "S./क्र.";
@@ -1874,7 +1874,7 @@ export const FirstPhysicalAssessment ="First Physical Assessment";
 export const Weight = "Weight / वजन";
 export const PulseRate ="Pulse Rate / पल्स रेट";
 export const Bloodpressure="Blood pressure / रक्तचाप";
-export const Temperature="Temperature / तापमान ";
+export const Temperature = "Temperature (°F) / तापमान (°F)";
 export const AnyMedicalHistory="Any Medical History / कोई भी चिकित्सा इतिहास";
 export const AnyBloodTransfusionHistory="Any Blood Transfusion History / ब्लड ट्रांसफ्यूजन इतिहास";
 

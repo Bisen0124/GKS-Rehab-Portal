@@ -67,28 +67,43 @@ const WardManagementModal = ({ isOpen, toggle, branchId: propBranchId, onWardsUp
     };
 
     try {
-      // Try /api/wards/all first, fallback to /api/wards
-      let res = await fetch(`${BASE_URL}/api/wards/all?branch_id=${branchId}`, {
+      const extractList = (payload) => {
+        if (!payload) return [];
+        if (Array.isArray(payload.data)) return payload.data;
+        if (Array.isArray(payload.wards)) return payload.wards;
+        if (Array.isArray(payload.data?.wards)) return payload.data.wards;
+        if (Array.isArray(payload)) return payload;
+        return [];
+      };
+
+      // Try /api/wards/all first, fallback to /api/wards if non-OK or empty
+      let list = [];
+      let loadedOk = false;
+
+      const resAll = await fetch(`${BASE_URL}/api/wards/all?branch_id=${branchId}`, {
         method: "GET",
         headers,
       });
 
-      if (!res.ok) {
-        res = await fetch(`${BASE_URL}/api/wards?branch_id=${branchId}`, {
+      if (resAll.ok) {
+        loadedOk = true;
+        const dataAll = await resAll.json().catch(() => null);
+        list = extractList(dataAll);
+      }
+
+      if (list.length === 0) {
+        const resActive = await fetch(`${BASE_URL}/api/wards?branch_id=${branchId}`, {
           method: "GET",
           headers,
         });
+        if (resActive.ok) {
+          loadedOk = true;
+          const dataActive = await resActive.json().catch(() => null);
+          list = extractList(dataActive);
+        }
       }
 
-      if (res.ok) {
-        const data = await res.json();
-        const list = Array.isArray(data.data)
-          ? data.data
-          : Array.isArray(data.wards)
-          ? data.wards
-          : Array.isArray(data)
-          ? data
-          : [];
+      if (loadedOk) {
         setWards(list);
       } else {
         toast.error(getTranslation("Failed to load wards / वार्ड लोड करने में विफल", lang));

@@ -67,7 +67,7 @@ import PatientViewHeader from "../Common/PatientViewHeader";
 import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
-import { useReactToPrint } from "react-to-print";
+import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 import ModalActionButtons from "../Common/ModalActionButtons";
 import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 import {
@@ -196,6 +196,7 @@ const BloodAnalysis = () => {
     const [labRequests, setLabRequests] = useState([]);
     const [labRequestsLoading, setLabRequestsLoading] = useState(false);
     const [labSearchText, setLabSearchText] = useState("");
+    const [activeKpiTile, setActiveKpiTile] = useState(null); // null | "all" | "pending_collection" | "overdue_samples" | "pending_reports"
 
     // Lab Operator Action Modals
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -989,10 +990,64 @@ const BloodAnalysis = () => {
       },
     ];
 
+    const getKpiTileRequests = (tileKey) => {
+      if (!tileKey || tileKey === "all") return labRequests;
+      if (tileKey === "pending_collection") {
+        return labRequests.filter(
+          (r) => r.status === "Scheduled" || !r.sample_collected || r.sample_collected === "No"
+        );
+      }
+      if (tileKey === "overdue_samples") {
+        return labRequests.filter(
+          (r) =>
+            (r.status === "Scheduled" || !r.sample_collected || r.sample_collected === "No") &&
+            getSLAInfo(r).isOverdue
+        );
+      }
+      if (tileKey === "pending_reports") {
+        return labRequests.filter((r) => r.status === "Sample_Collected");
+      }
+      return labRequests;
+    };
+
+    const activeTileMeta = {
+      all: {
+        title: getTranslation("Total Active Requests / कुल सक्रिय अनुरोध", lang),
+        color: "#1E6554",
+        bg: "#f0fdf4",
+        border: "#86efac",
+      },
+      pending_collection: {
+        title: getTranslation("Pending Collection / लंबित नमूना संग्रह", lang),
+        color: "#b45309",
+        bg: "#fffbeb",
+        border: "#fcd34d",
+      },
+      overdue_samples: {
+        title: getTranslation("Overdue Samples (>48h) / विलंबित नमूने (>48 घंटे)", lang),
+        color: "#dc2626",
+        bg: "#fef2f2",
+        border: "#fca5a5",
+      },
+      pending_reports: {
+        title: getTranslation("Pending Reports / लंबित रिपोर्ट", lang),
+        color: "#0284c7",
+        bg: "#f0f9ff",
+        border: "#7dd3fc",
+      },
+    };
+
+    const quickTileRequests = useMemo(() => {
+      if (!activeKpiTile) return [];
+      return getKpiTileRequests(activeKpiTile);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [labRequests, activeKpiTile]);
+
     const filteredLabRequests = useMemo(() => {
-      if (!labSearchText) return labRequests;
+      const baseList = activeKpiTile ? getKpiTileRequests(activeKpiTile) : labRequests;
+      if (!labSearchText) return baseList;
       const lower = labSearchText.toLowerCase();
-      return labRequests.filter((item) =>
+      return baseList.filter((item) =>
         (item.name && item.name.toLowerCase().includes(lower)) ||
         (item.custom_code && item.custom_code.toLowerCase().includes(lower)) ||
         (item.gks_id && String(item.gks_id).toLowerCase().includes(lower)) ||
@@ -1000,7 +1055,8 @@ const BloodAnalysis = () => {
         (item.status && item.status.toLowerCase().includes(lower)) ||
         (item.package_name && String(item.package_name).toLowerCase().includes(lower))
       );
-    }, [labRequests, labSearchText]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [labRequests, labSearchText, activeKpiTile]);
 
     const tableColumnsLabRequests = [
       {
@@ -2837,16 +2893,11 @@ const SubmitBAReadmissionFormHandler = async (e) => {
     };
 
 
-     //Print viewable form data handler
-       const handlePrint = useReactToPrint({
-            content: () => pdfRef.current,
-            pageStyle: `
-              @page { size: A4; margin: 12mm; }
-              @media print {
-                body { margin: 0; }
-              }
-            `,
-          });
+     //Print viewable form data handler (matches Download PDF identically)
+       const handlePrint = () =>
+         printElementAsPdf(pdfRef.current, {
+           title: `Blood_Analysis_${viewBAData?.name || "Report"}`,
+         });
 
   return (
    <Fragment>
@@ -2864,7 +2915,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
             </small>
           </div>
           <Nav pills className="nav-primary">
-            {/* Tab 1: Lab Requests & Blood Analysis (Swiped to first tab as requested) */}
+            {/* Tab 1: Lab Requests & Blood Analysis and Body Scan */}
             <NavItem>
               <NavLink
                 className={mainTab === "lab_requests" ? "active" : ""}
@@ -2872,7 +2923,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                 onClick={() => setMainTab("lab_requests")}
               >
                 <Activity size={16} className="me-1" />
-                {getTranslation("Lab Requests & Blood Analysis / लैब अनुरोध एवं रक्त विश्लेषण", lang)}
+                {getTranslation("Lab Requests & Blood Analysis and Body Scan / लैब अनुरोध, रक्त विश्लेषण एवं बॉडी स्कैन", lang)}
                 {labRequests.filter((r) => r.status === "Scheduled" || r.status === "Sample_Collected").length > 0 && (
                   <Badge color="danger" pill className="ms-2">
                     {labRequests.filter((r) => r.status === "Scheduled" || r.status === "Sample_Collected").length}
@@ -2901,67 +2952,269 @@ const SubmitBAReadmissionFormHandler = async (e) => {
         <Container fluid={true} className="datatables">
           <Row>
             <Col sm="12">
-              {/* SLA KPI Metrics Cards */}
+              {/* SLA KPI Metrics Cards — Click any tile for instant quick data view & filtering */}
               <Row className="mb-3 g-2">
-                <Col md="3" sm="6">
-                  <Card className="border shadow-none mb-0 bg-light">
-                    <CardBody className="p-3">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <small className="text-muted fw-semibold">{getTranslation("Total Active Requests", lang)}</small>
-                          <h4 className="mb-0 fw-bold">{labRequests.length}</h4>
-                        </div>
-                        <Activity className="text-primary" size={26} />
-                      </div>
-                    </CardBody>
-                  </Card>
-                </Col>
-                <Col md="3" sm="6">
-                  <Card className="border shadow-none mb-0 bg-light">
-                    <CardBody className="p-3">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <small className="text-muted fw-semibold">{getTranslation("Pending Collection", lang)}</small>
-                          <h4 className="mb-0 fw-bold text-warning">
-                            {labRequests.filter((r) => r.status === "Scheduled" || !r.sample_collected || r.sample_collected === "No").length}
-                          </h4>
-                        </div>
-                        <Clock className="text-warning" size={26} />
-                      </div>
-                    </CardBody>
-                  </Card>
-                </Col>
-                <Col md="3" sm="6">
-                  <Card className="border shadow-none mb-0 bg-light">
-                    <CardBody className="p-3">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <small className="text-muted fw-semibold">{getTranslation("Overdue Samples (>48h)", lang)}</small>
-                          <h4 className="mb-0 fw-bold text-danger">
-                            {labRequests.filter((r) => (r.status === "Scheduled" || !r.sample_collected || r.sample_collected === "No") && getSLAInfo(r).isOverdue).length}
-                          </h4>
-                        </div>
-                        <AlertCircle className="text-danger" size={26} />
-                      </div>
-                    </CardBody>
-                  </Card>
-                </Col>
-                <Col md="3" sm="6">
-                  <Card className="border shadow-none mb-0 bg-light">
-                    <CardBody className="p-3">
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div>
-                          <small className="text-muted fw-semibold">{getTranslation("Pending Reports", lang)}</small>
-                          <h4 className="mb-0 fw-bold text-info">
-                            {labRequests.filter((r) => r.status === "Sample_Collected").length}
-                          </h4>
-                        </div>
-                        <Upload className="text-info" size={26} />
-                      </div>
-                    </CardBody>
-                  </Card>
-                </Col>
+                {[
+                  {
+                    key: "all",
+                    label: getTranslation("Total Active Requests / कुल सक्रिय अनुरोध", lang),
+                    count: labRequests.length,
+                    color: "#1E6554",
+                    activeBg: "#f0fdf4",
+                    activeBorder: "#1E6554",
+                    icon: <Activity color="#1E6554" size={26} />,
+                  },
+                  {
+                    key: "pending_collection",
+                    label: getTranslation("Pending Collection / लंबित संग्रह", lang),
+                    count: getKpiTileRequests("pending_collection").length,
+                    color: "#d97706",
+                    activeBg: "#fffbeb",
+                    activeBorder: "#d97706",
+                    icon: <Clock color="#d97706" size={26} />,
+                  },
+                  {
+                    key: "overdue_samples",
+                    label: getTranslation("Overdue Samples (>48h) / विलंबित नमूने", lang),
+                    count: getKpiTileRequests("overdue_samples").length,
+                    color: "#dc2626",
+                    activeBg: "#fef2f2",
+                    activeBorder: "#dc2626",
+                    icon: <AlertCircle color="#dc2626" size={26} />,
+                  },
+                  {
+                    key: "pending_reports",
+                    label: getTranslation("Pending Reports / लंबित रिपोर्ट", lang),
+                    count: getKpiTileRequests("pending_reports").length,
+                    color: "#0284c7",
+                    activeBg: "#f0f9ff",
+                    activeBorder: "#0284c7",
+                    icon: <Upload color="#0284c7" size={26} />,
+                  },
+                ].map((tile) => {
+                  const isActive = activeKpiTile === tile.key;
+                  return (
+                    <Col md="3" sm="6" key={tile.key}>
+                      <Card
+                        className="mb-0"
+                        onClick={() => setActiveKpiTile(isActive ? null : tile.key)}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setActiveKpiTile(isActive ? null : tile.key);
+                          }
+                        }}
+                        style={{
+                          cursor: "pointer",
+                          backgroundColor: isActive ? tile.activeBg : "#f8fafc",
+                          border: isActive ? `2px solid ${tile.activeBorder}` : "1px solid #e2e8f0",
+                          borderRadius: "10px",
+                          boxShadow: isActive ? "0 4px 12px rgba(0,0,0,0.08)" : "none",
+                          transition: "all 0.18s ease-in-out",
+                        }}
+                      >
+                        <CardBody className="p-3">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <div>
+                              <small className="fw-semibold d-block" style={{ color: "#475569", fontSize: "12.5px" }}>
+                                {tile.label}
+                              </small>
+                              <h4
+                                className="mb-0 fw-bold mt-1"
+                                style={{ color: tile.color, fontSize: "24px", lineHeight: 1.2 }}
+                              >
+                                {tile.count}
+                              </h4>
+                              <small
+                                style={{
+                                  fontSize: "11px",
+                                  color: isActive ? tile.color : "#64748b",
+                                  fontWeight: isActive ? 600 : 500,
+                                }}
+                              >
+                                {isActive
+                                  ? getTranslation("Showing quick data ▲ / बंद करें", lang)
+                                  : getTranslation("Click to view data → / डेटा देखें", lang)}
+                              </small>
+                            </div>
+                            {tile.icon}
+                          </div>
+                        </CardBody>
+                      </Card>
+                    </Col>
+                  );
+                })}
               </Row>
+
+              {/* Quick Data Preview Panel — Opens immediately when any KPI tile is clicked */}
+              {activeKpiTile && (
+                <Card
+                  className="mb-3 shadow-sm"
+                  style={{
+                    borderRadius: "12px",
+                    border: `1.5px solid ${activeTileMeta[activeKpiTile]?.border || "#cbd5e1"}`,
+                    overflow: "hidden",
+                  }}
+                >
+                  <div
+                    className="px-3 py-2 d-flex justify-content-between align-items-center flex-wrap gap-2"
+                    style={{
+                      backgroundColor: activeTileMeta[activeKpiTile]?.bg || "#f8fafc",
+                      borderBottom: `1px solid ${activeTileMeta[activeKpiTile]?.border || "#e2e8f0"}`,
+                    }}
+                  >
+                    <div className="d-flex align-items-center gap-2">
+                      <span
+                        className="fw-bold"
+                        style={{ color: activeTileMeta[activeKpiTile]?.color || "#1e293b", fontSize: "14px" }}
+                      >
+                        ⚡ {getTranslation("Quick View / त्वरित डेटा", lang)}: {activeTileMeta[activeKpiTile]?.title}
+                      </span>
+                      <Badge
+                        pill
+                        style={{
+                          backgroundColor: activeTileMeta[activeKpiTile]?.color || "#1E6554",
+                          color: "#ffffff",
+                          fontSize: "12px",
+                        }}
+                      >
+                        {quickTileRequests.length} {getTranslation("Record(s) / रिकॉर्ड", lang)}
+                      </Badge>
+                    </div>
+                    <Button
+                      color="light"
+                      size="sm"
+                      className="border fw-semibold py-1 px-2"
+                      onClick={() => setActiveKpiTile(null)}
+                      style={{ borderRadius: "6px", fontSize: "12px", color: "#334155" }}
+                    >
+                      ✕ {getTranslation("Close Quick View / बंद करें", lang)}
+                    </Button>
+                  </div>
+                  <CardBody className="p-0">
+                    {quickTileRequests.length === 0 ? (
+                      <div className="p-4 text-center text-muted" style={{ fontSize: "13.5px" }}>
+                        {getTranslation("No matching records found for this category. / इस श्रेणी के लिए कोई रिकॉर्ड नहीं मिला।", lang)}
+                      </div>
+                    ) : (
+                      <div className="table-responsive" style={{ maxHeight: "340px", overflowY: "auto" }}>
+                        <table className="table table-hover align-middle mb-0" style={{ fontSize: "13px" }}>
+                          <thead style={{ backgroundColor: "#f8fafc", position: "sticky", top: 0, zIndex: 1 }}>
+                            <tr>
+                              <th className="px-3 py-2 text-muted fw-semibold">ID</th>
+                              <th className="px-3 py-2 text-muted fw-semibold">{getTranslation("Patient / रोगी", lang)}</th>
+                              <th className="px-3 py-2 text-muted fw-semibold">{getTranslation("Package(s) / पैकेज", lang)}</th>
+                              <th className="px-3 py-2 text-muted fw-semibold text-center">{getTranslation("Status / स्थिति", lang)}</th>
+                              <th className="px-3 py-2 text-muted fw-semibold text-center">{getTranslation("SLA / एसएलए", lang)}</th>
+                              <th className="px-3 py-2 text-muted fw-semibold text-center">{getTranslation("Quick Actions / त्वरित कार्य", lang)}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {quickTileRequests.map((row) => {
+                              const s = row.status || "Scheduled";
+                              const sla = getSLAInfo(row);
+                              const rowId = row.blood_analysis_id || row.id;
+                              return (
+                                <tr key={`quick-${rowId}`}>
+                                  <td className="px-3 py-2 fw-semibold text-dark">#{rowId}</td>
+                                  <td className="px-3 py-2">
+                                    <div className="fw-semibold text-dark">{row.name || "—"}</div>
+                                    <small className="text-muted">
+                                      {row.custom_code || row.gks_id || (row.phone ? `Ph: ${row.phone}` : "")}
+                                    </small>
+                                  </td>
+                                  <td className="px-3 py-2 fw-medium text-dark">
+                                    {Array.isArray(row.package_name) ? row.package_name.join(", ") : row.package_name || "—"}
+                                  </td>
+                                  <td className="px-3 py-2 text-center">
+                                    {s === "Scheduled" ? (
+                                      <Badge color="warning" className="text-dark px-2 py-1">Scheduled</Badge>
+                                    ) : s === "Sample_Collected" ? (
+                                      <Badge color="info" className="px-2 py-1">Sample Collected</Badge>
+                                    ) : s === "Report_Uploaded" ? (
+                                      <Badge color="primary" className="px-2 py-1">Report Uploaded</Badge>
+                                    ) : (
+                                      <Badge color="success" className="px-2 py-1">{s}</Badge>
+                                    )}
+                                  </td>
+                                  <td className="px-3 py-2 text-center">
+                                    <Badge color={sla.color} className="px-2 py-1" style={{ fontSize: "11px" }}>
+                                      {sla.text}
+                                    </Badge>
+                                  </td>
+                                  <td className="px-3 py-2 text-center">
+                                    <div className="d-inline-flex align-items-center gap-2">
+                                      <button
+                                        type="button"
+                                        className="btn btn-action-icon btn-action-view"
+                                        style={{
+                                          width: "30px",
+                                          height: "30px",
+                                          minWidth: "30px",
+                                          padding: 0,
+                                          display: "inline-flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          borderRadius: "6px",
+                                          backgroundColor: "#f0fdf4",
+                                          border: "1px solid #bbf7d0",
+                                          color: "#166534",
+                                        }}
+                                        onClick={() => viewBAFormData(rowId)}
+                                        title={getTranslation("View Observation / विवरण देखें", lang)}
+                                      >
+                                        <Eye size={15} color="#166534" strokeWidth={2.2} />
+                                      </button>
+                                      {(s === "Scheduled" || row.sample_collected !== "Yes") && (
+                                        <Button
+                                          color="warning"
+                                          size="sm"
+                                          className="py-1 px-2 text-dark fw-semibold d-inline-flex align-items-center gap-1"
+                                          style={{ borderRadius: "6px", fontSize: "11.5px" }}
+                                          onClick={() => handleCollectSample(row)}
+                                        >
+                                          <Activity size={12} color="#212529" />
+                                          <span>{getTranslation("Collect Sample", lang)}</span>
+                                        </Button>
+                                      )}
+                                      {s === "Sample_Collected" && (
+                                        <Button
+                                          color="info"
+                                          size="sm"
+                                          className="py-1 px-2 text-white fw-semibold d-inline-flex align-items-center gap-1"
+                                          style={{ borderRadius: "6px", fontSize: "11.5px", backgroundColor: "#0284c7", borderColor: "#0284c7" }}
+                                          onClick={() => handleOpenUploadModal(row)}
+                                        >
+                                          <Upload size={12} color="#ffffff" />
+                                          <span>{getTranslation("Upload Report", lang)}</span>
+                                        </Button>
+                                      )}
+                                      {s === "Report_Uploaded" && !isLabOperator && (
+                                        <Button
+                                          color="success"
+                                          size="sm"
+                                          className="py-1 px-2 fw-semibold d-inline-flex align-items-center gap-1"
+                                          style={{ borderRadius: "6px", fontSize: "11.5px" }}
+                                          onClick={() => handleOpenReviewModal(row)}
+                                        >
+                                          <CheckCircle size={12} color="#ffffff" />
+                                          <span>{getTranslation("Review", lang)}</span>
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </CardBody>
+                </Card>
+              )}
 
               {/* Card 1: Lab Requests & Collection Queue */}
               <Card className="mb-4">

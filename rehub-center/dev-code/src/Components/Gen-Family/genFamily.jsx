@@ -185,7 +185,7 @@ import ModalLoading from "../Common/ModalLoading";
 import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
-import { useReactToPrint } from "react-to-print";
+import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 import ModalActionButtons from "../Common/ModalActionButtons";
 import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
@@ -2969,15 +2969,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
   }
 
  //Print viewable form data handler
-     const handlePrint = useReactToPrint({
-        content: () => pdfRef.current,
-        pageStyle: `
-          @page { size: A4; margin: 12mm; }
-          @media print {
-            body { margin: 0; }
-          }
-        `,
-      });
+     const handlePrint = () => printElementAsPdf(pdfRef.current);
   
 
   return (

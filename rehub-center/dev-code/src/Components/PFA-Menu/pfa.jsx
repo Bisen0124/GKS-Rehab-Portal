@@ -100,7 +100,7 @@ import { getTranslation } from "../../utils/translator";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
-import { useReactToPrint } from "react-to-print";
+import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
@@ -122,6 +122,65 @@ function PFA() {
     (item) => item.spinnerClass === "loader-37"
   );
 
+  const SCREENING_KEYS = ["hiv", "hepatitis_c", "hepatitis_b", "vdrl", "syphilis"];
+
+  const saveLocalPFAScreening = (userId, pfaId, dataObj) => {
+    try {
+      const record = {
+        hiv: dataObj?.hiv || "",
+        hepatitis_c: dataObj?.hepatitis_c || "",
+        hepatitis_b: dataObj?.hepatitis_b || "",
+        vdrl: dataObj?.vdrl || "",
+        syphilis: dataObj?.syphilis || "",
+      };
+      if (pfaId) localStorage.setItem(`gks_pfa_screening_pfa_${pfaId}`, JSON.stringify(record));
+      if (userId) localStorage.setItem(`gks_pfa_screening_user_${userId}`, JSON.stringify(record));
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const loadLocalPFAScreening = (userId, pfaId) => {
+    try {
+      const byPfa = pfaId ? localStorage.getItem(`gks_pfa_screening_pfa_${pfaId}`) : null;
+      const byUser = userId ? localStorage.getItem(`gks_pfa_screening_user_${userId}`) : null;
+      const raw = byPfa || byUser;
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  };
+
+  const submitPFAWithScreeningFallback = async (url, method, token, payloadObj) => {
+    const doFetch = async (bodyObj) => {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(bodyObj),
+      });
+      const json = await res.json().catch(() => ({}));
+      return { response: res, result: json };
+    };
+
+    let { response, result } = await doFetch(payloadObj);
+
+    if (!response.ok) {
+      const errStr = JSON.stringify(result || "").toLowerCase();
+      const hasUnknownScreeningKey =
+        (errStr.includes("not allowed") || errStr.includes("unknown") || errStr.includes("validation")) &&
+        SCREENING_KEYS.some((k) => errStr.includes(k));
+      if (hasUnknownScreeningKey) {
+        const cleanPayload = { ...payloadObj };
+        SCREENING_KEYS.forEach((k) => delete cleanPayload[k]);
+        ({ response, result } = await doFetch(cleanPayload));
+      }
+    }
+    return { response, result };
+  };
+
   const initialPFAFormData = {
     dateOfAdmission: new Date(),
     dateOfAssessment: new Date(),
@@ -138,6 +197,11 @@ function PFA() {
     spo2: "",
     sugar: "",
     hb: "",
+    hiv: "",
+    hepatitis_c: "",
+    hepatitis_b: "",
+    vdrl: "",
+    syphilis: "",
 
     lymphadenopathy: "",
 
@@ -707,11 +771,21 @@ const tablePFAPatientListColumns = [
         return;
       }
   
+      const localScreening = loadLocalPFAScreening(
+        latestAssessment.user_id,
+        latestAssessment.pfa_id || latestAssessment.id
+      );
+
       const assessmentData = latestAssessment ? {
         ...latestAssessment,
         spo2: latestAssessment.spo2 ?? latestAssessment.health_metrics?.spo2,
         sugar: latestAssessment.sugar ?? latestAssessment.health_metrics?.sugar,
         hb: latestAssessment.hb ?? latestAssessment.health_metrics?.hb,
+        hiv: latestAssessment.hiv ?? latestAssessment.health_metrics?.hiv ?? localScreening.hiv ?? "",
+        hepatitis_c: latestAssessment.hepatitis_c ?? latestAssessment.health_metrics?.hepatitis_c ?? localScreening.hepatitis_c ?? "",
+        hepatitis_b: latestAssessment.hepatitis_b ?? latestAssessment.health_metrics?.hepatitis_b ?? localScreening.hepatitis_b ?? "",
+        vdrl: latestAssessment.vdrl ?? latestAssessment.health_metrics?.vdrl ?? localScreening.vdrl ?? "",
+        syphilis: latestAssessment.syphilis ?? latestAssessment.health_metrics?.syphilis ?? localScreening.syphilis ?? "",
         verification: latestAssessment.verification ?? latestAssessment.consent?.verification ?? "No",
       } : null;
 
@@ -910,6 +984,11 @@ const tablePFAPatientListColumns = [
       spo2: formData.spo2 !== "" && formData.spo2 !== null && formData.spo2 !== undefined ? Number(formData.spo2) : null,
       sugar: formData.sugar !== "" && formData.sugar !== null && formData.sugar !== undefined ? Number(formData.sugar) : null,
       hb: formData.hb !== "" && formData.hb !== null && formData.hb !== undefined ? Number(formData.hb) : null,
+      hiv: formData.hiv || "",
+      hepatitis_c: formData.hepatitis_c || "",
+      hepatitis_b: formData.hepatitis_b || "",
+      vdrl: formData.vdrl || "",
+      syphilis: formData.syphilis || "",
       lymphadenopathy: formData.lymphadenopathy,
       blood_transfusion_history: formData.bloodConfirmationData,
       medical_or_blood_history_details: formData.bloodTransfusionHistoryData,
@@ -931,21 +1010,15 @@ const tablePFAPatientListColumns = [
       const branch_id = selectedBranch; // make sure `selectedBranch` 
       const token = localStorage.getItem("Authorization");
 
-      //new pfa API 
-      const response = await fetch(
+      //new pfa API (with automatic fallback if backend Joi rejects new screening keys)
+      const { response, result } = await submitPFAWithScreeningFallback(
         `https://gks-yjdc.onrender.com/api/pfa/create-assessment?branch_id=${branch_id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
+        "POST",
+        token,
+        payload
       );
 
       console.log("payload", payload);
-      const result = await response.json();
       console.log("result", result);
 
       if (!response.ok) {
@@ -956,6 +1029,8 @@ const tablePFAPatientListColumns = [
       // ✅ Success Case
   setIsLoading(false);
   const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.[0]?.id || selectedUser?.user_id || selectedUser?.id || currentPFAUserId;
+  const createdPfaId = result?.data?.pfa_id || result?.data?.id || result?.pfa_id;
+  saveLocalPFAScreening(userTargetId, createdPfaId, formData);
   clearDraft("pfa", userTargetId);
   setDraftTimestamp(null);
 
@@ -1146,6 +1221,11 @@ const parseDateString = (dateStr) => {
       spo2: latestAssessment?.spo2 ?? latestAssessment?.health_metrics?.spo2 ?? "",
       sugar: latestAssessment?.sugar ?? latestAssessment?.health_metrics?.sugar ?? "",
       hb: latestAssessment?.hb ?? latestAssessment?.health_metrics?.hb ?? "",
+      hiv: latestAssessment?.hiv ?? latestAssessment?.health_metrics?.hiv ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hiv ?? "",
+      hepatitis_c: latestAssessment?.hepatitis_c ?? latestAssessment?.health_metrics?.hepatitis_c ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hepatitis_c ?? "",
+      hepatitis_b: latestAssessment?.hepatitis_b ?? latestAssessment?.health_metrics?.hepatitis_b ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hepatitis_b ?? "",
+      vdrl: latestAssessment?.vdrl ?? latestAssessment?.health_metrics?.vdrl ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.vdrl ?? "",
+      syphilis: latestAssessment?.syphilis ?? latestAssessment?.health_metrics?.syphilis ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.syphilis ?? "",
       lymphadenopathy: latestAssessment?.lymphadenopathy || "",
     
       medical_or_blood_history_details:
@@ -1212,6 +1292,11 @@ const parseDateString = (dateStr) => {
       spo2: PFAeditData.spo2 !== "" && PFAeditData.spo2 !== null && PFAeditData.spo2 !== undefined ? Number(PFAeditData.spo2) : null,
       sugar: PFAeditData.sugar !== "" && PFAeditData.sugar !== null && PFAeditData.sugar !== undefined ? Number(PFAeditData.sugar) : null,
       hb: PFAeditData.hb !== "" && PFAeditData.hb !== null && PFAeditData.hb !== undefined ? Number(PFAeditData.hb) : null,
+      hiv: PFAeditData.hiv || "",
+      hepatitis_c: PFAeditData.hepatitis_c || "",
+      hepatitis_b: PFAeditData.hepatitis_b || "",
+      vdrl: PFAeditData.vdrl || "",
+      syphilis: PFAeditData.syphilis || "",
       lymphadenopathy: PFAeditData.lymphadenopathy,
 
       // Complications
@@ -1291,20 +1376,14 @@ const parseDateString = (dateStr) => {
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
       //Readmission PFA API
-      const response = await fetch(
+      const { response, result } = await submitPFAWithScreeningFallback(
         `https://gks-yjdc.onrender.com/api/pfa/create-assessment?branch_id=${branch_id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
+        "POST",
+        token,
+        payload
       );
 
       console.log("payload", payload);
-      const result = await response.json();
       console.log("result", result);
 
       if (!response.ok) {
@@ -1312,6 +1391,11 @@ const parseDateString = (dateStr) => {
         showApiErrorAlert(result, lang, getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल", lang));
         return;
       }
+      saveLocalPFAScreening(
+        PFAeditData.readmissionUserId,
+        result?.data?.pfa_id || result?.data?.id || result?.pfa_id,
+        PFAeditData
+      );
       // ✅ Success Case
   setIsLoading(false);
   Swal.fire({
@@ -1425,12 +1509,18 @@ const parseDateString = (dateStr) => {
   
       // Save data into state
       setSelectedUser(latestAssessment);
+      const localEditScreening = loadLocalPFAScreening(latestAssessment.user_id, pfaId);
       setPFAeditData({
         pfa_id: pfaId,
         ...latestAssessment,
         spo2: latestAssessment.spo2 ?? latestAssessment.health_metrics?.spo2 ?? "",
         sugar: latestAssessment.sugar ?? latestAssessment.health_metrics?.sugar ?? "",
         hb: latestAssessment.hb ?? latestAssessment.health_metrics?.hb ?? "",
+        hiv: latestAssessment.hiv ?? latestAssessment.health_metrics?.hiv ?? localEditScreening.hiv ?? "",
+        hepatitis_c: latestAssessment.hepatitis_c ?? latestAssessment.health_metrics?.hepatitis_c ?? localEditScreening.hepatitis_c ?? "",
+        hepatitis_b: latestAssessment.hepatitis_b ?? latestAssessment.health_metrics?.hepatitis_b ?? localEditScreening.hepatitis_b ?? "",
+        vdrl: latestAssessment.vdrl ?? latestAssessment.health_metrics?.vdrl ?? localEditScreening.vdrl ?? "",
+        syphilis: latestAssessment.syphilis ?? latestAssessment.health_metrics?.syphilis ?? localEditScreening.syphilis ?? "",
         verification: latestAssessment.verification ?? latestAssessment.consent?.verification ?? "No",
         date_of_assessment: latestAssessment.date_of_assessment
           ? new Date(latestAssessment.date_of_assessment) // Convert string → Date object
@@ -1475,6 +1565,11 @@ const parseDateString = (dateStr) => {
       spo2: PFAeditData.spo2 !== "" && PFAeditData.spo2 !== null && PFAeditData.spo2 !== undefined ? Number(PFAeditData.spo2) : null,
       sugar: PFAeditData.sugar !== "" && PFAeditData.sugar !== null && PFAeditData.sugar !== undefined ? Number(PFAeditData.sugar) : null,
       hb: PFAeditData.hb !== "" && PFAeditData.hb !== null && PFAeditData.hb !== undefined ? Number(PFAeditData.hb) : null,
+      hiv: PFAeditData.hiv || "",
+      hepatitis_c: PFAeditData.hepatitis_c || "",
+      hepatitis_b: PFAeditData.hepatitis_b || "",
+      vdrl: PFAeditData.vdrl || "",
+      syphilis: PFAeditData.syphilis || "",
       lymphadenopathy: PFAeditData.lymphadenopathy,
   
       // Complications - flat
@@ -1515,28 +1610,23 @@ const parseDateString = (dateStr) => {
       const branch_id = selectedBranch;
       const token = localStorage.getItem("Authorization");
   
-      const response = await fetch(
+      const { response, result: data } = await submitPFAWithScreeningFallback(
         `https://gks-yjdc.onrender.com/api/pfa/update-assessment/${PFAeditData.pfa_id}?branch_id=${branch_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
+        "PUT",
+        token,
+        payload
       );
-  
-      const data = await response.json();
   
       if (!response.ok) {
         Swal.fire({
           icon: "error",
           title: getTranslation("Update Failed/भार बढ़ाना विफल हुवा",lang),
-          text: data.errors?.[0]?.message || getTranslation("Unknown error occurred./अनजान एरर हुआ।",lang),
+          text: data.errors?.[0]?.message || data.error || data.message || getTranslation("Unknown error occurred./अनजान एरर हुआ।",lang),
         });
         return;
       }
+
+      saveLocalPFAScreening(PFAeditData.user_id || PFAeditData.readmissionUserId, PFAeditData.pfa_id, PFAeditData);
   
       Swal.fire({
         icon: "success",
@@ -1763,16 +1853,11 @@ const parseDateString = (dateStr) => {
   //   // setviweFormPrint(false); // modal will close correctly
   // };
 
-   //Print viewable form data handler
-    const handlePrint = useReactToPrint({
-      content: () => pdfRef.current,
-      pageStyle: `
-        @page { size: A4; margin: 12mm; }
-        @media print {
-          body { margin: 0; }
-        }
-      `,
-    });
+   //Print viewable form data handler (matches Download PDF identically)
+    const handlePrint = () =>
+      printElementAsPdf(pdfRef.current, {
+        title: `PFA_${selectedUser?.name || "Report"}`,
+      });
 
 
   return (
@@ -2136,8 +2221,13 @@ const parseDateString = (dateStr) => {
     },
     {
       id: "6",
-      question: getTranslation(Temperature, lang),
+      question: getTranslation("Temperature (°F) / तापमान (°F)", lang),
       name: "temperature",
+      type: "number",
+      min: 0,
+      max: 115,
+      step: "0.1",
+      placeholder: getTranslation("e.g. 98.6 - 100 °F / जैसे 98.6 - 100 °F", lang),
     },
     {
       id: "7",
@@ -2167,6 +2257,36 @@ const parseDateString = (dateStr) => {
       step: "0.1",
       placeholder: getTranslation("g/dL (e.g. 14.2)", lang),
     },
+    {
+      id: "10",
+      question: getTranslation("HIV / एचआईवी", lang),
+      name: "hiv",
+      type: "screening",
+    },
+    {
+      id: "11",
+      question: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी (HCV)", lang),
+      name: "hepatitis_c",
+      type: "screening",
+    },
+    {
+      id: "12",
+      question: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी (HBsAg)", lang),
+      name: "hepatitis_b",
+      type: "screening",
+    },
+    {
+      id: "13",
+      question: getTranslation("VDRL / वीडीआरएल", lang),
+      name: "vdrl",
+      type: "screening",
+    },
+    {
+      id: "14",
+      question: getTranslation("Syphilis / सिफलिस", lang),
+      name: "syphilis",
+      type: "screening",
+    },
   ].map(({ id, question, name, type, min, max, step, placeholder }) => (
     <tr key={id}>
       <td>{id}</td>
@@ -2189,6 +2309,25 @@ const parseDateString = (dateStr) => {
             </option>
             <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
             <option value="No">{getTranslation("No / नहीं", lang)}</option>
+          </select>
+        ) : type === "screening" ? (
+          <select
+            className="form-control"
+            name={name}
+            value={formData[name] || ""}
+            onChange={(e) =>
+              setFormData((prevData) => ({
+                ...prevData,
+                [name]: e.target.value,
+              }))
+            }
+          >
+            <option value="">
+              {getTranslation("Select / चुनें", lang)}
+            </option>
+            <option value="Negative">{getTranslation("Negative / नेगेटिव", lang)}</option>
+            <option value="Positive">{getTranslation("Positive / पॉजिटिव", lang)}</option>
+            <option value="Not Tested">{getTranslation("Not Tested / जांच नहीं हुई", lang)}</option>
           </select>
         ) : (
           <Input
@@ -2625,7 +2764,7 @@ const parseDateString = (dateStr) => {
                           />
                           <Label className="text-muted" for="checkbox2">
                             {
-                              getTranslation("Varification from parent side before PFA submitting/पीएफए ​​जमा करने से पहले माता-पिता की ओर से सत्यापन",lang)
+                              getTranslation("Verification from parent side before PFA submitting/पीएफए ​​जमा करने से पहले माता-पिता की ओर से सत्यापन",lang)
                             }
                           </Label>
                         </div>
@@ -2897,6 +3036,45 @@ const parseDateString = (dateStr) => {
                             </div>
                           </div>
                         </div>
+
+                        {[
+                          { key: "hiv", label: getTranslation("HIV / एचआईवी", lang) },
+                          { key: "hepatitis_c", label: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी", lang) },
+                          { key: "hepatitis_b", label: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी", lang) },
+                          { key: "vdrl", label: getTranslation("VDRL / वीडीआरएल", lang) },
+                          { key: "syphilis", label: getTranslation("Syphilis / सिफलिस", lang) },
+                        ].map((item) => {
+                          const val = selectedUser[item.key];
+                          const isPos = String(val || "").toLowerCase() === "positive";
+                          const isNeg = String(val || "").toLowerCase() === "negative";
+                          return (
+                            <div className="col-6 col-sm-4 col-lg-2" key={item.key}>
+                              <div className="p-2 px-3 rounded-3 bg-light border">
+                                <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                                  {item.label}
+                                </div>
+                                <div className="fw-semibold mt-1" style={{ fontSize: "13px" }}>
+                                  {val ? (
+                                    <span
+                                      className="px-2 py-0.5 rounded-pill d-inline-block"
+                                      style={{
+                                        fontSize: "12px",
+                                        fontWeight: 600,
+                                        backgroundColor: isPos ? "#fef2f2" : isNeg ? "#f0fdf4" : "#f1f5f9",
+                                        color: isPos ? "#dc2626" : isNeg ? "#166534" : "#475569",
+                                        border: `1px solid ${isPos ? "#fecaca" : isNeg ? "#bbf7d0" : "#e2e8f0"}`,
+                                      }}
+                                    >
+                                      {val}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted">-</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
 
                         <div className="col-12 col-sm-6 col-lg-4">
                           <div className="p-2 px-3 rounded-3 bg-light border">
@@ -3540,8 +3718,13 @@ const parseDateString = (dateStr) => {
     },
     {
       id: "6",
-      question: getTranslation(Temperature, lang),
+      question: getTranslation("Temperature (°F) / तापमान (°F)", lang),
       name: "temperature",
+      type: "number",
+      min: 0,
+      max: 115,
+      step: "0.1",
+      placeholder: getTranslation("e.g. 98.6 - 100 °F / जैसे 98.6 - 100 °F", lang),
     },
     {
       id: "7",
@@ -3571,6 +3754,36 @@ const parseDateString = (dateStr) => {
       step: "0.1",
       placeholder: getTranslation("g/dL (e.g. 14.2)", lang),
     },
+    {
+      id: "10",
+      question: getTranslation("HIV / एचआईवी", lang),
+      name: "hiv",
+      type: "screening",
+    },
+    {
+      id: "11",
+      question: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी (HCV)", lang),
+      name: "hepatitis_c",
+      type: "screening",
+    },
+    {
+      id: "12",
+      question: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी (HBsAg)", lang),
+      name: "hepatitis_b",
+      type: "screening",
+    },
+    {
+      id: "13",
+      question: getTranslation("VDRL / वीडीआरएल", lang),
+      name: "vdrl",
+      type: "screening",
+    },
+    {
+      id: "14",
+      question: getTranslation("Syphilis / सिफलिस", lang),
+      name: "syphilis",
+      type: "screening",
+    },
   ].map(({ id, question, name, type, min, max, step, placeholder }) => (
     <tr key={id}>
       <td>{id}</td>
@@ -3595,6 +3808,26 @@ const parseDateString = (dateStr) => {
             <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
             <option value="No">{getTranslation("No / नहीं", lang)}</option>
           </select>
+        ) : type === "screening" ? (
+          <select
+            className="form-control"
+            name={name}
+            value={PFAeditData[name] || ""}
+            onChange={(e) => {
+              const { name, value } = e.target;
+              setPFAeditData((prev) => ({
+                ...prev,
+                [name]: value,
+              }));
+            }}
+          >
+            <option value="">
+              {getTranslation("Select / चुनें", lang)}
+            </option>
+            <option value="Negative">{getTranslation("Negative / नेगेटिव", lang)}</option>
+            <option value="Positive">{getTranslation("Positive / पॉजिटिव", lang)}</option>
+            <option value="Not Tested">{getTranslation("Not Tested / जांच नहीं हुई", lang)}</option>
+          </select>
         ) : (
           <Input
             type={["weight", "pulse_rate", "temperature", "spo2", "sugar", "hb"].includes(name) || type === "number" ? "number" : "text"}
@@ -3605,10 +3838,10 @@ const parseDateString = (dateStr) => {
             step={step}
             placeholder={placeholder || getTranslation("Enter details / विवरण दर्ज करें", lang)}
             onChange={(e) => {
-              const { name, value, type } = e.target;
+              const { name, value } = e.target;
               setPFAeditData((prev) => ({
                 ...prev,
-                [name]: type === "number" ? (value === "" ? "" : Number(value)) : value,
+                [name]: value,
               }));
             }}
           />
@@ -4110,7 +4343,7 @@ const parseDateString = (dateStr) => {
                           />
                           <Label className="text-muted" for="checkbox3">
                             {
-                              getTranslation("Varification from parent side before PFA submitting/PFA सबमिट करने से पहले माता-पिता की तरफ से वेरिफिकेशन",lang)
+                              getTranslation("Verification from parent side before PFA submitting/PFA सबमिट करने से पहले माता-पिता की तरफ से वेरिफिकेशन",lang)
                             }
                           </Label>
                         </div>
@@ -4369,8 +4602,13 @@ const parseDateString = (dateStr) => {
     },
     {
       id: "6",
-      question: getTranslation(Temperature, lang),
+      question: getTranslation("Temperature (°F) / तापमान (°F)", lang),
       name: "temperature",
+      type: "number",
+      min: 0,
+      max: 115,
+      step: "0.1",
+      placeholder: getTranslation("e.g. 98.6 - 100 °F / जैसे 98.6 - 100 °F", lang),
     },
     {
       id: "7",
@@ -4400,6 +4638,36 @@ const parseDateString = (dateStr) => {
       step: "0.1",
       placeholder: getTranslation("g/dL (e.g. 14.2)", lang),
     },
+    {
+      id: "10",
+      question: getTranslation("HIV / एचआईवी", lang),
+      name: "hiv",
+      type: "screening",
+    },
+    {
+      id: "11",
+      question: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी (HCV)", lang),
+      name: "hepatitis_c",
+      type: "screening",
+    },
+    {
+      id: "12",
+      question: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी (HBsAg)", lang),
+      name: "hepatitis_b",
+      type: "screening",
+    },
+    {
+      id: "13",
+      question: getTranslation("VDRL / वीडीआरएल", lang),
+      name: "vdrl",
+      type: "screening",
+    },
+    {
+      id: "14",
+      question: getTranslation("Syphilis / सिफलिस", lang),
+      name: "syphilis",
+      type: "screening",
+    },
   ].map(({ id, question, name, type, min, max, step, placeholder }) => (
     <tr key={id}>
       <td>{id}</td>
@@ -4424,6 +4692,26 @@ const parseDateString = (dateStr) => {
             <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
             <option value="No">{getTranslation("No / नहीं", lang)}</option>
           </select>
+        ) : type === "screening" ? (
+          <select
+            className="form-control"
+            name={name}
+            value={PFAeditData[name] || ""}
+            onChange={(e) => {
+              const { name, value } = e.target;
+              setPFAeditData((prev) => ({
+                ...prev,
+                [name]: value,
+              }));
+            }}
+          >
+            <option value="">
+              {getTranslation("Select / चुनें", lang)}
+            </option>
+            <option value="Negative">{getTranslation("Negative / नेगेटिव", lang)}</option>
+            <option value="Positive">{getTranslation("Positive / पॉजिटिव", lang)}</option>
+            <option value="Not Tested">{getTranslation("Not Tested / जांच नहीं हुई", lang)}</option>
+          </select>
         ) : (
           <Input
             type={["weight", "pulse_rate", "temperature", "spo2", "sugar", "hb"].includes(name) || type === "number" ? "number" : "text"}
@@ -4434,10 +4722,10 @@ const parseDateString = (dateStr) => {
             step={step}
             placeholder={placeholder || getTranslation("Enter details / विवरण दर्ज करें", lang)}
             onChange={(e) => {
-              const { name, value, type } = e.target;
+              const { name, value } = e.target;
               setPFAeditData((prev) => ({
                 ...prev,
-                [name]: type === "number" ? (value === "" ? "" : Number(value)) : value,
+                [name]: value,
               }));
             }}
           />
@@ -4923,7 +5211,7 @@ const parseDateString = (dateStr) => {
                   />
                   <Label className="text-muted" for="checkbox3">
                     {
-                      getTranslation("Varification from parent side before PFA submitting/पीएफए ​​जमा करने से पहले माता-पिता की ओर से सत्यापन",lang)
+                      getTranslation("Verification from parent side before PFA submitting/पीएफए ​​जमा करने से पहले माता-पिता की ओर से सत्यापन",lang)
                     }
                   </Label>
                 </div>

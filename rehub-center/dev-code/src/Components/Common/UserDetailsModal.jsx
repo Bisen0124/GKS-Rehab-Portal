@@ -6,7 +6,7 @@ import { useBranch } from "../../contexts/BranchContext";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 import html2pdf from "html2pdf.js";
-import { useReactToPrint } from "react-to-print";
+import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 import { toast } from "react-toastify";
 import ModalActionButtons from "./ModalActionButtons";
 
@@ -186,10 +186,10 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
       });
   };
 
-  const handlePrint = useReactToPrint({
-    content: () => pdfRef.current,
-    pageStyle: `@page { size: A4; margin: 12mm; }`,
-  });
+  const handlePrint = () =>
+    printElementAsPdf(pdfRef.current, {
+      title: `Patient_${selectedUser?.name || "Profile"}`,
+    });
 
   const getRoleLabel = (role) => {
     switch (Number(role)) {

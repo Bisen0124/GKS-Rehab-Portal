@@ -36,7 +36,7 @@ import PatientViewHeader from "../Common/PatientViewHeader";
 import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
-import { useReactToPrint } from "react-to-print";
+import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 import ModalActionButtons from "../Common/ModalActionButtons";
 import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 
@@ -1115,10 +1115,7 @@ const FirstExamination = () => {
     setFEPrefillModal(false);
   };
 
-  const handlePrint = useReactToPrint({
-    content: () => pdfRef.current,
-    pageStyle: `@page { size: A4; margin: 12mm; }`,
-  });
+  const handlePrint = () => printElementAsPdf(pdfRef.current);
 
   return (
     <Fragment>

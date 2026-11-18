@@ -27,7 +27,7 @@ import { useBranch } from "../../contexts/BranchContext";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
-import { useReactToPrint } from "react-to-print";
+import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 import PatientViewHeader from "../Common/PatientViewHeader";
 import TableExportButtons from "../Common/TableExportButtons";
 import ModalLoading from "../Common/ModalLoading";
@@ -46,6 +46,431 @@ import {
   CheckCircle,
   RefreshCw,
 } from "react-feather";
+
+// Tabbed Clinical Withdrawal Scales matching clinical assessment sheets (Alcohol CIWA-Ar, Cannabis CWAS, Opioids COWS, ATS AWQ)
+const SUBSTANCE_WITHDRAWAL_SCALES = {
+  alcohol: {
+    key: "alcohol",
+    tabLabel: "Alcohol",
+    matchKeywords: ["alcohol", "liquor", "ethanol", "ciwa"],
+    scaleTitle: "Clinical Alcohol Withdrawal Scale (CIWA-Ar Adaptation)",
+    subtitle:
+      "For each item, click/select the number that best describes the patient's signs or symptoms. Rate on just the apparent relationship to alcohol withdrawal.",
+    benchmarks: [
+      { range: "0 - 9", min: 0, max: 9, label: "Mild Alcohol Withdrawal", color: "#166534", bg: "#f0fdf4", border: "#bbf7d0" },
+      { range: "10 - 15", min: 10, max: 15, label: "Moderate Alcohol Withdrawal", color: "#92400e", bg: "#fffbeb", border: "#fde68a" },
+      { range: "16 - 20", min: 16, max: 20, label: "Severe Alcohol Withdrawal", color: "#c2410c", bg: "#fff7ed", border: "#fed7aa" },
+      { range: "21+", min: 21, max: 999, label: "Very Severe Alcohol Withdrawal / Risk of DTs", color: "#991b1b", bg: "#fef2f2", border: "#fecaca" },
+    ],
+    sampleDemo: {
+      nausea_vomiting: { score: 2, notes: "Mild morning dry heaves" },
+      tremor: { score: 2, notes: "Visible fine hand tremor" },
+      paroxysmal_sweats: { score: 2, notes: "Beads of sweat on forehead" },
+      anxiety: { score: 4, notes: "Tense, hypervigilant" },
+      agitation: { score: 1, notes: "Slightly fidgety in chair" },
+      tactile_disturbances: { score: 0, notes: "None reported" },
+      auditory_disturbances: { score: 0, notes: "None reported" },
+      visual_disturbances: { score: 1, notes: "Mild light sensitivity" },
+      headache: { score: 2, notes: "Mild frontal headache" },
+      orientation: { score: 0, notes: "Oriented x3" },
+    },
+    items: [
+      {
+        itemNo: 1,
+        key: "nausea_vomiting",
+        title: "Nausea and Vomiting",
+        sub: "(Over last 1/2 hour)",
+        options: [
+          { value: 0, label: "No nausea and no vomiting" },
+          { value: 1, label: "Mild nausea with no vomiting" },
+          { value: 2, label: "Moderate nausea with dry heaves" },
+          { value: 4, label: "Intermittent nausea with dry heaves" },
+          { value: 7, label: "Constant nausea, frequent dry heaves and vomiting" },
+        ],
+      },
+      {
+        itemNo: 2,
+        key: "tremor",
+        title: "Tremor",
+        sub: "(Observation of arms extended & fingers spread)",
+        options: [
+          { value: 0, label: "No tremor" },
+          { value: 1, label: "Not visible, but can be felt fingertip to fingertip" },
+          { value: 2, label: "Moderate tremor, easily visible with arms extended" },
+          { value: 4, label: "Severe tremor, visible even with arms at sides" },
+          { value: 7, label: "Gross, severe tremor even with arms not extended" },
+        ],
+      },
+      {
+        itemNo: 3,
+        key: "paroxysmal_sweats",
+        title: "Paroxysmal Sweats",
+        sub: "(Over last 1/2 hour)",
+        options: [
+          { value: 0, label: "No sweat visible" },
+          { value: 1, label: "Barely perceptible sweating, palms moist" },
+          { value: 2, label: "Beads of sweat obvious on forehead" },
+          { value: 4, label: "Drenching sweats, shirts/bedding wet" },
+          { value: 7, label: "Profuse, continuous drenching sweat" },
+        ],
+      },
+      {
+        itemNo: 4,
+        key: "anxiety",
+        title: "Anxiety",
+        sub: "(Patient observation & report)",
+        options: [
+          { value: 0, label: "No anxiety, patient relaxed" },
+          { value: 1, label: "Mildly anxious, slightly apprehensive" },
+          { value: 2, label: "Moderately anxious, tense" },
+          { value: 4, label: "Severely anxious, hypervigilant" },
+          { value: 7, label: "Acute panic state, severe terror or rage" },
+        ],
+      },
+      {
+        itemNo: 5,
+        key: "agitation",
+        title: "Agitation",
+        sub: "(Observation during assessment)",
+        options: [
+          { value: 0, label: "Normal activity, calm" },
+          { value: 1, label: "Somewhat more than normal activity, fidgety" },
+          { value: 2, label: "Moderately restless, pacing or shifting" },
+          { value: 4, label: "Severely restless, frequent pacing" },
+          { value: 7, label: "Paces constantly, thrashing about, uncooperative" },
+        ],
+      },
+      {
+        itemNo: 6,
+        key: "tactile_disturbances",
+        title: "Tactile Disturbances",
+        sub: "(Patient report)",
+        options: [
+          { value: 0, label: "None" },
+          { value: 1, label: "Very mild itchiness, pins & needles, burning, or numbness" },
+          { value: 2, label: "Mild itchiness, burning, or numbness" },
+          { value: 3, label: "Moderate itchiness, burning, or numbness" },
+          { value: 4, label: "Severe hallucinations/disturbances (sensations of bugs crawling)" },
+          { value: 7, label: "Continuous severe tactile hallucinations" },
+        ],
+      },
+      {
+        itemNo: 7,
+        key: "auditory_disturbances",
+        title: "Auditory Disturbances",
+        sub: "(Patient report)",
+        options: [
+          { value: 0, label: "Not present" },
+          { value: 1, label: "Very mild harshness or ability to frighten" },
+          { value: 2, label: "Mild harshness or ability to frighten" },
+          { value: 3, label: "Moderate auditory sensitivity / fright" },
+          { value: 4, label: "Severe hallucinations (hearing voices/sounds)" },
+          { value: 7, label: "Continuous severe auditory hallucinations" },
+        ],
+      },
+      {
+        itemNo: 8,
+        key: "visual_disturbances",
+        title: "Visual Disturbances",
+        sub: "(Patient report)",
+        options: [
+          { value: 0, label: "Not present" },
+          { value: 1, label: "Very mild sensitivity to light" },
+          { value: 2, label: "Mild sensitivity to light / shadow disturbances" },
+          { value: 3, label: "Moderate visual sensitivity" },
+          { value: 4, label: "Severe visual hallucinations (seeing objects/people)" },
+          { value: 7, label: "Continuous severe visual hallucinations" },
+        ],
+      },
+      {
+        itemNo: 9,
+        key: "headache",
+        title: "Headache, Fullness in Head",
+        sub: "(Patient report)",
+        options: [
+          { value: 0, label: "Not present" },
+          { value: 1, label: "Very mild headache / tightness" },
+          { value: 2, label: "Mild to moderate headache" },
+          { value: 4, label: "Moderately severe headache" },
+          { value: 7, label: "Extremely severe, blinding headache" },
+        ],
+      },
+      {
+        itemNo: 10,
+        key: "orientation",
+        title: "Orientation and Clouding of Sensorium",
+        sub: "(Assessment during interview)",
+        options: [
+          { value: 0, label: "Oriented and can do serial additions" },
+          { value: 1, label: "Cannot do serial additions or uncertain of date" },
+          { value: 2, label: "Disoriented for date by no more than 2 calendar days" },
+          { value: 3, label: "Disoriented for date by more than 2 calendar days" },
+          { value: 4, label: "Disoriented for place and/or person" },
+        ],
+      },
+    ],
+  },
+  cannabis: {
+    key: "cannabis",
+    tabLabel: "Cannabis",
+    matchKeywords: ["cannabis", "ganja", "marijuana", "thc", "cwas"],
+    scaleTitle: "Cannabis Withdrawal Assessment Scale (CWAS Adaptation)",
+    subtitle: "Rate each cannabis withdrawal symptom over the past 24 hours by clicking the matching severity level.",
+    benchmarks: [
+      { range: "0 - 5", min: 0, max: 5, label: "Mild Cannabis Withdrawal", color: "#166534", bg: "#f0fdf4", border: "#bbf7d0" },
+      { range: "6 - 10", min: 6, max: 10, label: "Moderate Cannabis Withdrawal", color: "#92400e", bg: "#fffbeb", border: "#fde68a" },
+      { range: "11+", min: 11, max: 999, label: "Severe Cannabis Withdrawal", color: "#991b1b", bg: "#fef2f2", border: "#fecaca" },
+    ],
+    sampleDemo: {
+      irritability_anger: { score: 2, notes: "Short-tempered during morning" },
+      anxiety_nervousness: { score: 1, notes: "Mildly anxious" },
+      sleep_difficulty: { score: 2, notes: "Woke up twice, vivid dreams" },
+      decreased_appetite: { score: 1, notes: "Ate half breakfast" },
+      restlessness_craving: { score: 2, notes: "Craving reported" },
+    },
+    items: [
+      {
+        itemNo: 1,
+        key: "irritability_anger",
+        title: "Irritability or Anger",
+        sub: "(Over last 24 hours)",
+        options: [
+          { value: 0, label: "None, calm mood" },
+          { value: 1, label: "Mild irritability" },
+          { value: 2, label: "Moderate irritability / short-tempered" },
+          { value: 3, label: "Severe anger or verbal outbursts" },
+        ],
+      },
+      {
+        itemNo: 2,
+        key: "anxiety_nervousness",
+        title: "Nervousness or Anxiety",
+        sub: "(Patient observation & report)",
+        options: [
+          { value: 0, label: "Relaxed, no anxiety" },
+          { value: 1, label: "Mild nervousness" },
+          { value: 2, label: "Moderately anxious and tense" },
+          { value: 3, label: "Severe persistent anxiety" },
+        ],
+      },
+      {
+        itemNo: 3,
+        key: "sleep_difficulty",
+        title: "Sleep Difficulty / Insomnia",
+        sub: "(Over last night)",
+        options: [
+          { value: 0, label: "Normal restful sleep" },
+          { value: 1, label: "Difficulty falling asleep" },
+          { value: 2, label: "Frequent waking or disturbing dreams" },
+          { value: 3, label: "Severe insomnia (< 3 hours sleep)" },
+        ],
+      },
+      {
+        itemNo: 4,
+        key: "decreased_appetite",
+        title: "Decreased Appetite / GI Discomfort",
+        sub: "(Over last 24 hours)",
+        options: [
+          { value: 0, label: "Normal appetite" },
+          { value: 1, label: "Slightly reduced appetite" },
+          { value: 2, label: "Skipped meals / mild stomach discomfort" },
+          { value: 3, label: "No appetite / unable to eat" },
+        ],
+      },
+      {
+        itemNo: 5,
+        key: "restlessness_craving",
+        title: "Restlessness & Craving",
+        sub: "(Observation & patient report)",
+        options: [
+          { value: 0, label: "Calm, no craving" },
+          { value: 1, label: "Mild restlessness or occasional craving" },
+          { value: 2, label: "Noticeably restless with frequent urges" },
+          { value: 3, label: "Intense restlessness and strong craving" },
+        ],
+      },
+    ],
+  },
+  opioids: {
+    key: "opioids",
+    tabLabel: "Opioids",
+    matchKeywords: ["opioid", "opiod", "opiate", "heroin", "smack", "drugs", "cows"],
+    scaleTitle: "Clinical Opiate Withdrawal Scale (COWS Adaptation)",
+    subtitle: "Select the observed clinical finding for each opioid withdrawal indicator.",
+    benchmarks: [
+      { range: "0 - 8", min: 0, max: 8, label: "Mild Opioid Withdrawal", color: "#166534", bg: "#f0fdf4", border: "#bbf7d0" },
+      { range: "9 - 16", min: 9, max: 16, label: "Moderate Opioid Withdrawal", color: "#92400e", bg: "#fffbeb", border: "#fde68a" },
+      { range: "17+", min: 17, max: 999, label: "Severe Opioid Withdrawal", color: "#991b1b", bg: "#fef2f2", border: "#fecaca" },
+    ],
+    sampleDemo: {
+      resting_pulse: { score: 2, notes: "Pulse 108 bpm" },
+      sweating_chills: { score: 2, notes: "Flushed with moist face" },
+      restlessness: { score: 3, notes: "Shifting frequently" },
+      bone_joint_aches: { score: 2, notes: "Knee and back pain" },
+      gi_upset: { score: 2, notes: "Mild nausea" },
+      anxiety_irritability: { score: 2, notes: "Irritable" },
+    },
+    items: [
+      {
+        itemNo: 1,
+        key: "resting_pulse",
+        title: "Resting Pulse Rate",
+        sub: "(Measured after 1 min sitting)",
+        options: [
+          { value: 0, label: "Pulse 80 bpm or below" },
+          { value: 1, label: "Pulse 81 - 100 bpm" },
+          { value: 2, label: "Pulse 101 - 120 bpm" },
+          { value: 4, label: "Pulse greater than 120 bpm" },
+        ],
+      },
+      {
+        itemNo: 2,
+        key: "sweating_chills",
+        title: "Sweating / Chills",
+        sub: "(Over past 1/2 hour)",
+        options: [
+          { value: 0, label: "No report of chills or flushing" },
+          { value: 1, label: "Subjective report of chills or flushing" },
+          { value: 2, label: "Flushed or observable moistness on face" },
+          { value: 3, label: "Beads of sweat on brow or face" },
+          { value: 4, label: "Sweat streaming off face" },
+        ],
+      },
+      {
+        itemNo: 3,
+        key: "restlessness",
+        title: "Restlessness",
+        sub: "(Observation during assessment)",
+        options: [
+          { value: 0, label: "Able to sit still" },
+          { value: 1, label: "Reports difficulty sitting still, but is able to do so" },
+          { value: 3, label: "Frequent shifting or extraneous movements of legs/arms" },
+          { value: 5, label: "Unable to sit still for more than a few seconds" },
+        ],
+      },
+      {
+        itemNo: 4,
+        key: "bone_joint_aches",
+        title: "Bone or Joint Aches",
+        sub: "(If not due to other pain)",
+        options: [
+          { value: 0, label: "Not present" },
+          { value: 1, label: "Mild diffuse discomfort" },
+          { value: 2, label: "Patient reports severe diffuse aching of joints/muscles" },
+          { value: 4, label: "Patient rubbing joints or muscles, unable to sit still" },
+        ],
+      },
+      {
+        itemNo: 5,
+        key: "gi_upset",
+        title: "GI Upset / Nausea",
+        sub: "(Over last 1/2 hour)",
+        options: [
+          { value: 0, label: "No GI symptoms" },
+          { value: 1, label: "Stomach cramps" },
+          { value: 2, label: "Nausea or loose stool" },
+          { value: 3, label: "Vomiting or diarrhea" },
+          { value: 5, label: "Multiple episodes of diarrhea or vomiting" },
+        ],
+      },
+      {
+        itemNo: 6,
+        key: "anxiety_irritability",
+        title: "Anxiety or Irritability",
+        sub: "(Observation & report)",
+        options: [
+          { value: 0, label: "None" },
+          { value: 1, label: "Patient reports increasing irritability or anxiousness" },
+          { value: 2, label: "Patient obviously irritable or anxious" },
+          { value: 4, label: "So irritable or anxious that participation is difficult" },
+        ],
+      },
+    ],
+  },
+  ats: {
+    key: "ats",
+    tabLabel: "ATS",
+    matchKeywords: ["ats", "amphetamine", "meth", "stimulant", "md", "cocaine"],
+    scaleTitle: "Amphetamine-Type Stimulant Withdrawal Scale (AWQ Adaptation)",
+    subtitle: "Select the clinical severity level for each ATS / stimulant withdrawal sign.",
+    benchmarks: [
+      { range: "0 - 6", min: 0, max: 6, label: "Mild ATS Withdrawal", color: "#166534", bg: "#f0fdf4", border: "#bbf7d0" },
+      { range: "7 - 12", min: 7, max: 12, label: "Moderate ATS Withdrawal", color: "#92400e", bg: "#fffbeb", border: "#fde68a" },
+      { range: "13+", min: 13, max: 999, label: "Severe ATS Withdrawal", color: "#991b1b", bg: "#fef2f2", border: "#fecaca" },
+    ],
+    sampleDemo: {
+      craving: { score: 2, notes: "Moderate afternoon craving" },
+      fatigue_energy: { score: 2, notes: "Low energy, drowsy" },
+      dysphoric_mood: { score: 2, notes: "Flat affect, low mood" },
+      sleep_disturbance: { score: 2, notes: "Slept 11 hours" },
+      psychomotor_change: { score: 1, notes: "Slightly slowed speech" },
+    },
+    items: [
+      {
+        itemNo: 1,
+        key: "craving",
+        title: "Craving for Stimulants",
+        sub: "(Patient report)",
+        options: [
+          { value: 0, label: "No craving" },
+          { value: 1, label: "Mild occasional thoughts" },
+          { value: 2, label: "Moderate frequent urges" },
+          { value: 4, label: "Intense, overpowering craving" },
+        ],
+      },
+      {
+        itemNo: 2,
+        key: "fatigue_energy",
+        title: "Fatigue & Lack of Energy",
+        sub: "(Observation & report)",
+        options: [
+          { value: 0, label: "Normal energy level" },
+          { value: 1, label: "Mild tiredness" },
+          { value: 2, label: "Noticeable lethargy / heavy limbs" },
+          { value: 4, label: "Severe exhaustion, unable to perform routine tasks" },
+        ],
+      },
+      {
+        itemNo: 3,
+        key: "dysphoric_mood",
+        title: "Dysphoric Mood / Depression",
+        sub: "(Patient report)",
+        options: [
+          { value: 0, label: "Normal stable mood" },
+          { value: 1, label: "Mild low mood or emotional flatness" },
+          { value: 2, label: "Moderate sadness / loss of interest" },
+          { value: 4, label: "Severe depression / hopelessness" },
+        ],
+      },
+      {
+        itemNo: 4,
+        key: "sleep_disturbance",
+        title: "Sleep Disturbance / Hypersomnia",
+        sub: "(Over last 24 hours)",
+        options: [
+          { value: 0, label: "Normal sleep pattern" },
+          { value: 1, label: "Light sleep or vivid dreams" },
+          { value: 2, label: "Excessive sleep (hypersomnia) or broken sleep" },
+          { value: 4, label: "Severe insomnia or extreme hypersomnia" },
+        ],
+      },
+      {
+        itemNo: 5,
+        key: "psychomotor_change",
+        title: "Psychomotor Agitation / Slowing",
+        sub: "(Clinical observation)",
+        options: [
+          { value: 0, label: "Normal movement and speech" },
+          { value: 1, label: "Slightly slowed or mildly restless" },
+          { value: 2, label: "Noticeable pacing or slowed speech" },
+          { value: 4, label: "Marked agitation or severe slowing" },
+        ],
+      },
+    ],
+  },
+};
+
+const SUBSTANCE_TAB_ORDER = ["alcohol", "cannabis", "opioids", "ats"];
 
 // Standard Clinical Institute Withdrawal Assessment (CIWA-Ar) parameter fallbacks
 const DEFAULT_CIWA_PARAMETERS = [
@@ -264,8 +689,9 @@ const Detoxification = () => {
   const [viewUserDetailsModal, setViewUserDetailsModal] = useState(false);
   const [selectedViewUserId, setSelectedViewUserId] = useState(null);
 
-  // Form options from backend
+  // Form options from backend (100% dynamic substances & parameters from Settings -> Detoxification)
   const [formSubstances, setFormSubstances] = useState(DEFAULT_CIWA_PARAMETERS);
+  const [dbParametersBySubId, setDbParametersBySubId] = useState({});
 
   // Registered Patients (Table 1)
   const [registeredPatients, setRegisteredPatients] = useState([]);
@@ -372,27 +798,59 @@ const Detoxification = () => {
         // ignore
       }
 
-      // Also incorporate custom configured assessment parameters
+      // Also incorporate custom configured assessment parameters (grouped dynamically by sub_id)
+      const groupedParams = {};
       try {
         const customParams = await fetchAssessmentParameters(selectedBranch);
         if (Array.isArray(customParams) && customParams.length > 0) {
           customParams.forEach((cp) => {
             if (cp.sub_id && cp.scores && cp.scores.length > 0) {
               const scoringBands = cp.scores.map((sc, scIdx) => ({
-                score_id: scIdx + 1,
-                min_score: Number(sc.score) || 0,
-                max_score: Number(sc.score) || 0,
+                score_id: sc.id || scIdx + 1,
+                min_score: Number(sc.min_score !== undefined ? sc.min_score : sc.score) || 0,
+                max_score: Number(sc.max_score !== undefined ? sc.max_score : sc.score) || 0,
                 description: sc.description,
               }));
               bandsMap[String(cp.sub_id)] = scoringBands;
               if (cp.substance_name) bandsMap[cp.substance_name.toLowerCase()] = scoringBands;
               bandsMap[cp.parameter_name.toLowerCase()] = scoringBands;
+
+              const sidKey = String(cp.sub_id);
+              if (!groupedParams[sidKey]) groupedParams[sidKey] = [];
+              const sortedOpts = [...cp.scores]
+                .map((sc) => ({
+                  value: Number(sc.min_score !== undefined ? sc.min_score : sc.score) || 0,
+                  label: sc.description || `Score ${sc.score}`,
+                }))
+                .sort((a, b) => a.value - b.value);
+
+              // Deduplicate score values keeping order
+              const uniqueOpts = [];
+              const seenVals = new Set();
+              sortedOpts.forEach((o) => {
+                if (!seenVals.has(o.value)) {
+                  seenVals.add(o.value);
+                  uniqueOpts.push(o);
+                }
+              });
+
+              groupedParams[sidKey].push({
+                itemNo: groupedParams[sidKey].length + 1,
+                key: cp.parameter_name
+                  .toLowerCase()
+                  .replace(/[^a-z0-9]+/g, "_")
+                  .replace(/^_|_$/g, "") || `param_${cp.id}`,
+                title: cp.parameter_name,
+                sub: cp.substance_name ? `(${cp.substance_name})` : "(Live DB Parameter)",
+                options: uniqueOpts.length > 0 ? uniqueOpts : [{ value: 0, label: "Normal / None" }],
+              });
             }
           });
         }
       } catch {
         // ignore
       }
+      setDbParametersBySubId(groupedParams);
 
       // 3. Merge master substances with scoring bands
       if (masterSubs.length > 0) {
@@ -413,6 +871,17 @@ const Detoxification = () => {
           };
         });
         setFormSubstances(merged);
+        setFormData((prev) => {
+          const validIds = merged.map((m) => String(m.sub_id || m.id));
+          if (prev.sub_id && validIds.includes(String(prev.sub_id))) {
+            return prev;
+          }
+          const alc = merged.find((m) =>
+            `${m.name || ""} ${m.description || ""}`.toLowerCase().includes("alcohol")
+          );
+          const picked = alc || merged[0];
+          return { ...prev, sub_id: picked?.sub_id || picked?.id || "" };
+        });
         return;
       }
     } catch (err) {
@@ -529,12 +998,142 @@ const Detoxification = () => {
     setFilteredAssessments(filtered);
   };
 
-  // Parameter score updater: updates the score for a specific parameter and re-computes CIWA total
+  // Match a dynamic DB substance to a built-in clinical template if no custom DB parameters are configured yet
+  const matchTemplateForSubstance = (subObj) => {
+    if (!subObj) return null;
+    const hay = `${subObj.name || ""} ${subObj.description || ""}`.toLowerCase();
+    for (const key of SUBSTANCE_TAB_ORDER) {
+      if (SUBSTANCE_WITHDRAWAL_SCALES[key].matchKeywords.some((kw) => hay.includes(kw))) {
+        return SUBSTANCE_WITHDRAWAL_SCALES[key];
+      }
+    }
+    return null;
+  };
+
+  // Dynamically resolve the clinical withdrawal scale for ANY live DB substance (sub_id)
+  const getScaleForSubId = useCallback(
+    (subId, subsOverride = null) => {
+      const subs = subsOverride || formSubstances || [];
+      const subObj =
+        subs.find((s) => String(s.sub_id || s.id) === String(subId)) || subs[0];
+
+      const subName = subObj?.name || "Alcohol";
+      const displayTitle =
+        subName.charAt(0).toUpperCase() + subName.slice(1);
+      const sidKey = String(subObj?.sub_id || subObj?.id || subId || "");
+      const liveDbParams = dbParametersBySubId[sidKey] || [];
+      const matchedTemplate = matchTemplateForSubstance(subObj);
+
+      // Priority 1: Live dynamic parameters configured in Settings -> Detoxification for this substance
+      if (liveDbParams.length > 0) {
+        return {
+          key: sidKey,
+          tabLabel: displayTitle,
+          scaleTitle: `${displayTitle} Withdrawal Assessment Scale`,
+          subtitle:
+            subObj?.description && subObj.description.toLowerCase() !== subName.toLowerCase()
+              ? subObj.description
+              : "For each item, click/select the criteria that best describes the patient's signs or symptoms.",
+          isLiveDbParams: true,
+          benchmarks: matchedTemplate?.benchmarks || SUBSTANCE_WITHDRAWAL_SCALES.alcohol.benchmarks,
+          sampleDemo: matchedTemplate?.sampleDemo || {},
+          items: liveDbParams,
+        };
+      }
+
+      // Priority 2: Built-in clinical sample scale template matching the substance name (e.g. Alcohol CIWA-Ar, Cannabis CWAS, Opioids/Drugs COWS, ATS AWQ)
+      if (matchedTemplate) {
+        return {
+          ...matchedTemplate,
+          key: sidKey,
+          tabLabel: displayTitle,
+          isLiveDbParams: false,
+        };
+      }
+
+      // Priority 3: Build clean table item(s) directly from the substance's own DB scoring_bands
+      const bands = Array.isArray(subObj?.scoring_bands) ? subObj.scoring_bands : [];
+      const optionsFromBands = [];
+      const seen = new Set();
+      bands.forEach((b) => {
+        const min = Number(b.min_score ?? 0);
+        if (!seen.has(min)) {
+          seen.add(min);
+          optionsFromBands.push({
+            value: min,
+            label: b.description || `Score ${min}`,
+          });
+        }
+      });
+      if (optionsFromBands.length === 0) {
+        optionsFromBands.push(
+          { value: 0, label: "None / Normal" },
+          { value: 1, label: "Mild symptom" },
+          { value: 2, label: "Moderate symptom" },
+          { value: 4, label: "Severe symptom" },
+          { value: 7, label: "Very severe / acute" }
+        );
+      }
+      optionsFromBands.sort((a, b) => a.value - b.value);
+
+      return {
+        key: sidKey,
+        tabLabel: displayTitle,
+        scaleTitle: `${displayTitle} Withdrawal Assessment Scale`,
+        subtitle:
+          subObj?.description ||
+          "Click/select the severity criteria that best describes the patient's current clinical presentation.",
+        isLiveDbParams: bands.length > 0,
+        benchmarks: SUBSTANCE_WITHDRAWAL_SCALES.alcohol.benchmarks,
+        sampleDemo: {},
+        items: [
+          {
+            itemNo: 1,
+            key: (subName || "symptom").toLowerCase().replace(/[^a-z0-9]+/g, "_"),
+            title: displayTitle,
+            sub: subObj?.description ? `(${subObj.description})` : "(Clinical observation)",
+            options: optionsFromBands,
+          },
+        ],
+      };
+    },
+    [formSubstances, dbParametersBySubId]
+  );
+
+  const buildZeroScoresForScale = (scale) => {
+    const map = {};
+    (scale?.items || []).forEach((item) => {
+      const zeroOpt = item.options?.[0] || { value: 0, label: "" };
+      map[item.key] = { score: zeroOpt.value, description: zeroOpt.label, notes: "" };
+    });
+    return map;
+  };
+
+  // Switch active dynamic substance tab & initialize that substance's withdrawal scale cleanly
+  const handleSubstanceTabChange = (subId, isEditing = false) => {
+    const updater = isEditing ? setEditData : setFormData;
+    const scale = getScaleForSubId(subId);
+    const freshScores = buildZeroScoresForScale(scale);
+
+    updater((prev) => ({
+      ...prev,
+      sub_id: subId,
+      parameterScores: freshScores,
+      CIWA_rating: 0,
+    }));
+  };
+
+  // Parameter score updater: updates the score for a specific parameter and re-computes total
   const handleParameterScoreChange = (paramName, scoreNum, desc, isEditing = false) => {
     const updater = isEditing ? setEditData : setFormData;
     updater((prev) => {
       const currentScores = { ...(prev.parameterScores || {}) };
-      currentScores[paramName] = { score: Number(scoreNum), description: desc };
+      const existingNotes = currentScores[paramName]?.notes || "";
+      currentScores[paramName] = {
+        score: Number(scoreNum),
+        description: desc,
+        notes: existingNotes,
+      };
 
       const newRating = Object.values(currentScores).reduce(
         (sum, item) => sum + (Number(item.score) || 0),
@@ -549,20 +1148,116 @@ const Detoxification = () => {
     });
   };
 
+  // Parameter notes updater (Notes / Context column)
+  const handleParameterNoteChange = (paramName, noteText, isEditing = false) => {
+    const updater = isEditing ? setEditData : setFormData;
+    updater((prev) => {
+      const currentScores = { ...(prev.parameterScores || {}) };
+      const existing = currentScores[paramName] || { score: 0, description: "" };
+      currentScores[paramName] = {
+        ...existing,
+        notes: noteText,
+      };
+      return {
+        ...prev,
+        parameterScores: currentScores,
+      };
+    });
+  };
+
+  // Fill realistic sample clinical demo values for the active dynamic substance tab
+  const handleLoadSampleDemo = (isEditing = false) => {
+    const updater = isEditing ? setEditData : setFormData;
+    updater((prev) => {
+      const scale = getScaleForSubId(prev.sub_id);
+      const demo = scale.sampleDemo || {};
+      const nextScores = {};
+      let total = 0;
+
+      scale.items.forEach((item, idx) => {
+        const demoItem = demo[item.key];
+        let matchedOpt;
+        if (demoItem) {
+          matchedOpt =
+            item.options.find((o) => o.value === demoItem.score) || item.options[0];
+        } else {
+          // Pick a realistic mild/moderate option for dynamic DB parameters
+          const pickIdx = Math.min(idx % 3 === 0 ? 2 : 1, item.options.length - 1);
+          matchedOpt = item.options[pickIdx] || item.options[0];
+        }
+        nextScores[item.key] = {
+          score: matchedOpt.value,
+          description: matchedOpt.label,
+          notes: demoItem?.notes || (matchedOpt.value > 0 ? "Observed during clinical check" : "Normal"),
+        };
+        total += Number(matchedOpt.value) || 0;
+      });
+
+      return {
+        ...prev,
+        parameterScores: nextScores,
+        CIWA_rating: total,
+        remarks:
+          prev.remarks ||
+          `Sample ${scale.tabLabel} withdrawal assessment: Patient cooperative, vitals monitored, supportive care initiated.`,
+      };
+    });
+    toast.info(getTranslation("Sample demo values loaded — click any row to adjust / सैंपल डेमो डेटा लोड किया गया", lang), {
+      autoClose: 2200,
+    });
+  };
+
+  // Reset all scores for the active substance tab back to 0
+  const handleResetScores = (isEditing = false) => {
+    const updater = isEditing ? setEditData : setFormData;
+    updater((prev) => {
+      const scale = getScaleForSubId(prev.sub_id);
+      return {
+        ...prev,
+        parameterScores: buildZeroScoresForScale(scale),
+        CIWA_rating: 0,
+      };
+    });
+  };
+
   // Open Create Modal for Patient
   const handleOpenCreateForm = async (userId) => {
     fetchFormOptions();
     const targetId = userId || currentDetoxUserId;
     if (userId) setCurrentDetoxUserId(userId);
 
+    // Prefer dynamic DB "alcohol" substance as initial active tab if present, else first live DB substance
+    const alcoholSub = (formSubstances || []).find((s) =>
+      `${s.name || ""} ${s.description || ""}`.toLowerCase().includes("alcohol")
+    );
+    const defaultSubId =
+      alcoholSub?.sub_id ||
+      alcoholSub?.id ||
+      formSubstances?.[0]?.sub_id ||
+      formSubstances?.[0]?.id ||
+      "";
+
     const saved = loadDraft("detoxification", targetId);
     if (saved && saved.data) {
-      setFormData(saved.data);
+      const subIdToUse = saved.data.sub_id || defaultSubId;
+      const scale = getScaleForSubId(subIdToUse);
+      setFormData({
+        ...saved.data,
+        sub_id: subIdToUse,
+        parameterScores:
+          saved.data.parameterScores && Object.keys(saved.data.parameterScores).length > 0
+            ? saved.data.parameterScores
+            : buildZeroScoresForScale(scale),
+      });
       setDraftTimestamp(saved.savedAt);
     } else {
-      // Default to first substance if available
-      const defaultSubId = formSubstances.length > 0 ? formSubstances[0].sub_id : "";
-      setFormData({ ...initialDetoxForm, sub_id: defaultSubId });
+      const scale = getScaleForSubId(defaultSubId);
+      setFormData({
+        ...initialDetoxForm,
+        sub_id: defaultSubId,
+        parameterScores: buildZeroScoresForScale(scale),
+        CIWA_rating: 0,
+      });
       setDraftTimestamp(null);
     }
 
@@ -589,10 +1284,16 @@ const Detoxification = () => {
   const handleSubmitAssessment = async (e) => {
     e.preventDefault();
 
+    const effectiveSubId =
+      formData.sub_id ||
+      formSubstances?.[0]?.sub_id ||
+      formSubstances?.[0]?.id ||
+      "";
+
     const compulsoryFieldDefinitions = [
       {
         label: getTranslation("Primary Substance Under Assessment / मुख्य विषहरण पदार्थ", lang),
-        value: formData.sub_id,
+        value: effectiveSubId,
       },
     ];
 
@@ -604,16 +1305,21 @@ const Detoxification = () => {
     const token = localStorage.getItem("Authorization");
     const userId = selectedUser?.user_id || selectedUser?.id || currentDetoxUserId;
 
-    // Build assessment_result array of objects
+    // Build assessment_result array of objects (preserving notes inside description when provided)
     const assessment_result = Object.entries(formData.parameterScores || {})
       .filter(([_, obj]) => obj && obj.score !== "" && obj.score !== undefined && obj.score !== null)
-      .map(([param, obj]) => ({
-        [param]: { [String(obj.score)]: obj.description || "" },
-      }));
+      .map(([param, obj]) => {
+        const descText = obj.notes && obj.notes.trim()
+          ? `${obj.description || ""} [Note: ${obj.notes.trim()}]`.trim()
+          : obj.description || "";
+        return {
+          [param]: { [String(obj.score)]: descText },
+        };
+      });
 
     const payload = {
       user_id: Number(userId),
-      sub_id: Number(formData.sub_id),
+      sub_id: Number(effectiveSubId),
       assessment_result,
       CIWA_rating: Number(formData.CIWA_rating) || 0,
     };
@@ -690,18 +1396,32 @@ const Detoxification = () => {
       }
       const record = data.data;
 
-      // Parse existing assessment_result into map
+      // Parse existing assessment_result into map (extracting inline notes if present)
       const parsedItems = parseAssessmentResult(record.assessment_result);
-      const scoresMap = {};
+      const editSubId =
+        record.sub_id ||
+        formSubstances?.[0]?.sub_id ||
+        formSubstances?.[0]?.id ||
+        "";
+      const editScale = getScaleForSubId(editSubId);
+      const scoresMap = buildZeroScoresForScale(editScale);
       parsedItems.forEach((p) => {
-        scoresMap[p.parameter] = { score: Number(p.score) || 0, description: p.description || "" };
+        const rawDesc = String(p.description || "");
+        const noteMatch = rawDesc.match(/\[Note:\s*([^\]]+)\]\s*$/);
+        const cleanDesc = noteMatch ? rawDesc.replace(/\s*\[Note:\s*[^\]]+\]\s*$/, "").trim() : rawDesc;
+        const extractedNote = noteMatch ? noteMatch[1].trim() : "";
+        scoresMap[p.parameter] = {
+          score: Number(p.score) || 0,
+          description: cleanDesc,
+          notes: extractedNote,
+        };
       });
 
       setEditData({
         detox_id: record.detox_id || record.id || detoxId,
         user_id: record.user_id,
         name: record.name || record.patient_name,
-        sub_id: record.sub_id || "",
+        sub_id: editSubId,
         CIWA_rating: Number(record.CIWA_rating) || 0,
         remarks: record.remarks || "",
         next_follow_date: record.next_follow_date
@@ -730,12 +1450,17 @@ const Detoxification = () => {
 
     const assessment_result = Object.entries(editData.parameterScores || {})
       .filter(([_, obj]) => obj && obj.score !== "" && obj.score !== undefined && obj.score !== null)
-      .map(([param, obj]) => ({
-        [param]: { [String(obj.score)]: obj.description || "" },
-      }));
+      .map(([param, obj]) => {
+        const descText = obj.notes && obj.notes.trim()
+          ? `${obj.description || ""} [Note: ${obj.notes.trim()}]`.trim()
+          : obj.description || "";
+        return {
+          [param]: { [String(obj.score)]: descText },
+        };
+      });
 
     const payload = {
-      sub_id: Number(editData.sub_id),
+      sub_id: Number(editData.sub_id || formSubstances?.[0]?.sub_id || formSubstances?.[0]?.id || 1),
       assessment_result,
       CIWA_rating: Number(editData.CIWA_rating) || 0,
     };
@@ -844,10 +1569,7 @@ const Detoxification = () => {
   };
 
   // Print PDF handler
-  const handlePrint = useReactToPrint({
-    content: () => pdfRef.current,
-    pageStyle: `@page { size: A4; margin: 12mm; } @media print { body { margin: 0; } }`,
-  });
+  const handlePrint = () => printElementAsPdf(pdfRef.current);
 
   const handleDownloadPDF = () => {
     const element = pdfRef.current;
@@ -1201,96 +1923,434 @@ const Detoxification = () => {
     },
   ];
 
-  // Render the Parameter Scoring Matrix for Create or Edit
-  const renderScoringMatrix = (isEditing = false) => {
+  // Render Dynamic Horizontal Substance Tab Bar directly from live DB Master Substances (/api/detoxification-substances)
+  const renderSubstanceTabBar = (isEditing = false) => {
     const currentData = isEditing ? editData : formData;
-    const scores = currentData?.parameterScores || {};
+    const activeSubId = String(
+      currentData?.sub_id || formSubstances?.[0]?.sub_id || formSubstances?.[0]?.id || ""
+    );
 
     return (
-      <div className="border rounded-3 p-3 bg-light mb-4">
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 pb-2 border-bottom">
-          <div>
-            <h6 className="fw-bold mb-0 text-dark">
-              📊 {getTranslation("CIWA-Ar Parameter Scoring Matrix / सीआईडब्ल्यूए स्कोरिंग मैट्रिक्स", lang)}
-            </h6>
-            <small className="text-muted">
-              {getTranslation("Select clinical findings for each parameter to compute the withdrawal severity score.", lang)}
-            </small>
-          </div>
-        </div>
+      <div
+        className="d-flex align-items-center flex-wrap gap-1 mb-3"
+        style={{
+          backgroundColor: "#2c3034",
+          borderRadius: "10px",
+          padding: "6px 10px",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+        }}
+        role="tablist"
+      >
+        {(formSubstances || []).map((sub, index) => {
+          const sid = String(sub.sub_id || sub.id);
+          const isActive = activeSubId === sid;
+          const displayLabel = sub.name
+            ? sub.name.charAt(0).toUpperCase() + sub.name.slice(1)
+            : `Substance #${sid}`;
 
-        <Row className="g-3">
-          {formSubstances.map((param) => {
-            const paramKey = param.name;
-            const currentScoreObj = scores[paramKey] || { score: "", description: "" };
-
-            return (
-              <Col md="6" key={param.sub_id || param.name}>
-                <Card className="border shadow-none h-100 bg-white">
-                  <CardBody className="p-3">
-                    <div className="d-flex justify-content-between align-items-start mb-2">
-                      <div>
-                        <div className="fw-bold text-dark text-capitalize">
-                          {param.display_name || param.name}
-                        </div>
-                        <small className="text-muted">{param.description}</small>
-                      </div>
-                      {currentScoreObj.score !== "" && (
-                        <Badge color="primary" pill>
-                          Score: {currentScoreObj.score}
-                        </Badge>
-                      )}
-                    </div>
-
-                    <FormGroup className="mb-0">
-                      <Input
-                        type="select"
-                        bsSize="sm"
-                        value={
-                          currentScoreObj.score !== "" && currentScoreObj.description
-                            ? `${currentScoreObj.score}|||${currentScoreObj.description}`
-                            : ""
-                        }
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (!val) {
-                            handleParameterScoreChange(paramKey, 0, "", isEditing);
-                            return;
-                          }
-                          const [sNum, sDesc] = val.split("|||");
-                          handleParameterScoreChange(paramKey, sNum, sDesc, isEditing);
-                        }}
-                      >
-                        <option value="">{getTranslation("-- Select score / स्कोर चुनें --", lang)}</option>
-                        {(param.scoring_bands || []).map((band) => {
-                          const min = band.min_score;
-                          const max = band.max_score;
-                          const scoreOptions = [];
-                          for (let s = min; s <= max; s++) {
-                            scoreOptions.push(s);
-                          }
-                          return scoreOptions.map((s) => (
-                            <option key={`${band.score_id}_${s}`} value={`${s}|||${band.description}`}>
-                              Score {s}: {band.description}
-                            </option>
-                          ));
-                        })}
-                      </Input>
-                    </FormGroup>
-                  </CardBody>
-                </Card>
-              </Col>
-            );
-          })}
-        </Row>
+          return (
+            <Fragment key={sid}>
+              {index > 0 && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    color: "#6c757d",
+                    userSelect: "none",
+                    padding: "0 4px",
+                    fontSize: "14px",
+                  }}
+                >
+                  |
+                </span>
+              )}
+              <button
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => handleSubstanceTabChange(sub.sub_id || sub.id, isEditing)}
+                style={{
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "7px 20px",
+                  fontSize: "13.5px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "all 0.18s ease-in-out",
+                  backgroundColor: isActive ? "#22c55e" : "transparent",
+                  color: isActive ? "#ffffff" : "#cbd5e1",
+                  boxShadow: isActive ? "0 2px 8px rgba(34, 197, 94, 0.35)" : "none",
+                }}
+                title={sub.description || displayLabel}
+              >
+                {displayLabel}
+              </button>
+            </Fragment>
+          );
+        })}
       </div>
     );
   };
 
-  // Total Score & CIWA Severity Summary Card (placed after Clinical Remarks at bottom)
+  // Render the Clinical Withdrawal Scale Table (100% dynamic DB parameters or matching clinical template fallback)
+  const renderScoringMatrix = (isEditing = false) => {
+    const currentData = isEditing ? editData : formData;
+    const scale = getScaleForSubId(currentData?.sub_id);
+    const scores = currentData?.parameterScores || {};
+    const totalScore = Number(currentData?.CIWA_rating) || 0;
+    const activeBenchmark =
+      scale.benchmarks.find((b) => totalScore >= b.min && totalScore <= b.max) ||
+      scale.benchmarks[scale.benchmarks.length - 1];
+
+    return (
+      <div
+        className="rounded-3 bg-white mb-4 overflow-hidden"
+        style={{
+          border: "1px solid #cce3dc",
+          boxShadow: "0 2px 10px rgba(30, 101, 84, 0.07)",
+        }}
+      >
+        {/* Clinical Scale Header Banner + Quick Demo / Reset Buttons */}
+        <div
+          className="px-3 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2"
+          style={{
+            backgroundColor: "#f2faf7",
+            borderBottom: "2px solid #1E6554",
+          }}
+        >
+          <div>
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <h6
+                className="fw-bold mb-0"
+                style={{ color: "#1E6554", fontSize: "15.5px", letterSpacing: "0.2px" }}
+              >
+                {scale.scaleTitle}
+              </h6>
+              <span
+                className="px-2 py-0.5 rounded-pill fw-semibold"
+                style={{
+                  fontSize: "10.5px",
+                  backgroundColor: scale.isLiveDbParams ? "#dcfce7" : "#fef3c7",
+                  color: scale.isLiveDbParams ? "#166534" : "#92400e",
+                  border: `1px solid ${scale.isLiveDbParams ? "#86efac" : "#fde68a"}`,
+                }}
+              >
+                {scale.isLiveDbParams
+                  ? getTranslation("● Live DB Parameters", lang)
+                  : getTranslation("● Sample Clinical Template", lang)}
+              </span>
+            </div>
+            <small className="d-block mt-1" style={{ color: "#475569", fontSize: "12px" }}>
+              {scale.subtitle}
+            </small>
+          </div>
+          <div className="d-flex align-items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              color="light"
+              className="border fw-semibold px-3"
+              onClick={() => handleLoadSampleDemo(isEditing)}
+              style={{
+                borderRadius: "7px",
+                fontSize: "12px",
+                color: "#1E6554",
+                borderColor: "#86efac",
+                backgroundColor: "#ffffff",
+              }}
+              title={getTranslation("Load sample clinical scores to preview how this scale works", lang)}
+            >
+              ✨ {getTranslation("Load Sample Demo / सैंपल डेटा", lang)}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              color="light"
+              className="border fw-semibold px-3"
+              onClick={() => handleResetScores(isEditing)}
+              style={{
+                borderRadius: "7px",
+                fontSize: "12px",
+                color: "#475569",
+                backgroundColor: "#ffffff",
+              }}
+            >
+              ↺ {getTranslation("Reset (0)", lang)}
+            </Button>
+          </div>
+        </div>
+
+        {/* Clinical Assessment Table (Item # | Assessment Parameter | Score Value & Criteria | Score (Select) | Notes / Context) */}
+        <div className="table-responsive">
+          <table
+            className="table table-bordered mb-0 align-middle detox-clinical-table"
+            style={{ fontSize: "12.5px" }}
+          >
+            <thead>
+              <tr style={{ backgroundColor: "#1E6554", color: "#ffffff" }}>
+                <th
+                  className="text-center py-2 px-2"
+                  style={{ width: "68px", color: "#ffffff", backgroundColor: "#1E6554", whiteSpace: "nowrap" }}
+                >
+                  Item #
+                </th>
+                <th
+                  className="py-2 px-3"
+                  style={{ width: "22%", color: "#ffffff", backgroundColor: "#1E6554", whiteSpace: "nowrap" }}
+                >
+                  Assessment Parameter
+                </th>
+                <th
+                  className="py-2 px-0"
+                  style={{ width: "44%", color: "#ffffff", backgroundColor: "#1E6554" }}
+                >
+                  <div className="d-flex align-items-center">
+                    <span
+                      className="text-center px-2"
+                      style={{
+                        width: "90px",
+                        flexShrink: 0,
+                        color: "#ffffff",
+                        whiteSpace: "nowrap",
+                        borderRight: "1px solid rgba(255,255,255,0.28)",
+                      }}
+                    >
+                      Score Value
+                    </span>
+                    <span className="px-3 flex-grow-1" style={{ color: "#ffffff", whiteSpace: "nowrap" }}>
+                      Criteria Description (Click row to select)
+                    </span>
+                  </div>
+                </th>
+                <th
+                  className="text-center py-2 px-2"
+                  style={{ width: "110px", color: "#ffffff", backgroundColor: "#1E6554", whiteSpace: "nowrap" }}
+                >
+                  Score (Select)
+                </th>
+                <th
+                  className="py-2 px-3"
+                  style={{ width: "18%", color: "#ffffff", backgroundColor: "#1E6554", whiteSpace: "nowrap" }}
+                >
+                  Notes / Context
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {scale.items.map((item) => {
+                const currentObj = scores[item.key] || {
+                  score: item.options[0]?.value ?? 0,
+                  description: item.options[0]?.label ?? "",
+                  notes: "",
+                };
+                const selectedVal = Number(currentObj.score ?? 0);
+
+                return (
+                  <tr key={item.key}>
+                    <td className="text-center fw-bold" style={{ backgroundColor: "#f8fbfa", color: "#1E6554", fontSize: "13px" }}>
+                      {item.itemNo}
+                    </td>
+                    <td className="px-3 py-2" style={{ backgroundColor: "#ffffff" }}>
+                      <div className="fw-bold" style={{ color: "#0f172a", fontSize: "13px", lineHeight: 1.35 }}>
+                        {item.title}
+                      </div>
+                      <div className="mt-1" style={{ color: "#64748b", fontSize: "11.5px", lineHeight: 1.25 }}>
+                        {item.sub}
+                      </div>
+                    </td>
+                    <td className="p-0" style={{ backgroundColor: "#ffffff" }}>
+                      <div className="d-flex flex-column">
+                        {item.options.map((opt, optIdx) => {
+                          const isSelected = selectedVal === opt.value;
+                          return (
+                            <div
+                              key={opt.value}
+                              role="button"
+                              tabIndex={0}
+                              onClick={() =>
+                                handleParameterScoreChange(item.key, opt.value, opt.label, isEditing)
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  handleParameterScoreChange(item.key, opt.value, opt.label, isEditing);
+                                }
+                              }}
+                              className={`d-flex align-items-center detox-criteria-row ${isSelected ? "is-selected" : ""}`}
+                              style={{
+                                cursor: "pointer",
+                                borderBottom:
+                                  optIdx < item.options.length - 1 ? "1px solid #e2e8f0" : "none",
+                                backgroundColor: isSelected ? "#dcfce7" : "transparent",
+                              }}
+                            >
+                              <div
+                                className="text-center py-2 px-2 fw-bold"
+                                style={{
+                                  width: "90px",
+                                  flexShrink: 0,
+                                  borderRight: "1px solid #e2e8f0",
+                                  color: isSelected ? "#166534" : "#334155",
+                                  backgroundColor: isSelected ? "#bbf7d0" : "#f8fafc",
+                                  fontSize: "12.5px",
+                                }}
+                              >
+                                {opt.value}
+                              </div>
+                              <div
+                                className="py-2 px-3 flex-grow-1 d-flex justify-content-between align-items-center gap-2"
+                                style={{
+                                  color: isSelected ? "#14532d" : "#1e293b",
+                                  fontWeight: isSelected ? 600 : 400,
+                                  fontSize: "12.5px",
+                                  lineHeight: 1.35,
+                                }}
+                              >
+                                <span>{opt.label}</span>
+                                {isSelected && (
+                                  <span
+                                    style={{
+                                      color: "#16a34a",
+                                      fontWeight: 700,
+                                      fontSize: "13px",
+                                      flexShrink: 0,
+                                    }}
+                                  >
+                                    ✓
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </td>
+                    <td className="text-center px-2 py-2" style={{ backgroundColor: "#fcfcfd" }}>
+                      <Input
+                        type="select"
+                        bsSize="sm"
+                        value={String(selectedVal)}
+                        onChange={(e) => {
+                          const v = Number(e.target.value);
+                          const matched = item.options.find((o) => o.value === v) || item.options[0];
+                          handleParameterScoreChange(item.key, matched.value, matched.label, isEditing);
+                        }}
+                        className="text-center fw-bold mx-auto"
+                        style={{
+                          maxWidth: "74px",
+                          borderRadius: "6px",
+                          borderColor: selectedVal > 0 ? "#22c55e" : "#cbd5e1",
+                          backgroundColor: selectedVal > 0 ? "#f0fdf4" : "#ffffff",
+                          color: selectedVal > 0 ? "#166534" : "#1e293b",
+                          fontSize: "13px",
+                        }}
+                      >
+                        {item.options.map((opt) => (
+                          <option key={opt.value} value={String(opt.value)}>
+                            {opt.value}
+                          </option>
+                        ))}
+                      </Input>
+                    </td>
+                    <td className="px-2 py-2" style={{ backgroundColor: "#ffffff" }}>
+                      <Input
+                        type="text"
+                        bsSize="sm"
+                        value={currentObj.notes || ""}
+                        onChange={(e) =>
+                          handleParameterNoteChange(item.key, e.target.value, isEditing)
+                        }
+                        placeholder={getTranslation("Add note... / टिप्पणी...", lang)}
+                        style={{
+                          borderRadius: "6px",
+                          fontSize: "12px",
+                          borderColor: "#e2e8f0",
+                        }}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {/* TOTAL SCORE Summary Row inside Table (matching Image 3) */}
+              <tr style={{ backgroundColor: "#f2faf7" }}>
+                <td
+                  colSpan={3}
+                  className="text-end py-2 px-3 fw-bold"
+                  style={{ color: "#1E6554", fontSize: "13.5px" }}
+                >
+                  TOTAL SCORE (Sum of all {scale.items.length} items):
+                </td>
+                <td
+                  className="text-center py-2 px-2 fw-bold"
+                  style={{
+                    backgroundColor: activeBenchmark.bg,
+                    color: activeBenchmark.color,
+                    fontSize: "16px",
+                    border: `2px solid ${activeBenchmark.border}`,
+                  }}
+                >
+                  {totalScore}
+                </td>
+                <td
+                  className="py-2 px-2 fw-semibold"
+                  style={{ color: activeBenchmark.color, fontSize: "12px" }}
+                >
+                  {activeBenchmark.label}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Score Interpretation Benchmark Footer (matching Image 3) */}
+        <div className="p-3" style={{ backgroundColor: "#f8fafc", borderTop: "1px solid #cbd5e1" }}>
+          <div className="fw-bold mb-2" style={{ color: "#1e293b", fontSize: "12.5px" }}>
+            Score Interpretation Benchmark ({scale.tabLabel} Standard):
+          </div>
+          <div className="row g-2">
+            {scale.benchmarks.map((b) => {
+              const isCurrent = totalScore >= b.min && totalScore <= b.max;
+              return (
+                <div className="col-md-3 col-sm-6" key={b.range}>
+                  <div
+                    className="px-2 py-1 rounded d-flex align-items-center justify-content-between gap-2"
+                    style={{
+                      backgroundColor: isCurrent ? b.bg : "#ffffff",
+                      border: isCurrent ? `1.5px solid ${b.color}` : "1px solid #e2e8f0",
+                      fontSize: "12px",
+                    }}
+                  >
+                    <div>
+                      <span className="fw-bold me-2" style={{ color: b.color }}>
+                        {b.range}
+                      </span>
+                      <span style={{ color: isCurrent ? b.color : "#334155", fontWeight: isCurrent ? 600 : 400 }}>
+                        {b.label}
+                      </span>
+                    </div>
+                    {isCurrent && (
+                      <Badge pill style={{ backgroundColor: b.color, color: "#fff", fontSize: "10px" }}>
+                        Active
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Total Score & Withdrawal Severity Summary Card (placed after Clinical Remarks at bottom)
   const renderTotalScoreCard = (isEditing = false) => {
     const currentData = isEditing ? editData : formData;
     const rating = Number(currentData?.CIWA_rating) || 0;
+    const scale = getScaleForSubId(currentData?.sub_id);
+    const activeBenchmark =
+      scale.benchmarks.find((b) => rating >= b.min && rating <= b.max) ||
+      scale.benchmarks[scale.benchmarks.length - 1];
     const sev = getCIWASeverity(rating);
 
     return (
@@ -1298,23 +2358,28 @@ const Detoxification = () => {
         className="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 rounded-3 border mt-3 mb-3"
         style={{
           backgroundColor: "#f8fafc",
-          borderLeft: `5px solid ${sev.badgeColor || "#198754"}`,
+          borderLeft: `5px solid ${activeBenchmark.color || "#198754"}`,
         }}
       >
-        <div className="d-flex align-items-center gap-2">
+        <div className="d-flex align-items-center gap-2 flex-wrap">
           <span
             className="fw-bold"
             style={{ color: "#1e293b", fontSize: "15px" }}
           >
-            {getTranslation("Total Score / कुल अंक:", lang)}
+            {scale.tabLabel} {getTranslation("Total Score / कुल अंक:", lang)}
           </span>
-          <Badge
-            color={sev.color}
-            className="px-3 py-2 fs-6 fw-bold"
-            style={{ fontSize: "14px", letterSpacing: "0.2px" }}
+          <span
+            className="px-3 py-1 rounded-pill fw-bold"
+            style={{
+              fontSize: "14px",
+              letterSpacing: "0.2px",
+              backgroundColor: activeBenchmark.bg,
+              color: activeBenchmark.color,
+              border: `1px solid ${activeBenchmark.border}`,
+            }}
           >
-            {rating} &nbsp;—&nbsp; {sev.label.split("/")[0].trim()}
-          </Badge>
+            {rating} &nbsp;—&nbsp; {activeBenchmark.label}
+          </span>
         </div>
         <div className="small fw-semibold" style={{ color: "#475569" }}>
           {sev.description}
@@ -1501,32 +2566,19 @@ const Detoxification = () => {
           />
 
           <Form className="mt-3" noValidate onSubmit={handleSubmitAssessment}>
-            {/* Primary Substance Selection & Assessment Date */}
-            <Row className="mb-3 g-3">
-              <Col md="6">
-                <FormGroup>
-                  <Label className="fw-semibold">
-                    {getTranslation("Primary Substance Under Assessment / मुख्य विषहरण पदार्थ", lang)}{" "}
-                    <span className="text-danger">*</span>
-                  </Label>
-                  <Input
-                    type="select"
-                    value={formData.sub_id}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, sub_id: e.target.value }))}
-                  >
-                    <option value="">{getTranslation("-- Select Primary Substance --", lang)}</option>
-                    {formSubstances.map((s) => (
-                      <option key={s.sub_id || s.id} value={s.sub_id || s.id}>
-                        {s.name} {s.description ? `(${s.description})` : ""}
-                      </option>
-                    ))}
-                  </Input>
-                </FormGroup>
+            {/* Substance Tab Bar (Alcohol | Cannabis | Opioids | ATS) & Assessment Date */}
+            <Row className="mb-3 g-3 align-items-end">
+              <Col lg="8" md="7">
+                <Label className="fw-semibold mb-1 d-block" style={{ fontSize: "13px" }}>
+                  {getTranslation("Select Substance Assessment Tab / पदार्थ मूल्यांकन टैब चुनें", lang)}{" "}
+                  <span className="text-danger">*</span>
+                </Label>
+                {renderSubstanceTabBar(false)}
               </Col>
 
-              <Col md="6">
-                <FormGroup>
-                  <Label className="fw-semibold">
+              <Col lg="4" md="5">
+                <FormGroup className="mb-3">
+                  <Label className="fw-semibold" style={{ fontSize: "13px" }}>
                     {getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang)}
                   </Label>
                   <div>
@@ -1630,30 +2682,17 @@ const Detoxification = () => {
                 </Badge>
               </div>
 
-              <Row className="mb-3 g-3">
-                <Col md="6">
-                  <FormGroup>
-                    <Label className="fw-semibold">
-                      {getTranslation("Primary Substance / मुख्य पदार्थ", lang)}
-                    </Label>
-                    <Input
-                      type="select"
-                      value={editData.sub_id}
-                      onChange={(e) => setEditData((prev) => ({ ...prev, sub_id: e.target.value }))}
-                    >
-                      <option value="">{getTranslation("-- Select Substance --", lang)}</option>
-                      {formSubstances.map((s) => (
-                        <option key={s.sub_id || s.id} value={s.sub_id || s.id}>
-                          {s.name} {s.description ? `(${s.description})` : ""}
-                        </option>
-                      ))}
-                    </Input>
-                  </FormGroup>
+              <Row className="mb-3 g-3 align-items-end">
+                <Col lg="8" md="7">
+                  <Label className="fw-semibold mb-1 d-block" style={{ fontSize: "13px" }}>
+                    {getTranslation("Primary Substance Tab / मुख्य पदार्थ टैब", lang)}
+                  </Label>
+                  {renderSubstanceTabBar(true)}
                 </Col>
 
-                <Col md="6">
-                  <FormGroup>
-                    <Label className="fw-semibold">
+                <Col lg="4" md="5">
+                  <FormGroup className="mb-3">
+                    <Label className="fw-semibold" style={{ fontSize: "13px" }}>
                       {getTranslation("Next Follow-up Date / अगली अनुवर्ती तिथि", lang)}
                     </Label>
                     <Input

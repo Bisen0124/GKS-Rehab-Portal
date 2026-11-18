@@ -38,7 +38,7 @@ import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import ModalActionButtons from "../Common/ModalActionButtons";
 import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
 import html2pdf from "html2pdf.js";
-import { useReactToPrint } from "react-to-print";
+import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 
 const BASE_URL = "https://gks-yjdc.onrender.com";
 
@@ -104,10 +104,7 @@ function PersonalDetails() {
   const [isDownloading, setIsDownloading] = useState(false);
   const pdfRef = useRef();
 
-  const handlePrint = useReactToPrint({
-    content: () => pdfRef.current,
-    documentTitle: `Personal_Details_${selectedUser?.name || "Patient"}`,
-  });
+  const handlePrint = () => printElementAsPdf(pdfRef.current);
 
   const handleDownloadPDF = () => {
     const element = pdfRef.current;

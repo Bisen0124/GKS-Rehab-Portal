@@ -19,7 +19,7 @@ import HeaderCard from "../Common/Component/HeaderCard";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import html2pdf from "html2pdf.js";
-import { useReactToPrint } from "react-to-print";
+import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 
 // Custom Hooks & Contexts
 import PatientCommonInfo from "../../CustomHook/PatientCommonInfo";
@@ -903,12 +903,7 @@ function DischargeFollowUp() {
   };
 
   // ─── Print & PDF Download Handlers ────────────────────────────────────────
-  const handlePrint = useReactToPrint({
-    content: () => reportPrintRef.current,
-    documentTitle: `Discharge_Follow_Up_${
-      selectedRecord?.name || selectedRecord?.patient_name || "Patient"
-    }`,
-  });
+  const handlePrint = () => printElementAsPdf(reportPrintRef.current);
 
   const handleDownloadPdf = () => {
     const element = reportPrintRef.current;

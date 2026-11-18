@@ -50,7 +50,6 @@ import Translated from "../Translated";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
 import UserDetailsModal from "../Common/UserDetailsModal";
-import WardManagementModal from "../Common/WardManagementModal";
 import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
@@ -58,7 +57,7 @@ import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formVal
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
-import { useReactToPrint } from "react-to-print";
+import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 
 function Register() {
 
@@ -77,10 +76,9 @@ function Register() {
     (item) => item.spinnerClass === "loader-37"
   );
 
-  // Ward dynamic data & management modal state
+  // Ward dynamic data state
   const [wardList, setWardList] = useState(wardOptions);
   const [isWardsLoading, setIsWardsLoading] = useState(false);
-  const [wardModalOpen, setWardModalOpen] = useState(false);
 
   // User data table data & search state (declared at top level)
   const [data, setData] = useState([]);
@@ -274,27 +272,39 @@ function Register() {
     }
   };
 
-  //Patient admission form (PDF) upload
+  //Patient admission form (PDF / Image / Camera) upload
   const [admissionForm, setAdmissionForm] = useState(null);
   const [admissionFormName, setAdmissionFormName] = useState("");
+  const [admissionFormPreview, setAdmissionFormPreview] = useState(null);
   const [admissionFormError, setAdmissionFormError] = useState("");
 
-  const handleAdmissionFormChange = (e) => {
-    const file = e.target.files[0];
+  const handleAdmissionFormChange = async (e) => {
+    const file = e.target.files?.[0];
 
     if (!file) return;
 
-    // File type validation - PDF required
+    // Allow PDF and common image formats (JPEG, JPG, PNG, WebP) from file picker or camera
     const isPdf =
       file.type === "application/pdf" ||
       file.name.toLowerCase().endsWith(".pdf");
+    const allowedImgTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const fileExt = file.name.split(".").pop()?.toLowerCase();
+    const allowedImgExts = ["jpg", "jpeg", "png", "webp"];
+    const isImage =
+      allowedImgTypes.includes(file.type?.toLowerCase()) ||
+      allowedImgExts.includes(fileExt) ||
+      file.type?.startsWith("image/");
 
-    if (!isPdf) {
-      const msg = getTranslation("Admission form must be a PDF file / प्रवेश फ़ॉर्म केवल PDF फ़ाइल होना चाहिए", lang);
+    if (!isPdf && !isImage) {
+      const msg = getTranslation(
+        "Admission form must be a PDF or Image (JPEG, PNG, WebP) / प्रवेश फ़ॉर्म PDF या छवि (JPEG, PNG, WebP) होना चाहिए",
+        lang
+      );
       setAdmissionFormError(msg);
       toast.error(msg);
       setAdmissionForm(null);
       setAdmissionFormName("");
+      setAdmissionFormPreview(null);
       e.target.value = "";
       return;
     }
@@ -306,13 +316,37 @@ function Register() {
       toast.error(msg);
       setAdmissionForm(null);
       setAdmissionFormName("");
+      setAdmissionFormPreview(null);
       e.target.value = "";
       return;
     }
 
     setAdmissionFormError("");
-    setAdmissionForm(file);
-    setAdmissionFormName(file.name);
+
+    if (isImage) {
+      try {
+        // Keep high resolution (1400px) so scanned/photographed form text remains readable while staying compact
+        const compressed = await compressImageFile(file, 1400, 0.85);
+        setAdmissionForm(compressed);
+        setAdmissionFormName(compressed.name || file.name);
+        setAdmissionFormPreview(URL.createObjectURL(compressed));
+        toast.success(
+          getTranslation(
+            `Admission form image ready: ${(compressed.size / 1024).toFixed(0)} KB / प्रवेश फ़ॉर्म छवि तैयार`,
+            lang
+          ),
+          { autoClose: 2200 }
+        );
+      } catch {
+        setAdmissionForm(file);
+        setAdmissionFormName(file.name);
+        setAdmissionFormPreview(URL.createObjectURL(file));
+      }
+    } else {
+      setAdmissionForm(file);
+      setAdmissionFormName(file.name);
+      setAdmissionFormPreview(null);
+    }
   };
 
   //Show hide password of register password filed.
@@ -461,14 +495,6 @@ function Register() {
         label: getTranslation("Patient Address / रोगी का पता", lang),
         value: formData.address,
       },
-      {
-        label: getTranslation("Patient Profile Image / रोगी का प्रोफ़ाइल फ़ोटो", lang),
-        value: image,
-      },
-      {
-        label: getTranslation("Admission Form (PDF) / प्रवेश फ़ॉर्म (पीडीएफ)", lang),
-        value: admissionForm,
-      },
     ];
 
     if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
@@ -605,6 +631,7 @@ function Register() {
       setPreview(null);
       setAdmissionForm(null);
       setAdmissionFormName("");
+      setAdmissionFormPreview(null);
 
       fetchUsers();
     });
@@ -678,28 +705,28 @@ function Register() {
       payload.append("ward_name", formToSubmit.ward_name || "");
       payload.append("secondary_phone", formToSubmit.secondary_phone || "");
 
-      // Clean relative contacts: backend Joi strictly allows only { name, phone }
+      // Clean relative contacts: optional — only send when user entered valid contact(s)
+      // Backend Joi strictly allows only { name, phone } objects
       const cleanedRelativeContacts = (formToSubmit.relative_contacts || [])
         .filter((c) => (c.name && c.name.trim()) || (c.phone && c.phone.trim()))
         .map((c) => ({
-          name: c.name ? c.name.trim() : "",
+          name: c.name && c.name.trim() ? c.name.trim() : "Relative",
           phone: c.phone ? c.phone.trim() : "",
-        }));
-      payload.append("relative_contacts", JSON.stringify(cleanedRelativeContacts));
+        }))
+        .filter((c) => c.name && c.phone);
+      if (cleanedRelativeContacts.length > 0) {
+        payload.append("relative_contacts", JSON.stringify(cleanedRelativeContacts));
+      }
       payload.append("relative_address", formToSubmit.relativeaddress || "");
       payload.append("relation_with_patient", formToSubmit.relation_with_patient || "");
 
-      // File uploads
+      // File uploads (optional: only append when a file is selected)
       if (image) {
         payload.append("profile_pic", image);
-      } else {
-        payload.append("profile_pic", "");
       }
 
       if (admissionForm) {
         payload.append("admission_form_url", admissionForm);
-      } else {
-        payload.append("admission_form_url", "");
       }
 
       // 120-second timeout to handle Render cold boot + Cloudinary dual file uploads
@@ -1287,13 +1314,14 @@ function Register() {
     );
     const effectiveEditWhatsAppNo = editData.whatsapp_no || (waEditContact ? waEditContact.phone.trim() : "");
 
-    // Clean relative contacts: backend Joi strictly allows only { name, phone }
+    // Clean relative contacts: optional — backend Joi strictly allows only { name, phone }
     const cleanedEditContacts = (editData.relative_contacts || [])
       .filter((c) => (c.name && c.name.trim()) || (c.phone && c.phone.trim()))
       .map((c) => ({
-        name: c.name ? c.name.trim() : "",
+        name: c.name && c.name.trim() ? c.name.trim() : "Relative",
         phone: c.phone ? c.phone.trim() : "",
-      }));
+      }))
+      .filter((c) => c.name && c.phone);
 
     const updatedData = new FormData();
     updatedData.append("name", editData.name || "");
@@ -1308,7 +1336,9 @@ function Register() {
     updatedData.append("isRole", editData.is_role || "");
     updatedData.append("relative_address", editData.relativeaddress || "");
     updatedData.append("relation_with_patient", editData.relation_with_patient || "");
-    updatedData.append("relative_contacts", JSON.stringify(cleanedEditContacts));
+    if (cleanedEditContacts.length > 0) {
+      updatedData.append("relative_contacts", JSON.stringify(cleanedEditContacts));
+    }
 
     if (editData.profile_pic instanceof File) {
       updatedData.append("profile_pic", editData.profile_pic);
@@ -1902,16 +1932,11 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
   //   // setviweFormPrint(false); // modal will close correctly
   // };
 
-  //Print viewable form data handler
-  const handlePrint = useReactToPrint({
-    content: () => pdfRef.current,
-    pageStyle: `
-      @page { size: A4; margin: 12mm; }
-      @media print {
-        body { margin: 0; }
-      }
-    `,
-  });
+  //Print viewable form data handler (matches Download PDF exactly)
+  const handlePrint = () =>
+    printElementAsPdf(pdfRef.current, {
+      title: `Patient_${selectedUser?.name || "Registration"}`,
+    });
 
   // Patient address and Patient relative address Usestate
   const [sameAddress, setSameAddress] = useState(false);
@@ -2363,36 +2388,6 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
                     <Translated text={wardDetails} /> <span className="text-danger">*</span>
                   </Label>
-                  <Button
-                    color="light"
-                    size="sm"
-                    type="button"
-                    onClick={() => setWardModalOpen(true)}
-                    className="border py-0.5 px-2 shadow-sm d-flex align-items-center gap-1"
-                    style={{
-                      fontSize: "11.5px",
-                      borderRadius: "6px",
-                      fontWeight: 600,
-                      color: "#24695c",
-                      borderColor: "#24695c",
-                    }}
-                    title={getTranslation("Manage Ward Types / वार्ड प्रकार प्रबंधन", lang)}
-                  >
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                    <span>+ {getTranslation("Manage Wards / वार्ड प्रबंधन", lang)}</span>
-                  </Button>
                 </div>
                 <div className="d-flex align-items-center flex-wrap gap-3 py-1" style={{ minHeight: "40px" }}>
                   {isWardsLoading ? (
@@ -2444,7 +2439,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
               <div className="col-md-6">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
-                    {getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि अपलोड करें", lang)} <span className="text-danger">*</span>
+                    {getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि अपलोड करें", lang)}
+                    <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                      ({getTranslation("Optional / वैकल्पिक", lang)})
+                    </span>
                   </Label>
                   <span className="text-muted" style={{ fontSize: "11px" }}>
                     Max 2MB (Auto-optimized)
@@ -2470,13 +2468,20 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       id="patientPhotoInput"
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
-                      capture="environment"
                       onChange={handleImageChange}
                       className="form-control"
-                      style={{ borderRadius: "8px", height: "40px", paddingRight: "38px" }}
+                      style={{ borderRadius: "8px", height: "40px", paddingRight: "42px" }}
+                    />
+                    <input
+                      id="patientPhotoCameraInput"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleImageChange}
+                      style={{ display: "none" }}
                     />
                     <label
-                      htmlFor="patientPhotoInput"
+                      htmlFor="patientPhotoCameraInput"
                       className="d-flex align-items-center justify-content-center"
                       style={{
                         position: "absolute",
@@ -2493,7 +2498,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         margin: 0,
                         zIndex: 2,
                       }}
-                      title={getTranslation("Take or choose photo / फ़ोटो लें या चुनें", lang)}
+                      title={getTranslation("Take photo with camera / कैमरे से फ़ोटो लें", lang)}
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E6554" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
@@ -2517,48 +2522,106 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 {error && <small className="text-danger d-block mt-1">{error}</small>}
               </div>
 
-              {/* Admission Form Upload with Modern PDF/Doc Icon */}
+              {/* Admission Form Upload — Supports PDF, Image Upload & Direct Camera Capture */}
               <div className="col-md-6">
-                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  {getTranslation("Upload Admission Form (PDF) / प्रवेश फ़ॉर्म (पीडीएफ) अपलोड करें", lang)} <span className="text-danger">*</span>
-                </Label>
-                <div className="position-relative" style={{ display: "flex", alignItems: "center" }}>
-                  <Input
-                    id="admissionFormInput"
-                    type="file"
-                    accept="application/pdf"
-                    onChange={handleAdmissionFormChange}
-                    className="form-control"
-                    style={{ borderRadius: "8px", height: "40px", paddingRight: "38px" }}
-                  />
-                  <label
-                    htmlFor="admissionFormInput"
-                    className="d-flex align-items-center justify-content-center"
-                    style={{
-                      position: "absolute",
-                      right: "6px",
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      cursor: "pointer",
-                      width: "28px",
-                      height: "28px",
-                      borderRadius: "6px",
-                      background: "#fef3c7",
-                      border: "1px solid #fde68a",
-                      transition: "all 0.2s ease-in-out",
-                      margin: 0,
-                      zIndex: 2,
-                    }}
-                    title={getTranslation("Select PDF document / पीडीएफ दस्तावेज़ चुनें", lang)}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                  </label>
+                <div className="d-flex justify-content-between align-items-center mb-1">
+                  <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                    {getTranslation("Upload Admission Form (PDF / Image) / प्रवेश फ़ॉर्म (पीडीएफ / छवि) अपलोड करें", lang)}
+                    <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                      ({getTranslation("Optional / वैकल्पिक", lang)})
+                    </span>
+                  </Label>
+                  <span className="text-muted" style={{ fontSize: "11px" }}>
+                    PDF / JPG / PNG / Camera
+                  </span>
+                </div>
+                <div className="d-flex align-items-center gap-2">
+                  {admissionFormPreview && (
+                    <img
+                      src={admissionFormPreview}
+                      alt="Admission Form Preview"
+                      style={{
+                        width: "40px",
+                        height: "40px",
+                        borderRadius: "8px",
+                        objectFit: "cover",
+                        border: "2px solid #1E6554",
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                  <div className="position-relative flex-grow-1" style={{ display: "flex", alignItems: "center" }}>
+                    <Input
+                      id="admissionFormInput"
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png,image/webp"
+                      onChange={handleAdmissionFormChange}
+                      className="form-control"
+                      style={{ borderRadius: "8px", height: "40px", paddingRight: "74px" }}
+                    />
+                    {/* Dedicated Camera Capture Input for Tablets / Mobile */}
+                    <input
+                      id="admissionFormCameraInput"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleAdmissionFormChange}
+                      style={{ display: "none" }}
+                    />
+                    <label
+                      htmlFor="admissionFormInput"
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        position: "absolute",
+                        right: "38px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        cursor: "pointer",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "6px",
+                        background: "#fef3c7",
+                        border: "1px solid #fde68a",
+                        transition: "all 0.2s ease-in-out",
+                        margin: 0,
+                        zIndex: 2,
+                      }}
+                      title={getTranslation("Upload PDF or Image / पीडीएफ या छवि अपलोड करें", lang)}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                      </svg>
+                    </label>
+                    <label
+                      htmlFor="admissionFormCameraInput"
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        position: "absolute",
+                        right: "6px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        cursor: "pointer",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "6px",
+                        background: "#e6f4ea",
+                        border: "1px solid #bbf7d0",
+                        transition: "all 0.2s ease-in-out",
+                        margin: 0,
+                        zIndex: 2,
+                      }}
+                      title={getTranslation("Capture admission form with camera / कैमरे से प्रवेश फ़ॉर्म फ़ोटो लें", lang)}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E6554" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                      </svg>
+                    </label>
+                  </div>
                 </div>
                 {admissionFormName && (
                   <small className="text-success d-block mt-1">
@@ -3131,18 +3194,70 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       </a>
                     )}
                   </div>
-                  <Input
-                    type="file"
-                    accept="application/pdf,image/*"
-                    onChange={(e) =>
-                      setEditData({
-                        ...editData,
-                        admission_form_file: e.target.files?.[0] || null,
-                      })
-                    }
-                    className="form-control"
-                    style={{ borderRadius: "8px", height: "40px" }}
-                  />
+                  <div className="position-relative" style={{ display: "flex", alignItems: "center" }}>
+                    <Input
+                      id="editAdmissionFormInput"
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png,image/webp"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.type?.startsWith("image/")) {
+                          try {
+                            const compressed = await compressImageFile(file, 1400, 0.85);
+                            setEditData({ ...editData, admission_form_file: compressed });
+                          } catch {
+                            setEditData({ ...editData, admission_form_file: file });
+                          }
+                        } else {
+                          setEditData({ ...editData, admission_form_file: file });
+                        }
+                      }}
+                      className="form-control"
+                      style={{ borderRadius: "8px", height: "40px", paddingRight: "42px" }}
+                    />
+                    <input
+                      id="editAdmissionFormCameraInput"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        try {
+                          const compressed = await compressImageFile(file, 1400, 0.85);
+                          setEditData({ ...editData, admission_form_file: compressed });
+                        } catch {
+                          setEditData({ ...editData, admission_form_file: file });
+                        }
+                      }}
+                      style={{ display: "none" }}
+                    />
+                    <label
+                      htmlFor="editAdmissionFormCameraInput"
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        position: "absolute",
+                        right: "6px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        cursor: "pointer",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "6px",
+                        background: "#e6f4ea",
+                        border: "1px solid #bbf7d0",
+                        margin: 0,
+                        zIndex: 2,
+                      }}
+                      title={getTranslation("Capture admission form with camera / कैमरे से फ़ोटो लें", lang)}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E6554" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                      </svg>
+                    </label>
+                  </div>
                   {editData.admission_form_file && (
                     <small className="text-success d-block mt-1">
                       ✓ {getTranslation("Selected file / चयनित फ़ाइल", lang)}: {editData.admission_form_file.name}
@@ -3392,16 +3507,6 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
           </Form>
         )}
       </CommonModal>
-
-      {/* Ward Management Modal */}
-      {wardModalOpen && (
-        <WardManagementModal
-          isOpen={wardModalOpen}
-          toggle={() => setWardModalOpen(false)}
-          branchId={branchId}
-          onWardsUpdated={() => fetchWards(branchId)}
-        />
-      )}
     </Fragment>
   );
 }

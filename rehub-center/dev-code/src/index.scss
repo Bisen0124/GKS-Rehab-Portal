@@ -1054,3 +1054,42 @@ label.d-flex.align-items-center.justify-content-center {
   display: flex !important;
   justify-content: center !important;
 }
+
+/* Detoxification Clinical Withdrawal Scale Table */
+.detox-clinical-table {
+  border-color: #d8e6e1 !important;
+  margin-bottom: 0 !important;
+
+  thead tr th {
+    background-color: #1E6554 !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 12.5px !important;
+    letter-spacing: 0.2px;
+    border-color: #2b7a67 !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+
+    span {
+      color: #ffffff !important;
+    }
+  }
+
+  tbody tr td {
+    border-color: #e2e8f0 !important;
+    vertical-align: middle !important;
+  }
+
+  .detox-criteria-row {
+    transition: background-color 0.14s ease, border-color 0.14s ease;
+
+    &:hover:not(.is-selected) {
+      background-color: #f4fbf8 !important;
+    }
+
+    &.is-selected {
+      background-color: #dcfce7 !important;
+      box-shadow: inset 3px 0 0 #16a34a;
+    }
+  }
+}
