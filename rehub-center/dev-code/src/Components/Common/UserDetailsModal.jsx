@@ -34,15 +34,21 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
     // If parent directly passed user object
     if (propUser && typeof propUser === "object" && (propUser.id || propUser.name || propUser.user_id)) {
       const userCopy = { ...propUser };
-      if (userCopy.relative_contacts && typeof userCopy.relative_contacts === "string") {
+      if (userCopy.relative_contacts) {
         try {
-          const parsed = JSON.parse(userCopy.relative_contacts);
+          const parsed =
+            typeof userCopy.relative_contacts === "string"
+              ? JSON.parse(userCopy.relative_contacts)
+              : Array.isArray(userCopy.relative_contacts)
+              ? userCopy.relative_contacts
+              : [];
           const localSaved = JSON.parse(
             localStorage.getItem(`gks_user_relative_contacts_${userCopy.id || userCopy.user_id}`) || "[]"
           );
           userCopy.relative_contacts = parsed.map((c) => {
             const matched = localSaved.find((ls) => ls.phone === c.phone);
             const isWa =
+              c.use_for_whatsapp === "Yes" ||
               c.is_whatsapp ||
               matched?.is_whatsapp ||
               (userCopy.whatsapp_no && c.phone && String(c.phone).trim() === String(userCopy.whatsapp_no).trim());
@@ -110,18 +116,21 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
           return;
         }
 
-        if (
-          userData.relative_contacts &&
-          typeof userData.relative_contacts === "string"
-        ) {
+        if (userData.relative_contacts) {
           try {
-            const parsed = JSON.parse(userData.relative_contacts);
+            const parsed =
+              typeof userData.relative_contacts === "string"
+                ? JSON.parse(userData.relative_contacts)
+                : Array.isArray(userData.relative_contacts)
+                ? userData.relative_contacts
+                : [];
             const localSaved = JSON.parse(
               localStorage.getItem(`gks_user_relative_contacts_${userData.id || userData.user_id}`) || "[]"
             );
             userData.relative_contacts = parsed.map((c) => {
               const matched = localSaved.find((ls) => ls.phone === c.phone);
               const isWa =
+                c.use_for_whatsapp === "Yes" ||
                 c.is_whatsapp ||
                 matched?.is_whatsapp ||
                 (userData.whatsapp_no && c.phone && String(c.phone).trim() === String(userData.whatsapp_no).trim());

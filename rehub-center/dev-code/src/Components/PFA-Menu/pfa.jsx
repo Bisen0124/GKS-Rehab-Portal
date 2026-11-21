@@ -122,16 +122,24 @@ function PFA() {
     (item) => item.spinnerClass === "loader-37"
   );
 
-  const SCREENING_KEYS = ["hiv", "hepatitis_c", "hepatitis_b", "vdrl", "syphilis"];
+  const SCREENING_KEYS = ["hiv", "hcv", "hbsag", "vdrl", "syphilis"];
+
+  const normalizeScreeningValue = (val) => {
+    if (val === null || val === undefined || val === "") return "";
+    const trimmed = String(val).trim();
+    if (trimmed === "Not Tested") return "Not Done";
+    if (["Positive", "Negative", "Not Done"].includes(trimmed)) return trimmed;
+    return "";
+  };
 
   const saveLocalPFAScreening = (userId, pfaId, dataObj) => {
     try {
       const record = {
-        hiv: dataObj?.hiv || "",
-        hepatitis_c: dataObj?.hepatitis_c || "",
-        hepatitis_b: dataObj?.hepatitis_b || "",
-        vdrl: dataObj?.vdrl || "",
-        syphilis: dataObj?.syphilis || "",
+        hiv: normalizeScreeningValue(dataObj?.hiv),
+        hcv: normalizeScreeningValue(dataObj?.hcv ?? dataObj?.hepatitis_c),
+        hbsag: normalizeScreeningValue(dataObj?.hbsag ?? dataObj?.hepatitis_b),
+        vdrl: normalizeScreeningValue(dataObj?.vdrl),
+        syphilis: normalizeScreeningValue(dataObj?.syphilis),
       };
       if (pfaId) localStorage.setItem(`gks_pfa_screening_pfa_${pfaId}`, JSON.stringify(record));
       if (userId) localStorage.setItem(`gks_pfa_screening_user_${userId}`, JSON.stringify(record));
@@ -145,7 +153,15 @@ function PFA() {
       const byPfa = pfaId ? localStorage.getItem(`gks_pfa_screening_pfa_${pfaId}`) : null;
       const byUser = userId ? localStorage.getItem(`gks_pfa_screening_user_${userId}`) : null;
       const raw = byPfa || byUser;
-      return raw ? JSON.parse(raw) : {};
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      return {
+        hiv: normalizeScreeningValue(parsed?.hiv),
+        hcv: normalizeScreeningValue(parsed?.hcv ?? parsed?.hepatitis_c),
+        hbsag: normalizeScreeningValue(parsed?.hbsag ?? parsed?.hepatitis_b),
+        vdrl: normalizeScreeningValue(parsed?.vdrl),
+        syphilis: normalizeScreeningValue(parsed?.syphilis),
+      };
     } catch {
       return {};
     }
@@ -170,7 +186,7 @@ function PFA() {
     if (!response.ok) {
       const errStr = JSON.stringify(result || "").toLowerCase();
       const hasUnknownScreeningKey =
-        (errStr.includes("not allowed") || errStr.includes("unknown") || errStr.includes("validation")) &&
+        (errStr.includes("not allowed") || errStr.includes("unknown")) &&
         SCREENING_KEYS.some((k) => errStr.includes(k));
       if (hasUnknownScreeningKey) {
         const cleanPayload = { ...payloadObj };
@@ -198,8 +214,8 @@ function PFA() {
     sugar: "",
     hb: "",
     hiv: "",
-    hepatitis_c: "",
-    hepatitis_b: "",
+    hcv: "",
+    hbsag: "",
     vdrl: "",
     syphilis: "",
 
@@ -778,14 +794,15 @@ const tablePFAPatientListColumns = [
 
       const assessmentData = latestAssessment ? {
         ...latestAssessment,
+        temperature: latestAssessment.temperature ?? latestAssessment.health_metrics?.temperature,
         spo2: latestAssessment.spo2 ?? latestAssessment.health_metrics?.spo2,
         sugar: latestAssessment.sugar ?? latestAssessment.health_metrics?.sugar,
         hb: latestAssessment.hb ?? latestAssessment.health_metrics?.hb,
-        hiv: latestAssessment.hiv ?? latestAssessment.health_metrics?.hiv ?? localScreening.hiv ?? "",
-        hepatitis_c: latestAssessment.hepatitis_c ?? latestAssessment.health_metrics?.hepatitis_c ?? localScreening.hepatitis_c ?? "",
-        hepatitis_b: latestAssessment.hepatitis_b ?? latestAssessment.health_metrics?.hepatitis_b ?? localScreening.hepatitis_b ?? "",
-        vdrl: latestAssessment.vdrl ?? latestAssessment.health_metrics?.vdrl ?? localScreening.vdrl ?? "",
-        syphilis: latestAssessment.syphilis ?? latestAssessment.health_metrics?.syphilis ?? localScreening.syphilis ?? "",
+        hiv: normalizeScreeningValue(latestAssessment.hiv ?? latestAssessment.screening_tests?.hiv ?? latestAssessment.health_metrics?.hiv ?? localScreening.hiv),
+        hcv: normalizeScreeningValue(latestAssessment.hcv ?? latestAssessment.screening_tests?.hcv ?? latestAssessment.health_metrics?.hcv ?? latestAssessment.hepatitis_c ?? localScreening.hcv),
+        hbsag: normalizeScreeningValue(latestAssessment.hbsag ?? latestAssessment.screening_tests?.hbsag ?? latestAssessment.health_metrics?.hbsag ?? latestAssessment.hepatitis_b ?? localScreening.hbsag),
+        vdrl: normalizeScreeningValue(latestAssessment.vdrl ?? latestAssessment.screening_tests?.vdrl ?? latestAssessment.health_metrics?.vdrl ?? localScreening.vdrl),
+        syphilis: normalizeScreeningValue(latestAssessment.syphilis ?? latestAssessment.screening_tests?.syphilis ?? latestAssessment.health_metrics?.syphilis ?? localScreening.syphilis),
         verification: latestAssessment.verification ?? latestAssessment.consent?.verification ?? "No",
       } : null;
 
@@ -939,16 +956,13 @@ const tablePFAPatientListColumns = [
       { label: getTranslation("Blood Transfusion History / रक्त आधान इतिहास", lang), value: formData.bloodConfirmationData },
       { label: getTranslation("Weight / वजन", lang), value: formData.weight },
       { label: getTranslation("Pulse Rate / नाड़ी की दर", lang), value: formData.pulse_rate },
-      { label: getTranslation("Blood Pressure / रक्तचाप", lang), value: formData.blood_pressure },
-      { label: getTranslation("Temperature / तापमान", lang), value: formData.temperature },
-      { label: getTranslation("Blood / Medical History Details / विवरण", lang), value: formData.bloodTransfusionHistoryData },
+      { label: getTranslation("Temperature (°F) / तापमान (°F)", lang), value: formData.temperature },
       { label: getTranslation("Complications (Ulcer) / अल्सर", lang), value: formData.complications?.ulcer },
       { label: getTranslation("Complications (Respiratory) / श्वसन समस्या", lang), value: formData.complications?.respiratory_problem },
       { label: getTranslation("Complications (Jaundice) / पीलिया", lang), value: formData.complications?.jaundice },
       { label: getTranslation("Complications (Haematemesis) / रक्त वमन", lang), value: formData.complications?.haematemesis },
       { label: getTranslation("Complications (Abdominal) / पेट की शिकायतें", lang), value: formData.complications?.abdominal_complaints },
       { label: getTranslation("Complications (Cardiovascular) / हृदय संबंधी", lang), value: formData.complications?.cardiovascular },
-      { label: getTranslation("Complication Description / जटिलता विवरण", lang), value: formData.complication_description },
       { label: getTranslation("Neurological (Delirium) / प्रलाप", lang), value: formData.neurological?.delirium },
       { label: getTranslation("Neurological (Seizure) / दौरा", lang), value: formData.neurological?.seizure },
       { label: getTranslation("Neurological (Blackout) / बेहोशी", lang), value: formData.neurological?.blackout },
@@ -956,8 +970,6 @@ const tablePFAPatientListColumns = [
       { label: getTranslation("Neurological (Trembling) / कंपकंपी", lang), value: formData.neurological?.trembling },
       { label: getTranslation("Neurological (Epilepsy) / मिर्गी", lang), value: formData.neurological?.epilepsy },
       { label: getTranslation("Neurological (Neuropathy) / न्यूरोपैथी", lang), value: formData.neurological?.neuropathy },
-      { label: getTranslation("Neurological Description / न्यूरोलॉजिकल विवरण", lang), value: formData.neuro_description },
-      { label: getTranslation("Other Findings / अन्य निष्कर्ष", lang), value: formData.other_findings },
       { label: getTranslation("Consent / सहमति", lang), value: formData.consent },
       { label: getTranslation("Consent Name / सहमति देने वाले का नाम", lang), value: formData.consent_name },
       { label: getTranslation("Consent Relationship / संबंध", lang), value: formData.consent_relationship },
@@ -966,6 +978,20 @@ const tablePFAPatientListColumns = [
 
     if (!validateCompulsoryFields(compulsoryFieldDefinitions, lang)) {
       setIsLoading(false);
+      return;
+    }
+
+    const tempVal = Number(formData.temperature);
+    if (isNaN(tempVal) || tempVal < 86 || tempVal > 113) {
+      setIsLoading(false);
+      Swal.fire({
+        icon: "warning",
+        title: getTranslation("Invalid Temperature / अमान्य तापमान", lang),
+        text: getTranslation(
+          "Temperature must be in Fahrenheit between 86°F and 113°F (e.g. 98.6°F). / तापमान फ़ारेनहाइट में 86°F और 113°F के बीच होना चाहिए (जैसे 98.6°F)।",
+          lang
+        ),
+      });
       return;
     }
 
@@ -979,16 +1005,16 @@ const tablePFAPatientListColumns = [
       medical_history: formData.medicalConfirmationData,
       weight: Number(formData.weight) || 0,
       pulse_rate: Number(formData.pulse_rate) || 0,
-      blood_pressure: formData.blood_pressure || "", // usually string like "120/80"
-      temperature: Number(formData.temperature) || 0,
+      blood_pressure: formData.blood_pressure || "", // optional (omit, "" or null)
+      temperature: tempVal,
       spo2: formData.spo2 !== "" && formData.spo2 !== null && formData.spo2 !== undefined ? Number(formData.spo2) : null,
       sugar: formData.sugar !== "" && formData.sugar !== null && formData.sugar !== undefined ? Number(formData.sugar) : null,
       hb: formData.hb !== "" && formData.hb !== null && formData.hb !== undefined ? Number(formData.hb) : null,
-      hiv: formData.hiv || "",
-      hepatitis_c: formData.hepatitis_c || "",
-      hepatitis_b: formData.hepatitis_b || "",
-      vdrl: formData.vdrl || "",
-      syphilis: formData.syphilis || "",
+      hiv: normalizeScreeningValue(formData.hiv),
+      hcv: normalizeScreeningValue(formData.hcv ?? formData.hepatitis_c),
+      hbsag: normalizeScreeningValue(formData.hbsag ?? formData.hepatitis_b),
+      vdrl: normalizeScreeningValue(formData.vdrl),
+      syphilis: normalizeScreeningValue(formData.syphilis),
       lymphadenopathy: formData.lymphadenopathy,
       blood_transfusion_history: formData.bloodConfirmationData,
       medical_or_blood_history_details: formData.bloodTransfusionHistoryData,
@@ -1189,7 +1215,7 @@ const parseDateString = (dateStr) => {
       return;
     }
 
-    const latestAssessment = data.assessment || data;
+    const latestAssessment = data.data || data.assessment || data;
 
     if (!latestAssessment) {
       console.warn("No assessment found for this user.");
@@ -1217,15 +1243,15 @@ const parseDateString = (dateStr) => {
       weight: Number(latestAssessment?.weight) || 0,
       pulse_rate: Number(latestAssessment?.pulse_rate) || 0,
       blood_pressure: latestAssessment?.blood_pressure || "",
-      temperature: Number(latestAssessment?.temperature) || 0,
+      temperature: Number(latestAssessment?.temperature ?? latestAssessment?.health_metrics?.temperature) || 0,
       spo2: latestAssessment?.spo2 ?? latestAssessment?.health_metrics?.spo2 ?? "",
       sugar: latestAssessment?.sugar ?? latestAssessment?.health_metrics?.sugar ?? "",
       hb: latestAssessment?.hb ?? latestAssessment?.health_metrics?.hb ?? "",
-      hiv: latestAssessment?.hiv ?? latestAssessment?.health_metrics?.hiv ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hiv ?? "",
-      hepatitis_c: latestAssessment?.hepatitis_c ?? latestAssessment?.health_metrics?.hepatitis_c ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hepatitis_c ?? "",
-      hepatitis_b: latestAssessment?.hepatitis_b ?? latestAssessment?.health_metrics?.hepatitis_b ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hepatitis_b ?? "",
-      vdrl: latestAssessment?.vdrl ?? latestAssessment?.health_metrics?.vdrl ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.vdrl ?? "",
-      syphilis: latestAssessment?.syphilis ?? latestAssessment?.health_metrics?.syphilis ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.syphilis ?? "",
+      hiv: normalizeScreeningValue(latestAssessment?.hiv ?? latestAssessment?.screening_tests?.hiv ?? latestAssessment?.health_metrics?.hiv ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hiv),
+      hcv: normalizeScreeningValue(latestAssessment?.hcv ?? latestAssessment?.screening_tests?.hcv ?? latestAssessment?.health_metrics?.hcv ?? latestAssessment?.hepatitis_c ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hcv),
+      hbsag: normalizeScreeningValue(latestAssessment?.hbsag ?? latestAssessment?.screening_tests?.hbsag ?? latestAssessment?.health_metrics?.hbsag ?? latestAssessment?.hepatitis_b ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hbsag),
+      vdrl: normalizeScreeningValue(latestAssessment?.vdrl ?? latestAssessment?.screening_tests?.vdrl ?? latestAssessment?.health_metrics?.vdrl ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.vdrl),
+      syphilis: normalizeScreeningValue(latestAssessment?.syphilis ?? latestAssessment?.screening_tests?.syphilis ?? latestAssessment?.health_metrics?.syphilis ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.syphilis),
       lymphadenopathy: latestAssessment?.lymphadenopathy || "",
     
       medical_or_blood_history_details:
@@ -1287,16 +1313,16 @@ const parseDateString = (dateStr) => {
 
       weight: Number(PFAeditData.weight) || 0,
       pulse_rate: Number(PFAeditData.pulse_rate) || 0,
-      blood_pressure: PFAeditData.blood_pressure,
+      blood_pressure: PFAeditData.blood_pressure || "",
       temperature: Number(PFAeditData?.temperature) || 0,
       spo2: PFAeditData.spo2 !== "" && PFAeditData.spo2 !== null && PFAeditData.spo2 !== undefined ? Number(PFAeditData.spo2) : null,
       sugar: PFAeditData.sugar !== "" && PFAeditData.sugar !== null && PFAeditData.sugar !== undefined ? Number(PFAeditData.sugar) : null,
       hb: PFAeditData.hb !== "" && PFAeditData.hb !== null && PFAeditData.hb !== undefined ? Number(PFAeditData.hb) : null,
-      hiv: PFAeditData.hiv || "",
-      hepatitis_c: PFAeditData.hepatitis_c || "",
-      hepatitis_b: PFAeditData.hepatitis_b || "",
-      vdrl: PFAeditData.vdrl || "",
-      syphilis: PFAeditData.syphilis || "",
+      hiv: normalizeScreeningValue(PFAeditData.hiv),
+      hcv: normalizeScreeningValue(PFAeditData.hcv ?? PFAeditData.hepatitis_c),
+      hbsag: normalizeScreeningValue(PFAeditData.hbsag ?? PFAeditData.hepatitis_b),
+      vdrl: normalizeScreeningValue(PFAeditData.vdrl),
+      syphilis: normalizeScreeningValue(PFAeditData.syphilis),
       lymphadenopathy: PFAeditData.lymphadenopathy,
 
       // Complications
@@ -1513,14 +1539,15 @@ const parseDateString = (dateStr) => {
       setPFAeditData({
         pfa_id: pfaId,
         ...latestAssessment,
+        temperature: latestAssessment.temperature ?? latestAssessment.health_metrics?.temperature ?? "",
         spo2: latestAssessment.spo2 ?? latestAssessment.health_metrics?.spo2 ?? "",
         sugar: latestAssessment.sugar ?? latestAssessment.health_metrics?.sugar ?? "",
         hb: latestAssessment.hb ?? latestAssessment.health_metrics?.hb ?? "",
-        hiv: latestAssessment.hiv ?? latestAssessment.health_metrics?.hiv ?? localEditScreening.hiv ?? "",
-        hepatitis_c: latestAssessment.hepatitis_c ?? latestAssessment.health_metrics?.hepatitis_c ?? localEditScreening.hepatitis_c ?? "",
-        hepatitis_b: latestAssessment.hepatitis_b ?? latestAssessment.health_metrics?.hepatitis_b ?? localEditScreening.hepatitis_b ?? "",
-        vdrl: latestAssessment.vdrl ?? latestAssessment.health_metrics?.vdrl ?? localEditScreening.vdrl ?? "",
-        syphilis: latestAssessment.syphilis ?? latestAssessment.health_metrics?.syphilis ?? localEditScreening.syphilis ?? "",
+        hiv: normalizeScreeningValue(latestAssessment.hiv ?? latestAssessment.screening_tests?.hiv ?? latestAssessment.health_metrics?.hiv ?? localEditScreening.hiv),
+        hcv: normalizeScreeningValue(latestAssessment.hcv ?? latestAssessment.screening_tests?.hcv ?? latestAssessment.health_metrics?.hcv ?? latestAssessment.hepatitis_c ?? localEditScreening.hcv),
+        hbsag: normalizeScreeningValue(latestAssessment.hbsag ?? latestAssessment.screening_tests?.hbsag ?? latestAssessment.health_metrics?.hbsag ?? latestAssessment.hepatitis_b ?? localEditScreening.hbsag),
+        vdrl: normalizeScreeningValue(latestAssessment.vdrl ?? latestAssessment.screening_tests?.vdrl ?? latestAssessment.health_metrics?.vdrl ?? localEditScreening.vdrl),
+        syphilis: normalizeScreeningValue(latestAssessment.syphilis ?? latestAssessment.screening_tests?.syphilis ?? latestAssessment.health_metrics?.syphilis ?? localEditScreening.syphilis),
         verification: latestAssessment.verification ?? latestAssessment.consent?.verification ?? "No",
         date_of_assessment: latestAssessment.date_of_assessment
           ? new Date(latestAssessment.date_of_assessment) // Convert string → Date object
@@ -1560,16 +1587,16 @@ const parseDateString = (dateStr) => {
   
       weight: Number(PFAeditData.weight) || 0,
       pulse_rate: Number(PFAeditData.pulse_rate) || 0,
-      blood_pressure: PFAeditData.blood_pressure,
+      blood_pressure: PFAeditData.blood_pressure ?? "",
       temperature: Number(PFAeditData.temperature) || 0,
       spo2: PFAeditData.spo2 !== "" && PFAeditData.spo2 !== null && PFAeditData.spo2 !== undefined ? Number(PFAeditData.spo2) : null,
       sugar: PFAeditData.sugar !== "" && PFAeditData.sugar !== null && PFAeditData.sugar !== undefined ? Number(PFAeditData.sugar) : null,
       hb: PFAeditData.hb !== "" && PFAeditData.hb !== null && PFAeditData.hb !== undefined ? Number(PFAeditData.hb) : null,
-      hiv: PFAeditData.hiv || "",
-      hepatitis_c: PFAeditData.hepatitis_c || "",
-      hepatitis_b: PFAeditData.hepatitis_b || "",
-      vdrl: PFAeditData.vdrl || "",
-      syphilis: PFAeditData.syphilis || "",
+      hiv: normalizeScreeningValue(PFAeditData.hiv),
+      hcv: normalizeScreeningValue(PFAeditData.hcv ?? PFAeditData.hepatitis_c),
+      hbsag: normalizeScreeningValue(PFAeditData.hbsag ?? PFAeditData.hepatitis_b),
+      vdrl: normalizeScreeningValue(PFAeditData.vdrl),
+      syphilis: normalizeScreeningValue(PFAeditData.syphilis),
       lymphadenopathy: PFAeditData.lymphadenopathy,
   
       // Complications - flat
@@ -1598,7 +1625,7 @@ const parseDateString = (dateStr) => {
       prepared_by: PFAeditData.prepared_by,
       nutritional_status: PFAeditData.nutritional_status,
   
-      consent: yesNo(PFAeditData.readmissionConsent),
+      consent: yesNo(PFAeditData.consent ?? PFAeditData.readmissionConsent),
       // verification: yesNo(PFAeditData.readmissionVerification),
       verification:PFAeditData.verification,
   
@@ -1618,11 +1645,7 @@ const parseDateString = (dateStr) => {
       );
   
       if (!response.ok) {
-        Swal.fire({
-          icon: "error",
-          title: getTranslation("Update Failed/भार बढ़ाना विफल हुवा",lang),
-          text: data.errors?.[0]?.message || data.error || data.message || getTranslation("Unknown error occurred./अनजान एरर हुआ।",lang),
-        });
+        showApiErrorAlert(data, lang, getTranslation("Update Failed/भार बढ़ाना विफल हुवा", lang));
         return;
       }
 
@@ -1811,6 +1834,11 @@ const parseDateString = (dateStr) => {
               spo2: item.health_metrics?.spo2 ?? item.spo2,
               sugar: item.health_metrics?.sugar ?? item.sugar,
               hb: item.health_metrics?.hb ?? item.hb,
+              hiv: item.screening_tests?.hiv ?? item.health_metrics?.hiv ?? item.hiv ?? "",
+              hcv: item.screening_tests?.hcv ?? item.health_metrics?.hcv ?? item.hcv ?? "",
+              hbsag: item.screening_tests?.hbsag ?? item.health_metrics?.hbsag ?? item.hbsag ?? "",
+              vdrl: item.screening_tests?.vdrl ?? item.health_metrics?.vdrl ?? item.vdrl ?? "",
+              syphilis: item.screening_tests?.syphilis ?? item.health_metrics?.syphilis ?? item.syphilis ?? "",
               lymphadenopathy: item.health_metrics?.lymphadenopathy ?? item.lymphadenopathy,
               nutritional_status: item.health_metrics?.nutritional_status ?? item.nutritional_status,
               other_findings: item.health_metrics?.other_findings ?? item.other_findings,
@@ -2224,10 +2252,10 @@ const parseDateString = (dateStr) => {
       question: getTranslation("Temperature (°F) / तापमान (°F)", lang),
       name: "temperature",
       type: "number",
-      min: 0,
-      max: 115,
+      min: 86,
+      max: 113,
       step: "0.1",
-      placeholder: getTranslation("e.g. 98.6 - 100 °F / जैसे 98.6 - 100 °F", lang),
+      placeholder: getTranslation("86 - 113 °F (e.g. 98.6 - 100 °F) / जैसे 98.6 - 100 °F", lang),
     },
     {
       id: "7",
@@ -2266,13 +2294,13 @@ const parseDateString = (dateStr) => {
     {
       id: "11",
       question: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी (HCV)", lang),
-      name: "hepatitis_c",
+      name: "hcv",
       type: "screening",
     },
     {
       id: "12",
       question: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी (HBsAg)", lang),
-      name: "hepatitis_b",
+      name: "hbsag",
       type: "screening",
     },
     {
@@ -2314,7 +2342,7 @@ const parseDateString = (dateStr) => {
           <select
             className="form-control"
             name={name}
-            value={formData[name] || ""}
+            value={normalizeScreeningValue(formData[name])}
             onChange={(e) =>
               setFormData((prevData) => ({
                 ...prevData,
@@ -2327,7 +2355,7 @@ const parseDateString = (dateStr) => {
             </option>
             <option value="Negative">{getTranslation("Negative / नेगेटिव", lang)}</option>
             <option value="Positive">{getTranslation("Positive / पॉजिटिव", lang)}</option>
-            <option value="Not Tested">{getTranslation("Not Tested / जांच नहीं हुई", lang)}</option>
+            <option value="Not Done">{getTranslation("Not Done / जांच नहीं हुई", lang)}</option>
           </select>
         ) : (
           <Input
@@ -3039,12 +3067,12 @@ const parseDateString = (dateStr) => {
 
                         {[
                           { key: "hiv", label: getTranslation("HIV / एचआईवी", lang) },
-                          { key: "hepatitis_c", label: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी", lang) },
-                          { key: "hepatitis_b", label: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी", lang) },
+                          { key: "hcv", fallbackKey: "hepatitis_c", label: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी", lang) },
+                          { key: "hbsag", fallbackKey: "hepatitis_b", label: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी", lang) },
                           { key: "vdrl", label: getTranslation("VDRL / वीडीआरएल", lang) },
                           { key: "syphilis", label: getTranslation("Syphilis / सिफलिस", lang) },
                         ].map((item) => {
-                          const val = selectedUser[item.key];
+                          const val = selectedUser[item.key] || (item.fallbackKey ? selectedUser[item.fallbackKey] : "");
                           const isPos = String(val || "").toLowerCase() === "positive";
                           const isNeg = String(val || "").toLowerCase() === "negative";
                           return (
@@ -3721,10 +3749,10 @@ const parseDateString = (dateStr) => {
       question: getTranslation("Temperature (°F) / तापमान (°F)", lang),
       name: "temperature",
       type: "number",
-      min: 0,
-      max: 115,
+      min: 86,
+      max: 113,
       step: "0.1",
-      placeholder: getTranslation("e.g. 98.6 - 100 °F / जैसे 98.6 - 100 °F", lang),
+      placeholder: getTranslation("86 - 113 °F (e.g. 98.6 - 100 °F) / जैसे 98.6 - 100 °F", lang),
     },
     {
       id: "7",
@@ -3763,13 +3791,13 @@ const parseDateString = (dateStr) => {
     {
       id: "11",
       question: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी (HCV)", lang),
-      name: "hepatitis_c",
+      name: "hcv",
       type: "screening",
     },
     {
       id: "12",
       question: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी (HBsAg)", lang),
-      name: "hepatitis_b",
+      name: "hbsag",
       type: "screening",
     },
     {
@@ -3812,7 +3840,7 @@ const parseDateString = (dateStr) => {
           <select
             className="form-control"
             name={name}
-            value={PFAeditData[name] || ""}
+            value={normalizeScreeningValue(PFAeditData[name])}
             onChange={(e) => {
               const { name, value } = e.target;
               setPFAeditData((prev) => ({
@@ -3826,7 +3854,7 @@ const parseDateString = (dateStr) => {
             </option>
             <option value="Negative">{getTranslation("Negative / नेगेटिव", lang)}</option>
             <option value="Positive">{getTranslation("Positive / पॉजिटिव", lang)}</option>
-            <option value="Not Tested">{getTranslation("Not Tested / जांच नहीं हुई", lang)}</option>
+            <option value="Not Done">{getTranslation("Not Done / जांच नहीं हुई", lang)}</option>
           </select>
         ) : (
           <Input
@@ -4605,10 +4633,10 @@ const parseDateString = (dateStr) => {
       question: getTranslation("Temperature (°F) / तापमान (°F)", lang),
       name: "temperature",
       type: "number",
-      min: 0,
-      max: 115,
+      min: 86,
+      max: 113,
       step: "0.1",
-      placeholder: getTranslation("e.g. 98.6 - 100 °F / जैसे 98.6 - 100 °F", lang),
+      placeholder: getTranslation("86 - 113 °F (e.g. 98.6 - 100 °F) / जैसे 98.6 - 100 °F", lang),
     },
     {
       id: "7",
@@ -4647,13 +4675,13 @@ const parseDateString = (dateStr) => {
     {
       id: "11",
       question: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी (HCV)", lang),
-      name: "hepatitis_c",
+      name: "hcv",
       type: "screening",
     },
     {
       id: "12",
       question: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी (HBsAg)", lang),
-      name: "hepatitis_b",
+      name: "hbsag",
       type: "screening",
     },
     {
@@ -4696,7 +4724,7 @@ const parseDateString = (dateStr) => {
           <select
             className="form-control"
             name={name}
-            value={PFAeditData[name] || ""}
+            value={normalizeScreeningValue(PFAeditData[name])}
             onChange={(e) => {
               const { name, value } = e.target;
               setPFAeditData((prev) => ({
@@ -4710,7 +4738,7 @@ const parseDateString = (dateStr) => {
             </option>
             <option value="Negative">{getTranslation("Negative / नेगेटिव", lang)}</option>
             <option value="Positive">{getTranslation("Positive / पॉजिटिव", lang)}</option>
-            <option value="Not Tested">{getTranslation("Not Tested / जांच नहीं हुई", lang)}</option>
+            <option value="Not Done">{getTranslation("Not Done / जांच नहीं हुई", lang)}</option>
           </select>
         ) : (
           <Input

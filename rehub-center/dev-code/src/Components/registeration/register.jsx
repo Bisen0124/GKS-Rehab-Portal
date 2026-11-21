@@ -176,18 +176,25 @@ function Register() {
   };
 
   const handleImageChange = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
 
     if (!file) return;
 
-    // Allowed image formats: JPEG, JPG, PNG, WEBP (Server requirement)
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    // Backend requirement: Profile picture must be JPEG / JPG or PDF (max 5 MB)
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+    const allowedImgTypes = ["image/jpeg", "image/jpg"];
     const fileExt = file.name.split(".").pop()?.toLowerCase();
-    const allowedExts = ["jpg", "jpeg", "png", "webp"];
+    const allowedImgExts = ["jpg", "jpeg"];
+    const isJpegOrCameraImg =
+      allowedImgTypes.includes(file.type?.toLowerCase()) ||
+      allowedImgExts.includes(fileExt) ||
+      file.type?.startsWith("image/");
 
-    if (!allowedTypes.includes(file.type?.toLowerCase()) && !allowedExts.includes(fileExt)) {
+    if (!isPdf && !isJpegOrCameraImg) {
       const msg = getTranslation(
-        `Profile picture must be JPEG, PNG, or WebP. (${file.name || file.type} is not supported) / केवल JPEG, PNG और WebP प्रारूप समर्थित हैं।`,
+        `Profile picture must be a JPG, JPEG, or PDF file (Max 5 MB). (${file.name || file.type} is not supported) / प्रोफ़ाइल फ़ाइल केवल JPG, JPEG या PDF प्रारूप (अधिकतम 5 MB) में होनी चाहिए।`,
         lang
       );
       setError(msg);
@@ -199,7 +206,33 @@ function Register() {
       return;
     }
 
-    // High size check: Reject initial raw files larger than 10MB
+    // PDF file handling for profile_pic (max 5 MB)
+    if (isPdf) {
+      if (file.size > 5 * 1024 * 1024) {
+        const msg = getTranslation(
+          "File size must be less than 5 MB / फ़ाइल का आकार 5 MB से कम होना चाहिए।",
+          lang
+        );
+        setError(msg);
+        toast.error(msg);
+        setImage(null);
+        setPreview(null);
+        setImageOptimizationInfo(null);
+        e.target.value = "";
+        return;
+      }
+      setError("");
+      setImage(file);
+      setPreview(null);
+      setImageOptimizationInfo({
+        originalSize: file.size,
+        compressedSize: file.size,
+        name: file.name,
+      });
+      return;
+    }
+
+    // Reject raw image files larger than 10MB before compression
     if (file.size > 10 * 1024 * 1024) {
       const msg = getTranslation(
         "Image file size must be less than 10MB before optimization / छवि फ़ाइल का आकार अनुकूलन से पहले 10MB से कम होना चाहिए।",
@@ -215,12 +248,12 @@ function Register() {
     }
 
     try {
+      // compressImageFile converts any camera/image input into a strict image/jpeg (.jpg) file
       const compressed = await compressImageFile(file);
 
-      // Verify that compressed image does not exceed 2MB limit
-      if (compressed.size > 2 * 1024 * 1024) {
+      if (compressed.size > 5 * 1024 * 1024) {
         const msg = getTranslation(
-          "Image size exceeds 2MB limit after compression. Please choose a smaller photo. / संपीड़ित छवि 2MB की सीमा से अधिक है। कृपया एक छोटी तस्वीर चुनें।",
+          "File size exceeds 5 MB limit. Please choose a smaller file. / फ़ाइल 5 MB की सीमा से अधिक है।",
           lang
         );
         setError(msg);
@@ -238,19 +271,19 @@ function Register() {
       setImageOptimizationInfo({
         originalSize: file.size,
         compressedSize: compressed.size,
-        name: file.name,
+        name: compressed.name || file.name,
       });
       toast.success(
         getTranslation(
-          `Image optimized: ${(compressed.size / 1024).toFixed(0)} KB / छवि अनुकूलित: ${(compressed.size / 1024).toFixed(0)} KB`,
+          `Image optimized (JPG): ${(compressed.size / 1024).toFixed(0)} KB / छवि अनुकूलित: ${(compressed.size / 1024).toFixed(0)} KB`,
           lang
         ),
         { autoClose: 2500 }
       );
     } catch (compressErr) {
-      if (file.size > 2 * 1024 * 1024) {
+      if (file.size > 5 * 1024 * 1024 || (!allowedImgTypes.includes(file.type?.toLowerCase()) && !allowedImgExts.includes(fileExt))) {
         const msg = getTranslation(
-          "Image size exceeds 2MB limit. / छवि 2MB सीमा से अधिक है।",
+          "Profile picture must be a JPG, JPEG, or PDF file under 5 MB. / फ़ाइल 5 MB से कम JPG, JPEG या PDF होनी चाहिए।",
           lang
         );
         setError(msg);
@@ -272,7 +305,7 @@ function Register() {
     }
   };
 
-  //Patient admission form (PDF / Image / Camera) upload
+  //Patient admission form (JPG / JPEG / PDF / Camera) upload
   const [admissionForm, setAdmissionForm] = useState(null);
   const [admissionFormName, setAdmissionFormName] = useState("");
   const [admissionFormPreview, setAdmissionFormPreview] = useState(null);
@@ -283,13 +316,13 @@ function Register() {
 
     if (!file) return;
 
-    // Allow PDF and common image formats (JPEG, JPG, PNG, WebP) from file picker or camera
+    // Backend requirement: admission_form_url accepts JPEG / JPG or PDF (max 5 MB)
     const isPdf =
       file.type === "application/pdf" ||
       file.name.toLowerCase().endsWith(".pdf");
-    const allowedImgTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const allowedImgTypes = ["image/jpeg", "image/jpg"];
     const fileExt = file.name.split(".").pop()?.toLowerCase();
-    const allowedImgExts = ["jpg", "jpeg", "png", "webp"];
+    const allowedImgExts = ["jpg", "jpeg"];
     const isImage =
       allowedImgTypes.includes(file.type?.toLowerCase()) ||
       allowedImgExts.includes(fileExt) ||
@@ -297,7 +330,7 @@ function Register() {
 
     if (!isPdf && !isImage) {
       const msg = getTranslation(
-        "Admission form must be a PDF or Image (JPEG, PNG, WebP) / प्रवेश फ़ॉर्म PDF या छवि (JPEG, PNG, WebP) होना चाहिए",
+        "Admission form must be a JPG, JPEG, or PDF file (Max 5 MB) / प्रवेश फ़ॉर्म केवल JPG, JPEG या PDF (अधिकतम 5 MB) होना चाहिए",
         lang
       );
       setAdmissionFormError(msg);
@@ -309,9 +342,9 @@ function Register() {
       return;
     }
 
-    // File size validation (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      const msg = getTranslation("File size must be less than 10MB / फ़ाइल का आकार 10MB से कम होना चाहिए", lang);
+    // File size validation (5 MB limit for PDF, 10 MB pre-compression for camera images)
+    if ((isPdf && file.size > 5 * 1024 * 1024) || file.size > 10 * 1024 * 1024) {
+      const msg = getTranslation("File size must be less than 5 MB / फ़ाइल का आकार 5 MB से कम होना चाहिए", lang);
       setAdmissionFormError(msg);
       toast.error(msg);
       setAdmissionForm(null);
@@ -325,14 +358,21 @@ function Register() {
 
     if (isImage) {
       try {
-        // Keep high resolution (1400px) so scanned/photographed form text remains readable while staying compact
+        // Converts any camera/image into a strict image/jpeg (.jpg) file under 5 MB
         const compressed = await compressImageFile(file, 1400, 0.85);
+        if (compressed.size > 5 * 1024 * 1024) {
+          const msg = getTranslation("File size exceeds 5 MB limit / फ़ाइल 5 MB सीमा से अधिक है", lang);
+          setAdmissionFormError(msg);
+          toast.error(msg);
+          e.target.value = "";
+          return;
+        }
         setAdmissionForm(compressed);
         setAdmissionFormName(compressed.name || file.name);
         setAdmissionFormPreview(URL.createObjectURL(compressed));
         toast.success(
           getTranslation(
-            `Admission form image ready: ${(compressed.size / 1024).toFixed(0)} KB / प्रवेश फ़ॉर्म छवि तैयार`,
+            `Admission form image ready (JPG): ${(compressed.size / 1024).toFixed(0)} KB / प्रवेश फ़ॉर्म छवि तैयार`,
             lang
           ),
           { autoClose: 2200 }
@@ -456,16 +496,8 @@ function Register() {
         value: formData.patientName,
       },
       {
-        label: getTranslation("Name of Patient Relative / रोगी के संबंधी का नाम", lang),
-        value: formData.patientRelativeName,
-      },
-      {
         label: getTranslation("Patient Sex / रोगी का लिंग", lang),
         value: formData.gender,
-      },
-      {
-        label: getTranslation("Relation with Patient / रोगी से संबंध", lang),
-        value: formData.relation_with_patient,
       },
       {
         label: getTranslation("Patient Date of Birth / रोगी की जन्म तिथि", lang),
@@ -476,20 +508,12 @@ function Register() {
         value: formData.phone,
       },
       {
-        label: getTranslation("Mobile number for WhatsApp/SMS communication / व्हाट्सएप/एसएमएस संचार के लिए मोबाइल नंबर", lang),
-        value: formData.whatsapp_no,
-      },
-      {
         label: getTranslation("Password / पासवर्ड", lang),
         value: formData.password,
       },
       {
         label: getTranslation("Ward Details / वार्ड विवरण", lang),
         value: formData.ward_type_id,
-      },
-      {
-        label: getTranslation("Patient Relative Address / रोगी के संबंधी का पता", lang),
-        value: formData.relativeaddress,
       },
       {
         label: getTranslation("Patient Address / रोगी का पता", lang),
@@ -677,50 +701,64 @@ function Register() {
       const branch_id = branchId;
       const authToken = localStorage.getItem("Authorization");
 
-      // ✅ Create FormData for multipart upload
+      // ✅ Create FormData matching GKS Rehab Portal Users Module API specification
       const payload = new FormData();
-      payload.append("date_of_admission", formatDate(formToSubmit.date_of_admission));
-      payload.append("name", formToSubmit.patientName);
+      payload.append("name", (formToSubmit.patientName || "").trim());
+
+      if (formToSubmit.patientRelativeName && formToSubmit.patientRelativeName.trim()) {
+        payload.append("relative_name", formToSubmit.patientRelativeName.trim());
+      }
 
       // Email is optional for patients: only append if non-empty
       if (formToSubmit.email && formToSubmit.email.trim()) {
         payload.append("email", formToSubmit.email.trim());
       }
 
-      payload.append("relative_name", formToSubmit.patientRelativeName);
-      payload.append("phone", formToSubmit.phone);
-      payload.append("gender", formToSubmit.gender);
+      payload.append("gender", formToSubmit.gender || "Male");
+      payload.append("address", (formToSubmit.address || "").trim());
       payload.append("dob", formatDate(formToSubmit.dob));
-      payload.append("address", formToSubmit.address);
-      payload.append("password", formToSubmit.password);
-
-      // Set WhatsApp number from primary or relative contact with WhatsApp enabled
-      const waContact = (formToSubmit.relative_contacts || []).find(
-        (c) => c.is_whatsapp && c.phone && c.phone.trim()
-      );
-      const effectiveWhatsAppNo = formToSubmit.whatsapp_no || (waContact ? waContact.phone.trim() : "");
-      payload.append("whatsapp_no", effectiveWhatsAppNo);
+      payload.append("phone", (formToSubmit.phone || "").trim());
+      payload.append("password", formToSubmit.password || "");
       payload.append("isRole", 4);
       payload.append("ward_type_id", formToSubmit.ward_type_id || "");
-      payload.append("ward_name", formToSubmit.ward_name || "");
-      payload.append("secondary_phone", formToSubmit.secondary_phone || "");
+      if (formToSubmit.ward_name) {
+        payload.append("ward_name", formToSubmit.ward_name);
+      }
 
-      // Clean relative contacts: optional — only send when user entered valid contact(s)
-      // Backend Joi strictly allows only { name, phone } objects
+      if (formToSubmit.relation_with_patient && formToSubmit.relation_with_patient.trim()) {
+        payload.append("relation_with_patient", formToSubmit.relation_with_patient.trim());
+      }
+
+      // Clean relative_contacts: optional — every sent entry must have name + 10-digit phone + use_for_whatsapp + use_for_sms
       const cleanedRelativeContacts = (formToSubmit.relative_contacts || [])
-        .filter((c) => (c.name && c.name.trim()) || (c.phone && c.phone.trim()))
         .map((c) => ({
-          name: c.name && c.name.trim() ? c.name.trim() : "Relative",
-          phone: c.phone ? c.phone.trim() : "",
+          name: c.name && c.name.trim() ? c.name.trim() : (formToSubmit.patientRelativeName || "").trim(),
+          phone: c.phone ? String(c.phone).trim() : "",
+          use_for_whatsapp: c.is_whatsapp || c.use_for_whatsapp === "Yes" ? "Yes" : "No",
+          use_for_sms: c.use_for_sms === "Yes" ? "Yes" : "No",
         }))
-        .filter((c) => c.name && c.phone);
+        .filter((c) => c.name && /^\d{10}$/.test(c.phone));
+
+      // If user entered a 10-digit whatsapp_no and it isn't already in relative_contacts, include it cleanly
+      const waTrimmed = (formToSubmit.whatsapp_no || "").trim();
+      if (/^\d{10}$/.test(waTrimmed) && !cleanedRelativeContacts.some((c) => c.phone === waTrimmed)) {
+        cleanedRelativeContacts.push({
+          name: (formToSubmit.patientRelativeName || formToSubmit.patientName || "Relative").trim(),
+          phone: waTrimmed,
+          use_for_whatsapp: "Yes",
+          use_for_sms: "No",
+        });
+      }
+
       if (cleanedRelativeContacts.length > 0) {
         payload.append("relative_contacts", JSON.stringify(cleanedRelativeContacts));
       }
-      payload.append("relative_address", formToSubmit.relativeaddress || "");
-      payload.append("relation_with_patient", formToSubmit.relation_with_patient || "");
 
-      // File uploads (optional: only append when a file is selected)
+      if (formToSubmit.relativeaddress && formToSubmit.relativeaddress.trim()) {
+        payload.append("relative_address", formToSubmit.relativeaddress.trim());
+      }
+
+      // File uploads (optional: .jpg / .jpeg / .pdf, max 5 MB)
       if (image) {
         payload.append("profile_pic", image);
       }
@@ -824,12 +862,17 @@ function Register() {
             ),
             confirmButtonText: getTranslation("OK / ठीक है", lang),
           });
-        } else if (lowerErr.includes("profile picture must be") || lowerErr.includes("jpeg, png, or webp")) {
+        } else if (
+          lowerErr.includes("profile picture must be") ||
+          lowerErr.includes("admission form") ||
+          lowerErr.includes("jpeg, jpg or pdf") ||
+          lowerErr.includes("jpeg, png, or webp")
+        ) {
           Swal.fire({
             icon: "error",
-            title: getTranslation("Unsupported Image Format / असमर्थित छवि प्रारूप", lang),
+            title: getTranslation("Unsupported File Format / असमर्थित फ़ाइल प्रारूप", lang),
             text: getTranslation(
-              `${errorMsg} / प्रोफ़ाइल फ़ोटो केवल JPEG, PNG या WebP प्रारूप में होनी चाहिए।`,
+              `${errorMsg} / फ़ाइल केवल JPG, JPEG या PDF प्रारूप (अधिकतम 5 MB) में होनी चाहिए।`,
               lang
             ),
             confirmButtonText: getTranslation("OK / ठीक है", lang),
@@ -1230,10 +1273,17 @@ function Register() {
           parsedRelativeContacts = parsedRelativeContacts.map((c) => {
             const matched = localSaved.find((ls) => ls.phone === c.phone);
             const isWa =
+              c.use_for_whatsapp === "Yes" ||
               c.is_whatsapp ||
               matched?.is_whatsapp ||
               (user.whatsapp_no && c.phone && String(c.phone).trim() === String(user.whatsapp_no).trim());
-            return { name: c.name || "", phone: c.phone || "", is_whatsapp: !!isWa };
+            return {
+              name: c.name || "",
+              phone: c.phone || "",
+              is_whatsapp: !!isWa,
+              use_for_whatsapp: isWa ? "Yes" : "No",
+              use_for_sms: c.use_for_sms === "Yes" ? "Yes" : "No",
+            };
           });
         } catch {
           // ignore
@@ -1314,31 +1364,44 @@ function Register() {
     );
     const effectiveEditWhatsAppNo = editData.whatsapp_no || (waEditContact ? waEditContact.phone.trim() : "");
 
-    // Clean relative contacts: optional — backend Joi strictly allows only { name, phone }
+    // Clean relative contacts for PUT /api/users/:id: every entry needs name + 10-digit phone + use_for_whatsapp + use_for_sms
     const cleanedEditContacts = (editData.relative_contacts || [])
-      .filter((c) => (c.name && c.name.trim()) || (c.phone && c.phone.trim()))
       .map((c) => ({
-        name: c.name && c.name.trim() ? c.name.trim() : "Relative",
-        phone: c.phone ? c.phone.trim() : "",
+        name: c.name && c.name.trim() ? c.name.trim() : (editData.patientRelativeName || "").trim(),
+        phone: c.phone ? String(c.phone).trim() : "",
+        use_for_whatsapp: c.is_whatsapp || c.use_for_whatsapp === "Yes" ? "Yes" : "No",
+        use_for_sms: c.use_for_sms === "Yes" ? "Yes" : "No",
       }))
-      .filter((c) => c.name && c.phone);
+      .filter((c) => c.name && /^\d{10}$/.test(c.phone));
 
     const updatedData = new FormData();
-    updatedData.append("name", editData.name || "");
-    updatedData.append("relative_name", editData.patientRelativeName || "");
-    updatedData.append("email", editData.email || "");
-    updatedData.append("gender", editData.gender || "");
-    updatedData.append("address", editData.address || "");
-    updatedData.append("dob", formatDate(editData.dob));
-    updatedData.append("phone", editData.phone || "");
-    updatedData.append("secondary_phone", editData.secondary_phone || "");
-    updatedData.append("whatsapp_no", effectiveEditWhatsAppNo);
-    updatedData.append("isRole", editData.is_role || "");
-    updatedData.append("relative_address", editData.relativeaddress || "");
-    updatedData.append("relation_with_patient", editData.relation_with_patient || "");
-    if (cleanedEditContacts.length > 0) {
-      updatedData.append("relative_contacts", JSON.stringify(cleanedEditContacts));
+    updatedData.append("name", (editData.name || "").trim());
+    if (editData.patientRelativeName !== undefined) {
+      updatedData.append("relative_name", (editData.patientRelativeName || "").trim());
     }
+    if (editData.email && editData.email.trim()) {
+      updatedData.append("email", editData.email.trim());
+    }
+    if (editData.gender) {
+      updatedData.append("gender", editData.gender);
+    }
+    if (editData.address !== undefined) {
+      updatedData.append("address", (editData.address || "").trim());
+    }
+    if (editData.dob) {
+      updatedData.append("dob", formatDate(editData.dob));
+    }
+    if (editData.phone) {
+      updatedData.append("phone", (editData.phone || "").trim());
+    }
+    if (editData.is_role) {
+      updatedData.append("isRole", editData.is_role);
+    }
+    updatedData.append("relative_address", (editData.relativeaddress || "").trim());
+    if (editData.relation_with_patient) {
+      updatedData.append("relation_with_patient", editData.relation_with_patient);
+    }
+    updatedData.append("relative_contacts", JSON.stringify(cleanedEditContacts));
 
     if (editData.profile_pic instanceof File) {
       updatedData.append("profile_pic", editData.profile_pic);
@@ -1459,42 +1522,135 @@ function Register() {
       });
   };
 
-  // ✅ Fetch active ward types from API
+  // ✅ Fetch active ward types from GET /api/users/wards?branch_id=<id> (items of item type "Wards")
   const fetchWards = useCallback(async (targetBranch = branchId) => {
     if (!targetBranch) return;
     setIsWardsLoading(true);
     const authToken = localStorage.getItem("Authorization");
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `${authToken}`,
+      "x-target-branch": String(targetBranch),
+    };
+
+    const parseWardList = (data) => {
+      if (!data) return [];
+      if (Array.isArray(data.data)) return data.data;
+      if (Array.isArray(data.wards)) return data.wards;
+      if (Array.isArray(data)) return data;
+      return [];
+    };
+
     try {
-      const res = await fetch(
-        `https://gks-yjdc.onrender.com/api/wards?branch_id=${targetBranch}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${authToken}`,
-            "x-target-branch": String(targetBranch),
-          },
-        }
+      let list = [];
+      let res = await fetch(
+        `https://gks-yjdc.onrender.com/api/users/wards?branch_id=${targetBranch}`,
+        { method: "GET", headers }
       );
       if (res.ok) {
-        const data = await res.json();
-        const list = Array.isArray(data.data)
-          ? data.data
-          : Array.isArray(data.wards)
-          ? data.wards
-          : Array.isArray(data)
-          ? data
-          : [];
-        if (list.length > 0) {
-          setWardList(list);
-        } else {
-          setWardList(wardOptions);
+        const data = await res.json().catch(() => null);
+        list = parseWardList(data);
+      }
+
+      // If no active "Wards" items exist in this branch yet, auto-provision default "Wards" items so registration never fails with 400
+      if (list.length === 0) {
+        try {
+          const typesRes = await fetch(
+            `https://gks-yjdc.onrender.com/api/item-types?branch_id=${targetBranch}`,
+            { method: "GET", headers }
+          );
+          let wardItemTypeId = null;
+          if (typesRes.ok) {
+            const typesJson = await typesRes.json().catch(() => null);
+            const typesArr = Array.isArray(typesJson?.data)
+              ? typesJson.data
+              : Array.isArray(typesJson)
+              ? typesJson
+              : [];
+            const foundType = typesArr.find(
+              (t) =>
+                String(t.item_type_name || t.name || "")
+                  .trim()
+                  .toLowerCase() === "wards"
+            );
+            if (foundType) {
+              wardItemTypeId = foundType.item_type_id || foundType.id;
+            }
+          }
+
+          if (!wardItemTypeId) {
+            const createTypeRes = await fetch(
+              `https://gks-yjdc.onrender.com/api/item-types?branch_id=${targetBranch}`,
+              {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ item_type_name: "Wards", description: "Patient admission wards" }),
+              }
+            );
+            if (createTypeRes.ok) {
+              const createdJson = await createTypeRes.json().catch(() => null);
+              wardItemTypeId =
+                createdJson?.data?.item_type_id ||
+                createdJson?.data?.insertId ||
+                createdJson?.data?.id ||
+                createdJson?.insertId;
+            }
+          }
+
+          if (wardItemTypeId) {
+            const defaultWardItems = [
+              { item_name: "General Ward", original_amount: 8000 },
+              { item_name: "Semi-Private Ward", original_amount: 12000 },
+              { item_name: "Private Ward", original_amount: 18000 },
+            ];
+            for (const w of defaultWardItems) {
+              await fetch(
+                `https://gks-yjdc.onrender.com/api/items?branch_id=${targetBranch}`,
+                {
+                  method: "POST",
+                  headers,
+                  body: JSON.stringify({
+                    item_name: w.item_name,
+                    item_type_id: Number(wardItemTypeId),
+                    original_amount: w.original_amount,
+                  }),
+                }
+              ).catch(() => {});
+            }
+
+            const retryRes = await fetch(
+              `https://gks-yjdc.onrender.com/api/users/wards?branch_id=${targetBranch}`,
+              { method: "GET", headers }
+            );
+            if (retryRes.ok) {
+              const retryData = await retryRes.json().catch(() => null);
+              list = parseWardList(retryData);
+            }
+          }
+        } catch {
+          // ignore auto-provision errors
         }
+      }
+
+      if (list.length > 0) {
+        setWardList(list);
+        setFormData((prev) => {
+          const validIds = list.map((w) => String(w.ward_type_id || w.id));
+          if (prev.ward_type_id && validIds.includes(String(prev.ward_type_id))) {
+            return prev;
+          }
+          const first = list[0];
+          return {
+            ...prev,
+            ward_type_id: first.ward_type_id || first.id,
+            ward_name: first.ward_name || first.name,
+          };
+        });
       } else {
         setWardList(wardOptions);
       }
     } catch (err) {
-      console.warn("Failed to fetch wards, using fallback:", err);
+      console.warn("Failed to fetch wards from /api/users/wards, using fallback:", err);
       setWardList(wardOptions);
     } finally {
       setIsWardsLoading(false);
@@ -2125,7 +2281,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
               {/* Patient Relative Name */}
               <div className="col-md-6">
                 <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  <Translated text={patientRelativeName} /> <span className="text-danger">*</span>
+                  <Translated text={patientRelativeName} />
+                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                    ({getTranslation("Optional / वैकल्पिक", lang)})
+                  </span>
                 </Label>
                 <Input
                   type="text"
@@ -2166,7 +2325,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
               {/* Relation with Patient */}
               <div className="col-md-6">
                 <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  {getTranslation("Relation with Patient / रोगी से संबंध", lang)} <span className="text-danger">*</span>
+                  {getTranslation("Relation with Patient / रोगी से संबंध", lang)}
+                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                    ({getTranslation("Optional / वैकल्पिक", lang)})
+                  </span>
                 </Label>
                 <select
                   className="form-select"
@@ -2240,11 +2402,14 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 )}
               </div>
 
-              {/* Mobile number for WhatsApp/SMS communication */}
+              {/* Mobile number for WhatsApp/SMS communication (Optional) */}
               <div className="col-md-6">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
-                    {getTranslation("Mobile number for WhatsApp / व्हाट्सएप के लिए मोबाइल नंबर", lang)} <span className="text-danger">*</span>
+                    {getTranslation("Mobile number for WhatsApp / व्हाट्सएप के लिए मोबाइल नंबर", lang)}
+                    <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                      ({getTranslation("Optional / वैकल्पिक", lang)})
+                    </span>
                   </Label>
                   {formData.phone && (
                     <span
@@ -2422,9 +2587,9 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                             style={{ cursor: "pointer", fontSize: "14px" }}
                           >
                             {optName}
-                            {option.price_rate ? (
+                            {(option.original_amount ?? option.price_rate ?? option.ward_amount) ? (
                               <span className="text-muted extra-small ms-1" style={{ fontSize: "11px" }}>
-                                (₹{Number(option.price_rate).toLocaleString("en-IN")})
+                                (₹{Number(option.original_amount ?? option.price_rate ?? option.ward_amount).toLocaleString("en-IN")})
                               </span>
                             ) : null}
                           </Label>
@@ -2435,7 +2600,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
-              {/* Patient Photo Upload with Modern Camera Icon & Optimization */}
+              {/* Patient Photo Upload with Modern Camera Icon & Optimization (.jpg / .jpeg / .pdf, max 5 MB) */}
               <div className="col-md-6">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
@@ -2445,7 +2610,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     </span>
                   </Label>
                   <span className="text-muted" style={{ fontSize: "11px" }}>
-                    Max 2MB (Auto-optimized)
+                    JPG / JPEG / PDF (Max 5MB)
                   </span>
                 </div>
                 <div className="d-flex align-items-center gap-2">
@@ -2467,7 +2632,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     <Input
                       id="patientPhotoInput"
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf"
                       onChange={handleImageChange}
                       className="form-control"
                       style={{ borderRadius: "8px", height: "40px", paddingRight: "42px" }}
@@ -2475,7 +2640,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     <input
                       id="patientPhotoCameraInput"
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/*"
                       capture="environment"
                       onChange={handleImageChange}
                       style={{ display: "none" }}
@@ -2510,7 +2675,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 {imageOptimizationInfo && image && (
                   <div className="d-flex align-items-center justify-content-between mt-1 px-1">
                     <small className="text-success fw-semibold" style={{ fontSize: "11.5px" }}>
-                      ✓ {getTranslation("Optimized & Ready / अनुकूलित एवं तैयार", lang)}: {(image.size / 1024).toFixed(0)} KB
+                      ✓ {getTranslation("Ready / तैयार", lang)}: {imageOptimizationInfo.name || image.name} ({(image.size / 1024).toFixed(0)} KB)
                       {imageOptimizationInfo.originalSize > image.size && (
                         <span className="text-muted fw-normal ms-1">
                           ({getTranslation("Saved / बचत", lang)} {Math.round((1 - image.size / imageOptimizationInfo.originalSize) * 100)}%)
@@ -2522,17 +2687,17 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 {error && <small className="text-danger d-block mt-1">{error}</small>}
               </div>
 
-              {/* Admission Form Upload — Supports PDF, Image Upload & Direct Camera Capture */}
+              {/* Admission Form Upload — Supports JPG / JPEG / PDF & Direct Camera Capture (max 5 MB) */}
               <div className="col-md-6">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
-                    {getTranslation("Upload Admission Form (PDF / Image) / प्रवेश फ़ॉर्म (पीडीएफ / छवि) अपलोड करें", lang)}
+                    {getTranslation("Upload Admission Form (JPG / JPEG / PDF) / प्रवेश फ़ॉर्म अपलोड करें", lang)}
                     <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
                       ({getTranslation("Optional / वैकल्पिक", lang)})
                     </span>
                   </Label>
                   <span className="text-muted" style={{ fontSize: "11px" }}>
-                    PDF / JPG / PNG / Camera
+                    JPG / JPEG / PDF (Max 5MB)
                   </span>
                 </div>
                 <div className="d-flex align-items-center gap-2">
@@ -2554,7 +2719,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     <Input
                       id="admissionFormInput"
                       type="file"
-                      accept="application/pdf,image/jpeg,image/png,image/webp"
+                      accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf"
                       onChange={handleAdmissionFormChange}
                       className="form-control"
                       style={{ borderRadius: "8px", height: "40px", paddingRight: "74px" }}
@@ -2563,7 +2728,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     <input
                       id="admissionFormCameraInput"
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/*"
                       capture="environment"
                       onChange={handleAdmissionFormChange}
                       style={{ display: "none" }}
@@ -2766,7 +2931,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 <VoiceTextarea
                   label={
                     <span className="fw-semibold text-dark" style={{ fontSize: "13px" }}>
-                      <Translated text={pateintRelativeAddress} /> <span className="text-danger">*</span>
+                      <Translated text={pateintRelativeAddress} />
+                      <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                        ({getTranslation("Optional / वैकल्पिक", lang)})
+                      </span>
                     </span>
                   }
                   name="relativeaddress"
@@ -3143,10 +3311,20 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     )}
                     <Input
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
+                        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+                        if (isPdf) {
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error(getTranslation("File size must be less than 5 MB / फ़ाइल 5 MB से कम होनी चाहिए।", lang));
+                            e.target.value = "";
+                            return;
+                          }
+                          setEditData({ ...editData, profile_pic: file });
+                          return;
+                        }
                         if (file.size > 10 * 1024 * 1024) {
                           toast.error(getTranslation("Image file size must be less than 10MB before optimization / छवि फ़ाइल का आकार 10MB से कम होना चाहिए।", lang));
                           e.target.value = "";
@@ -3154,13 +3332,13 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         }
                         try {
                           const compressed = await compressImageFile(file);
-                          if (compressed.size > 2 * 1024 * 1024) {
-                            toast.error(getTranslation("Image size exceeds 2MB limit after compression. / छवि 2MB सीमा से अधिक है।", lang));
+                          if (compressed.size > 5 * 1024 * 1024) {
+                            toast.error(getTranslation("File size exceeds 5 MB limit. / फ़ाइल 5 MB सीमा से अधिक है।", lang));
                             e.target.value = "";
                             return;
                           }
                           setEditData({ ...editData, profile_pic: compressed });
-                          toast.success(getTranslation(`Image optimized: ${(compressed.size / 1024).toFixed(0)} KB / छवि अनुकूलित: ${(compressed.size / 1024).toFixed(0)} KB`, lang));
+                          toast.success(getTranslation(`Image optimized (JPG): ${(compressed.size / 1024).toFixed(0)} KB / छवि अनुकूलित: ${(compressed.size / 1024).toFixed(0)} KB`, lang));
                         } catch {
                           setEditData({ ...editData, profile_pic: file });
                         }
@@ -3180,7 +3358,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 <div className="col-md-6">
                   <div className="d-flex justify-content-between align-items-center mb-1">
                     <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
-                      {getTranslation("Update Admission Form (PDF / Image) / प्रवेश फॉर्म अपडेट करें", lang)}
+                      {getTranslation("Update Admission Form (JPG / JPEG / PDF) / प्रवेश फॉर्म अपडेट करें", lang)}
                     </Label>
                     {editData.admission_form_url && (
                       <a
@@ -3198,18 +3376,28 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     <Input
                       id="editAdmissionFormInput"
                       type="file"
-                      accept="application/pdf,image/jpeg,image/png,image/webp"
+                      accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf"
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
                         if (file.type?.startsWith("image/")) {
                           try {
                             const compressed = await compressImageFile(file, 1400, 0.85);
+                            if (compressed.size > 5 * 1024 * 1024) {
+                              toast.error(getTranslation("File size exceeds 5 MB limit / फ़ाइल 5 MB सीमा से अधिक है।", lang));
+                              e.target.value = "";
+                              return;
+                            }
                             setEditData({ ...editData, admission_form_file: compressed });
                           } catch {
                             setEditData({ ...editData, admission_form_file: file });
                           }
                         } else {
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast.error(getTranslation("File size must be less than 5 MB / फ़ाइल 5 MB से कम होनी चाहिए।", lang));
+                            e.target.value = "";
+                            return;
+                          }
                           setEditData({ ...editData, admission_form_file: file });
                         }
                       }}
@@ -3478,8 +3666,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       />
                       <Label for={`rereg-wards-${optId}`} className="mb-0 ms-1 cursor-pointer">
                         {optName}
-                        {option.price_rate ? (
-                          <span className="text-muted small ms-1">(₹{option.price_rate})</span>
+                        {(option.original_amount ?? option.price_rate ?? option.ward_amount) ? (
+                          <span className="text-muted small ms-1">
+                            (₹{Number(option.original_amount ?? option.price_rate ?? option.ward_amount).toLocaleString("en-IN")})
+                          </span>
                         ) : null}
                       </Label>
                     </div>
