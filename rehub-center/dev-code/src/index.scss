@@ -622,7 +622,20 @@ table td.radio,
 .table td.radio {
   display: table-cell !important;
   vertical-align: middle !important;
-  text-align: center !important;
+  text-align: left !important;
+
+  .form-check-label,
+  label {
+    vertical-align: middle !important;
+    margin-bottom: 0 !important;
+    cursor: pointer !important;
+  }
+}
+
+.table td .form-check,
+.table td .form-check-inline {
+  padding: 4px 6px 4px 0 !important;
+  margin: 0 !important;
 }
 
 /* ==========================================================================

@@ -2499,7 +2499,7 @@ const parseDateString = (dateStr) => {
                                 return (
                                   <td
                                     key={inputId}
-                                    className="text-center align-middle"
+                                    className="align-middle"
                                   >
                                     <div className="form-check form-check-inline m-0">
                                       <Input
@@ -2577,7 +2577,7 @@ const parseDateString = (dateStr) => {
                                 return (
                                   <td
                                     key={inputId}
-                                    className="text-center align-middle"
+                                    className="align-middle"
                                   >
                                     <div className="form-check form-check-inline m-0">
                                       <Input
@@ -4009,7 +4009,7 @@ const parseDateString = (dateStr) => {
                                 return (
                                   <td
                                     key={inputId}
-                                    className="text-center align-middle"
+                                    className="align-middle"
                                   >
                                     <div className="form-check form-check-inline m-0">
                                       <Input
@@ -4101,7 +4101,7 @@ const parseDateString = (dateStr) => {
                               return (
                                 <td
                                   key={inputId}
-                                  className="text-center align-middle"
+                                  className="align-middle"
                                 >
                                   <div className="form-check form-check-inline m-0">
                                     <Input
@@ -4885,7 +4885,7 @@ const parseDateString = (dateStr) => {
                                 return (
                                   <td
                                     key={inputId}
-                                    className="text-center align-middle"
+                                    className="align-middle"
                                   >
                                     <div className="form-check form-check-inline m-0">
                                       <Input
@@ -4973,7 +4973,7 @@ const parseDateString = (dateStr) => {
             return (
               <td
                 key={inputId}
-                className="text-center align-middle"
+                className="align-middle"
               >
                 <div className="form-check form-check-inline m-0">
                   <Input

@@ -188,6 +188,22 @@ export const MENUITEMS = [
     "menucontent": "Dashboards,Widgets",
     "Items": [
       {
+        "title": "Billing/बिलिंग",
+        "icon": "icon-class",
+        "type": "sub",
+        "path": `${process.env.PUBLIC_URL}/billing`,
+        children: [
+          { path: `${process.env.PUBLIC_URL}/billing/patient-billing`, title: "Patient Billing/मरीज बिलिंग", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/billing/items-master`, title: "Bill Items Master/बिल आइटम मास्टर", type: "link" },
+          { path: `${process.env.PUBLIC_URL}/billing/item-types`, title: "Bill Item Types/आइटम प्रकार", type: "link" },
+        ],
+      }
+    ]
+  },
+  {
+    "menucontent": "Dashboards,Widgets",
+    "Items": [
+      {
         "title": "Settings/सेटिंग्स",
         "icon": "icon-class",
         "type": "sub",
@@ -199,9 +215,6 @@ export const MENUITEMS = [
           { path: `${process.env.PUBLIC_URL}/settings/detox-substances`, title: "Detox Substances/डिटॉक्स पदार्थ", type: "link" },
           { path: `${process.env.PUBLIC_URL}/settings/detox-parameters`, title: "Assessment Parameters/मूल्यांकन पैरामीटर", type: "link" },
           { path: `${process.env.PUBLIC_URL}/settings/detox-severity`, title: "Severity Benchmarks/गंभीरता बेंचमार्क", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/settings/patient-billing`, title: "Patient Billing/मरीज बिलिंग", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/settings/items-master`, title: "Bill Items Master/बिल आइटम मास्टर", type: "link" },
-          { path: `${process.env.PUBLIC_URL}/settings/item-types`, title: "Bill Item Types/आइटम प्रकार", type: "link" },
         ],
       }
     ]
