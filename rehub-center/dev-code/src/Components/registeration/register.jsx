@@ -68,8 +68,116 @@ function Register() {
 
   //Branches selection
   const { selectedBranch } = useBranch();
+  const storedBranchDetail = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("Branch_Detail") || "[]");
+    } catch {
+      return [];
+    }
+  })();
   const branchId =
-    selectedBranch?.branch_id || selectedBranch?.id || selectedBranch || "";
+    selectedBranch?.branch_id ||
+    selectedBranch?.id ||
+    selectedBranch ||
+    storedBranchDetail?.[0]?.Branch_id ||
+    storedBranchDetail?.[0]?.branch_id ||
+    1;
+
+  // Helper: Calculate age from DOB string or Date
+  const calculateAgeFromDob = useCallback((dobVal, fallbackAge) => {
+    if (fallbackAge !== undefined && fallbackAge !== null && fallbackAge !== "" && !isNaN(Number(fallbackAge)) && Number(fallbackAge) > 0) {
+      return `${Number(fallbackAge)} Yrs`;
+    }
+    if (!dobVal) return "N/A";
+    const birthDate = new Date(dobVal);
+    if (isNaN(birthDate.getTime())) return "N/A";
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age >= 0 ? `${age} Yrs` : "N/A";
+  }, []);
+
+  // Helper: Convert File to Data URL for local persistence & bulk download
+  const fileToDataUrl = (file) =>
+    new Promise((resolve) => {
+      if (!file || !(file instanceof Blob)) return resolve("");
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result || "");
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
+
+  // Helper: Load extra user metadata from localStorage
+  const loadUserExtraMetadata = useCallback((uid, phone) => {
+    try {
+      const cleanPhone = String(phone || "").trim();
+      const byId = uid ? localStorage.getItem(`gks_user_extra_${uid}`) : null;
+      const byPhone = cleanPhone ? localStorage.getItem(`gks_user_extra_phone_${cleanPhone}`) : null;
+      const parsedId = byId ? JSON.parse(byId) : {};
+      const parsedPhone = byPhone ? JSON.parse(byPhone) : {};
+      return { ...parsedPhone, ...parsedId };
+    } catch {
+      return {};
+    }
+  }, []);
+
+  // Helper: Save extra user metadata to localStorage
+  const saveUserExtraMetadata = useCallback((uid, phone, extraObj) => {
+    try {
+      const cleanPhone = String(phone || "").trim();
+      const existing = loadUserExtraMetadata(uid, cleanPhone);
+      const merged = { ...existing, ...extraObj, updatedAt: Date.now() };
+      if (uid) {
+        localStorage.setItem(`gks_user_extra_${uid}`, JSON.stringify(merged));
+      }
+      if (cleanPhone) {
+        localStorage.setItem(`gks_user_extra_phone_${cleanPhone}`, JSON.stringify(merged));
+      }
+    } catch {
+      // ignore storage quota errors
+    }
+  }, [loadUserExtraMetadata]);
+
+  // Helper: Format all phone numbers (Primary, Secondary, WhatsApp, Additional Relative Contacts)
+  const collectAllPhones = useCallback((userObj = {}, localExtra = {}) => {
+    const phones = [];
+    const addPhone = (p, tag = "") => {
+      if (!p) return;
+      const clean = String(p).trim();
+      if (!clean) return;
+      if (!phones.some((item) => item.number === clean)) {
+        phones.push({ number: clean, tag });
+      }
+    };
+
+    addPhone(userObj.phone, "Primary");
+    addPhone(userObj.secondary_phone || localExtra.secondary_phone, "Secondary");
+    addPhone(userObj.whatsapp_no || localExtra.whatsapp_no, "WhatsApp");
+
+    let relContacts = userObj.relative_contacts || localExtra.relative_contacts || [];
+    if (typeof relContacts === "string") {
+      try {
+        relContacts = JSON.parse(relContacts);
+      } catch {
+        relContacts = [];
+      }
+    }
+    if (Array.isArray(relContacts)) {
+      relContacts.forEach((c) => {
+        if (c && c.phone) {
+          addPhone(c.phone, c.name || "Relative");
+        }
+      });
+    }
+
+    return {
+      list: phones,
+      text: phones.length > 0 ? phones.map((p) => p.number).join(", ") : "N/A",
+    };
+  }, []);
 
   //spinner extract from other file
   const selectedSpinner = Data.find(
@@ -305,18 +413,15 @@ function Register() {
     }
   };
 
-  //Patient admission form (JPG / JPEG / PDF / Camera) upload
+  //Patient admission form (Multiple JPG / JPEG / PDF / Camera) upload
   const [admissionForm, setAdmissionForm] = useState(null);
+  const [admissionFormFiles, setAdmissionFormFiles] = useState([]);
   const [admissionFormName, setAdmissionFormName] = useState("");
   const [admissionFormPreview, setAdmissionFormPreview] = useState(null);
   const [admissionFormError, setAdmissionFormError] = useState("");
+  const [sameAsPrimaryPhone, setSameAsPrimaryPhone] = useState(false);
 
-  const handleAdmissionFormChange = async (e) => {
-    const file = e.target.files?.[0];
-
-    if (!file) return;
-
-    // Backend requirement: admission_form_url accepts JPEG / JPG or PDF (max 5 MB)
+  const processSingleAdmissionFile = async (file) => {
     const isPdf =
       file.type === "application/pdf" ||
       file.name.toLowerCase().endsWith(".pdf");
@@ -333,60 +438,107 @@ function Register() {
         "Admission form must be a JPG, JPEG, or PDF file (Max 5 MB) / प्रवेश फ़ॉर्म केवल JPG, JPEG या PDF (अधिकतम 5 MB) होना चाहिए",
         lang
       );
-      setAdmissionFormError(msg);
       toast.error(msg);
-      setAdmissionForm(null);
-      setAdmissionFormName("");
-      setAdmissionFormPreview(null);
-      e.target.value = "";
-      return;
+      return { error: msg };
     }
 
-    // File size validation (5 MB limit for PDF, 10 MB pre-compression for camera images)
     if ((isPdf && file.size > 5 * 1024 * 1024) || file.size > 10 * 1024 * 1024) {
       const msg = getTranslation("File size must be less than 5 MB / फ़ाइल का आकार 5 MB से कम होना चाहिए", lang);
-      setAdmissionFormError(msg);
       toast.error(msg);
-      setAdmissionForm(null);
-      setAdmissionFormName("");
-      setAdmissionFormPreview(null);
-      e.target.value = "";
-      return;
+      return { error: msg };
     }
-
-    setAdmissionFormError("");
 
     if (isImage) {
       try {
-        // Converts any camera/image into a strict image/jpeg (.jpg) file under 5 MB
         const compressed = await compressImageFile(file, 1400, 0.85);
         if (compressed.size > 5 * 1024 * 1024) {
           const msg = getTranslation("File size exceeds 5 MB limit / फ़ाइल 5 MB सीमा से अधिक है", lang);
-          setAdmissionFormError(msg);
           toast.error(msg);
-          e.target.value = "";
-          return;
+          return { error: msg };
         }
-        setAdmissionForm(compressed);
-        setAdmissionFormName(compressed.name || file.name);
-        setAdmissionFormPreview(URL.createObjectURL(compressed));
-        toast.success(
-          getTranslation(
-            `Admission form image ready (JPG): ${(compressed.size / 1024).toFixed(0)} KB / प्रवेश फ़ॉर्म छवि तैयार`,
-            lang
-          ),
-          { autoClose: 2200 }
-        );
+        const dataUrl = await fileToDataUrl(compressed);
+        return {
+          item: {
+            file: compressed,
+            name: compressed.name || file.name,
+            preview: URL.createObjectURL(compressed),
+            dataUrl,
+            isPdf: false,
+            size: compressed.size,
+          },
+        };
       } catch {
-        setAdmissionForm(file);
-        setAdmissionFormName(file.name);
-        setAdmissionFormPreview(URL.createObjectURL(file));
+        const dataUrl = await fileToDataUrl(file);
+        return {
+          item: {
+            file,
+            name: file.name,
+            preview: URL.createObjectURL(file),
+            dataUrl,
+            isPdf: false,
+            size: file.size,
+          },
+        };
       }
     } else {
-      setAdmissionForm(file);
-      setAdmissionFormName(file.name);
-      setAdmissionFormPreview(null);
+      const dataUrl = await fileToDataUrl(file);
+      return {
+        item: {
+          file,
+          name: file.name,
+          preview: null,
+          dataUrl,
+          isPdf: true,
+          size: file.size,
+        },
+      };
     }
+  };
+
+  const handleAdmissionFormChange = async (e) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length === 0) return;
+
+    setAdmissionFormError("");
+    const newlyProcessed = [];
+    for (const rawFile of selectedFiles) {
+      const { item, error: errMsg } = await processSingleAdmissionFile(rawFile);
+      if (errMsg) {
+        setAdmissionFormError(errMsg);
+      } else if (item) {
+        newlyProcessed.push(item);
+      }
+    }
+
+    if (newlyProcessed.length > 0) {
+      setAdmissionFormFiles((prev) => {
+        const combined = [...prev, ...newlyProcessed];
+        setAdmissionForm(combined[0]?.file || null);
+        setAdmissionFormName(combined.map((f) => f.name).join(", "));
+        const firstImg = combined.find((f) => !f.isPdf && f.preview);
+        setAdmissionFormPreview(firstImg ? firstImg.preview : null);
+        return combined;
+      });
+      toast.success(
+        getTranslation(
+          `Added ${newlyProcessed.length} admission form file(s) / ${newlyProcessed.length} प्रवेश फ़ॉर्म फ़ाइल जोड़ी गई`,
+          lang
+        ),
+        { autoClose: 2200 }
+      );
+    }
+    e.target.value = "";
+  };
+
+  const removeAdmissionFormFile = (indexToRemove) => {
+    setAdmissionFormFiles((prev) => {
+      const updated = prev.filter((_, idx) => idx !== indexToRemove);
+      setAdmissionForm(updated[0]?.file || null);
+      setAdmissionFormName(updated.map((f) => f.name).join(", "));
+      const firstImg = updated.find((f) => !f.isPdf && f.preview);
+      setAdmissionFormPreview(firstImg ? firstImg.preview : null);
+      return updated;
+    });
   };
 
   //Show hide password of register password filed.
@@ -496,15 +648,23 @@ function Register() {
         value: formData.patientName,
       },
       {
+        label: getTranslation("Name of Patient Relative / रोगी के संबंधी का नाम", lang),
+        value: formData.patientRelativeName,
+      },
+      {
         label: getTranslation("Patient Sex / रोगी का लिंग", lang),
         value: formData.gender,
+      },
+      {
+        label: getTranslation("Relation with Patient / रोगी से संबंध", lang),
+        value: formData.relation_with_patient,
       },
       {
         label: getTranslation("Patient Date of Birth / रोगी की जन्म तिथि", lang),
         value: formData.dob,
       },
       {
-        label: getTranslation("Patient Relative Primary Phone Number / संबंधी का प्राथमिक फ़ोन नंबर", lang),
+        label: getTranslation("Patient Primary Phone Number / प्राथमिक फ़ोन नंबर", lang),
         value: formData.phone,
       },
       {
@@ -514,6 +674,14 @@ function Register() {
       {
         label: getTranslation("Ward Details / वार्ड विवरण", lang),
         value: formData.ward_type_id,
+      },
+      {
+        label: getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि", lang),
+        value: image ? "uploaded" : "",
+      },
+      {
+        label: getTranslation("Upload Admission Form (JPG / JPEG / PDF) / प्रवेश फ़ॉर्म", lang),
+        value: admissionFormFiles.length > 0 || admissionForm ? "uploaded" : "",
       },
       {
         label: getTranslation("Patient Address / रोगी का पता", lang),
@@ -623,7 +791,38 @@ function Register() {
 
   // ✅ Common registration success handler
   const handleRegistrationSuccess = (createdUser = {}) => {
-    const createdUserId = createdUser?.id || createdUser?.user_id;
+    const createdUserId = createdUser?.id || createdUser?.user_id || createdUser?.insertId;
+    const formatDateStr = (d) =>
+      d instanceof Date && !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : d || "";
+
+    const storedAdmissionFiles = (admissionFormFiles || []).map((f) => ({
+      name: f.name,
+      url: f.dataUrl || "",
+      isPdf: !!f.isPdf,
+    }));
+    if (createdUser?.admission_form_url && !storedAdmissionFiles.some((f) => f.url === createdUser.admission_form_url)) {
+      storedAdmissionFiles.unshift({
+        name: admissionFormFiles[0]?.name || "Admission_Form",
+        url: createdUser.admission_form_url,
+        isPdf: String(createdUser.admission_form_url).toLowerCase().includes(".pdf"),
+      });
+    }
+
+    saveUserExtraMetadata(createdUserId, formData.phone, {
+      ward_type_id: createdUser?.ward?.ward_type_id || formData.ward_type_id,
+      ward_name: createdUser?.ward?.ward_name || formData.ward_name,
+      date_of_admission: formatDateStr(formData.date_of_admission),
+      secondary_phone: (formData.secondary_phone || "").trim(),
+      whatsapp_no: (formData.whatsapp_no || "").trim(),
+      dob: formatDateStr(formData.dob),
+      address: (formData.address || "").trim(),
+      relative_name: (formData.patientRelativeName || "").trim(),
+      relative_address: (formData.relativeaddress || "").trim(),
+      relation_with_patient: formData.relation_with_patient || "",
+      relative_contacts: formData.relative_contacts,
+      admission_files: storedAdmissionFiles,
+    });
+
     if (createdUserId) {
       try {
         localStorage.setItem(
@@ -649,15 +848,18 @@ function Register() {
       setFormData(initialFormData);
       setPasswordError("");
       setEmailError("");
+      setSameAsPrimaryPhone(false);
 
       // ✅ Reset file upload states too
       setImage(null);
       setPreview(null);
       setAdmissionForm(null);
+      setAdmissionFormFiles([]);
       setAdmissionFormName("");
       setAdmissionFormPreview(null);
 
       fetchUsers();
+      fetchIPDEntries();
     });
   };
 
@@ -701,6 +903,46 @@ function Register() {
       const branch_id = branchId;
       const authToken = localStorage.getItem("Authorization");
 
+      // Ensure ward_type_id is a valid active ward of the selected branch from GET /api/users/wards
+      let effectiveWardTypeId = formToSubmit.ward_type_id;
+      let effectiveWardName = formToSubmit.ward_name;
+      try {
+        const wardsCheckRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/users/wards${branch_id ? `?branch_id=${branch_id}` : ""}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${authToken}`,
+            },
+          }
+        );
+        if (wardsCheckRes.ok) {
+          const wardsCheckJson = await wardsCheckRes.json().catch(() => null);
+          const activeBranchWards = Array.isArray(wardsCheckJson?.data) ? wardsCheckJson.data : [];
+          if (activeBranchWards.length > 0) {
+            setWardList(activeBranchWards);
+            const matchedWard =
+              activeBranchWards.find(
+                (w) => String(w.ward_type_id || w.id) === String(effectiveWardTypeId)
+              ) ||
+              activeBranchWards.find(
+                (w) =>
+                  effectiveWardName &&
+                  String(w.ward_name || "").trim().toLowerCase() ===
+                    String(effectiveWardName).trim().toLowerCase()
+              ) ||
+              activeBranchWards[0];
+            if (matchedWard) {
+              effectiveWardTypeId = matchedWard.ward_type_id || matchedWard.id;
+              effectiveWardName = matchedWard.ward_name || matchedWard.name;
+            }
+          }
+        }
+      } catch {
+        // continue with selected ward_type_id
+      }
+
       // ✅ Create FormData matching GKS Rehab Portal Users Module API specification
       const payload = new FormData();
       payload.append("name", (formToSubmit.patientName || "").trim());
@@ -720,9 +962,9 @@ function Register() {
       payload.append("phone", (formToSubmit.phone || "").trim());
       payload.append("password", formToSubmit.password || "");
       payload.append("isRole", 4);
-      payload.append("ward_type_id", formToSubmit.ward_type_id || "");
-      if (formToSubmit.ward_name) {
-        payload.append("ward_name", formToSubmit.ward_name);
+      payload.append("ward_type_id", effectiveWardTypeId || "");
+      if (effectiveWardName) {
+        payload.append("ward_name", effectiveWardName);
       }
 
       if (formToSubmit.relation_with_patient && formToSubmit.relation_with_patient.trim()) {
@@ -738,6 +980,17 @@ function Register() {
           use_for_sms: c.use_for_sms === "Yes" ? "Yes" : "No",
         }))
         .filter((c) => c.name && /^\d{10}$/.test(c.phone));
+
+      // If user entered a 10-digit secondary_phone and it isn't already in relative_contacts, include it cleanly
+      const secTrimmed = (formToSubmit.secondary_phone || "").trim();
+      if (/^\d{10}$/.test(secTrimmed) && !cleanedRelativeContacts.some((c) => c.phone === secTrimmed)) {
+        cleanedRelativeContacts.push({
+          name: (formToSubmit.patientRelativeName || formToSubmit.patientName || "Secondary").trim(),
+          phone: secTrimmed,
+          use_for_whatsapp: secTrimmed === (formToSubmit.whatsapp_no || "").trim() ? "Yes" : "No",
+          use_for_sms: "No",
+        });
+      }
 
       // If user entered a 10-digit whatsapp_no and it isn't already in relative_contacts, include it cleanly
       const waTrimmed = (formToSubmit.whatsapp_no || "").trim();
@@ -758,13 +1011,14 @@ function Register() {
         payload.append("relative_address", formToSubmit.relativeaddress.trim());
       }
 
-      // File uploads (optional: .jpg / .jpeg / .pdf, max 5 MB)
+      // File uploads (.jpg / .jpeg / .pdf, max 5 MB)
       if (image) {
         payload.append("profile_pic", image);
       }
 
-      if (admissionForm) {
-        payload.append("admission_form_url", admissionForm);
+      const primaryAdmissionFile = admissionFormFiles?.[0]?.file || admissionForm;
+      if (primaryAdmissionFile) {
+        payload.append("admission_form_url", primaryAdmissionFile);
       }
 
       // 120-second timeout to handle Render cold boot + Cloudinary dual file uploads
@@ -934,6 +1188,7 @@ function Register() {
     if (!modal) {
       setIsRegisterSubmitting(false);
       setSubmitStatusMessage("");
+      fetchWards(branchId);
 
       // ✅ Pre-warm the backend on Render in background while user fills the form
       if (branchId) {
@@ -947,8 +1202,18 @@ function Register() {
 
       const saved = loadDraft("patient_registration", "new");
       if (saved && saved.data) {
-        setFormData(saved.data);
+        setFormData((prev) => ({
+          ...saved.data,
+          ward_type_id: saved.data.ward_type_id || prev.ward_type_id || wardList?.[0]?.ward_type_id || wardList?.[0]?.id || "",
+          ward_name: saved.data.ward_name || prev.ward_name || wardList?.[0]?.ward_name || wardList?.[0]?.name || "",
+        }));
         setDraftTimestamp(saved.savedAt);
+      } else {
+        setFormData((prev) => ({
+          ...initialFormData,
+          ward_type_id: prev.ward_type_id || wardList?.[0]?.ward_type_id || wardList?.[0]?.id || "",
+          ward_name: prev.ward_name || wardList?.[0]?.ward_name || wardList?.[0]?.name || "",
+        }));
       }
     } else {
       setIsRegisterSubmitting(false);
@@ -1108,82 +1373,272 @@ function Register() {
     });
   };
 
-  //handle re-register user based on discahrge status
+  //handle re-register user based on discharge status
   const [reregisterModal, setreregisterModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
+  const [reregFormData, setReregFormData] = useState({
+    date_of_admission: new Date(),
+    patientName: "",
+    patientRelativeName: "",
+    gender: "Male",
+    relation_with_patient: "",
+    dob: new Date(),
+    phone: "",
+    secondary_phone: "",
+    whatsapp_no: "",
+    sameAsPrimaryPhone: false,
+    email: "",
+    ward_type_id: "",
+    ward_name: "",
+    relative_contacts: [{ name: "", phone: "", is_whatsapp: false }],
+    relativeaddress: "",
+    address: "",
+    sameAddress: false,
+  });
+  const [reregImage, setReregImage] = useState(null);
+  const [reregPreview, setReregPreview] = useState(null);
+  const [reregAdmissionFiles, setReregAdmissionFiles] = useState([]);
 
-  //getting user_Id for re-registering
-  const handleReregisterUserID = async (user) => {
-    const userId = typeof user === "object" && user !== null ? user.id : user;
+  //getting user_Id for re-registering: pre-fill ONLY current date, patient name, gender, email, phone, DOB; rest empty
+  const handleReregisterUserID = async (userOrId) => {
+    const userId = typeof userOrId === "object" && userOrId !== null ? userOrId.id : userOrId;
     if (!userId) return;
 
-    setSelectedUserId(userId); // store user ID
-    setreregisterModal(true); // open modal
+    setSelectedUserId(userId);
+    setReregImage(null);
+    setReregPreview(null);
+    setReregAdmissionFiles([]);
+    fetchWards(branchId);
 
-    // alert(selectedUserId);
+    const rowFallback = (data || []).find((u) => String(u.id) === String(userId)) || {};
+    const defaultWard = (wardList && wardList.length > 0 ? wardList : wardOptions)[0] || {};
+
+    // Initialize immediately from row while fetching full user details
+    setReregFormData({
+      date_of_admission: new Date(),
+      patientName: rowFallback.name || "",
+      patientRelativeName: "",
+      gender: rowFallback.gender || "Male",
+      relation_with_patient: "",
+      dob: rowFallback.rawDob ? parseDateString(rowFallback.rawDob) || new Date() : new Date(),
+      phone: rowFallback.phone || "",
+      secondary_phone: "",
+      whatsapp_no: "",
+      sameAsPrimaryPhone: false,
+      email: rowFallback.email || "",
+      ward_type_id: defaultWard.ward_type_id || defaultWard.id || "",
+      ward_name: defaultWard.ward_name || defaultWard.name || "",
+      relative_contacts: [{ name: "", phone: "", is_whatsapp: false }],
+      relativeaddress: "",
+      address: "",
+      sameAddress: false,
+    });
+    setreregisterModal(true);
+
+    try {
+      const authToken = localStorage.getItem("Authorization");
+      const res = await fetch(
+        `https://gks-yjdc.onrender.com/api/users/${userId}?branch_id=${branchId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${authToken}`,
+          },
+        }
+      );
+      if (res.ok) {
+        const resJson = await res.json().catch(() => ({}));
+        const u = Array.isArray(resJson?.data) ? resJson.data[0] : resJson?.data || resJson;
+        if (u && typeof u === "object") {
+          setReregFormData((prev) => ({
+            ...prev,
+            date_of_admission: new Date(),
+            patientName: u.name || prev.patientName || "",
+            gender: u.gender || prev.gender || "Male",
+            email: u.email || "",
+            phone: u.phone || prev.phone || "",
+            dob: u.dob ? parseDateString(u.dob) || new Date() : prev.dob,
+            // Ensure all remaining fields stay empty as required for readmission
+            patientRelativeName: "",
+            relation_with_patient: "",
+            secondary_phone: "",
+            whatsapp_no: "",
+            sameAsPrimaryPhone: false,
+            relative_contacts: [{ name: "", phone: "", is_whatsapp: false }],
+            relativeaddress: "",
+            address: "",
+            sameAddress: false,
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to prefill readmission user details:", err);
+    }
   };
 
-  //It check if discharge status true then re-register user will perform and send userId, ward name and ward type id to backend
+  // Submit Readmission: validate fields, update user details & files, and create new IPD readmission entry
   const handleReRegister = async (e) => {
-    e.preventDefault(); // prevent default form submission
-    setIsLoading(true); // Set loading to true when the update starts
+    e.preventDefault();
     if (!selectedUserId) {
       console.error("No user selected for re-registration");
       return;
     }
 
-    const payload = {
-      user_id: selectedUserId,
-      ward_type_id: formData.ward_type_id,
-      ward_name: formData.ward_name,
-    };
+    const reregCompulsoryFields = [
+      { label: getTranslation("Date of Admission / प्रवेश की तिथि", lang), value: reregFormData.date_of_admission },
+      { label: getTranslation("Name of Patient / रोगी का नाम", lang), value: reregFormData.patientName },
+      { label: getTranslation("Name of Patient Relative / रोगी के संबंधी का नाम", lang), value: reregFormData.patientRelativeName },
+      { label: getTranslation("Patient Sex / रोगी का लिंग", lang), value: reregFormData.gender },
+      { label: getTranslation("Relation with Patient / रोगी से संबंध", lang), value: reregFormData.relation_with_patient },
+      { label: getTranslation("Patient Date of Birth / रोगी की जन्म तिथि", lang), value: reregFormData.dob },
+      { label: getTranslation("Patient Primary Phone Number / प्राथमिक फ़ोन नंबर", lang), value: reregFormData.phone },
+      { label: getTranslation("Ward Details / वार्ड विवरण", lang), value: reregFormData.ward_type_id },
+      { label: getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि", lang), value: reregImage ? "uploaded" : "" },
+      { label: getTranslation("Upload Admission Form (JPG / JPEG / PDF) / प्रवेश फ़ॉर्म", lang), value: reregAdmissionFiles.length > 0 ? "uploaded" : "" },
+      { label: getTranslation("Patient Address / रोगी का पता", lang), value: reregFormData.address },
+    ];
+
+    if (!validateCompulsoryFields(reregCompulsoryFields, lang)) {
+      return;
+    }
+
+    setIsLoading(true);
+    const formatDateStr = (d) =>
+      d instanceof Date && !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : d || "";
 
     try {
       const branch_id = branchId;
-      const token = localStorage.getItem("Authorization");
+      const authToken = localStorage.getItem("Authorization");
+
+      // Step 1: Update user details & files via PUT /api/users/:id
+      const cleanedReregContacts = (reregFormData.relative_contacts || [])
+        .map((c) => ({
+          name: c.name && c.name.trim() ? c.name.trim() : (reregFormData.patientRelativeName || "").trim(),
+          phone: c.phone ? String(c.phone).trim() : "",
+          use_for_whatsapp: c.is_whatsapp || c.use_for_whatsapp === "Yes" ? "Yes" : "No",
+          use_for_sms: c.use_for_sms === "Yes" ? "Yes" : "No",
+        }))
+        .filter((c) => c.name && /^\d{10}$/.test(c.phone));
+
+      const secTrimmed = (reregFormData.secondary_phone || "").trim();
+      if (/^\d{10}$/.test(secTrimmed) && !cleanedReregContacts.some((c) => c.phone === secTrimmed)) {
+        cleanedReregContacts.push({
+          name: (reregFormData.patientRelativeName || reregFormData.patientName || "Secondary").trim(),
+          phone: secTrimmed,
+          use_for_whatsapp: secTrimmed === (reregFormData.whatsapp_no || "").trim() ? "Yes" : "No",
+          use_for_sms: "No",
+        });
+      }
+
+      const waTrimmed = (reregFormData.whatsapp_no || "").trim();
+      if (/^\d{10}$/.test(waTrimmed) && !cleanedReregContacts.some((c) => c.phone === waTrimmed)) {
+        cleanedReregContacts.push({
+          name: (reregFormData.patientRelativeName || reregFormData.patientName || "Relative").trim(),
+          phone: waTrimmed,
+          use_for_whatsapp: "Yes",
+          use_for_sms: "No",
+        });
+      }
+
+      const updateForm = new FormData();
+      updateForm.append("name", (reregFormData.patientName || "").trim());
+      updateForm.append("relative_name", (reregFormData.patientRelativeName || "").trim());
+      if (reregFormData.email && reregFormData.email.trim()) {
+        updateForm.append("email", reregFormData.email.trim());
+      }
+      updateForm.append("gender", reregFormData.gender || "Male");
+      updateForm.append("address", (reregFormData.address || "").trim());
+      updateForm.append("dob", formatDateStr(reregFormData.dob));
+      updateForm.append("phone", (reregFormData.phone || "").trim());
+      updateForm.append("relative_address", (reregFormData.relativeaddress || "").trim());
+      updateForm.append("relation_with_patient", reregFormData.relation_with_patient || "");
+      updateForm.append("relative_contacts", JSON.stringify(cleanedReregContacts));
+      if (reregImage instanceof File) {
+        updateForm.append("profile_pic", reregImage);
+      }
+      if (reregAdmissionFiles?.[0]?.file instanceof File) {
+        updateForm.append("admission_form_url", reregAdmissionFiles[0].file);
+      }
+
+      await fetch(
+        `https://gks-yjdc.onrender.com/api/users/${selectedUserId}?branch_id=${branch_id}`,
+        {
+          method: "PUT",
+          headers: { Authorization: `${authToken}` },
+          body: updateForm,
+        }
+      ).catch(() => {});
+
+      // Step 2: Create new IPD readmission entry
+      const ipdPayload = {
+        user_id: selectedUserId,
+        ward_type_id: reregFormData.ward_type_id,
+        ward_name: reregFormData.ward_name,
+      };
+
       const response = await fetch(
         `https://gks-yjdc.onrender.com/api/ipd/create-entry?branch_id=${branch_id}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `${token}`,
+            Authorization: `${authToken}`,
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(ipdPayload),
         }
       );
 
       const result = await response.json();
-      console.log("Re-Registration payload data: ", result);
+
+      // Save local extra metadata for readmission
+      saveUserExtraMetadata(selectedUserId, reregFormData.phone, {
+        ward_type_id: reregFormData.ward_type_id,
+        ward_name: reregFormData.ward_name,
+        date_of_admission: formatDateStr(reregFormData.date_of_admission),
+        secondary_phone: secTrimmed,
+        whatsapp_no: waTrimmed,
+        dob: formatDateStr(reregFormData.dob),
+        address: (reregFormData.address || "").trim(),
+        relative_name: (reregFormData.patientRelativeName || "").trim(),
+        relative_address: (reregFormData.relativeaddress || "").trim(),
+        relation_with_patient: reregFormData.relation_with_patient || "",
+        relative_contacts: cleanedReregContacts,
+        admission_files: (reregAdmissionFiles || []).map((f) => ({
+          name: f.name,
+          url: f.dataUrl || "",
+          isPdf: !!f.isPdf,
+        })),
+      });
 
       if (response.ok) {
         await Swal.fire({
-          title: getTranslation("Success!/सफलता!",lang),
-          text: getTranslation("Re-Registration has been successful!/पुनः पंजीकरण सफल रहा!",lang),
+          title: getTranslation("Success!/सफलता!", lang),
+          text: getTranslation("Re-Registration has been successful!/पुनः पंजीकरण सफल रहा!", lang),
           icon: "success",
-          confirmButtonText: getTranslation("OK/ठीक है",lang),
+          confirmButtonText: getTranslation("OK/ठीक है", lang),
         });
-        setreregisterModal(false); // Close modal only after success
-      } else if (
-        result.error ===
-       getTranslation( "User is not eligible for readmission. Please check discharge status and dates./उपयोगकर्ता पुनः प्रवेश के लिए पात्र नहीं है। कृपया डिस्चार्ज स्थिति और तिथियाँ जाँच लें।",lang)
-      ) {
-        await Swal.fire({
-          title: getTranslation("User Not Eligible/उपयोगकर्ता योग्य नहीं है",lang),
-          text: getTranslation("User is not eligible for re-admission. Please check the discharge status and dates./उपयोगकर्ता पुनः प्रवेश के लिए पात्र नहीं है। कृपया डिस्चार्ज स्थिति और तिथियाँ जाँच लें।",lang),
-          icon: "warning",
-          confirmButtonText: getTranslation("OK/ठीक है",lang),
-        });
-        setreregisterModal(false); // Keep modal open
+        setreregisterModal(false);
+        fetchUsers();
+        fetchIPDEntries();
       } else {
-        console.error("Unhandled error:", result?.error || result?.message);
-        // No alert shown for other errors, just log it
+        await Swal.fire({
+          title: getTranslation("User Not Eligible/उपयोगकर्ता योग्य नहीं है", lang),
+          text:
+            result?.error ||
+            result?.message ||
+            getTranslation(
+              "User is not eligible for re-admission. Please check the discharge status and dates./उपयोगकर्ता पुनः प्रवेश के लिए पात्र नहीं है। कृपया डिस्चार्ज स्थिति और तिथियाँ जाँच लें।",
+              lang
+            ),
+          icon: "warning",
+          confirmButtonText: getTranslation("OK/ठीक है", lang),
+        });
       }
     } catch (error) {
       console.error("Fetch Error:", error);
-      // No alert shown here either, per your request
     } finally {
-      setIsLoading(false); // Set loading to false after the request is complete
+      setIsLoading(false);
     }
   };
 
@@ -1290,27 +1745,71 @@ function Register() {
         }
       }
 
+      const localExtra = loadUserExtraMetadata(user.user_id || user.id, user.phone);
+      const ipdRow = (allIPDData || []).find((entry) => String(entry.id) === String(user.user_id || user.id));
+      const resolvedWardName =
+        user.ward_name ||
+        user.ward?.ward_name ||
+        user.ipd?.ward_name ||
+        localExtra.ward_name ||
+        ipdRow?.wardName ||
+        "";
+      const matchedWardOption = (wardList && wardList.length > 0 ? wardList : wardOptions).find(
+        (w) =>
+          (user.ward_type_id && String(w.ward_type_id || w.id) === String(user.ward_type_id)) ||
+          (localExtra.ward_type_id && String(w.ward_type_id || w.id) === String(localExtra.ward_type_id)) ||
+          (resolvedWardName &&
+            String(w.ward_name || w.name || "").trim().toLowerCase() === String(resolvedWardName).trim().toLowerCase())
+      );
+      const resolvedWardTypeId =
+        user.ward_type_id ||
+        localExtra.ward_type_id ||
+        matchedWardOption?.ward_type_id ||
+        matchedWardOption?.id ||
+        "";
+
+      const waContact = parsedRelativeContacts.find((c) => c.is_whatsapp || c.use_for_whatsapp === "Yes");
+      const resolvedWhatsAppNo =
+        user.whatsapp_no ||
+        localExtra.whatsapp_no ||
+        (waContact ? waContact.phone : "") ||
+        "";
+      const secContact = parsedRelativeContacts.find(
+        (c) => c.phone && String(c.phone).trim() !== String(user.phone || "").trim()
+      );
+      const resolvedSecondaryPhone =
+        user.secondary_phone ||
+        localExtra.secondary_phone ||
+        (secContact ? secContact.phone : "") ||
+        "";
+
       // Handle null/undefined safely and set editData
       setEditData({
         id: user.user_id || "",
         name: user.name || "",
-        patientRelativeName: user.relative_name || "",
-        dob: user.dob ? parseDateString(user.dob) : "",
+        patientRelativeName: user.relative_name || localExtra.relative_name || "",
+        dob: (user.dob || localExtra.dob) ? parseDateString(user.dob || localExtra.dob) : "",
         email: user.email || "",
         phone: user.phone || "",
-        secondary_phone: user.secondary_phone || "",
-        whatsapp_no: user.whatsapp_no || "",
-        isWhatsApp: user.isWhatsApp || false,
-        address: user.address || "",
-        relativeaddress: user.relative_address || "",
-        relation_with_patient: user.relation_with_patient || "",
+        secondary_phone: resolvedSecondaryPhone,
+        whatsapp_no: resolvedWhatsAppNo,
+        isWhatsApp:
+          user.isWhatsApp ||
+          (Boolean(resolvedWhatsAppNo) && String(resolvedWhatsAppNo).trim() === String(user.phone || "").trim()),
+        address: user.address || localExtra.address || "",
+        relativeaddress: user.relative_address || localExtra.relative_address || "",
+        relation_with_patient: user.relation_with_patient || localExtra.relation_with_patient || "",
         relative_contacts: parsedRelativeContacts,
-        // is_role: user.isRole || "",
-        is_role: Number(user.isRole) || "",
+        ward_type_id: resolvedWardTypeId,
+        ward_name: resolvedWardName || matchedWardOption?.ward_name || matchedWardOption?.name || "",
+        is_role: Number(user.isRole) || 4,
         password: "",
-        gender: user.gender || "",
+        gender: user.gender || "Male",
         profile_pic_url: user.profile_pic || "",
+        profile_pic_preview: "",
         admission_form_url: user.admission_form_url || user.admission_form || "",
+        existing_admission_files: Array.isArray(localExtra.admission_files) ? localExtra.admission_files : [],
+        admission_form_files: [],
       });
       setShowEditModal(true);
     } catch (error) {
@@ -1374,6 +1873,26 @@ function Register() {
       }))
       .filter((c) => c.name && /^\d{10}$/.test(c.phone));
 
+    const secEditTrimmed = (editData.secondary_phone || "").trim();
+    if (/^\d{10}$/.test(secEditTrimmed) && !cleanedEditContacts.some((c) => c.phone === secEditTrimmed)) {
+      cleanedEditContacts.push({
+        name: (editData.patientRelativeName || editData.name || "Secondary").trim(),
+        phone: secEditTrimmed,
+        use_for_whatsapp: secEditTrimmed === (effectiveEditWhatsAppNo || "").trim() ? "Yes" : "No",
+        use_for_sms: "No",
+      });
+    }
+
+    const waEditTrimmed = (effectiveEditWhatsAppNo || "").trim();
+    if (/^\d{10}$/.test(waEditTrimmed) && !cleanedEditContacts.some((c) => c.phone === waEditTrimmed)) {
+      cleanedEditContacts.push({
+        name: (editData.patientRelativeName || editData.name || "Relative").trim(),
+        phone: waEditTrimmed,
+        use_for_whatsapp: "Yes",
+        use_for_sms: "No",
+      });
+    }
+
     const updatedData = new FormData();
     updatedData.append("name", (editData.name || "").trim());
     if (editData.patientRelativeName !== undefined) {
@@ -1394,9 +1913,6 @@ function Register() {
     if (editData.phone) {
       updatedData.append("phone", (editData.phone || "").trim());
     }
-    if (editData.is_role) {
-      updatedData.append("isRole", editData.is_role);
-    }
     updatedData.append("relative_address", (editData.relativeaddress || "").trim());
     if (editData.relation_with_patient) {
       updatedData.append("relation_with_patient", editData.relation_with_patient);
@@ -1407,8 +1923,11 @@ function Register() {
       updatedData.append("profile_pic", editData.profile_pic);
     }
 
-    if (editData.admission_form_file instanceof File) {
-      updatedData.append("admission_form_url", editData.admission_form_file);
+    const primaryEditAdmissionFile =
+      editData.admission_form_files?.[0]?.file ||
+      (editData.admission_form_file instanceof File ? editData.admission_form_file : null);
+    if (primaryEditAdmissionFile) {
+      updatedData.append("admission_form_url", primaryEditAdmissionFile);
     }
 
     console.log("User ID:", editData.id, typeof editData.id);
@@ -1429,10 +1948,36 @@ function Register() {
 
       if (response.ok) {
         if (editData?.id) {
+          const mergedEditAdmissionFiles = [
+            ...(Array.isArray(editData.existing_admission_files) ? editData.existing_admission_files : []),
+            ...(Array.isArray(editData.admission_form_files)
+              ? editData.admission_form_files.map((f) => ({
+                  name: f.name,
+                  url: f.dataUrl || "",
+                  isPdf: !!f.isPdf,
+                }))
+              : []),
+          ];
+
+          saveUserExtraMetadata(editData.id, editData.phone, {
+            ward_type_id: editData.ward_type_id,
+            ward_name: editData.ward_name,
+            secondary_phone: secEditTrimmed,
+            whatsapp_no: waEditTrimmed,
+            isWhatsApp: !!editData.isWhatsApp,
+            dob: formatDate(editData.dob),
+            address: (editData.address || "").trim(),
+            relative_name: (editData.patientRelativeName || "").trim(),
+            relative_address: (editData.relativeaddress || "").trim(),
+            relation_with_patient: editData.relation_with_patient || "",
+            relative_contacts: cleanedEditContacts,
+            ...(mergedEditAdmissionFiles.length > 0 ? { admission_files: mergedEditAdmissionFiles } : {}),
+          });
+
           try {
             localStorage.setItem(
               `gks_user_relative_contacts_${editData.id}`,
-              JSON.stringify(editData.relative_contacts)
+              JSON.stringify(cleanedEditContacts)
             );
           } catch {
             // ignore
@@ -1449,6 +1994,7 @@ function Register() {
           setShowEditModal(false);
         });
         fetchUsers();
+        fetchIPDEntries();
       } else {
         const errorData = await response.json();
         showApiErrorAlert(errorData, lang, getTranslation("Failed to update user/उपयोगकर्ता अपडेट करने में विफल", lang));
@@ -1471,6 +2017,110 @@ function Register() {
 
   // ✅ Step 1: Move this into a reusable function
   const [stillLoading, setstillLoading] = useState(true);
+
+  const enrichMissingUserDetailsInBackground = useCallback(
+    async (userIdsToEnrich) => {
+      if (!Array.isArray(userIdsToEnrich) || userIdsToEnrich.length === 0) return;
+      const authToken = localStorage.getItem("Authorization");
+      for (const uid of userIdsToEnrich) {
+        try {
+          const res = await fetch(
+            `https://gks-yjdc.onrender.com/api/users/${uid}?branch_id=${branchId}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `${authToken}`,
+              },
+            }
+          );
+          if (!res.ok) continue;
+          const resJson = await res.json().catch(() => null);
+          const u = Array.isArray(resJson?.data) ? resJson.data[0] : resJson?.data || resJson;
+          if (!u || typeof u !== "object") continue;
+
+          saveUserExtraMetadata(uid, u.phone, {
+            dob: u.dob || "",
+            address: u.address || "",
+            relative_name: u.relative_name || "",
+            relative_address: u.relative_address || "",
+            relation_with_patient: u.relation_with_patient || "",
+            ...(u.relative_contacts ? { relative_contacts: u.relative_contacts } : {}),
+            ...(u.ward_name ? { ward_name: u.ward_name } : {}),
+          });
+
+          const localExtra = loadUserExtraMetadata(uid, u.phone);
+          const phonesObj = collectAllPhones(u, localExtra);
+          const ageStr = calculateAgeFromDob(u.dob || localExtra.dob, u.age);
+          const addressStr = u.address || localExtra.address || "N/A";
+          const relNameStr = u.relative_name || localExtra.relative_name || "N/A";
+
+          setData((prev) =>
+            prev.map((row) =>
+              String(row.id) === String(uid)
+                ? {
+                    ...row,
+                    rawDob: u.dob || row.rawDob,
+                    age: ageStr !== "N/A" ? ageStr : row.age,
+                    address: addressStr !== "N/A" ? addressStr : row.address,
+                    relative_name: relNameStr !== "N/A" ? relNameStr : row.relative_name,
+                    allPhonesList: phonesObj.list,
+                    allPhonesText: phonesObj.text,
+                  }
+                : row
+            )
+          );
+          setFilteredData((prev) =>
+            prev.map((row) =>
+              String(row.id) === String(uid)
+                ? {
+                    ...row,
+                    rawDob: u.dob || row.rawDob,
+                    age: ageStr !== "N/A" ? ageStr : row.age,
+                    address: addressStr !== "N/A" ? addressStr : row.address,
+                    relative_name: relNameStr !== "N/A" ? relNameStr : row.relative_name,
+                    allPhonesList: phonesObj.list,
+                    allPhonesText: phonesObj.text,
+                  }
+                : row
+            )
+          );
+          setAllIPDData((prev) =>
+            prev.map((row) =>
+              String(row.id) === String(uid)
+                ? {
+                    ...row,
+                    age: ageStr !== "N/A" ? ageStr : row.age,
+                    address: addressStr !== "N/A" ? addressStr : row.address,
+                    relative_name: relNameStr !== "N/A" ? relNameStr : row.relative_name,
+                    allPhonesList: phonesObj.list,
+                    allPhonesText: phonesObj.text,
+                  }
+                : row
+            )
+          );
+          setFilteredIPDData((prev) =>
+            prev.map((row) =>
+              String(row.id) === String(uid)
+                ? {
+                    ...row,
+                    age: ageStr !== "N/A" ? ageStr : row.age,
+                    address: addressStr !== "N/A" ? addressStr : row.address,
+                    relative_name: relNameStr !== "N/A" ? relNameStr : row.relative_name,
+                    allPhonesList: phonesObj.list,
+                    allPhonesText: phonesObj.text,
+                  }
+                : row
+            )
+          );
+        } catch {
+          // ignore background enrichment errors
+        }
+      }
+    },
+    [branchId, calculateAgeFromDob, collectAllPhones, loadUserExtraMetadata, saveUserExtraMetadata]
+  );
+
   const fetchUsers = () => {
     if (!branchId) return; // avoid empty branch fetch
 
@@ -1491,29 +2141,56 @@ function Register() {
         return response.json();
       })
       .then((resData) => {
-        const formatted = resData.data.map((user) => ({
-          id: user.user_id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          gks_id: user.gks_id,
-          discharge_status: user.discharge_status,
-          discharge_status_text: user.discharge_status_text,
-          is_readmission: user.is_readmission,
-          recent_admit_date: user.recent_admit_date
-            ? new Date(user.recent_admit_date).toLocaleDateString()
-            : "N/A",
-          recent_pfa_date: user.recent_pfa_date
-            ? new Date(user.recent_pfa_date).toLocaleDateString()
-            : "N/A",
-          recent_gen_fam_date: user.recent_gen_fam_date
-            ? new Date(user.recent_gen_fam_date).toLocaleDateString()
-            : "N/A",
-        }));
+        const missingIds = [];
+        const formatted = (resData.data || []).map((user) => {
+          const localExtra = loadUserExtraMetadata(user.user_id, user.phone);
+          const dobVal = user.dob || localExtra.dob || "";
+          const ageVal = calculateAgeFromDob(dobVal, user.age);
+          const addrVal = user.address || localExtra.address || "";
+          const relNameVal = user.relative_name || localExtra.relative_name || "";
+          const phonesObj = collectAllPhones(user, localExtra);
+
+          if (!dobVal || !addrVal || !relNameVal) {
+            missingIds.push(user.user_id);
+          }
+
+          return {
+            id: user.user_id,
+            name: user.name,
+            gender: user.gender,
+            email: user.email,
+            phone: user.phone,
+            allPhonesList: phonesObj.list,
+            allPhonesText: phonesObj.text,
+            rawDob: dobVal,
+            age: ageVal,
+            address: addrVal || "N/A",
+            relative_name: relNameVal || "N/A",
+            gks_id: user.gks_id,
+            discharge_status: user.discharge_status,
+            discharge_status_text: user.discharge_status_text,
+            is_readmission: user.is_readmission,
+            recent_admit_date: user.recent_admit_date
+              ? new Date(user.recent_admit_date).toLocaleDateString()
+              : localExtra.date_of_admission
+              ? new Date(localExtra.date_of_admission).toLocaleDateString()
+              : "N/A",
+            recent_pfa_date: user.recent_pfa_date
+              ? new Date(user.recent_pfa_date).toLocaleDateString()
+              : "N/A",
+            recent_gen_fam_date: user.recent_gen_fam_date
+              ? new Date(user.recent_gen_fam_date).toLocaleDateString()
+              : "N/A",
+          };
+        });
 
         setData(formatted);
         setFilteredData(formatted);
         setstillLoading(false);
+
+        if (missingIds.length > 0) {
+          enrichMissingUserDetailsInBackground(missingIds.slice(0, 25));
+        }
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -1524,13 +2201,11 @@ function Register() {
 
   // ✅ Fetch active ward types from GET /api/users/wards?branch_id=<id> (items of item type "Wards")
   const fetchWards = useCallback(async (targetBranch = branchId) => {
-    if (!targetBranch) return;
     setIsWardsLoading(true);
     const authToken = localStorage.getItem("Authorization");
     const headers = {
       "Content-Type": "application/json",
       Authorization: `${authToken}`,
-      "x-target-branch": String(targetBranch),
     };
 
     const parseWardList = (data) => {
@@ -1541,22 +2216,34 @@ function Register() {
       return [];
     };
 
+    const branchQuery = targetBranch ? `?branch_id=${targetBranch}` : "";
+
     try {
       let list = [];
       let res = await fetch(
-        `https://gks-yjdc.onrender.com/api/users/wards?branch_id=${targetBranch}`,
+        `https://gks-yjdc.onrender.com/api/users/wards${branchQuery}`,
         { method: "GET", headers }
       );
       if (res.ok) {
         const data = await res.json().catch(() => null);
         list = parseWardList(data);
+      } else if (branchQuery) {
+        // Fallback without ?branch_id for BranchAdmin / BranchOperator tokens
+        const fallbackRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/users/wards`,
+          { method: "GET", headers }
+        );
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json().catch(() => null);
+          list = parseWardList(fallbackData);
+        }
       }
 
       // If no active "Wards" items exist in this branch yet, auto-provision default "Wards" items so registration never fails with 400
       if (list.length === 0) {
         try {
           const typesRes = await fetch(
-            `https://gks-yjdc.onrender.com/api/item-types?branch_id=${targetBranch}`,
+            `https://gks-yjdc.onrender.com/api/item-types${branchQuery}`,
             { method: "GET", headers }
           );
           let wardItemTypeId = null;
@@ -1580,7 +2267,7 @@ function Register() {
 
           if (!wardItemTypeId) {
             const createTypeRes = await fetch(
-              `https://gks-yjdc.onrender.com/api/item-types?branch_id=${targetBranch}`,
+              `https://gks-yjdc.onrender.com/api/item-types${branchQuery}`,
               {
                 method: "POST",
                 headers,
@@ -1605,7 +2292,7 @@ function Register() {
             ];
             for (const w of defaultWardItems) {
               await fetch(
-                `https://gks-yjdc.onrender.com/api/items?branch_id=${targetBranch}`,
+                `https://gks-yjdc.onrender.com/api/items${branchQuery}`,
                 {
                   method: "POST",
                   headers,
@@ -1619,7 +2306,7 @@ function Register() {
             }
 
             const retryRes = await fetch(
-              `https://gks-yjdc.onrender.com/api/users/wards?branch_id=${targetBranch}`,
+              `https://gks-yjdc.onrender.com/api/users/wards${branchQuery}`,
               { method: "GET", headers }
             );
             if (retryRes.ok) {
@@ -1663,29 +2350,54 @@ function Register() {
     fetchWards();
   }, [branchId, fetchWards]);
 
-  // ✅ Define table columns
+  // ✅ Define table columns for Registered Patient List (GKS ID, Patient Name, Age, All Phone Numbers, Address, Action — Email removed)
   const tableColumns = [
     {
-      // name: "GKS ID",
-      name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
+      name: `${getTranslation("GKS ID/GKS आईडी", lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
-    { 
-      name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
-      selector: (row) => row.name, sortable: true, center: true },
     {
-      name: `${getTranslation('Phone/फोन' , lang)}`,
-      selector: (row) => row.phone,
+      name: `${getTranslation("Patient name/रोगी का नाम", lang)}`,
+      selector: (row) => row.name,
       sortable: true,
       center: true,
     },
     {
-      name: `${getTranslation('Email/ईमेल' , lang)}`,
-      selector: (row) => row.email,
+      name: `${getTranslation("Age/उम्र", lang)}`,
+      selector: (row) => row.age || "N/A",
       sortable: true,
       center: true,
+      width: "100px",
+    },
+    {
+      name: `${getTranslation("Phone Numbers (Primary / Secondary)/फ़ोन नंबर", lang)}`,
+      selector: (row) => row.allPhonesText || row.phone || "N/A",
+      sortable: true,
+      center: true,
+      minWidth: "180px",
+      cell: (row) => (
+        <div className="d-flex flex-column align-items-center py-1" style={{ lineHeight: "1.35" }}>
+          {Array.isArray(row.allPhonesList) && row.allPhonesList.length > 0 ? (
+            row.allPhonesList.map((p, idx) => (
+              <span key={idx} className={idx === 0 ? "fw-semibold text-dark" : "text-muted small"}>
+                {p.number}
+                {idx > 0 && p.tag ? ` (${p.tag})` : ""}
+              </span>
+            ))
+          ) : (
+            <span>{row.phone || "N/A"}</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      name: `${getTranslation("Address/पता", lang)}`,
+      selector: (row) => row.address || "N/A",
+      sortable: true,
+      center: true,
+      wrap: true,
     },
     {
       name: `${getTranslation('Action/क्रिया' , lang)}`,
@@ -1845,31 +2557,83 @@ function Register() {
         return response.json();
       })
       .then((entriesData) => {
-        const mappedData = (entriesData.data || []).map((entry) => ({
-          id: entry.user_id,
-          gks_id: entry.gks_id,
-          name: entry.name,
-          email: entry.email,
-          phone: entry.phone,
-          wardName: entry.ward_name,
-          // dischargeDate: entry.discharge_date
-          //   ? new Date(entry.discharge_date).toLocaleDateString()
-          //   : "Not Discharge yet",
-          dischargeDate: entry.discharge_date ? (
-            <span class="Discharge" style={{ color: "#28a745", fontWeight: "500" }}>
-              {new Date(entry.discharge_date).toLocaleDateString()}
-            </span>
-          ) : (
-            <span class="ntDischarge" style={{ color: "#dc3545", fontWeight: "500" }}>
-              Not Discharge
-            </span>
-          ),
-          
-        }));
+        const missingIds = [];
+        const mappedData = (entriesData.data || []).map((entry) => {
+          const uid = entry.user_id || entry.id;
+          const localExtra = loadUserExtraMetadata(uid, entry.phone);
+          const matchedUser = (data || []).find((u) => String(u.id) === String(uid));
 
-        setAllIPDData(mappedData); // keep the full data
-        setFilteredIPDData(mappedData); // also show full data initially
+          // Also persist ward_name from active IPD entry into localExtra so View modal always has it
+          if (entry.ward_name) {
+            saveUserExtraMetadata(uid, entry.phone, {
+              ward_name: entry.ward_name,
+              ...(entry.admit_date ? { date_of_admission: entry.admit_date } : {}),
+            });
+          }
+
+          const dobVal = entry.dob || matchedUser?.rawDob || localExtra.dob || "";
+          const ageVal = calculateAgeFromDob(dobVal, entry.age);
+          const phonesObj = collectAllPhones(
+            { ...matchedUser, ...entry },
+            localExtra
+          );
+          const relNameVal =
+            entry.relative_name ||
+            matchedUser?.relative_name ||
+            localExtra.relative_name ||
+            "N/A";
+          const addrVal =
+            entry.address ||
+            entry.relative_address ||
+            matchedUser?.address ||
+            localExtra.address ||
+            localExtra.relative_address ||
+            "N/A";
+          const rawAdmitDate =
+            entry.admit_date ||
+            entry.date_of_admission ||
+            entry.recent_admit_date ||
+            localExtra.date_of_admission ||
+            "";
+          const admitDateFormatted = rawAdmitDate
+            ? new Date(rawAdmitDate).toLocaleDateString()
+            : matchedUser?.recent_admit_date || "N/A";
+
+          if (!dobVal || addrVal === "N/A" || relNameVal === "N/A") {
+            if (uid && !missingIds.includes(uid)) missingIds.push(uid);
+          }
+
+          return {
+            id: uid,
+            gks_id: entry.gks_id,
+            name: entry.name,
+            age: ageVal,
+            phone: entry.phone,
+            allPhonesList: phonesObj.list,
+            allPhonesText: phonesObj.text,
+            relative_name: relNameVal,
+            address: addrVal,
+            admitDate: admitDateFormatted,
+            wardName: entry.ward_name || localExtra.ward_name || "N/A",
+            dischargeDate: entry.discharge_date ? (
+              <span className="Discharge" style={{ color: "#28a745", fontWeight: "500" }}>
+                {new Date(entry.discharge_date).toLocaleDateString()}
+              </span>
+            ) : (
+              <span className="ntDischarge" style={{ color: "#dc3545", fontWeight: "500" }}>
+                Not Discharge
+              </span>
+            ),
+          };
+        });
+
+        setAllIPDData(mappedData);
+        setFilteredIPDData(mappedData);
         setstillLoading(false);
+
+        if (missingIds.length > 0) {
+          enrichMissingUserDetailsInBackground(missingIds.slice(0, 25));
+        }
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -1882,37 +2646,75 @@ function Register() {
     fetchIPDEntries();
   }, [branchId]);
 
-  // ✅ Define table columns
+  // ✅ Define table columns for All Registered Patient List (Show Age, All Phone Numbers, Relative Name, Address, Date of Admission, Ward Name, Discharge Date — Email removed)
   const tableIPDColumns = [
     {
-      name: `${getTranslation('GKS ID/GKS आईडी' , lang)}`,
+      name: `${getTranslation("GKS ID/GKS आईडी", lang)}`,
       selector: (row) => row.gks_id,
       sortable: true,
       center: true,
     },
-    { 
-      name: `${getTranslation('Patient name/रोगी का नाम' , lang)}`,
-      selector: (row) => row.name, sortable: true, center: true },
     {
-      name: `${getTranslation('Phone/फोन' , lang)}`,
-      selector: (row) => row.phone,
+      name: `${getTranslation("Patient name/रोगी का नाम", lang)}`,
+      selector: (row) => row.name,
       sortable: true,
       center: true,
     },
     {
-      name: `${getTranslation('Email/ईमेल' , lang)}`,
-      selector: (row) => row.email,
+      name: `${getTranslation("Age/उम्र", lang)}`,
+      selector: (row) => row.age || "N/A",
+      sortable: true,
+      center: true,
+      width: "95px",
+    },
+    {
+      name: `${getTranslation("Phone Numbers (Primary / Secondary)/फ़ोन नंबर", lang)}`,
+      selector: (row) => row.allPhonesText || row.phone || "N/A",
+      sortable: true,
+      center: true,
+      minWidth: "175px",
+      cell: (row) => (
+        <div className="d-flex flex-column align-items-center py-1" style={{ lineHeight: "1.35" }}>
+          {Array.isArray(row.allPhonesList) && row.allPhonesList.length > 0 ? (
+            row.allPhonesList.map((p, idx) => (
+              <span key={idx} className={idx === 0 ? "fw-semibold text-dark" : "text-muted small"}>
+                {p.number}
+                {idx > 0 && p.tag ? ` (${p.tag})` : ""}
+              </span>
+            ))
+          ) : (
+            <span>{row.phone || "N/A"}</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      name: `${getTranslation("Relative Name/रिश्तेदार का नाम", lang)}`,
+      selector: (row) => row.relative_name || "N/A",
       sortable: true,
       center: true,
     },
     {
-      name: `${getTranslation('Ward Name/वार्ड का नाम' , lang)}`,
+      name: `${getTranslation("Address/पता", lang)}`,
+      selector: (row) => row.address || "N/A",
+      sortable: true,
+      center: true,
+      wrap: true,
+    },
+    {
+      name: `${getTranslation("Date of Admission/प्रवेश की तिथि", lang)}`,
+      selector: (row) => row.admitDate || "N/A",
+      sortable: true,
+      center: true,
+    },
+    {
+      name: `${getTranslation("Ward Name/वार्ड का नाम", lang)}`,
       selector: (row) => row.wardName,
       sortable: true,
       center: true,
     },
     {
-      name: `${getTranslation('Discharge Date/डिस्चार्ज की तिथि' , lang)}`,
+      name: `${getTranslation("Discharge Date/डिस्चार्ज की तिथि", lang)}`,
       selector: (row) => row.dischargeDate,
       sortable: true,
       center: true,
@@ -2278,13 +3080,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 />
               </div>
 
-              {/* Patient Relative Name */}
+              {/* Patient Relative Name (Mandatory) */}
               <div className="col-md-6">
                 <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  <Translated text={patientRelativeName} />
-                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
-                    ({getTranslation("Optional / वैकल्पिक", lang)})
-                  </span>
+                  <Translated text={patientRelativeName} /> <span className="text-danger">*</span>
                 </Label>
                 <Input
                   type="text"
@@ -2322,13 +3121,10 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
-              {/* Relation with Patient */}
+              {/* Relation with Patient (Mandatory) */}
               <div className="col-md-6">
                 <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                  {getTranslation("Relation with Patient / रोगी से संबंध", lang)}
-                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
-                    ({getTranslation("Optional / वैकल्पिक", lang)})
-                  </span>
+                  {getTranslation("Relation with Patient / रोगी से संबंध", lang)} <span className="text-danger">*</span>
                 </Label>
                 <select
                   className="form-select"
@@ -2387,7 +3183,11 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   onChange={(e) => {
                     const value = e.target.value;
                     if (/^\d{0,10}$/.test(value)) {
-                      setFormData({ ...formData, phone: value });
+                      setFormData((prev) => ({
+                        ...prev,
+                        phone: value,
+                        whatsapp_no: sameAsPrimaryPhone ? value : prev.whatsapp_no,
+                      }));
                     }
                   }}
                   placeholder={getTranslation("Enter 10-digit Phone Number / 10 अंकों का फोन नंबर दर्ज करें", lang)}
@@ -2402,34 +3202,37 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 )}
               </div>
 
-              {/* Mobile number for WhatsApp/SMS communication (Optional) */}
+              {/* Mobile number for WhatsApp (Optional) + Same as Patient Primary Phone Number */}
               <div className="col-md-6">
-                <div className="d-flex justify-content-between align-items-center mb-1">
+                <div className="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
                   <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
                     {getTranslation("Mobile number for WhatsApp / व्हाट्सएप के लिए मोबाइल नंबर", lang)}
                     <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
                       ({getTranslation("Optional / वैकल्पिक", lang)})
                     </span>
                   </Label>
-                  {formData.phone && (
-                    <span
-                      className="text-primary d-inline-flex align-items-center gap-1 cursor-pointer"
-                      style={{ fontSize: "12px", cursor: "pointer", fontWeight: "500" }}
-                      onClick={() => {
-                        setFormData((prev) => ({ ...prev, whatsapp_no: prev.phone }));
-                        toast.info(
-                          getTranslation(
-                            "Copied Primary Phone to WhatsApp Number / प्राथमिक फ़ोन को व्हाट्सएप नंबर पर कॉपी किया गया",
-                            lang
-                          ),
-                          { autoClose: 2000 }
-                        );
+                  <div className="form-check m-0 p-0 d-inline-flex align-items-center gap-1">
+                    <Input
+                      type="checkbox"
+                      id="sameAsPrimaryPhoneCheck"
+                      checked={sameAsPrimaryPhone}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setSameAsPrimaryPhone(checked);
+                        if (checked) {
+                          setFormData((prev) => ({ ...prev, whatsapp_no: prev.phone || "" }));
+                        }
                       }}
-                      title="Copy from Primary Phone"
+                      className="form-check-input m-0"
+                    />
+                    <Label
+                      for="sameAsPrimaryPhoneCheck"
+                      className="form-check-label text-primary mb-0"
+                      style={{ fontSize: "12px", cursor: "pointer", fontWeight: "600" }}
                     >
-                      📋 {getTranslation("Same as Phone / फोन जैसा ही", lang)}
-                    </span>
-                  )}
+                      {getTranslation("Same as Patient Primary Phone Number / प्राथमिक फ़ोन नंबर जैसा", lang)}
+                    </Label>
+                  </div>
                 </div>
                 <Input
                   type="text"
@@ -2439,6 +3242,9 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     const value = e.target.value;
                     if (/^\d{0,10}$/.test(value)) {
                       setFormData((prev) => ({ ...prev, whatsapp_no: value }));
+                      if (sameAsPrimaryPhone && value !== formData.phone) {
+                        setSameAsPrimaryPhone(false);
+                      }
                     }
                   }}
                   placeholder={getTranslation("Enter 10-digit WhatsApp Number / 10 अंकों का व्हाट्सएप नंबर दर्ज करें", lang)}
@@ -2451,6 +3257,31 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     {getTranslation("WhatsApp number must be 10 digits. / व्हाट्सएप नंबर 10 अंकों का होना चाहिए।", lang)}
                   </small>
                 )}
+              </div>
+
+              {/* Patient Secondary Phone Number (Optional) */}
+              <div className="col-md-6">
+                <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                  {getTranslation("Patient Secondary Phone Number / द्वितीयक फ़ोन नंबर", lang)}
+                  <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                    ({getTranslation("Optional / वैकल्पिक", lang)})
+                  </span>
+                </Label>
+                <Input
+                  type="text"
+                  name="secondary_phone"
+                  value={formData.secondary_phone || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^\d{0,10}$/.test(value)) {
+                      setFormData((prev) => ({ ...prev, secondary_phone: value }));
+                    }
+                  }}
+                  placeholder={getTranslation("Enter 10-digit Secondary Phone (Optional) / द्वितीयक फ़ोन नंबर", lang)}
+                  maxLength={10}
+                  className="form-control"
+                  style={{ borderRadius: "8px", height: "40px" }}
+                />
               </div>
 
               {/* Relative Email (Optional) */}
@@ -2561,7 +3392,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       <span>{getTranslation("Loading wards... / वार्ड लोड हो रहे हैं...", lang)}</span>
                     </div>
                   ) : (
-                    wardList.map((option) => {
+                    (wardList && wardList.length > 0 ? wardList : wardOptions).map((option) => {
                       const optId = option.ward_type_id || option.id;
                       const optName = option.ward_name || option.name;
                       return (
@@ -2600,14 +3431,12 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 </div>
               </div>
 
-              {/* Patient Photo Upload with Modern Camera Icon & Optimization (.jpg / .jpeg / .pdf, max 5 MB) */}
+              {/* Patient Photo Upload with Modern Camera Icon & Optimization (.jpg / .jpeg / .pdf, max 5 MB) — Mandatory */}
               <div className="col-md-6">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
-                    {getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि अपलोड करें", lang)}
-                    <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
-                      ({getTranslation("Optional / वैकल्पिक", lang)})
-                    </span>
+                    {getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि अपलोड करें", lang)}{" "}
+                    <span className="text-danger">*</span>
                   </Label>
                   <span className="text-muted" style={{ fontSize: "11px" }}>
                     JPG / JPEG / PDF (Max 5MB)
@@ -2687,17 +3516,15 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                 {error && <small className="text-danger d-block mt-1">{error}</small>}
               </div>
 
-              {/* Admission Form Upload — Supports JPG / JPEG / PDF & Direct Camera Capture (max 5 MB) */}
+              {/* Admission Form Upload — Multiple JPG / JPEG / PDF & Direct Camera Capture (max 5 MB) — Mandatory */}
               <div className="col-md-6">
                 <div className="d-flex justify-content-between align-items-center mb-1">
                   <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
-                    {getTranslation("Upload Admission Form (JPG / JPEG / PDF) / प्रवेश फ़ॉर्म अपलोड करें", lang)}
-                    <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
-                      ({getTranslation("Optional / वैकल्पिक", lang)})
-                    </span>
+                    {getTranslation("Upload Admission Form (JPG / JPEG / PDF) / प्रवेश फ़ॉर्म अपलोड करें", lang)}{" "}
+                    <span className="text-danger">*</span>
                   </Label>
                   <span className="text-muted" style={{ fontSize: "11px" }}>
-                    JPG / JPEG / PDF (Max 5MB)
+                    Multiple JPG / JPEG / PDF (Max 5MB)
                   </span>
                 </div>
                 <div className="d-flex align-items-center gap-2">
@@ -2719,6 +3546,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     <Input
                       id="admissionFormInput"
                       type="file"
+                      multiple
                       accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf"
                       onChange={handleAdmissionFormChange}
                       className="form-control"
@@ -2751,7 +3579,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         margin: 0,
                         zIndex: 2,
                       }}
-                      title={getTranslation("Upload PDF or Image / पीडीएफ या छवि अपलोड करें", lang)}
+                      title={getTranslation("Upload Multiple PDFs or Images / एकाधिक पीडीएफ या छवियां अपलोड करें", lang)}
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -2788,10 +3616,27 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     </label>
                   </div>
                 </div>
-                {admissionFormName && (
-                  <small className="text-success d-block mt-1">
-                    ✓ {getTranslation("Selected file / चयनित फ़ाइल", lang)}: {admissionFormName}
-                  </small>
+                {admissionFormFiles.length > 0 && (
+                  <div className="d-flex flex-wrap gap-1 mt-2">
+                    {admissionFormFiles.map((f, idx) => (
+                      <span
+                        key={idx}
+                        className="badge bg-light text-dark border d-inline-flex align-items-center gap-1 px-2 py-1"
+                        style={{ fontSize: "11.5px", fontWeight: "500" }}
+                      >
+                        {f.isPdf ? "📄" : "🖼️"} {f.name} ({(f.size / 1024).toFixed(0)} KB)
+                        <button
+                          type="button"
+                          onClick={() => removeAdmissionFormFile(idx)}
+                          className="btn btn-sm p-0 ms-1 text-danger border-0 bg-transparent"
+                          style={{ fontSize: "12px", lineHeight: 1 }}
+                          title="Remove file"
+                        >
+                          ✕
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 )}
                 {admissionFormError && (
                   <small className="text-danger d-block mt-1">{admissionFormError}</small>
@@ -3290,62 +4135,178 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   </div>
                 </div>
 
-                {/* Profile Pic Upload */}
-                <div className="col-md-6">
+                {/* Edit Ward Details */}
+                <div className="col-12">
                   <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                    {getTranslation("Update Patient Profile Image / रोगी प्रोफ़ाइल छवि अपडेट करें", lang)}
+                    <Translated text={wardDetails} />
                   </Label>
-                  <div className="d-flex align-items-center gap-3">
-                    {editData.profile_pic_url && (
+                  <div className="d-flex align-items-center flex-wrap gap-3 py-1" style={{ minHeight: "40px" }}>
+                    {(wardList && wardList.length > 0 ? wardList : wardOptions).map((option) => {
+                      const optId = option.ward_type_id || option.id;
+                      const optName = option.ward_name || option.name;
+                      const isChecked =
+                        (editData.ward_type_id && String(editData.ward_type_id) === String(optId)) ||
+                        (!editData.ward_type_id &&
+                          editData.ward_name &&
+                          String(editData.ward_name).trim().toLowerCase() === String(optName).trim().toLowerCase());
+                      return (
+                        <div key={optId} className="form-check form-check-inline m-0">
+                          <Input
+                            type="radio"
+                            id={`edit-wards-${optId}`}
+                            name="edit-ward"
+                            value={optName}
+                            checked={Boolean(isChecked)}
+                            onChange={() =>
+                              setEditData((prev) => ({
+                                ...prev,
+                                ward_type_id: optId,
+                                ward_name: optName,
+                              }))
+                            }
+                            className="form-check-input"
+                          />
+                          <Label
+                            for={`edit-wards-${optId}`}
+                            className="form-check-label ms-1"
+                            style={{ cursor: "pointer", fontSize: "14px" }}
+                          >
+                            {optName}
+                            {(option.original_amount ?? option.price_rate ?? option.ward_amount) ? (
+                              <span className="text-muted extra-small ms-1" style={{ fontSize: "11px" }}>
+                                (₹{Number(option.original_amount ?? option.price_rate ?? option.ward_amount).toLocaleString("en-IN")})
+                              </span>
+                            ) : null}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Profile Pic Upload with Camera Support */}
+                <div className="col-md-6">
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                      {getTranslation("Update Patient Profile Image / रोगी प्रोफ़ाइल छवि अपडेट करें", lang)}
+                    </Label>
+                    <span className="text-muted" style={{ fontSize: "11px" }}>
+                      JPG / JPEG / PDF + Camera
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    {(editData.profile_pic_preview || editData.profile_pic_url) && (
                       <img
-                        src={editData.profile_pic_url}
+                        src={editData.profile_pic_preview || editData.profile_pic_url}
                         alt="Patient profile"
                         style={{
                           width: "42px",
                           height: "42px",
                           borderRadius: "50%",
                           objectFit: "cover",
-                          border: "2px solid #e2e8f0",
+                          border: "2px solid #1E6554",
+                          flexShrink: 0,
                         }}
                       />
                     )}
-                    <Input
-                      type="file"
-                      accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
-                        if (isPdf) {
-                          if (file.size > 5 * 1024 * 1024) {
-                            toast.error(getTranslation("File size must be less than 5 MB / फ़ाइल 5 MB से कम होनी चाहिए।", lang));
+                    <div className="position-relative flex-grow-1" style={{ display: "flex", alignItems: "center" }}>
+                      <Input
+                        id="editProfilePicInput"
+                        type="file"
+                        accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+                          if (isPdf) {
+                            if (file.size > 5 * 1024 * 1024) {
+                              toast.error(getTranslation("File size must be less than 5 MB / फ़ाइल 5 MB से कम होनी चाहिए।", lang));
+                              e.target.value = "";
+                              return;
+                            }
+                            setEditData({ ...editData, profile_pic: file, profile_pic_preview: "" });
+                            return;
+                          }
+                          if (file.size > 10 * 1024 * 1024) {
+                            toast.error(getTranslation("Image file size must be less than 10MB before optimization / छवि फ़ाइल का आकार 10MB से कम होना चाहिए।", lang));
                             e.target.value = "";
                             return;
                           }
-                          setEditData({ ...editData, profile_pic: file });
-                          return;
-                        }
-                        if (file.size > 10 * 1024 * 1024) {
-                          toast.error(getTranslation("Image file size must be less than 10MB before optimization / छवि फ़ाइल का आकार 10MB से कम होना चाहिए।", lang));
-                          e.target.value = "";
-                          return;
-                        }
-                        try {
-                          const compressed = await compressImageFile(file);
-                          if (compressed.size > 5 * 1024 * 1024) {
-                            toast.error(getTranslation("File size exceeds 5 MB limit. / फ़ाइल 5 MB सीमा से अधिक है।", lang));
-                            e.target.value = "";
-                            return;
+                          try {
+                            const compressed = await compressImageFile(file);
+                            if (compressed.size > 5 * 1024 * 1024) {
+                              toast.error(getTranslation("File size exceeds 5 MB limit. / फ़ाइल 5 MB सीमा से अधिक है।", lang));
+                              e.target.value = "";
+                              return;
+                            }
+                            setEditData({
+                              ...editData,
+                              profile_pic: compressed,
+                              profile_pic_preview: URL.createObjectURL(compressed),
+                            });
+                            toast.success(getTranslation(`Image optimized (JPG): ${(compressed.size / 1024).toFixed(0)} KB / छवि अनुकूलित`, lang));
+                          } catch {
+                            setEditData({
+                              ...editData,
+                              profile_pic: file,
+                              profile_pic_preview: URL.createObjectURL(file),
+                            });
                           }
-                          setEditData({ ...editData, profile_pic: compressed });
-                          toast.success(getTranslation(`Image optimized (JPG): ${(compressed.size / 1024).toFixed(0)} KB / छवि अनुकूलित: ${(compressed.size / 1024).toFixed(0)} KB`, lang));
-                        } catch {
-                          setEditData({ ...editData, profile_pic: file });
-                        }
-                      }}
-                      className="form-control"
-                      style={{ borderRadius: "8px", height: "40px" }}
-                    />
+                        }}
+                        className="form-control"
+                        style={{ borderRadius: "8px", height: "40px", paddingRight: "42px" }}
+                      />
+                      <input
+                        id="editProfilePicCameraInput"
+                        type="file"
+                        accept="image/jpeg,image/*"
+                        capture="environment"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const compressed = await compressImageFile(file);
+                            setEditData({
+                              ...editData,
+                              profile_pic: compressed,
+                              profile_pic_preview: URL.createObjectURL(compressed),
+                            });
+                            toast.success(getTranslation("Camera photo captured! / कैमरे से फ़ोटो ली गई!", lang));
+                          } catch {
+                            setEditData({
+                              ...editData,
+                              profile_pic: file,
+                              profile_pic_preview: URL.createObjectURL(file),
+                            });
+                          }
+                        }}
+                        style={{ display: "none" }}
+                      />
+                      <label
+                        htmlFor="editProfilePicCameraInput"
+                        className="d-flex align-items-center justify-content-center"
+                        style={{
+                          position: "absolute",
+                          right: "6px",
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          cursor: "pointer",
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "6px",
+                          background: "#e6f4ea",
+                          border: "1px solid #bbf7d0",
+                          margin: 0,
+                          zIndex: 2,
+                        }}
+                        title={getTranslation("Take profile photo with camera / कैमरे से प्रोफ़ाइल फ़ोटो लें", lang)}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E6554" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                          <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                      </label>
+                    </div>
                   </div>
                   {editData.profile_pic && (
                     <small className="text-success d-block mt-1">
@@ -3354,11 +4315,11 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   )}
                 </div>
 
-                {/* Admission Form Upload */}
+                {/* Admission Form Upload — Multiple JPG / JPEG / PDF + Camera */}
                 <div className="col-md-6">
                   <div className="d-flex justify-content-between align-items-center mb-1">
                     <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
-                      {getTranslation("Update Admission Form (JPG / JPEG / PDF) / प्रवेश फॉर्म अपडेट करें", lang)}
+                      {getTranslation("Update Admission Form (Multiple JPG / JPEG / PDF) / प्रवेश फॉर्म अपडेट करें", lang)}
                     </Label>
                     {editData.admission_form_url && (
                       <a
@@ -3376,30 +4337,24 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                     <Input
                       id="editAdmissionFormInput"
                       type="file"
+                      multiple
                       accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf"
                       onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        if (file.type?.startsWith("image/")) {
-                          try {
-                            const compressed = await compressImageFile(file, 1400, 0.85);
-                            if (compressed.size > 5 * 1024 * 1024) {
-                              toast.error(getTranslation("File size exceeds 5 MB limit / फ़ाइल 5 MB सीमा से अधिक है।", lang));
-                              e.target.value = "";
-                              return;
-                            }
-                            setEditData({ ...editData, admission_form_file: compressed });
-                          } catch {
-                            setEditData({ ...editData, admission_form_file: file });
-                          }
-                        } else {
-                          if (file.size > 5 * 1024 * 1024) {
-                            toast.error(getTranslation("File size must be less than 5 MB / फ़ाइल 5 MB से कम होनी चाहिए।", lang));
-                            e.target.value = "";
-                            return;
-                          }
-                          setEditData({ ...editData, admission_form_file: file });
+                        const files = Array.from(e.target.files || []);
+                        if (files.length === 0) return;
+                        const added = [];
+                        for (const f of files) {
+                          const { item } = await processSingleAdmissionFile(f);
+                          if (item) added.push(item);
                         }
+                        if (added.length > 0) {
+                          setEditData((prev) => ({
+                            ...prev,
+                            admission_form_file: added[0].file,
+                            admission_form_files: [...(prev.admission_form_files || []), ...added],
+                          }));
+                        }
+                        e.target.value = "";
                       }}
                       className="form-control"
                       style={{ borderRadius: "8px", height: "40px", paddingRight: "42px" }}
@@ -3412,12 +4367,15 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        try {
-                          const compressed = await compressImageFile(file, 1400, 0.85);
-                          setEditData({ ...editData, admission_form_file: compressed });
-                        } catch {
-                          setEditData({ ...editData, admission_form_file: file });
+                        const { item } = await processSingleAdmissionFile(file);
+                        if (item) {
+                          setEditData((prev) => ({
+                            ...prev,
+                            admission_form_file: item.file,
+                            admission_form_files: [...(prev.admission_form_files || []), item],
+                          }));
                         }
+                        e.target.value = "";
                       }}
                       style={{ display: "none" }}
                     />
@@ -3446,10 +4404,35 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       </svg>
                     </label>
                   </div>
-                  {editData.admission_form_file && (
-                    <small className="text-success d-block mt-1">
-                      ✓ {getTranslation("Selected file / चयनित फ़ाइल", lang)}: {editData.admission_form_file.name}
-                    </small>
+                  {Array.isArray(editData.admission_form_files) && editData.admission_form_files.length > 0 && (
+                    <div className="d-flex flex-wrap gap-1 mt-2">
+                      {editData.admission_form_files.map((f, idx) => (
+                        <span
+                          key={idx}
+                          className="badge bg-light text-dark border d-inline-flex align-items-center gap-1 px-2 py-1"
+                          style={{ fontSize: "11.5px", fontWeight: "500" }}
+                        >
+                          {f.isPdf ? "📄" : "🖼️"} {f.name}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditData((prev) => {
+                                const updated = (prev.admission_form_files || []).filter((_, i) => i !== idx);
+                                return {
+                                  ...prev,
+                                  admission_form_files: updated,
+                                  admission_form_file: updated[0]?.file || null,
+                                };
+                              })
+                            }
+                            className="btn btn-sm p-0 ms-1 text-danger border-0 bg-transparent"
+                            style={{ fontSize: "12px", lineHeight: 1 }}
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
 
@@ -3633,68 +4616,604 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
       </CommonModal>
       {/* Update form data JSX code end */}
 
-      {/* Readmission/Re-register modal pass ward name and type to backend for re-enter user registration field */}
+      {/* Readmission / Re-register modal: pre-fills current date, patient name, gender, email, phone, DOB; all other fields start empty */}
       <CommonModal
         isOpen={reregisterModal}
-        title={getTranslation("Re-Registeration User/पुनः पंजीकरण उपयोगकर्ता",lang)}
+        title={getTranslation("Patient Re-Admission Form / रोगी पुन: प्रवेश फॉर्म", lang)}
         toggler={closeUserViewModal}
-        maxWidth="500px"
+        maxWidth="1100px"
       >
         {reregisterModal && (
-          <Form noValidate onSubmit={handleReRegister}>
-            <div className="col-md-12 pt-3 pb-3">
-              <Label><Translated text={wardDetails} /></Label>
-              <div className="radio radio-primary d-flex flex-wrap gap-3">
-                {(wardList && wardList.length > 0 ? wardList : wardOptions).map((option) => {
-                  const optId = option.ward_type_id || option.id;
-                  const optName = option.ward_name || option.name;
-                  return (
-                    <div key={optId} className="d-flex align-items-center">
+          <div className="p-3 p-md-4" style={{ backgroundColor: "#ffffff" }}>
+            <Form noValidate onSubmit={handleReRegister}>
+              <div className="row g-3">
+                {/* Date of Admission (Current Date) */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    <Translated text={dateOfAdmission} /> <span className="text-danger">*</span>
+                  </Label>
+                  <div>
+                    <DatePicker
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      className="form-control"
+                      style={{ borderRadius: "8px", height: "40px" }}
+                      selected={safeDate(reregFormData.date_of_admission)}
+                      onChange={(date) =>
+                        setReregFormData((prev) => ({ ...prev, date_of_admission: date }))
+                      }
+                      dateFormat="yyyy/MM/dd"
+                    />
+                  </div>
+                </div>
+
+                {/* Patient Name (Pre-filled) */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    <Translated text={patientName} /> <span className="text-danger">*</span>
+                  </Label>
+                  <Input
+                    type="text"
+                    value={reregFormData.patientName}
+                    onChange={(e) =>
+                      setReregFormData((prev) => ({ ...prev, patientName: e.target.value }))
+                    }
+                    placeholder={getTranslation("Enter Patient Name / मरीज़ का नाम दर्ज करें", lang)}
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
+
+                {/* Patient Relative Name (Empty on Readmission, Mandatory) */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    <Translated text={patientRelativeName} /> <span className="text-danger">*</span>
+                  </Label>
+                  <Input
+                    type="text"
+                    value={reregFormData.patientRelativeName}
+                    onChange={(e) =>
+                      setReregFormData((prev) => ({ ...prev, patientRelativeName: e.target.value }))
+                    }
+                    placeholder={getTranslation("Enter Relative Name / रिश्तेदार का नाम दर्ज करें", lang)}
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
+
+                {/* Gender (Pre-filled) */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1 d-block" style={{ fontSize: "13px" }}>
+                    <Translated text={patientSex} /> <span className="text-danger">*</span>
+                  </Label>
+                  <div className="d-flex align-items-center gap-3" style={{ height: "40px" }}>
+                    {["Male", "Female", "Other"].map((g) => (
+                      <div key={g} className="form-check form-check-inline m-0">
+                        <Input
+                          type="radio"
+                          id={`rereg-gender-${g}`}
+                          name="rereg-gender"
+                          value={g}
+                          checked={reregFormData.gender === g}
+                          onChange={() =>
+                            setReregFormData((prev) => ({ ...prev, gender: g }))
+                          }
+                          className="form-check-input"
+                        />
+                        <Label for={`rereg-gender-${g}`} className="form-check-label ms-1" style={{ cursor: "pointer", fontSize: "14px" }}>
+                          {g}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Relation with Patient (Empty on Readmission, Mandatory) */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Relation with Patient / रोगी से संबंध", lang)} <span className="text-danger">*</span>
+                  </Label>
+                  <select
+                    className="form-select"
+                    value={reregFormData.relation_with_patient}
+                    onChange={(e) =>
+                      setReregFormData((prev) => ({ ...prev, relation_with_patient: e.target.value }))
+                    }
+                    style={{ borderRadius: "8px", height: "40px", fontSize: "13.5px" }}
+                  >
+                    <option value="">{getTranslation("Select Relation / संबंध चुनें", lang)}</option>
+                    <option value="Father">{getTranslation("Father / पिता", lang)}</option>
+                    <option value="Mother">{getTranslation("Mother / माता", lang)}</option>
+                    <option value="Brother">{getTranslation("Brother / भाई", lang)}</option>
+                    <option value="Sister">{getTranslation("Sister / बहन", lang)}</option>
+                    <option value="Spouse">{getTranslation("Spouse (Husband/Wife) / पति/पत्नी", lang)}</option>
+                    <option value="Son">{getTranslation("Son / बेटा", lang)}</option>
+                    <option value="Daughter">{getTranslation("Daughter / बेटी", lang)}</option>
+                    <option value="Friend">{getTranslation("Friend / मित्र", lang)}</option>
+                    <option value="Guardian">{getTranslation("Guardian / अभिभावक", lang)}</option>
+                    <option value="Uncle">{getTranslation("Uncle / चाचा/मामा", lang)}</option>
+                    <option value="Aunt">{getTranslation("Aunt / चाची/मामी", lang)}</option>
+                    <option value="Cousin">{getTranslation("Cousin / चचेरा/ममेरा भाई/बहन", lang)}</option>
+                    <option value="Self">{getTranslation("Self / स्वयं", lang)}</option>
+                    <option value="Other Relative">{getTranslation("Other Relative / अन्य रिश्तेदार", lang)}</option>
+                    <option value="Other">{getTranslation("Other / अन्य", lang)}</option>
+                  </select>
+                </div>
+
+                {/* DOB (Pre-filled) */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    <Translated text={patientDateOfBirth} /> <span className="text-danger">*</span>
+                  </Label>
+                  <div>
+                    <DatePicker
+                      showMonthDropdown
+                      showYearDropdown
+                      dropdownMode="select"
+                      className="form-control"
+                      style={{ borderRadius: "8px", height: "40px" }}
+                      selected={safeDate(reregFormData.dob)}
+                      onChange={(date) =>
+                        setReregFormData((prev) => ({ ...prev, dob: date }))
+                      }
+                      dateFormat="yyyy/MM/dd"
+                    />
+                  </div>
+                </div>
+
+                {/* Primary Phone (Pre-filled) */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    <Translated text={patientRelativePhoneNumber} /> <span className="text-danger">*</span>
+                  </Label>
+                  <Input
+                    type="text"
+                    value={reregFormData.phone}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d{0,10}$/.test(val)) {
+                        setReregFormData((prev) => ({
+                          ...prev,
+                          phone: val,
+                          whatsapp_no: prev.sameAsPrimaryPhone ? val : prev.whatsapp_no,
+                        }));
+                      }
+                    }}
+                    maxLength={10}
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
+
+                {/* WhatsApp Mobile (Empty on Readmission + Same as Primary Phone checkbox) */}
+                <div className="col-md-6">
+                  <div className="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                    <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                      {getTranslation("Mobile number for WhatsApp / व्हाट्सएप के लिए मोबाइल नंबर", lang)}
+                      <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                        ({getTranslation("Optional / वैकल्पिक", lang)})
+                      </span>
+                    </Label>
+                    <div className="form-check m-0 p-0 d-inline-flex align-items-center gap-1">
                       <Input
-                        type="radio"
-                        id={`rereg-wards-${optId}`}
-                        name="rereg-ward"
-                        value={optName}
-                        checked={String(formData.ward_type_id) === String(optId)}
-                        onChange={() =>
-                          setFormData((prev) => ({
+                        type="checkbox"
+                        id="reregSameAsPrimaryPhoneCheck"
+                        checked={reregFormData.sameAsPrimaryPhone}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setReregFormData((prev) => ({
                             ...prev,
-                            ward_type_id: optId,
-                            ward_name: optName,
-                          }))
-                        }
+                            sameAsPrimaryPhone: checked,
+                            whatsapp_no: checked ? prev.phone || "" : prev.whatsapp_no,
+                          }));
+                        }}
+                        className="form-check-input m-0"
                       />
-                      <Label for={`rereg-wards-${optId}`} className="mb-0 ms-1 cursor-pointer">
-                        {optName}
-                        {(option.original_amount ?? option.price_rate ?? option.ward_amount) ? (
-                          <span className="text-muted small ms-1">
-                            (₹{Number(option.original_amount ?? option.price_rate ?? option.ward_amount).toLocaleString("en-IN")})
-                          </span>
-                        ) : null}
+                      <Label
+                        for="reregSameAsPrimaryPhoneCheck"
+                        className="form-check-label text-primary mb-0"
+                        style={{ fontSize: "12px", cursor: "pointer", fontWeight: "600" }}
+                      >
+                        {getTranslation("Same as Patient Primary Phone Number", lang)}
                       </Label>
                     </div>
-                  );
-                })}
+                  </div>
+                  <Input
+                    type="text"
+                    value={reregFormData.whatsapp_no}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d{0,10}$/.test(val)) {
+                        setReregFormData((prev) => ({
+                          ...prev,
+                          whatsapp_no: val,
+                          sameAsPrimaryPhone: val === prev.phone ? prev.sameAsPrimaryPhone : false,
+                        }));
+                      }
+                    }}
+                    placeholder={getTranslation("Enter 10-digit WhatsApp Number / व्हाट्सएप नंबर", lang)}
+                    maxLength={10}
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
+
+                {/* Secondary Phone (Empty on Readmission) */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    {getTranslation("Patient Secondary Phone Number / द्वितीयक फ़ोन नंबर", lang)}
+                    <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                      ({getTranslation("Optional / वैकल्पिक", lang)})
+                    </span>
+                  </Label>
+                  <Input
+                    type="text"
+                    value={reregFormData.secondary_phone}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (/^\d{0,10}$/.test(val)) {
+                        setReregFormData((prev) => ({ ...prev, secondary_phone: val }));
+                      }
+                    }}
+                    placeholder={getTranslation("Enter 10-digit Secondary Phone (Optional)", lang)}
+                    maxLength={10}
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
+
+                {/* Email (Pre-filled, Optional) */}
+                <div className="col-md-6">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    <Translated text={patientRelativeEmailAddr} />
+                    <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                      ({getTranslation("Optional / वैकल्पिक", lang)})
+                    </span>
+                  </Label>
+                  <Input
+                    type="email"
+                    value={reregFormData.email}
+                    onChange={(e) =>
+                      setReregFormData((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    placeholder={getTranslation("Enter Email Address (Optional)", lang)}
+                    className="form-control"
+                    style={{ borderRadius: "8px", height: "40px" }}
+                  />
+                </div>
+
+                {/* Ward Details */}
+                <div className="col-12">
+                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                    <Translated text={wardDetails} /> <span className="text-danger">*</span>
+                  </Label>
+                  <div className="d-flex align-items-center flex-wrap gap-3 py-1">
+                    {(wardList && wardList.length > 0 ? wardList : wardOptions).map((option) => {
+                      const optId = option.ward_type_id || option.id;
+                      const optName = option.ward_name || option.name;
+                      return (
+                        <div key={optId} className="form-check form-check-inline m-0">
+                          <Input
+                            type="radio"
+                            id={`rereg-wards-${optId}`}
+                            name="rereg-ward"
+                            value={optName}
+                            checked={String(reregFormData.ward_type_id) === String(optId)}
+                            onChange={() =>
+                              setReregFormData((prev) => ({
+                                ...prev,
+                                ward_type_id: optId,
+                                ward_name: optName,
+                              }))
+                            }
+                            className="form-check-input"
+                          />
+                          <Label for={`rereg-wards-${optId}`} className="form-check-label ms-1 cursor-pointer">
+                            {optName}
+                            {(option.original_amount ?? option.price_rate ?? option.ward_amount) ? (
+                              <span className="text-muted small ms-1">
+                                (₹{Number(option.original_amount ?? option.price_rate ?? option.ward_amount).toLocaleString("en-IN")})
+                              </span>
+                            ) : null}
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Upload Patient Profile Image (Empty on Readmission, Mandatory) */}
+                <div className="col-md-6">
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                      {getTranslation("Upload Patient Profile Image / रोगी प्रोफ़ाइल छवि अपलोड करें", lang)}{" "}
+                      <span className="text-danger">*</span>
+                    </Label>
+                    <span className="text-muted" style={{ fontSize: "11px" }}>
+                      JPG / JPEG / PDF + Camera
+                    </span>
+                  </div>
+                  <div className="d-flex align-items-center gap-2">
+                    {reregPreview && (
+                      <img
+                        src={reregPreview}
+                        alt="Preview"
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          border: "2px solid #1E6554",
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                    <div className="position-relative flex-grow-1" style={{ display: "flex", alignItems: "center" }}>
+                      <Input
+                        id="reregProfileInput"
+                        type="file"
+                        accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+                          if (isPdf) {
+                            setReregImage(file);
+                            setReregPreview(null);
+                            return;
+                          }
+                          try {
+                            const compressed = await compressImageFile(file);
+                            setReregImage(compressed);
+                            setReregPreview(URL.createObjectURL(compressed));
+                          } catch {
+                            setReregImage(file);
+                            setReregPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        className="form-control"
+                        style={{ borderRadius: "8px", height: "40px", paddingRight: "42px" }}
+                      />
+                      <input
+                        id="reregProfileCameraInput"
+                        type="file"
+                        accept="image/jpeg,image/*"
+                        capture="environment"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          try {
+                            const compressed = await compressImageFile(file);
+                            setReregImage(compressed);
+                            setReregPreview(URL.createObjectURL(compressed));
+                          } catch {
+                            setReregImage(file);
+                            setReregPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                        style={{ display: "none" }}
+                      />
+                      <label
+                        htmlFor="reregProfileCameraInput"
+                        className="d-flex align-items-center justify-content-center"
+                        style={{
+                          position: "absolute",
+                          right: "6px",
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          cursor: "pointer",
+                          width: "28px",
+                          height: "28px",
+                          borderRadius: "6px",
+                          background: "#e6f4ea",
+                          border: "1px solid #bbf7d0",
+                          margin: 0,
+                          zIndex: 2,
+                        }}
+                      >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E6554" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                          <circle cx="12" cy="13" r="4"></circle>
+                        </svg>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload Admission Form (Multiple JPG / JPEG / PDF, Empty on Readmission, Mandatory) */}
+                <div className="col-md-6">
+                  <div className="d-flex justify-content-between align-items-center mb-1">
+                    <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                      {getTranslation("Upload Admission Form (JPG / JPEG / PDF) / प्रवेश फ़ॉर्म अपलोड करें", lang)}{" "}
+                      <span className="text-danger">*</span>
+                    </Label>
+                    <span className="text-muted" style={{ fontSize: "11px" }}>
+                      Multiple JPG / JPEG / PDF
+                    </span>
+                  </div>
+                  <div className="position-relative" style={{ display: "flex", alignItems: "center" }}>
+                    <Input
+                      id="reregAdmissionInput"
+                      type="file"
+                      multiple
+                      accept=".jpg,.jpeg,.pdf,image/jpeg,application/pdf"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || []);
+                        const added = [];
+                        for (const f of files) {
+                          const { item } = await processSingleAdmissionFile(f);
+                          if (item) added.push(item);
+                        }
+                        if (added.length > 0) {
+                          setReregAdmissionFiles((prev) => [...prev, ...added]);
+                        }
+                        e.target.value = "";
+                      }}
+                      className="form-control"
+                      style={{ borderRadius: "8px", height: "40px", paddingRight: "42px" }}
+                    />
+                    <input
+                      id="reregAdmissionCameraInput"
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const { item } = await processSingleAdmissionFile(file);
+                        if (item) {
+                          setReregAdmissionFiles((prev) => [...prev, item]);
+                        }
+                        e.target.value = "";
+                      }}
+                      style={{ display: "none" }}
+                    />
+                    <label
+                      htmlFor="reregAdmissionCameraInput"
+                      className="d-flex align-items-center justify-content-center"
+                      style={{
+                        position: "absolute",
+                        right: "6px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        cursor: "pointer",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "6px",
+                        background: "#e6f4ea",
+                        border: "1px solid #bbf7d0",
+                        margin: 0,
+                        zIndex: 2,
+                      }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1E6554" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                        <circle cx="12" cy="13" r="4"></circle>
+                      </svg>
+                    </label>
+                  </div>
+                  {reregAdmissionFiles.length > 0 && (
+                    <div className="d-flex flex-wrap gap-1 mt-2">
+                      {reregAdmissionFiles.map((f, idx) => (
+                        <span
+                          key={idx}
+                          className="badge bg-light text-dark border d-inline-flex align-items-center gap-1 px-2 py-1"
+                          style={{ fontSize: "11.5px", fontWeight: "500" }}
+                        >
+                          {f.isPdf ? "📄" : "🖼️"} {f.name}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setReregAdmissionFiles((prev) => prev.filter((_, i) => i !== idx))
+                            }
+                            className="btn btn-sm p-0 ms-1 text-danger border-0 bg-transparent"
+                            style={{ fontSize: "12px", lineHeight: 1 }}
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Relative Address (Empty on Readmission) */}
+                <div className="col-md-6">
+                  <VoiceTextarea
+                    label={
+                      <span className="fw-semibold text-dark" style={{ fontSize: "13px" }}>
+                        <Translated text={pateintRelativeAddress} />
+                        <span className="text-muted fw-normal ms-1" style={{ fontSize: "12px" }}>
+                          ({getTranslation("Optional / वैकल्पिक", lang)})
+                        </span>
+                      </span>
+                    }
+                    value={reregFormData.relativeaddress}
+                    onChange={(e) =>
+                      setReregFormData((prev) => ({
+                        ...prev,
+                        relativeaddress: e.target.value,
+                        address: prev.sameAddress ? e.target.value : prev.address,
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Patient Address (Empty on Readmission, Mandatory) */}
+                <div className="col-md-6">
+                  <VoiceTextarea
+                    label={
+                      <span className="fw-semibold text-dark" style={{ fontSize: "13px" }}>
+                        <Translated text={pateintAddress} /> <span className="text-danger">*</span>
+                      </span>
+                    }
+                    value={reregFormData.address}
+                    onChange={(e) =>
+                      setReregFormData((prev) => ({
+                        ...prev,
+                        address: e.target.value,
+                        sameAddress: false,
+                      }))
+                    }
+                  />
+                </div>
+
+                {/* Same as Patient Relative Address Checkbox */}
+                <div className="col-12">
+                  <div className="form-check">
+                    <Input
+                      type="checkbox"
+                      id="reregSameAddressCheck"
+                      className="form-check-input"
+                      checked={reregFormData.sameAddress}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setReregFormData((prev) => ({
+                          ...prev,
+                          sameAddress: checked,
+                          address: checked ? prev.relativeaddress : prev.address,
+                        }));
+                      }}
+                    />
+                    <Label for="reregSameAddressCheck" className="form-check-label ms-1" style={{ cursor: "pointer", fontSize: "13.5px" }}>
+                      <Translated text="Same as Patient Relative Address" />
+                    </Label>
+                  </div>
+                </div>
               </div>
 
-              <Button
-                color="primary"
-                type="submit"
-                className="mt-3 mb-3"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span
-                    className="spinner-border spinner-border-sm"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                ) : (
-                  getTranslation("Re-Admission/पुन: प्रवेश",lang)
-                )}
-              </Button>
-            </div>
-          </Form>
+              <div className="d-flex justify-content-end gap-2 pt-4 mt-4 border-top">
+                <Button
+                  color="light"
+                  type="button"
+                  className="border fw-semibold px-4"
+                  onClick={closeUserViewModal}
+                  style={{ borderRadius: "8px" }}
+                >
+                  {getTranslation("Cancel / रद्द करें", lang)}
+                </Button>
+                <Button
+                  color="primary"
+                  type="submit"
+                  disabled={isLoading}
+                  style={{
+                    borderRadius: "8px",
+                    backgroundColor: "#d56337",
+                    borderColor: "#d56337",
+                    fontWeight: "600",
+                    padding: "8px 24px",
+                  }}
+                >
+                  {isLoading ? (
+                    <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  ) : (
+                    getTranslation("Re-Admission / पुन: प्रवेश", lang)
+                  )}
+                </Button>
+              </div>
+            </Form>
+          </div>
         )}
       </CommonModal>
     </Fragment>

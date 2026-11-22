@@ -14,13 +14,220 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
   const handleClose = toggler || toggle || onClose || (() => {});
   const { lang } = useLang();
   const { selectedBranch } = useBranch();
+  const storedBranchDetail = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("Branch_Detail") || "[]");
+    } catch {
+      return [];
+    }
+  })();
   const branchId =
-    selectedBranch?.branch_id || selectedBranch?.id || selectedBranch || "";
+    selectedBranch?.branch_id ||
+    selectedBranch?.id ||
+    selectedBranch ||
+    storedBranchDetail?.[0]?.Branch_id ||
+    storedBranchDetail?.[0]?.branch_id ||
+    1;
 
   const pdfRef = useRef();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isBulkDownloading, setIsBulkDownloading] = useState(false);
+
+  const enrichUserWithLocalAndIpdData = async (rawUser, token) => {
+    if (!rawUser || typeof rawUser !== "object") return rawUser;
+    const userCopy = { ...rawUser };
+    const uid = userCopy.user_id || userCopy.id;
+    const cleanPhone = String(userCopy.phone || "").trim();
+
+    let localExtra = {};
+    try {
+      const byId = uid ? localStorage.getItem(`gks_user_extra_${uid}`) : null;
+      const byPhone = cleanPhone ? localStorage.getItem(`gks_user_extra_phone_${cleanPhone}`) : null;
+      localExtra = JSON.parse(byId || byPhone || "{}");
+    } catch {
+      localExtra = {};
+    }
+
+    // Parse relative_contacts
+    let parsedContacts = [];
+    if (userCopy.relative_contacts) {
+      try {
+        parsedContacts =
+          typeof userCopy.relative_contacts === "string"
+            ? JSON.parse(userCopy.relative_contacts)
+            : Array.isArray(userCopy.relative_contacts)
+            ? userCopy.relative_contacts
+            : [];
+      } catch {
+        parsedContacts = [];
+      }
+    }
+
+    let localSavedContacts = [];
+    try {
+      localSavedContacts = JSON.parse(
+        localStorage.getItem(`gks_user_relative_contacts_${uid}`) || "[]"
+      );
+    } catch {
+      localSavedContacts = [];
+    }
+
+    if (parsedContacts.length === 0 && Array.isArray(localSavedContacts) && localSavedContacts.length > 0) {
+      parsedContacts = localSavedContacts.filter((c) => c && (c.name || c.phone));
+    }
+
+    userCopy.relative_contacts = parsedContacts.map((c) => {
+      const matched = localSavedContacts.find((ls) => ls && ls.phone === c.phone);
+      const isWa =
+        c.use_for_whatsapp === "Yes" ||
+        c.is_whatsapp ||
+        matched?.is_whatsapp ||
+        matched?.use_for_whatsapp === "Yes" ||
+        ((userCopy.whatsapp_no || localExtra.whatsapp_no) &&
+          c.phone &&
+          String(c.phone).trim() === String(userCopy.whatsapp_no || localExtra.whatsapp_no).trim());
+      return { ...c, is_whatsapp: !!isWa };
+    });
+
+    // Resolve WhatsApp Number
+    const waContact = (userCopy.relative_contacts || []).find(
+      (c) => (c.is_whatsapp || c.use_for_whatsapp === "Yes") && c.phone
+    );
+    userCopy.whatsapp_no =
+      userCopy.whatsapp_no ||
+      localExtra.whatsapp_no ||
+      (waContact ? waContact.phone : "") ||
+      "";
+
+    // Resolve Secondary Phone
+    const secondaryFromContacts = (userCopy.relative_contacts || []).find(
+      (c) => c.phone && String(c.phone).trim() !== cleanPhone
+    );
+    userCopy.secondary_phone =
+      userCopy.secondary_phone ||
+      localExtra.secondary_phone ||
+      (secondaryFromContacts ? secondaryFromContacts.phone : "") ||
+      (userCopy.relative_contacts?.[0]?.phone || "") ||
+      "";
+
+    // Resolve Ward Details & Admission Date
+    userCopy.ward_name =
+      userCopy.ward_name ||
+      userCopy.wardName ||
+      userCopy.recent_ward_name ||
+      userCopy.ward?.ward_name ||
+      userCopy.ipd?.ward_name ||
+      localExtra.ward_name ||
+      "";
+    userCopy.ward_type_id =
+      userCopy.ward_type_id ||
+      userCopy.ward?.ward_type_id ||
+      userCopy.ipd?.ward_type_id ||
+      localExtra.ward_type_id ||
+      "";
+    userCopy.date_of_admission =
+      userCopy.date_of_admission ||
+      userCopy.recent_admit_date ||
+      userCopy.admit_date ||
+      userCopy.ipd?.admit_date ||
+      localExtra.date_of_admission ||
+      userCopy.created_at ||
+      "";
+
+    // If ward_name is still missing, look up from /api/ipd/active-ipd-entries
+    if (!userCopy.ward_name && token && uid) {
+      try {
+        const ipdRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/ipd/active-ipd-entries?branch_id=${branchId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        );
+        if (ipdRes.ok) {
+          const ipdJson = await ipdRes.json().catch(() => null);
+          const entries = Array.isArray(ipdJson?.data) ? ipdJson.data : [];
+          const matchedEntry = entries.find(
+            (e) =>
+              String(e.user_id || e.id) === String(uid) ||
+              (userCopy.gks_id && e.gks_id === userCopy.gks_id)
+          );
+          if (matchedEntry) {
+            if (matchedEntry.ward_name) userCopy.ward_name = matchedEntry.ward_name;
+            if (matchedEntry.admit_date && !userCopy.date_of_admission) {
+              userCopy.date_of_admission = matchedEntry.admit_date;
+            }
+          }
+        }
+      } catch {
+        // ignore IPD lookup error
+      }
+    }
+
+    // Collect all Admission Form files (supports single URL, JSON array of URLs, or multiple stored files)
+    const admissionFilesList = [];
+    const addFileItem = (urlOrObj, idx) => {
+      if (!urlOrObj) return;
+      if (typeof urlOrObj === "string") {
+        const trimmed = urlOrObj.trim();
+        if (!trimmed) return;
+        if (trimmed.startsWith("[")) {
+          try {
+            const arr = JSON.parse(trimmed);
+            if (Array.isArray(arr)) {
+              arr.forEach((item, i) => addFileItem(item, i));
+              return;
+            }
+          } catch {
+            // not JSON array
+          }
+        }
+        const isPdf =
+          trimmed.toLowerCase().includes(".pdf") ||
+          trimmed.startsWith("data:application/pdf");
+        const defaultName = `Admission_Form_${idx + 1}.${isPdf ? "pdf" : "jpg"}`;
+        if (!admissionFilesList.some((f) => f.url === trimmed)) {
+          admissionFilesList.push({
+            name: defaultName,
+            url: trimmed,
+            isPdf,
+          });
+        }
+      } else if (typeof urlOrObj === "object") {
+        const u = urlOrObj.url || urlOrObj.dataUrl || "";
+        if (!u) return;
+        const isPdf =
+          urlOrObj.isPdf ||
+          String(urlOrObj.type || "").includes("pdf") ||
+          String(urlOrObj.name || u).toLowerCase().endsWith(".pdf");
+        if (!admissionFilesList.some((f) => f.url === u || (f.name && f.name === urlOrObj.name && u.startsWith("data:")))) {
+          admissionFilesList.push({
+            name: urlOrObj.name || `Admission_Form_${idx + 1}.${isPdf ? "pdf" : "jpg"}`,
+            url: u,
+            isPdf,
+          });
+        }
+      }
+    };
+
+    if (Array.isArray(userCopy.admission_form_urls)) {
+      userCopy.admission_form_urls.forEach((u, i) => addFileItem(u, i));
+    }
+    if (Array.isArray(localExtra.admission_files) && localExtra.admission_files.length > 0) {
+      localExtra.admission_files.forEach((f, i) => addFileItem(f, i));
+    }
+    if (userCopy.admission_form_url || userCopy.admission_form) {
+      addFileItem(userCopy.admission_form_url || userCopy.admission_form, admissionFilesList.length);
+    }
+
+    userCopy.admission_files = admissionFilesList;
+    return userCopy;
+  };
 
   useEffect(() => {
     let active = true;
@@ -31,43 +238,25 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
       return;
     }
 
-    // If parent directly passed user object
-    if (propUser && typeof propUser === "object" && (propUser.id || propUser.name || propUser.user_id)) {
-      const userCopy = { ...propUser };
-      if (userCopy.relative_contacts) {
-        try {
-          const parsed =
-            typeof userCopy.relative_contacts === "string"
-              ? JSON.parse(userCopy.relative_contacts)
-              : Array.isArray(userCopy.relative_contacts)
-              ? userCopy.relative_contacts
-              : [];
-          const localSaved = JSON.parse(
-            localStorage.getItem(`gks_user_relative_contacts_${userCopy.id || userCopy.user_id}`) || "[]"
-          );
-          userCopy.relative_contacts = parsed.map((c) => {
-            const matched = localSaved.find((ls) => ls.phone === c.phone);
-            const isWa =
-              c.use_for_whatsapp === "Yes" ||
-              c.is_whatsapp ||
-              matched?.is_whatsapp ||
-              (userCopy.whatsapp_no && c.phone && String(c.phone).trim() === String(userCopy.whatsapp_no).trim());
-            return { ...c, is_whatsapp: !!isWa };
-          });
-        } catch (e) {
-          userCopy.relative_contacts = [];
-        }
-      }
-      setSelectedUser(userCopy);
-      setIsLoading(false);
-      return;
-    }
+    const token = localStorage.getItem("Authorization");
 
     const fetchUserDetails = async () => {
-      let id = userId;
+      let id = userId || propUser?.user_id || propUser?.id;
       if (typeof id === "object" && id !== null) {
         id = id.user_id || id.userId || id.id;
       }
+
+      // If parent passed propUser and no id to fetch, enrich propUser directly
+      if (!id && propUser && typeof propUser === "object") {
+        setIsLoading(true);
+        const enriched = await enrichUserWithLocalAndIpdData(propUser, token);
+        if (active) {
+          setSelectedUser(enriched);
+          setIsLoading(false);
+        }
+        return;
+      }
+
       if (!id) {
         setSelectedUser(null);
         setIsLoading(false);
@@ -75,7 +264,6 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
       }
 
       setIsLoading(true);
-      const token = localStorage.getItem("Authorization");
 
       try {
         let response = await fetch(
@@ -89,7 +277,7 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
           }
         );
 
-        let data = await response.json();
+        let data = await response.json().catch(() => ({}));
 
         // If not found or empty, retry without branch_id query parameter
         if (!response.ok || !data.data || (Array.isArray(data.data) && data.data.length === 0)) {
@@ -104,48 +292,35 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
             }
           );
           if (fallbackRes.ok) {
-            data = await fallbackRes.json();
+            data = await fallbackRes.json().catch(() => ({}));
           }
         }
 
-        const userData = Array.isArray(data.data) ? data.data[0] : (data.data || data);
+        const fetchedUser = Array.isArray(data.data) ? data.data[0] : (data.data || data);
+        const mergedRawUser =
+          fetchedUser && typeof fetchedUser === "object" && (fetchedUser.user_id || fetchedUser.id || fetchedUser.name)
+            ? { ...(propUser || {}), ...fetchedUser }
+            : propUser && typeof propUser === "object"
+            ? { ...propUser }
+            : null;
 
-        if (!userData || typeof userData !== "object") {
+        if (!mergedRawUser) {
           console.error("User not found in response:", data);
           if (active) setSelectedUser(null);
           return;
         }
 
-        if (userData.relative_contacts) {
-          try {
-            const parsed =
-              typeof userData.relative_contacts === "string"
-                ? JSON.parse(userData.relative_contacts)
-                : Array.isArray(userData.relative_contacts)
-                ? userData.relative_contacts
-                : [];
-            const localSaved = JSON.parse(
-              localStorage.getItem(`gks_user_relative_contacts_${userData.id || userData.user_id}`) || "[]"
-            );
-            userData.relative_contacts = parsed.map((c) => {
-              const matched = localSaved.find((ls) => ls.phone === c.phone);
-              const isWa =
-                c.use_for_whatsapp === "Yes" ||
-                c.is_whatsapp ||
-                matched?.is_whatsapp ||
-                (userData.whatsapp_no && c.phone && String(c.phone).trim() === String(userData.whatsapp_no).trim());
-              return { ...c, is_whatsapp: !!isWa };
-            });
-          } catch (e) {
-            userData.relative_contacts = [];
-          }
-        }
+        const enrichedUser = await enrichUserWithLocalAndIpdData(mergedRawUser, token);
 
         if (active) {
-          setSelectedUser(userData);
+          setSelectedUser(enrichedUser);
         }
       } catch (error) {
         console.error("Fetch error in UserDetailsModal:", error);
+        if (propUser && typeof propUser === "object" && active) {
+          const enriched = await enrichUserWithLocalAndIpdData(propUser, token);
+          setSelectedUser(enriched);
+        }
       } finally {
         if (active) {
           setIsLoading(false);
@@ -159,6 +334,98 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
       active = false;
     };
   }, [isOpen, userId, propUser, branchId]);
+
+  const triggerSingleFileDownload = async (fileUrl, fileName) => {
+    if (!fileUrl) return;
+    try {
+      if (fileUrl.startsWith("data:") || fileUrl.startsWith("blob:")) {
+        const a = document.createElement("a");
+        a.href = fileUrl;
+        a.download = fileName || "document";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        return;
+      }
+      const res = await fetch(fileUrl);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = fileName || fileUrl.split("/").pop() || "document";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+    } catch {
+      const a = document.createElement("a");
+      a.href = fileUrl;
+      a.target = "_blank";
+      a.download = fileName || "document";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+  };
+
+  const handleBulkDownloadAllFiles = async () => {
+    if (!selectedUser) return;
+    const filesToDownload = [];
+    const safePatientName = String(selectedUser.name || "Patient")
+      .trim()
+      .replace(/\s+/g, "_");
+    const safeGksId = String(selectedUser.gks_id || selectedUser.user_id || selectedUser.id || "")
+      .trim()
+      .replace(/\s+/g, "_");
+
+    const profilePic =
+      selectedUser.profile_pic ||
+      selectedUser.profile_image ||
+      selectedUser.image ||
+      "";
+    if (profilePic) {
+      const isPdf = profilePic.toLowerCase().includes(".pdf") || profilePic.startsWith("data:application/pdf");
+      filesToDownload.push({
+        url: profilePic,
+        name: `${safePatientName}_${safeGksId}_Profile.${isPdf ? "pdf" : "jpg"}`,
+      });
+    }
+
+    const admissionFiles = Array.isArray(selectedUser.admission_files)
+      ? selectedUser.admission_files
+      : [];
+    admissionFiles.forEach((f, idx) => {
+      const ext = f.isPdf ? "pdf" : "jpg";
+      const cleanName = f.name
+        ? `${safePatientName}_${safeGksId}_${f.name}`
+        : `${safePatientName}_${safeGksId}_Admission_Form_${idx + 1}.${ext}`;
+      filesToDownload.push({
+        url: f.url,
+        name: cleanName,
+      });
+    });
+
+    if (filesToDownload.length === 0) {
+      toast.info(getTranslation("No uploaded files available to download / डाउनलोड करने के लिए कोई फ़ाइल उपलब्ध नहीं है", lang));
+      return;
+    }
+
+    setIsBulkDownloading(true);
+    try {
+      for (let i = 0; i < filesToDownload.length; i++) {
+        await triggerSingleFileDownload(filesToDownload[i].url, filesToDownload[i].name);
+        await new Promise((r) => setTimeout(r, 350));
+      }
+      toast.success(
+        getTranslation(
+          `Downloaded ${filesToDownload.length} file(s) successfully! / ${filesToDownload.length} फ़ाइलें सफलतापूर्वक डाउनलोड की गईं!`,
+          lang
+        )
+      );
+    } finally {
+      setIsBulkDownloading(false);
+    }
+  };
 
   const handleDownloadPDF = () => {
     const element = pdfRef.current;
@@ -334,37 +601,27 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
                       </div>
 
                   <div className="mt-2 mt-sm-0 d-flex align-items-center gap-2 flex-wrap">
-                    {(selectedUser.admission_form_url || selectedUser.admission_form) && (
-                      <a
-                        href={selectedUser.admission_form_url || selectedUser.admission_form}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-2 shadow-sm"
+                    {(profilePic ||
+                      selectedUser.admission_form_url ||
+                      selectedUser.admission_form ||
+                      (Array.isArray(selectedUser.admission_files) && selectedUser.admission_files.length > 0)) && (
+                      <Button
+                        color="primary"
+                        size="sm"
+                        onClick={handleBulkDownloadAllFiles}
+                        disabled={isBulkDownloading}
+                        className="d-inline-flex align-items-center gap-2 shadow-sm"
                         style={{
                           borderRadius: "8px",
-                          fontWeight: "500",
-                          padding: "8px 16px",
+                          fontWeight: "600",
+                          padding: "8px 14px",
                         }}
                       >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
-                          <line x1="16" y1="13" x2="8" y2="13"></line>
-                          <line x1="16" y1="17" x2="8" y2="17"></line>
-                          <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                        {getTranslation("View Admission Form / प्रवेश फॉर्म देखें", lang)}
-                      </a>
+                        <i className="fa fa-download" />
+                        {isBulkDownloading
+                          ? getTranslation("Downloading... / डाउनलोड हो रहा है...", lang)
+                          : getTranslation("Bulk Download Files (Images & PDFs) / सभी फ़ाइलें डाउनलोड करें", lang)}
+                      </Button>
                     )}
                     <Button
                       color="secondary"
@@ -473,11 +730,75 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
                       </div>
 
                       <div className="col-12">
-                        <div className="text-muted mb-1" style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                          {getTranslation("Admission Form / प्रवेश फॉर्म", lang)}
+                        <div className="d-flex align-items-center justify-content-between mb-2">
+                          <div className="text-muted" style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                            {getTranslation("Admission Form Documents (JPG / JPEG / PDF) / प्रवेश फॉर्म दस्तावेज़", lang)}
+                          </div>
+                          {Array.isArray(selectedUser.admission_files) && selectedUser.admission_files.length > 0 && (
+                            <Button
+                              color="primary"
+                              size="sm"
+                              onClick={handleBulkDownloadAllFiles}
+                              disabled={isBulkDownloading}
+                              style={{ fontSize: "11.5px", padding: "4px 10px", borderRadius: "6px" }}
+                            >
+                              <i className="fa fa-download me-1" />
+                              {getTranslation("Bulk Download All / सभी डाउनलोड करें", lang)} ({selectedUser.admission_files.length + (selectedUser.profile_pic ? 1 : 0)})
+                            </Button>
+                          )}
                         </div>
                         <div>
-                          {selectedUser.admission_form_url || selectedUser.admission_form ? (
+                          {Array.isArray(selectedUser.admission_files) && selectedUser.admission_files.length > 0 ? (
+                            <div className="d-flex flex-column gap-2">
+                              {selectedUser.admission_files.map((fileItem, idx) => (
+                                <div
+                                  key={idx}
+                                  className="d-flex align-items-center justify-content-between p-2 rounded border bg-light"
+                                  style={{ borderRadius: "8px" }}
+                                >
+                                  <div className="d-flex align-items-center gap-2 text-truncate">
+                                    {!fileItem.isPdf && fileItem.url ? (
+                                      <img
+                                        src={fileItem.url}
+                                        alt={fileItem.name}
+                                        style={{
+                                          width: "34px",
+                                          height: "34px",
+                                          objectFit: "cover",
+                                          borderRadius: "6px",
+                                          border: "1px solid #cbd5e1",
+                                        }}
+                                      />
+                                    ) : (
+                                      <span style={{ fontSize: "18px" }}>📄</span>
+                                    )}
+                                    <span className="fw-semibold text-dark text-truncate" style={{ fontSize: "13px", maxWidth: "210px" }}>
+                                      {fileItem.name || `Document_${idx + 1}`}
+                                    </span>
+                                  </div>
+                                  <div className="d-flex align-items-center gap-2 flex-shrink-0">
+                                    <a
+                                      href={fileItem.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="btn btn-outline-secondary btn-sm py-1 px-2"
+                                      style={{ fontSize: "11.5px", borderRadius: "6px" }}
+                                    >
+                                      {getTranslation("View / देखें", lang)} ↗
+                                    </a>
+                                    <button
+                                      type="button"
+                                      onClick={() => triggerSingleFileDownload(fileItem.url, fileItem.name)}
+                                      className="btn btn-outline-success btn-sm py-1 px-2"
+                                      style={{ fontSize: "11.5px", borderRadius: "6px" }}
+                                    >
+                                      ⬇ {getTranslation("Download", lang)}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : selectedUser.admission_form_url || selectedUser.admission_form ? (
                             <a
                               href={selectedUser.admission_form_url || selectedUser.admission_form}
                               target="_blank"
