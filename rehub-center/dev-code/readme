@@ -1,1 +1,170 @@
+---- Changes by Client by 27-08-26 -----
+
+=============
+
+Slow form submition - All forms
+
+Register form - 
+Name of Patient Relative: * - remove two dots - Done
+
+Relation with Patient * - Add dropdown all possible  - Done
+
+Match all content UI with theme - green colour
+
+Patient Relative Email Address * - make it optional - Done
+
+While auto generate password remove that red error message, it should be incluse while generate - Done
+
+Remove select role - Done
+
+Patient sex by default Male should be select - Done
+
+Upload Patient Profile Image(Optional) and Upload Admission Form (PDF(Optional) give camera icon so user can upload else take becaue use use this on tab devices. - Done
+
+Wards details and price - get from API backend and give one dicount price input ths is optional if dicount, so final price will showing, otherwsie normal price.  - Need an API 
+
+Is Patient Phone Number * remove this - mobile number for WhatsApp Number/SMS comunication * use should be enter manully - Done
+
+Transation history page - Ward room price , Blood Package these coming from API and add one manual filed where they can enter item name and amount on popup. - Show resgiter table complete entry. - in discussion
+
+View register print give profile photo and GKS ID - Done
+
+======
+
+Setting page - User create ====
+
+Super admin will create this. Role
+
+List of all branch Admin  Role 1
+select branch
+Branch wise account rcreation - Email ID and password, address, phone number, branch adming name
+Branch admin will not previllage this
+
+=====
+
+Option 2 user management Role 2
+same as branch operator creation
+Whole form will open first branch will come user role select, user name and password it will create
+
+======
+
+Option 2 branch Admin will create operator Role 3
+branch will showing only that superadmin select
+Whole form will open first branch will come user role select, user name and password it will create
+
+
+=================================
+Global print all form - 
+GKS id should be come while print and change format - pending from client side.
+
+
+====
+Global required and optinal manage for all form filed.
+Add export CSV, PDF and excel give opotin so client can download all table data. - Done
+
+====
+Left menu should be higlight while select (UI). - Done
+
+===
+On form like PFA showing showing complete on first table also that make confuse so pls remove that. - Done
+
+===
+![alt text](image.png)
+
+=== PFA
+All form checkbox should be green. -Varification from parent side before PFA submitting and update Varification spalling  
+remove Signature input
+Varification -  make it optional
+All Patient First Assessment (PFA) List at after action add verified and unverifed column (Verification column done or incompleted)
+![alt text](image-1.png) - Done
+add spo2, suger and hiv positive and negative  add these filed.
+
+====
+remove user ID from all form table - Done
+
+===
+Visible GKS ID full on all form table - Done
+
+====
+Remove signature filed from all table form.
+
+===
+Add full screen opotion on UI - Theme. - Done
+
+====
+English/Hindi btn UI update as per theme - Done
+
+
+====
+While filling form and in while session out and logout so our form data details should be remain. So give save a dfaft. - If possible give on all form. - Done
+
+
+
+
+======= 21 sep 2026 ======
+
+
+Setting Page ->
+
+First step - Item type and item name
+
+
+
+biiling
+transaction
+item type
+item master
+
+=====
+
+
+
+=== branch admin and super admin have previllage ===
+
+seeting -> billing menu page -> 2 table two button 
+
+item type - add iput text
+
+adding item master name - text box ---- item type, amount, item name, discription 
+
+add branch if he has not branch admin 
+
+
+On seeting page make another tab billing there will be two tables with buttons on click item type by default like ward, blood packages, and input box if wanted to add custom bill item type.
+
+after click item type second button add item master name where item type will come with add amount, item name, description like this
+
+
+
+=================================================================================
+
+add button -> patien id select item type from dropdown if you want to add discount.
+
+billing page - bill api - download bill, search by bill id, patient id.
+
+one table will come where transaction will show again bill - add two button - entry into transaction table.
+
+======
+
+
+
+
+
+
+
+
+item type - add, edit, delete - input 
+
+
+
+
+
+
+
+
+
+
+
+
+
 

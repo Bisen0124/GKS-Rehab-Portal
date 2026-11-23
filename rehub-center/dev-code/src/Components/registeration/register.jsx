@@ -512,7 +512,16 @@ function Register() {
 
     if (newlyProcessed.length > 0) {
       setAdmissionFormFiles((prev) => {
-        const combined = [...prev, ...newlyProcessed];
+        let combined = [...prev, ...newlyProcessed];
+        if (combined.length > 10) {
+          toast.warning(
+            getTranslation(
+              "Maximum 10 admission form files are allowed per patient / अधिकतम 10 प्रवेश फ़ॉर्म फ़ाइलों की अनुमति है",
+              lang
+            )
+          );
+          combined = combined.slice(0, 10);
+        }
         setAdmissionForm(combined[0]?.file || null);
         setAdmissionFormName(combined.map((f) => f.name).join(", "));
         const firstImg = combined.find((f) => !f.isPdf && f.preview);
@@ -795,18 +804,26 @@ function Register() {
     const formatDateStr = (d) =>
       d instanceof Date && !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : d || "";
 
-    const storedAdmissionFiles = (admissionFormFiles || []).map((f) => ({
-      name: f.name,
-      url: f.dataUrl || "",
-      isPdf: !!f.isPdf,
-    }));
-    if (createdUser?.admission_form_url && !storedAdmissionFiles.some((f) => f.url === createdUser.admission_form_url)) {
-      storedAdmissionFiles.unshift({
-        name: admissionFormFiles[0]?.name || "Admission_Form",
-        url: createdUser.admission_form_url,
-        isPdf: String(createdUser.admission_form_url).toLowerCase().includes(".pdf"),
-      });
-    }
+    const backendReturnedUrls = Array.isArray(createdUser?.admission_form_urls)
+      ? createdUser.admission_form_urls
+      : Array.isArray(createdUser?.admission_form_url)
+      ? createdUser.admission_form_url
+      : typeof createdUser?.admission_form_url === "string" && createdUser.admission_form_url
+      ? [createdUser.admission_form_url]
+      : [];
+
+    const storedAdmissionFiles =
+      backendReturnedUrls.length > 0
+        ? backendReturnedUrls.map((url, idx) => ({
+            name: admissionFormFiles[idx]?.name || `Admission_Form_${idx + 1}`,
+            url,
+            isPdf: String(url).toLowerCase().includes(".pdf"),
+          }))
+        : (admissionFormFiles || []).map((f) => ({
+            name: f.name,
+            url: f.dataUrl || "",
+            isPdf: !!f.isPdf,
+          }));
 
     saveUserExtraMetadata(createdUserId, formData.phone, {
       ward_type_id: createdUser?.ward?.ward_type_id || formData.ward_type_id,
@@ -960,11 +977,25 @@ function Register() {
       payload.append("address", (formToSubmit.address || "").trim());
       payload.append("dob", formatDate(formToSubmit.dob));
       payload.append("phone", (formToSubmit.phone || "").trim());
+
+      const secTrimmed = (formToSubmit.secondary_phone || "").trim();
+      if (/^\d{10}$/.test(secTrimmed)) {
+        payload.append("secondary_phone", secTrimmed);
+      }
+
+      const waTrimmed = (formToSubmit.whatsapp_no || "").trim();
+      if (/^\d{10}$/.test(waTrimmed)) {
+        payload.append("whatsapp_no", waTrimmed);
+      }
+
       payload.append("password", formToSubmit.password || "");
       payload.append("isRole", 4);
       payload.append("ward_type_id", effectiveWardTypeId || "");
       if (effectiveWardName) {
         payload.append("ward_name", effectiveWardName);
+      }
+      if (formToSubmit.date_of_admission) {
+        payload.append("date_of_admission", formatDate(formToSubmit.date_of_admission));
       }
 
       if (formToSubmit.relation_with_patient && formToSubmit.relation_with_patient.trim()) {
@@ -981,28 +1012,6 @@ function Register() {
         }))
         .filter((c) => c.name && /^\d{10}$/.test(c.phone));
 
-      // If user entered a 10-digit secondary_phone and it isn't already in relative_contacts, include it cleanly
-      const secTrimmed = (formToSubmit.secondary_phone || "").trim();
-      if (/^\d{10}$/.test(secTrimmed) && !cleanedRelativeContacts.some((c) => c.phone === secTrimmed)) {
-        cleanedRelativeContacts.push({
-          name: (formToSubmit.patientRelativeName || formToSubmit.patientName || "Secondary").trim(),
-          phone: secTrimmed,
-          use_for_whatsapp: secTrimmed === (formToSubmit.whatsapp_no || "").trim() ? "Yes" : "No",
-          use_for_sms: "No",
-        });
-      }
-
-      // If user entered a 10-digit whatsapp_no and it isn't already in relative_contacts, include it cleanly
-      const waTrimmed = (formToSubmit.whatsapp_no || "").trim();
-      if (/^\d{10}$/.test(waTrimmed) && !cleanedRelativeContacts.some((c) => c.phone === waTrimmed)) {
-        cleanedRelativeContacts.push({
-          name: (formToSubmit.patientRelativeName || formToSubmit.patientName || "Relative").trim(),
-          phone: waTrimmed,
-          use_for_whatsapp: "Yes",
-          use_for_sms: "No",
-        });
-      }
-
       if (cleanedRelativeContacts.length > 0) {
         payload.append("relative_contacts", JSON.stringify(cleanedRelativeContacts));
       }
@@ -1011,14 +1020,19 @@ function Register() {
         payload.append("relative_address", formToSubmit.relativeaddress.trim());
       }
 
-      // File uploads (.jpg / .jpeg / .pdf, max 5 MB)
+      // File uploads (.jpg / .jpeg / .pdf, max 5 MB each, up to 10 admission_form_url files)
       if (image) {
         payload.append("profile_pic", image);
       }
 
-      const primaryAdmissionFile = admissionFormFiles?.[0]?.file || admissionForm;
-      if (primaryAdmissionFile) {
-        payload.append("admission_form_url", primaryAdmissionFile);
+      if (Array.isArray(admissionFormFiles) && admissionFormFiles.length > 0) {
+        admissionFormFiles.slice(0, 10).forEach((item) => {
+          if (item?.file instanceof File) {
+            payload.append("admission_form_url", item.file);
+          }
+        });
+      } else if (admissionForm instanceof File) {
+        payload.append("admission_form_url", admissionForm);
       }
 
       // 120-second timeout to handle Render cold boot + Cloudinary dual file uploads
@@ -1522,24 +1536,7 @@ function Register() {
         .filter((c) => c.name && /^\d{10}$/.test(c.phone));
 
       const secTrimmed = (reregFormData.secondary_phone || "").trim();
-      if (/^\d{10}$/.test(secTrimmed) && !cleanedReregContacts.some((c) => c.phone === secTrimmed)) {
-        cleanedReregContacts.push({
-          name: (reregFormData.patientRelativeName || reregFormData.patientName || "Secondary").trim(),
-          phone: secTrimmed,
-          use_for_whatsapp: secTrimmed === (reregFormData.whatsapp_no || "").trim() ? "Yes" : "No",
-          use_for_sms: "No",
-        });
-      }
-
       const waTrimmed = (reregFormData.whatsapp_no || "").trim();
-      if (/^\d{10}$/.test(waTrimmed) && !cleanedReregContacts.some((c) => c.phone === waTrimmed)) {
-        cleanedReregContacts.push({
-          name: (reregFormData.patientRelativeName || reregFormData.patientName || "Relative").trim(),
-          phone: waTrimmed,
-          use_for_whatsapp: "Yes",
-          use_for_sms: "No",
-        });
-      }
 
       const updateForm = new FormData();
       updateForm.append("name", (reregFormData.patientName || "").trim());
@@ -1551,14 +1548,20 @@ function Register() {
       updateForm.append("address", (reregFormData.address || "").trim());
       updateForm.append("dob", formatDateStr(reregFormData.dob));
       updateForm.append("phone", (reregFormData.phone || "").trim());
+      updateForm.append("secondary_phone", /^\d{10}$/.test(secTrimmed) ? secTrimmed : "");
+      updateForm.append("whatsapp_no", /^\d{10}$/.test(waTrimmed) ? waTrimmed : "");
       updateForm.append("relative_address", (reregFormData.relativeaddress || "").trim());
       updateForm.append("relation_with_patient", reregFormData.relation_with_patient || "");
       updateForm.append("relative_contacts", JSON.stringify(cleanedReregContacts));
       if (reregImage instanceof File) {
         updateForm.append("profile_pic", reregImage);
       }
-      if (reregAdmissionFiles?.[0]?.file instanceof File) {
-        updateForm.append("admission_form_url", reregAdmissionFiles[0].file);
+      if (Array.isArray(reregAdmissionFiles) && reregAdmissionFiles.length > 0) {
+        reregAdmissionFiles.slice(0, 10).forEach((item) => {
+          if (item?.file instanceof File) {
+            updateForm.append("admission_form_url", item.file);
+          }
+        });
       }
 
       await fetch(
@@ -1783,6 +1786,35 @@ function Register() {
         (secContact ? secContact.phone : "") ||
         "";
 
+      // Extract stored admission form URLs array from backend response
+      const rawAdmissionUrls = user.admission_form_urls ?? user.admission_form_url ?? user.admission_form ?? [];
+      let storedAdmissionUrls = [];
+      if (Array.isArray(rawAdmissionUrls)) {
+        storedAdmissionUrls = rawAdmissionUrls.filter((u) => typeof u === "string" && u.trim());
+      } else if (typeof rawAdmissionUrls === "string" && rawAdmissionUrls.trim()) {
+        const trimmed = rawAdmissionUrls.trim();
+        if (trimmed.startsWith("[")) {
+          try {
+            const parsedArr = JSON.parse(trimmed);
+            if (Array.isArray(parsedArr)) {
+              storedAdmissionUrls = parsedArr.filter((u) => typeof u === "string" && u.trim());
+            }
+          } catch {
+            storedAdmissionUrls = [trimmed];
+          }
+        } else {
+          storedAdmissionUrls = [trimmed];
+        }
+      }
+
+      const matchedUserRow = (data || []).find((r) => String(r.id) === String(user.user_id || user.id));
+      const userDischargeStatus =
+        user.discharge_status !== undefined
+          ? Number(user.discharge_status)
+          : matchedUserRow?.discharge_status !== undefined
+          ? Number(matchedUserRow.discharge_status)
+          : 0;
+
       // Handle null/undefined safely and set editData
       setEditData({
         id: user.user_id || "",
@@ -1801,13 +1833,17 @@ function Register() {
         relation_with_patient: user.relation_with_patient || localExtra.relation_with_patient || "",
         relative_contacts: parsedRelativeContacts,
         ward_type_id: resolvedWardTypeId,
+        initial_ward_type_id: resolvedWardTypeId,
         ward_name: resolvedWardName || matchedWardOption?.ward_name || matchedWardOption?.name || "",
+        discharge_status: userDischargeStatus,
         is_role: Number(user.isRole) || 4,
         password: "",
         gender: user.gender || "Male",
         profile_pic_url: user.profile_pic || "",
         profile_pic_preview: "",
-        admission_form_url: user.admission_form_url || user.admission_form || "",
+        admission_form_url: storedAdmissionUrls[0] || "",
+        stored_admission_urls: storedAdmissionUrls,
+        remove_admission_form_urls: [],
         existing_admission_files: Array.isArray(localExtra.admission_files) ? localExtra.admission_files : [],
         admission_form_files: [],
       });
@@ -1874,23 +1910,26 @@ function Register() {
       .filter((c) => c.name && /^\d{10}$/.test(c.phone));
 
     const secEditTrimmed = (editData.secondary_phone || "").trim();
-    if (/^\d{10}$/.test(secEditTrimmed) && !cleanedEditContacts.some((c) => c.phone === secEditTrimmed)) {
-      cleanedEditContacts.push({
-        name: (editData.patientRelativeName || editData.name || "Secondary").trim(),
-        phone: secEditTrimmed,
-        use_for_whatsapp: secEditTrimmed === (effectiveEditWhatsAppNo || "").trim() ? "Yes" : "No",
-        use_for_sms: "No",
+    const waEditTrimmed = (effectiveEditWhatsAppNo || "").trim();
+
+    if (secEditTrimmed && !/^\d{10}$/.test(secEditTrimmed)) {
+      setIsLoading(false);
+      Swal.fire({
+        icon: "warning",
+        title: getTranslation("Invalid Secondary Phone / अमान्य द्वितीयक फ़ोन", lang),
+        text: getTranslation("Secondary phone number must be 10 digits (or leave blank to clear). / द्वितीयक फ़ोन नंबर 10 अंकों का होना चाहिए।", lang),
       });
+      return;
     }
 
-    const waEditTrimmed = (effectiveEditWhatsAppNo || "").trim();
-    if (/^\d{10}$/.test(waEditTrimmed) && !cleanedEditContacts.some((c) => c.phone === waEditTrimmed)) {
-      cleanedEditContacts.push({
-        name: (editData.patientRelativeName || editData.name || "Relative").trim(),
-        phone: waEditTrimmed,
-        use_for_whatsapp: "Yes",
-        use_for_sms: "No",
+    if (waEditTrimmed && !/^\d{10}$/.test(waEditTrimmed)) {
+      setIsLoading(false);
+      Swal.fire({
+        icon: "warning",
+        title: getTranslation("Invalid WhatsApp Number / अमान्य व्हाट्सएप नंबर", lang),
+        text: getTranslation("WhatsApp number must be 10 digits (or leave blank to clear). / व्हाट्सएप नंबर 10 अंकों का होना चाहिए।", lang),
       });
+      return;
     }
 
     const updatedData = new FormData();
@@ -1913,21 +1952,50 @@ function Register() {
     if (editData.phone) {
       updatedData.append("phone", (editData.phone || "").trim());
     }
+
+    // secondary_phone & whatsapp_no: 10 digits, or "" to clear
+    updatedData.append("secondary_phone", secEditTrimmed);
+    updatedData.append("whatsapp_no", waEditTrimmed);
+
     updatedData.append("relative_address", (editData.relativeaddress || "").trim());
     if (editData.relation_with_patient) {
       updatedData.append("relation_with_patient", editData.relation_with_patient);
     }
     updatedData.append("relative_contacts", JSON.stringify(cleanedEditContacts));
 
+    // Change Ward (only for non-discharged active IPD patients when ward_type_id is provided)
+    if (
+      editData.ward_type_id &&
+      Number(editData.discharge_status) !== 1 &&
+      String(editData.ward_type_id) !== String(editData.initial_ward_type_id || "")
+    ) {
+      updatedData.append("ward_type_id", editData.ward_type_id);
+      if (editData.ward_name) {
+        updatedData.append("ward_name", editData.ward_name);
+      }
+    }
+
+    // Remove chosen stored admission form URLs (also deleted from Cloudinary by backend)
+    if (Array.isArray(editData.remove_admission_form_urls) && editData.remove_admission_form_urls.length > 0) {
+      updatedData.append(
+        "remove_admission_form_urls",
+        JSON.stringify(editData.remove_admission_form_urls)
+      );
+    }
+
     if (editData.profile_pic instanceof File) {
       updatedData.append("profile_pic", editData.profile_pic);
     }
 
-    const primaryEditAdmissionFile =
-      editData.admission_form_files?.[0]?.file ||
-      (editData.admission_form_file instanceof File ? editData.admission_form_file : null);
-    if (primaryEditAdmissionFile) {
-      updatedData.append("admission_form_url", primaryEditAdmissionFile);
+    // Append all newly uploaded admission form files (repeat key admission_form_url for each file, max 10)
+    if (Array.isArray(editData.admission_form_files) && editData.admission_form_files.length > 0) {
+      editData.admission_form_files.slice(0, 10).forEach((item) => {
+        if (item?.file instanceof File) {
+          updatedData.append("admission_form_url", item.file);
+        }
+      });
+    } else if (editData.admission_form_file instanceof File) {
+      updatedData.append("admission_form_url", editData.admission_form_file);
     }
 
     console.log("User ID:", editData.id, typeof editData.id);
@@ -1947,21 +2015,39 @@ function Register() {
       );
 
       if (response.ok) {
+        const resJson = await response.json().catch(() => ({}));
+        const updatedUserObj = resJson?.data || {};
+        const returnedUrls = Array.isArray(updatedUserObj.admission_form_urls)
+          ? updatedUserObj.admission_form_urls
+          : Array.isArray(updatedUserObj.admission_form_url)
+          ? updatedUserObj.admission_form_url
+          : null;
+
         if (editData?.id) {
-          const mergedEditAdmissionFiles = [
-            ...(Array.isArray(editData.existing_admission_files) ? editData.existing_admission_files : []),
-            ...(Array.isArray(editData.admission_form_files)
-              ? editData.admission_form_files.map((f) => ({
-                  name: f.name,
-                  url: f.dataUrl || "",
-                  isPdf: !!f.isPdf,
-                }))
-              : []),
-          ];
+          const mergedEditAdmissionFiles = returnedUrls
+            ? returnedUrls.map((u, idx) => ({
+                name: `Admission_Form_${idx + 1}`,
+                url: u,
+                isPdf: String(u).toLowerCase().includes(".pdf"),
+              }))
+            : [
+                ...(editData.stored_admission_urls || []).map((u, idx) => ({
+                  name: `Admission_Form_${idx + 1}`,
+                  url: u,
+                  isPdf: String(u).toLowerCase().includes(".pdf"),
+                })),
+                ...(Array.isArray(editData.admission_form_files)
+                  ? editData.admission_form_files.map((f) => ({
+                      name: f.name,
+                      url: f.dataUrl || "",
+                      isPdf: !!f.isPdf,
+                    }))
+                  : []),
+              ];
 
           saveUserExtraMetadata(editData.id, editData.phone, {
-            ward_type_id: editData.ward_type_id,
-            ward_name: editData.ward_name,
+            ward_type_id: updatedUserObj.ward_type_id || editData.ward_type_id,
+            ward_name: updatedUserObj.ward_name || editData.ward_name,
             secondary_phone: secEditTrimmed,
             whatsapp_no: waEditTrimmed,
             isWhatsApp: !!editData.isWhatsApp,
@@ -1971,7 +2057,7 @@ function Register() {
             relative_address: (editData.relativeaddress || "").trim(),
             relation_with_patient: editData.relation_with_patient || "",
             relative_contacts: cleanedEditContacts,
-            ...(mergedEditAdmissionFiles.length > 0 ? { admission_files: mergedEditAdmissionFiles } : {}),
+            admission_files: mergedEditAdmissionFiles,
           });
 
           try {
@@ -1983,10 +2069,25 @@ function Register() {
             // ignore
           }
         }
+
+        const wardChangeInfo = updatedUserObj?.ward_change;
+        const wardSyncText =
+          wardChangeInfo?.changed && wardChangeInfo?.ward_name
+            ? `\nWard changed to ${wardChangeInfo.ward_name}${
+                wardChangeInfo.bill?.synced
+                  ? ` (Bill #${wardChangeInfo.bill.bill_no} synced — Payable: ₹${Number(
+                      wardChangeInfo.bill.total_payable_amount || 0
+                    ).toLocaleString("en-IN")})`
+                  : ""
+              }`
+            : "";
+
         // Show success SweetAlert
         Swal.fire({
           title: getTranslation("Good job!/अच्छा काम!",lang),
-          text: getTranslation("Patient Data Has Been Updated Successfully!/रोगी डेटा सफलतापूर्वक अद्यतन किया गया है!",lang),
+          text:
+            getTranslation("Patient Data Has Been Updated Successfully!/रोगी डेटा सफलतापूर्वक अद्यतन किया गया है!",lang) +
+            wardSyncText,
           icon: "success",
           confirmButtonText: getTranslation("OK/ठीक है",lang),
         }).then(() => {
@@ -2150,7 +2251,7 @@ function Register() {
           const relNameVal = user.relative_name || localExtra.relative_name || "";
           const phonesObj = collectAllPhones(user, localExtra);
 
-          if (!dobVal || !addrVal || !relNameVal) {
+          if (user.age === undefined && user.dob === undefined && user.address === undefined) {
             missingIds.push(user.user_id);
           }
 
@@ -2350,6 +2451,94 @@ function Register() {
     fetchWards();
   }, [branchId, fetchWards]);
 
+  // Helper: Clean, non-wrapping pill UI for Phone Numbers in Registration tables
+  const renderPhoneNumbersCell = (row) => {
+    const phones =
+      Array.isArray(row.allPhonesList) && row.allPhonesList.length > 0
+        ? row.allPhonesList
+        : row.phone
+        ? [{ number: row.phone, tag: "Primary" }]
+        : [];
+
+    if (phones.length === 0) {
+      return <span className="text-muted">N/A</span>;
+    }
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          gap: "4px",
+          padding: "6px 0",
+          width: "100%",
+          maxWidth: "215px",
+        }}
+      >
+        {phones.map((p, idx) => {
+          const isPrimary = idx === 0;
+          const tagLabel =
+            !isPrimary && p.tag
+              ? p.tag === "Secondary"
+                ? "Alt"
+                : p.tag === "WhatsApp"
+                ? "WA"
+                : p.tag
+              : "Primary";
+
+          return (
+            <div
+              key={idx}
+              title={p.tag ? `${p.number} (${p.tag})` : p.number}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: "6px",
+                width: "100%",
+                padding: isPrimary ? "3px 8px" : "2px 8px",
+                borderRadius: "6px",
+                backgroundColor: isPrimary ? "#f0fdf4" : "#f8fafc",
+                border: isPrimary ? "1px solid #bbf7d0" : "1px solid #e2e8f0",
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span
+                style={{
+                  fontSize: isPrimary ? "12.5px" : "12px",
+                  fontWeight: isPrimary ? 700 : 600,
+                  color: isPrimary ? "#166534" : "#334155",
+                  fontVariantNumeric: "tabular-nums",
+                  letterSpacing: "0.2px",
+                }}
+              >
+                {p.number}
+              </span>
+              <span
+                style={{
+                  fontSize: "10px",
+                  fontWeight: 600,
+                  color: isPrimary ? "#15803d" : "#64748b",
+                  backgroundColor: isPrimary ? "#dcfce7" : "#e2e8f0",
+                  padding: "1px 6px",
+                  borderRadius: "999px",
+                  maxWidth: "78px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  lineHeight: "1.3",
+                }}
+              >
+                {tagLabel}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   // ✅ Define table columns for Registered Patient List (GKS ID, Patient Name, Age, All Phone Numbers, Address, Action — Email removed)
   const tableColumns = [
     {
@@ -2372,25 +2561,12 @@ function Register() {
       width: "100px",
     },
     {
-      name: `${getTranslation("Phone Numbers (Primary / Secondary)/फ़ोन नंबर", lang)}`,
+      name: `${getTranslation("Phone Numbers/फ़ोन नंबर", lang)}`,
       selector: (row) => row.allPhonesText || row.phone || "N/A",
       sortable: true,
       center: true,
-      minWidth: "180px",
-      cell: (row) => (
-        <div className="d-flex flex-column align-items-center py-1" style={{ lineHeight: "1.35" }}>
-          {Array.isArray(row.allPhonesList) && row.allPhonesList.length > 0 ? (
-            row.allPhonesList.map((p, idx) => (
-              <span key={idx} className={idx === 0 ? "fw-semibold text-dark" : "text-muted small"}>
-                {p.number}
-                {idx > 0 && p.tag ? ` (${p.tag})` : ""}
-              </span>
-            ))
-          ) : (
-            <span>{row.phone || "N/A"}</span>
-          )}
-        </div>
-      ),
+      minWidth: "215px",
+      cell: (row) => renderPhoneNumbersCell(row),
     },
     {
       name: `${getTranslation("Address/पता", lang)}`,
@@ -2599,7 +2775,7 @@ function Register() {
             ? new Date(rawAdmitDate).toLocaleDateString()
             : matchedUser?.recent_admit_date || "N/A";
 
-          if (!dobVal || addrVal === "N/A" || relNameVal === "N/A") {
+          if (entry.age === undefined && entry.dob === undefined && entry.address === undefined) {
             if (uid && !missingIds.includes(uid)) missingIds.push(uid);
           }
 
@@ -2668,25 +2844,12 @@ function Register() {
       width: "95px",
     },
     {
-      name: `${getTranslation("Phone Numbers (Primary / Secondary)/फ़ोन नंबर", lang)}`,
+      name: `${getTranslation("Phone Numbers/फ़ोन नंबर", lang)}`,
       selector: (row) => row.allPhonesText || row.phone || "N/A",
       sortable: true,
       center: true,
-      minWidth: "175px",
-      cell: (row) => (
-        <div className="d-flex flex-column align-items-center py-1" style={{ lineHeight: "1.35" }}>
-          {Array.isArray(row.allPhonesList) && row.allPhonesList.length > 0 ? (
-            row.allPhonesList.map((p, idx) => (
-              <span key={idx} className={idx === 0 ? "fw-semibold text-dark" : "text-muted small"}>
-                {p.number}
-                {idx > 0 && p.tag ? ` (${p.tag})` : ""}
-              </span>
-            ))
-          ) : (
-            <span>{row.phone || "N/A"}</span>
-          )}
-        </div>
-      ),
+      minWidth: "215px",
+      cell: (row) => renderPhoneNumbersCell(row),
     },
     {
       name: `${getTranslation("Relative Name/रिश्तेदार का नाम", lang)}`,
@@ -2767,18 +2930,14 @@ function Register() {
 
     const filtered = data.filter((item) => {
       return (
-        // item.name?.toLowerCase().includes(value) ||
-        // item.email?.toLowerCase().includes(value) ||
-        // item.phone?.toString().includes(value) ||
-        // item.id?.toString().includes(value) ||
-        // item.gks_id?.toLowerCase().includes(value) // Only if gks_id is a string
-        item.name && normalize(item.name).includes(value.toLowerCase()) ||
-item.email && normalize(item.email).includes(value.toLowerCase()) ||
-item.phone && normalize(item.phone).includes(value) ||
-item.id && normalize(item.id).includes(value) ||
-item.gks_id && normalize(item.gks_id).includes(value.toLowerCase()) ||
-item.wardName && normalize(item.wardName).includes(value.toLowerCase()) ||
-item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase())
+        (item.name && normalize(item.name).includes(value.toLowerCase())) ||
+        (item.phone && normalize(item.phone).includes(value)) ||
+        (item.allPhonesText && normalize(item.allPhonesText).includes(value)) ||
+        (item.address && normalize(item.address).includes(value.toLowerCase())) ||
+        (item.relative_name && normalize(item.relative_name).includes(value.toLowerCase())) ||
+        (item.age && normalize(item.age).includes(value.toLowerCase())) ||
+        (item.id && normalize(item.id).includes(value)) ||
+        (item.gks_id && normalize(item.gks_id).includes(value.toLowerCase()))
       );
     });
 
@@ -2804,22 +2963,16 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
 
     const IPDfiltered = allIPDData.filter((item) => {
       return (
-        // item.name?.toLowerCase().includes(value) ||
-        // item.email?.toLowerCase().includes(value) ||
-        // item.phone?.toString().includes(value) ||
-        // item.id?.toString().includes(value) ||
-        // item.gks_id?.toLowerCase().includes(value) ||
-        // item.wardName?.toLowerCase().includes(value) ||
-        // item.dischargeDate?.toLowerCase().includes(value)
-
-
-        item.name && normalize(item.name).includes(value.toLowerCase()) ||
-item.email && normalize(item.email).includes(value.toLowerCase()) ||
-item.phone && normalize(item.phone).includes(value) ||
-item.id && normalize(item.id).includes(value) ||
-item.gks_id && normalize(item.gks_id).includes(value.toLowerCase()) ||
-item.wardName && normalize(item.wardName).includes(value.toLowerCase()) ||
-item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase())
+        (item.name && normalize(item.name).includes(value.toLowerCase())) ||
+        (item.phone && normalize(item.phone).includes(value)) ||
+        (item.allPhonesText && normalize(item.allPhonesText).includes(value)) ||
+        (item.relative_name && normalize(item.relative_name).includes(value.toLowerCase())) ||
+        (item.address && normalize(item.address).includes(value.toLowerCase())) ||
+        (item.age && normalize(item.age).includes(value.toLowerCase())) ||
+        (item.admitDate && normalize(item.admitDate).includes(value.toLowerCase())) ||
+        (item.id && normalize(item.id).includes(value)) ||
+        (item.gks_id && normalize(item.gks_id).includes(value.toLowerCase())) ||
+        (item.wardName && normalize(item.wardName).includes(value.toLowerCase()))
       );
     });
 
@@ -4137,9 +4290,19 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
 
                 {/* Edit Ward Details */}
                 <div className="col-12">
-                  <Label className="form-label fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
-                    <Translated text={wardDetails} />
-                  </Label>
+                  <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+                    <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+                      <Translated text={wardDetails} />
+                    </Label>
+                    {Number(editData.discharge_status) === 1 && (
+                      <span className="badge bg-warning text-dark" style={{ fontSize: "11.5px" }}>
+                        {getTranslation(
+                          "Patient is discharged — Ward cannot be changed on a discharged IPD entry (use Re-Admission) / डिस्चार्ज किए गए रोगी का वार्ड नहीं बदला जा सकता",
+                          lang
+                        )}
+                      </span>
+                    )}
+                  </div>
                   <div className="d-flex align-items-center flex-wrap gap-3 py-1" style={{ minHeight: "40px" }}>
                     {(wardList && wardList.length > 0 ? wardList : wardOptions).map((option) => {
                       const optId = option.ward_type_id || option.id;
@@ -4157,6 +4320,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                             name="edit-ward"
                             value={optName}
                             checked={Boolean(isChecked)}
+                            disabled={Number(editData.discharge_status) === 1}
                             onChange={() =>
                               setEditData((prev) => ({
                                 ...prev,
@@ -4169,7 +4333,7 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                           <Label
                             for={`edit-wards-${optId}`}
                             className="form-check-label ms-1"
-                            style={{ cursor: "pointer", fontSize: "14px" }}
+                            style={{ cursor: Number(editData.discharge_status) === 1 ? "not-allowed" : "pointer", fontSize: "14px" }}
                           >
                             {optName}
                             {(option.original_amount ?? option.price_rate ?? option.ward_amount) ? (
@@ -4315,23 +4479,15 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                   )}
                 </div>
 
-                {/* Admission Form Upload — Multiple JPG / JPEG / PDF + Camera */}
+                {/* Admission Form Upload — Multiple JPG / JPEG / PDF + Camera + Stored Files Delete (remove_admission_form_urls) */}
                 <div className="col-md-6">
                   <div className="d-flex justify-content-between align-items-center mb-1">
                     <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
                       {getTranslation("Update Admission Form (Multiple JPG / JPEG / PDF) / प्रवेश फॉर्म अपडेट करें", lang)}
                     </Label>
-                    {editData.admission_form_url && (
-                      <a
-                        href={editData.admission_form_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary text-decoration-none"
-                        style={{ fontSize: "12px", fontWeight: "500" }}
-                      >
-                        📄 {getTranslation("View Current File / वर्तमान फ़ाइल देखें", lang)}
-                      </a>
-                    )}
+                    <span className="text-muted" style={{ fontSize: "11px" }}>
+                      Max 10 Files (5MB each)
+                    </span>
                   </div>
                   <div className="position-relative" style={{ display: "flex", alignItems: "center" }}>
                     <Input
@@ -4348,11 +4504,25 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                           if (item) added.push(item);
                         }
                         if (added.length > 0) {
-                          setEditData((prev) => ({
-                            ...prev,
-                            admission_form_file: added[0].file,
-                            admission_form_files: [...(prev.admission_form_files || []), ...added],
-                          }));
+                          setEditData((prev) => {
+                            const storedCount = (prev.stored_admission_urls || []).length;
+                            const maxNewAllowed = Math.max(0, 10 - storedCount);
+                            let combinedNew = [...(prev.admission_form_files || []), ...added];
+                            if (combinedNew.length > maxNewAllowed) {
+                              toast.warning(
+                                getTranslation(
+                                  `A patient can have at most 10 admission form files (${storedCount} already stored). / अधिकतम 10 प्रवेश फ़ॉर्म फ़ाइलों की अनुमति है।`,
+                                  lang
+                                )
+                              );
+                              combinedNew = combinedNew.slice(0, maxNewAllowed);
+                            }
+                            return {
+                              ...prev,
+                              admission_form_file: combinedNew[0]?.file || null,
+                              admission_form_files: combinedNew,
+                            };
+                          });
                         }
                         e.target.value = "";
                       }}
@@ -4369,11 +4539,25 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                         if (!file) return;
                         const { item } = await processSingleAdmissionFile(file);
                         if (item) {
-                          setEditData((prev) => ({
-                            ...prev,
-                            admission_form_file: item.file,
-                            admission_form_files: [...(prev.admission_form_files || []), item],
-                          }));
+                          setEditData((prev) => {
+                            const storedCount = (prev.stored_admission_urls || []).length;
+                            const maxNewAllowed = Math.max(0, 10 - storedCount);
+                            let combinedNew = [...(prev.admission_form_files || []), item];
+                            if (combinedNew.length > maxNewAllowed) {
+                              toast.warning(
+                                getTranslation(
+                                  `A patient can have at most 10 admission form files (${storedCount} already stored).`,
+                                  lang
+                                )
+                              );
+                              combinedNew = combinedNew.slice(0, maxNewAllowed);
+                            }
+                            return {
+                              ...prev,
+                              admission_form_file: combinedNew[0]?.file || null,
+                              admission_form_files: combinedNew,
+                            };
+                          });
                         }
                         e.target.value = "";
                       }}
@@ -4404,6 +4588,56 @@ item.dischargeDate && normalize(item.dischargeDate).includes(value.toLowerCase()
                       </svg>
                     </label>
                   </div>
+
+                  {/* Stored Admission Form Files from Backend with View & Delete support */}
+                  {Array.isArray(editData.stored_admission_urls) && editData.stored_admission_urls.length > 0 && (
+                    <div className="mt-2">
+                      <small className="text-muted d-block mb-1" style={{ fontSize: "11px" }}>
+                        {getTranslation("Stored Files (Click ✕ to remove on save) / संग्रहीत फ़ाइलें:", lang)}
+                      </small>
+                      <div className="d-flex flex-wrap gap-1">
+                        {editData.stored_admission_urls.map((url, idx) => {
+                          const isPdf = String(url).toLowerCase().includes(".pdf");
+                          return (
+                            <span
+                              key={url}
+                              className="badge bg-white text-dark border d-inline-flex align-items-center gap-2 px-2 py-1"
+                              style={{ fontSize: "11.5px", fontWeight: "500", borderRadius: "6px" }}
+                            >
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-primary text-decoration-none d-inline-flex align-items-center gap-1"
+                              >
+                                {isPdf ? "📄" : "🖼️"} {getTranslation("Stored File", lang)} #{idx + 1} ↗
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setEditData((prev) => ({
+                                    ...prev,
+                                    stored_admission_urls: (prev.stored_admission_urls || []).filter((u) => u !== url),
+                                    remove_admission_form_urls: [
+                                      ...(prev.remove_admission_form_urls || []),
+                                      url,
+                                    ],
+                                  }))
+                                }
+                                className="btn btn-sm p-0 text-danger border-0 bg-transparent"
+                                style={{ fontSize: "12px", lineHeight: 1 }}
+                                title={getTranslation("Remove stored file / फ़ाइल हटाएं", lang)}
+                              >
+                                ✕
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Newly Selected Admission Form Files to Append */}
                   {Array.isArray(editData.admission_form_files) && editData.admission_form_files.length > 0 && (
                     <div className="d-flex flex-wrap gap-1 mt-2">
                       {editData.admission_form_files.map((f, idx) => (

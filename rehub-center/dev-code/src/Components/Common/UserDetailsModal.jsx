@@ -169,10 +169,14 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
       }
     }
 
-    // Collect all Admission Form files (supports single URL, JSON array of URLs, or multiple stored files)
+    // Collect all Admission Form files (supports array of URLs from backend admission_form_urls / admission_form_url, JSON array, or single URL)
     const admissionFilesList = [];
     const addFileItem = (urlOrObj, idx) => {
       if (!urlOrObj) return;
+      if (Array.isArray(urlOrObj)) {
+        urlOrObj.forEach((item, i) => addFileItem(item, i));
+        return;
+      }
       if (typeof urlOrObj === "string") {
         const trimmed = urlOrObj.trim();
         if (!trimmed) return;
@@ -190,7 +194,7 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
         const isPdf =
           trimmed.toLowerCase().includes(".pdf") ||
           trimmed.startsWith("data:application/pdf");
-        const defaultName = `Admission_Form_${idx + 1}.${isPdf ? "pdf" : "jpg"}`;
+        const defaultName = `Admission_Form_${admissionFilesList.length + 1}.${isPdf ? "pdf" : "jpg"}`;
         if (!admissionFilesList.some((f) => f.url === trimmed)) {
           admissionFilesList.push({
             name: defaultName,
@@ -205,9 +209,9 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
           urlOrObj.isPdf ||
           String(urlOrObj.type || "").includes("pdf") ||
           String(urlOrObj.name || u).toLowerCase().endsWith(".pdf");
-        if (!admissionFilesList.some((f) => f.url === u || (f.name && f.name === urlOrObj.name && u.startsWith("data:")))) {
+        if (!admissionFilesList.some((f) => f.url === u)) {
           admissionFilesList.push({
-            name: urlOrObj.name || `Admission_Form_${idx + 1}.${isPdf ? "pdf" : "jpg"}`,
+            name: urlOrObj.name || `Admission_Form_${admissionFilesList.length + 1}.${isPdf ? "pdf" : "jpg"}`,
             url: u,
             isPdf,
           });
@@ -215,14 +219,18 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
       }
     };
 
-    if (Array.isArray(userCopy.admission_form_urls)) {
-      userCopy.admission_form_urls.forEach((u, i) => addFileItem(u, i));
-    }
-    if (Array.isArray(localExtra.admission_files) && localExtra.admission_files.length > 0) {
-      localExtra.admission_files.forEach((f, i) => addFileItem(f, i));
+    if (userCopy.admission_form_urls) {
+      addFileItem(userCopy.admission_form_urls, 0);
     }
     if (userCopy.admission_form_url || userCopy.admission_form) {
       addFileItem(userCopy.admission_form_url || userCopy.admission_form, admissionFilesList.length);
+    }
+    if (
+      admissionFilesList.length === 0 &&
+      Array.isArray(localExtra.admission_files) &&
+      localExtra.admission_files.length > 0
+    ) {
+      localExtra.admission_files.forEach((f, i) => addFileItem(f, i));
     }
 
     userCopy.admission_files = admissionFilesList;
@@ -605,42 +613,51 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
                       selectedUser.admission_form_url ||
                       selectedUser.admission_form ||
                       (Array.isArray(selectedUser.admission_files) && selectedUser.admission_files.length > 0)) && (
-                      <Button
-                        color="primary"
-                        size="sm"
+                      <button
+                        type="button"
                         onClick={handleBulkDownloadAllFiles}
                         disabled={isBulkDownloading}
-                        className="d-inline-flex align-items-center gap-2 shadow-sm"
+                        className="d-inline-flex align-items-center gap-2"
                         style={{
                           borderRadius: "8px",
                           fontWeight: "600",
-                          padding: "8px 14px",
+                          fontSize: "13px",
+                          padding: "7px 14px",
+                          backgroundColor: "#24695c",
+                          border: "1px solid #24695c",
+                          color: "#ffffff",
+                          whiteSpace: "nowrap",
+                          cursor: isBulkDownloading ? "not-allowed" : "pointer",
+                          boxShadow: "0 2px 6px rgba(36, 105, 92, 0.18)",
                         }}
                       >
                         <i className="fa fa-download" />
-                        {isBulkDownloading
-                          ? getTranslation("Downloading... / डाउनलोड हो रहा है...", lang)
-                          : getTranslation("Bulk Download Files (Images & PDFs) / सभी फ़ाइलें डाउनलोड करें", lang)}
-                      </Button>
+                        <span>
+                          {isBulkDownloading
+                            ? getTranslation("Downloading... / डाउनलोड हो रहा है...", lang)
+                            : getTranslation("Download All Files / सभी फ़ाइलें डाउनलोड करें", lang)}
+                        </span>
+                      </button>
                     )}
-                    <Button
-                      color="secondary"
-                      outline
-                      size="sm"
+                    <button
+                      type="button"
                       onClick={handleClose}
-                      className="d-inline-flex align-items-center gap-1 shadow-sm px-3"
+                      className="d-inline-flex align-items-center gap-1"
                       style={{
                         borderRadius: "8px",
                         fontWeight: "600",
-                        padding: "8px 16px",
-                        borderColor: "#cbd5e1",
+                        fontSize: "13px",
+                        padding: "7px 14px",
+                        border: "1px solid #cbd5e1",
                         color: "#334155",
                         backgroundColor: "#ffffff",
+                        whiteSpace: "nowrap",
+                        cursor: "pointer",
                       }}
                     >
                       <i className="fa fa-times me-1 text-danger" />
                       {getTranslation("Close / बंद करें", lang)}
-                    </Button>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -729,22 +746,55 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
                         </div>
                       </div>
 
-                      <div className="col-12">
-                        <div className="d-flex align-items-center justify-content-between mb-2">
-                          <div className="text-muted" style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                            {getTranslation("Admission Form Documents (JPG / JPEG / PDF) / प्रवेश फॉर्म दस्तावेज़", lang)}
+                      <div className="col-12 mt-2 pt-3 border-top">
+                        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                          <div className="d-flex align-items-center gap-2">
+                            <span
+                              className="text-muted fw-semibold"
+                              style={{ fontSize: "11.5px", textTransform: "uppercase", letterSpacing: "0.5px" }}
+                            >
+                              {getTranslation("Admission Form Documents / प्रवेश फॉर्म दस्तावेज़", lang)}
+                            </span>
+                            {Array.isArray(selectedUser.admission_files) && selectedUser.admission_files.length > 0 && (
+                              <span
+                                style={{
+                                  fontSize: "11px",
+                                  fontWeight: "600",
+                                  backgroundColor: "#f1f5f9",
+                                  color: "#475569",
+                                  border: "1px solid #e2e8f0",
+                                  borderRadius: "999px",
+                                  padding: "1px 8px",
+                                }}
+                              >
+                                {selectedUser.admission_files.length} {selectedUser.admission_files.length === 1 ? "File" : "Files"}
+                              </span>
+                            )}
                           </div>
                           {Array.isArray(selectedUser.admission_files) && selectedUser.admission_files.length > 0 && (
-                            <Button
-                              color="primary"
-                              size="sm"
+                            <button
+                              type="button"
                               onClick={handleBulkDownloadAllFiles}
                               disabled={isBulkDownloading}
-                              style={{ fontSize: "11.5px", padding: "4px 10px", borderRadius: "6px" }}
+                              className="d-inline-flex align-items-center gap-1"
+                              style={{
+                                fontSize: "12px",
+                                fontWeight: "600",
+                                padding: "5px 12px",
+                                borderRadius: "6px",
+                                backgroundColor: "#ecfdf5",
+                                color: "#047857",
+                                border: "1px solid #a7f3d0",
+                                whiteSpace: "nowrap",
+                                cursor: isBulkDownloading ? "not-allowed" : "pointer",
+                                transition: "all 0.15s ease",
+                              }}
                             >
-                              <i className="fa fa-download me-1" />
-                              {getTranslation("Bulk Download All / सभी डाउनलोड करें", lang)} ({selectedUser.admission_files.length + (selectedUser.profile_pic ? 1 : 0)})
-                            </Button>
+                              <i className="fa fa-download" style={{ fontSize: "11px" }} />
+                              <span>
+                                {getTranslation("Bulk Download", lang)} ({selectedUser.admission_files.length + (selectedUser.profile_pic ? 1 : 0)})
+                              </span>
+                            </button>
                           )}
                         </div>
                         <div>
@@ -753,46 +803,98 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
                               {selectedUser.admission_files.map((fileItem, idx) => (
                                 <div
                                   key={idx}
-                                  className="d-flex align-items-center justify-content-between p-2 rounded border bg-light"
-                                  style={{ borderRadius: "8px" }}
+                                  className="d-flex align-items-center justify-content-between p-2 px-3"
+                                  style={{
+                                    borderRadius: "10px",
+                                    backgroundColor: "#ffffff",
+                                    border: "1px solid #e2e8f0",
+                                    boxShadow: "0 1px 2px rgba(15, 23, 42, 0.03)",
+                                  }}
                                 >
-                                  <div className="d-flex align-items-center gap-2 text-truncate">
+                                  <div className="d-flex align-items-center gap-2 text-truncate me-2">
                                     {!fileItem.isPdf && fileItem.url ? (
                                       <img
                                         src={fileItem.url}
                                         alt={fileItem.name}
                                         style={{
-                                          width: "34px",
-                                          height: "34px",
+                                          width: "36px",
+                                          height: "36px",
                                           objectFit: "cover",
-                                          borderRadius: "6px",
+                                          borderRadius: "8px",
                                           border: "1px solid #cbd5e1",
+                                          flexShrink: 0,
                                         }}
                                       />
                                     ) : (
-                                      <span style={{ fontSize: "18px" }}>📄</span>
+                                      <div
+                                        style={{
+                                          width: "36px",
+                                          height: "36px",
+                                          borderRadius: "8px",
+                                          backgroundColor: "#fef2f2",
+                                          border: "1px solid #fecaca",
+                                          color: "#dc2626",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          fontSize: "11px",
+                                          fontWeight: "700",
+                                          flexShrink: 0,
+                                        }}
+                                      >
+                                        PDF
+                                      </div>
                                     )}
-                                    <span className="fw-semibold text-dark text-truncate" style={{ fontSize: "13px", maxWidth: "210px" }}>
-                                      {fileItem.name || `Document_${idx + 1}`}
-                                    </span>
+                                    <div className="text-truncate">
+                                      <div
+                                        className="fw-semibold text-dark text-truncate"
+                                        style={{ fontSize: "13px", maxWidth: "200px", lineHeight: "1.25" }}
+                                      >
+                                        {fileItem.name || `Admission_Form_${idx + 1}`}
+                                      </div>
+                                      <div className="text-muted" style={{ fontSize: "11px" }}>
+                                        {fileItem.isPdf ? "PDF Document" : "JPG / JPEG Image"}
+                                      </div>
+                                    </div>
                                   </div>
                                   <div className="d-flex align-items-center gap-2 flex-shrink-0">
                                     <a
                                       href={fileItem.url}
                                       target="_blank"
                                       rel="noreferrer"
-                                      className="btn btn-outline-secondary btn-sm py-1 px-2"
-                                      style={{ fontSize: "11.5px", borderRadius: "6px" }}
+                                      className="text-decoration-none d-inline-flex align-items-center gap-1"
+                                      style={{
+                                        fontSize: "12px",
+                                        fontWeight: "600",
+                                        padding: "5px 10px",
+                                        borderRadius: "6px",
+                                        backgroundColor: "#f8fafc",
+                                        color: "#334155",
+                                        border: "1px solid #cbd5e1",
+                                        whiteSpace: "nowrap",
+                                      }}
                                     >
-                                      {getTranslation("View / देखें", lang)} ↗
+                                      <span>{getTranslation("View / देखें", lang)}</span>
+                                      <span style={{ fontSize: "11px" }}>↗</span>
                                     </a>
                                     <button
                                       type="button"
                                       onClick={() => triggerSingleFileDownload(fileItem.url, fileItem.name)}
-                                      className="btn btn-outline-success btn-sm py-1 px-2"
-                                      style={{ fontSize: "11.5px", borderRadius: "6px" }}
+                                      className="d-inline-flex align-items-center gap-1"
+                                      style={{
+                                        fontSize: "12px",
+                                        fontWeight: "600",
+                                        padding: "5px 10px",
+                                        borderRadius: "6px",
+                                        backgroundColor: "#24695c",
+                                        color: "#ffffff",
+                                        border: "1px solid #24695c",
+                                        whiteSpace: "nowrap",
+                                        cursor: "pointer",
+                                      }}
                                     >
-                                      ⬇ {getTranslation("Download", lang)}
+                                      <i className="fa fa-download" style={{ fontSize: "11px" }} />
+                                      <span>{getTranslation("Download", lang)}</span>
                                     </button>
                                   </div>
                                 </div>
