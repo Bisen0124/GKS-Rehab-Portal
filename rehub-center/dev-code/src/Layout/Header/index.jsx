@@ -1,18 +1,18 @@
-import React, { Fragment, useState, useEffect, useLayoutEffect } from 'react';
+import React, { Fragment, useState, useEffect, useLayoutEffect, useContext } from 'react';
 import { MoreHorizontal } from 'react-feather';
+import { useLocation } from 'react-router-dom';
 import Leftbar from './LeftBar';
 import Rightbar from './RightBar';
-import Searchbar from './Search';
 import { Row } from 'reactstrap';
-import { useContext } from 'react';
 import CustomizerContext from '../../_helper/Customizer';
+import LanguageSwitcher from '../../Components/LanguageSwitcher';
 
 
 
 const Header = () => {
     const [sidebartoogle, setSidebartoogle] = useState(true);
-    const { toggleIcon, toggleSidebarResponsive, setToggleIcon } = useContext(CustomizerContext);
-    const [toggle, setToggle] = useState(true);
+    const { toggleIcon, toggleSidebarResponsive, setToggleIcon, sidebarResponsive } = useContext(CustomizerContext);
+    const location = useLocation();
 
     function useWindowSize() {
         const [size, setSize] = useState([0, 0]);
@@ -23,6 +23,7 @@ const Header = () => {
                     setToggleIcon(true);
                 } else {
                     setToggleIcon(false);
+                    toggleSidebarResponsive(false);
                 }
             }
             window.addEventListener('resize', updateSize);
@@ -39,22 +40,34 @@ const Header = () => {
             setToggleIcon(true);
         } else {
             setToggleIcon(false);
+            toggleSidebarResponsive(false);
         }
     }, []);
 
-    const toggleResp = (value) => {
-        setToggle(value);
-        toggleSidebarResponsive(toggle);
+    useEffect(() => {
+        toggleSidebarResponsive(false);
+    }, [location.pathname]);
+
+    const toggleResp = () => {
+        toggleSidebarResponsive(!sidebarResponsive);
     };
     return (
         <Fragment>
             <div className={`page-main-header ${toggleIcon ? 'close_icon' : ''}`}>
-                <Row className="main-header-right m-0">
+                <Row className="main-header-right m-0 align-items-center">
                     <Leftbar sidebartoogle={sidebartoogle} setSidebartoogle={setSidebartoogle} />
                     {/* <Searchbar /> */}
                     <Rightbar />
-                    <div className="d-lg-none mobile-toggle pull-right w-auto" onClick={() => toggleResp(!toggle)}>
-                        <MoreHorizontal />
+                    <div className="d-flex d-lg-none align-items-center gap-2 ms-auto pe-2 mobile-header-actions w-auto">
+                        <LanguageSwitcher compact />
+                        <button
+                            type="button"
+                            className="mobile-toggle btn btn-sm p-1 d-inline-flex align-items-center justify-content-center border-0 bg-transparent"
+                            onClick={toggleResp}
+                            aria-label="Toggle Menu"
+                        >
+                            <MoreHorizontal size={20} />
+                        </button>
                     </div>
                 </Row>
             </div>

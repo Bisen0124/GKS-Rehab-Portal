@@ -33,6 +33,7 @@ import {
 } from "react-feather";
 
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import { useBranch } from "../../contexts/BranchContext";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
@@ -549,43 +550,23 @@ const DetoxParameters = () => {
 
                       {/* Actions: [e] Edit, [v] View, [d] Delete */}
                       <td style={{ textAlign: "center" }}>
-                        <div className="d-inline-flex align-items-center gap-1.5">
-                          {/* [e] Edit */}
-                          <Button
-                            color="light"
-                            size="sm"
-                            className="border p-1.5 text-primary shadow-sm"
-                            style={{ borderRadius: "6px" }}
-                            title={getTranslation("Edit Parameter / संपादित करें", lang)}
-                            onClick={() => openEditModal(param)}
-                          >
-                            <Edit2 size={14} />
-                          </Button>
-
-                          {/* [v] View */}
-                          <Button
-                            color="light"
-                            size="sm"
-                            className="border p-1.5 text-secondary shadow-sm"
-                            style={{ borderRadius: "6px" }}
+                        <ActionButtonsGroup>
+                          <TableActionButton
+                            type="view"
                             title={getTranslation("View Details / विवरण देखें", lang)}
                             onClick={() => openViewModal(param)}
-                          >
-                            <Eye size={14} />
-                          </Button>
-
-                          {/* [d] Delete */}
-                          <Button
-                            color="light"
-                            size="sm"
-                            className="border p-1.5 text-danger shadow-sm"
-                            style={{ borderRadius: "6px" }}
+                          />
+                          <TableActionButton
+                            type="edit"
+                            title={getTranslation("Edit Parameter / संपादित करें", lang)}
+                            onClick={() => openEditModal(param)}
+                          />
+                          <TableActionButton
+                            type="delete"
                             title={getTranslation("Delete Parameter / हटाएं", lang)}
                             onClick={() => handleDelete(param)}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
+                          />
+                        </ActionButtonsGroup>
                       </td>
                     </tr>
                   ))}

@@ -16,6 +16,7 @@ import {
 } from "reactstrap";
 import DatePicker from "react-datepicker";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
@@ -1642,42 +1643,24 @@ const Detoxification = () => {
       center: true,
       minWidth: "180px",
       cell: (row) => (
-        <div className="d-flex align-items-center justify-content-center gap-2">
-          <button
-            type="button"
-            className="btn btn-action-icon btn-action-neutral"
-            style={{
-              width: "32px",
-              height: "32px",
-              minWidth: "32px",
-              padding: "0",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              borderRadius: "7px",
-              backgroundColor: "#f8fafc",
-              border: "1px solid #e2e8f0",
-              color: "#475569",
-              cursor: "pointer",
-            }}
+        <ActionButtonsGroup>
+          <TableActionButton
+            type="view"
             onClick={() => handleViewUserDetails(row.id)}
             title={getTranslation("View Patient / देखना", lang)}
-          >
-            <Eye size={16} color="#475569" strokeWidth={2.2} />
-          </button>
+          />
 
           <Button
             color="primary"
             size="sm"
-            className="py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm"
-            style={{ borderRadius: "6px", fontSize: "12.5px" }}
+            className="d-inline-flex align-items-center gap-1 shadow-sm"
             onClick={() => handleOpenCreateForm(row.id)}
             title={getTranslation("Create Detox Assessment / विषहरण मूल्यांकन बनाएँ", lang)}
           >
             <Plus size={14} />
             <span>{getTranslation("Assess Detox", lang)}</span>
           </Button>
-        </div>
+        </ActionButtonsGroup>
       ),
     },
   ];
@@ -1850,74 +1833,23 @@ const Detoxification = () => {
         const detoxId = row.detox_id || row.id;
         const patientName = row.name || row.patient_name;
         return (
-          <div className="d-flex align-items-center justify-content-center gap-2">
-            <button
-              type="button"
-              className="btn btn-action-icon btn-action-view"
-              style={{
-                width: "32px",
-                height: "32px",
-                minWidth: "32px",
-                padding: "0",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "7px",
-                backgroundColor: "#f0fdf4",
-                border: "1px solid #bbf7d0",
-                color: "#166534",
-                cursor: "pointer",
-              }}
+          <ActionButtonsGroup>
+            <TableActionButton
+              type="view"
               title={getTranslation("View Assessment / देखना", lang)}
               onClick={() => handleOpenViewModal(detoxId)}
-            >
-              <Eye size={16} color="#166534" strokeWidth={2.2} />
-            </button>
-            <button
-              type="button"
-              className="btn btn-action-icon btn-action-edit"
-              style={{
-                width: "32px",
-                height: "32px",
-                minWidth: "32px",
-                padding: "0",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "7px",
-                backgroundColor: "#ecfdf5",
-                border: "1px solid #a7f3d0",
-                color: "#059669",
-                cursor: "pointer",
-              }}
+            />
+            <TableActionButton
+              type="edit"
               title={getTranslation("Edit Assessment / संपादित करें", lang)}
               onClick={() => handleOpenEditModal(detoxId)}
-            >
-              <Edit2 size={16} color="#059669" strokeWidth={2.2} />
-            </button>
-            <button
-              type="button"
-              className="btn btn-action-icon btn-action-delete"
-              style={{
-                width: "32px",
-                height: "32px",
-                minWidth: "32px",
-                padding: "0",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "7px",
-                backgroundColor: "#fef2f2",
-                border: "1px solid #fecaca",
-                color: "#dc2626",
-                cursor: "pointer",
-              }}
+            />
+            <TableActionButton
+              type="delete"
               title={getTranslation("Delete Assessment / हटाएं", lang)}
               onClick={() => handleDeleteAssessment(detoxId, patientName)}
-            >
-              <Trash2 size={16} color="#dc2626" strokeWidth={2.2} />
-            </button>
-          </div>
+            />
+          </ActionButtonsGroup>
         );
       },
     },

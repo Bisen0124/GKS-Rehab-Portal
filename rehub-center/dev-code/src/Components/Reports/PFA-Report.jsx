@@ -32,6 +32,7 @@ import {
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import DataTable from "react-data-table-component";
 import { Data } from "../UiKits/Spinners/SpinnerData";
 import { toast } from "react-toastify";
@@ -120,78 +121,13 @@ const GetPFAReports = () => {
       name: "View / Download Report",
       center: true,
       cell: (row) => (
-        <div className="d-flex gap-2">
-          <>
-            <span
-              onClick={() => viewPFAToggle(row.user_id)}
-              style={{ cursor: "pointer" }}
-              title="View / Download Report"
-            >
-              <svg
-                style={{ color: "#d56337" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-eye"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </span>
-            {/* <span
-              onClick={() => handleAllPFAEditData(row.user_id)}
-              style={{ cursor: "pointer", marginLeft: "10px" }}
-              title="Edit"
-            >
-            <svg
-                style={{ color: "green" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-edit"
-              >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </span> */}
-            {/* <span
-              onClick={() => handlePFADelete(row.id)}
-              style={{ cursor: "pointer", marginLeft: "10px" }}
-              title="Delete"
-            >
-              <svg
-                style={{ color: "red" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-trash-2"
-              >
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>
-            </span> */}
-          </>
-        </div>
+        <ActionButtonsGroup>
+          <TableActionButton
+            type="view"
+            onClick={() => viewPFAToggle(row.user_id)}
+            title="View / Download Report"
+          />
+        </ActionButtonsGroup>
       ),
     },
   ];
@@ -413,8 +349,12 @@ const GetPFAReports = () => {
             assessment_date: item.assessment?.date_of_assessment,
             age: item.assessment?.age,
             dependent_to: item.assessment?.dependent_to,
+            substance_use_frequency: item.assessment?.substance_use_frequency,
             substance_use_pattern: item.assessment?.substance_use_pattern,
             last_30_days_quantity: item.assessment?.last_30_days_quantity,
+            using_medicine:
+              item.health_metrics?.using_medicine ??
+              item.assessment?.using_medicine,
 
             medical_history: item.medical_history?.medical_history,
             blood_transfusion_history:
@@ -444,6 +384,16 @@ const GetPFAReports = () => {
             pulse_rate: item.health_metrics?.pulse_rate,
             blood_pressure: item.health_metrics?.blood_pressure,
             temperature: item.health_metrics?.temperature,
+            diabetes: item.health_metrics?.diabetes,
+            hiv: item.health_metrics?.hiv,
+            hcv:
+              item.health_metrics?.hcv || item.health_metrics?.hepatitis_c,
+            hbsag:
+              item.health_metrics?.hbsag || item.health_metrics?.hepatitis_b,
+            vdrl_syphilis:
+              item.health_metrics?.vdrl_syphilis ||
+              item.health_metrics?.vdrl ||
+              item.health_metrics?.syphilis,
             lymphadenopathy: item.health_metrics?.lymphadenopathy,
             nutritional_status: item.health_metrics?.nutritional_status,
             other_findings: item.health_metrics?.other_findings,
@@ -621,6 +571,16 @@ const GetPFAReports = () => {
                     </tr>
                     <tr>
                       <td colSpan="2" className="fw-semibold p-3">
+                        Substance Use Frequency / पदार्थ उपयोग आवृत्ति:
+                      </td>
+                      <td colSpan="2" className="p-3">
+                        <span colSpan="2" className="fw-normal">
+                          {selectedUser.substance_use_frequency || "—"}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan="2" className="fw-semibold p-3">
                         Substance Use Pattern / उपयोग का पैटर्न:
                       </td>
                       <td colSpan="2" className="p-3">
@@ -663,6 +623,42 @@ const GetPFAReports = () => {
                       {
                         label: "Temperature / तापमान",
                         value: selectedUser.temperature,
+                      },
+                      {
+                        label: "Diabetes / मधुमेह",
+                        value: selectedUser.diabetes,
+                      },
+                      {
+                        label: "HIV / एचआईवी",
+                        value:
+                          selectedUser.hiv === "Not Done" ||
+                          selectedUser.hiv === "Not Tested"
+                            ? "NA"
+                            : selectedUser.hiv,
+                      },
+                      {
+                        label: "Hepatitis C (HCV) / हेपेटाइटिस सी",
+                        value:
+                          selectedUser.hcv === "Not Done" ||
+                          selectedUser.hcv === "Not Tested"
+                            ? "NA"
+                            : selectedUser.hcv,
+                      },
+                      {
+                        label: "Hepatitis B (HBsAg) / हेपेटाइटिस बी",
+                        value:
+                          selectedUser.hbsag === "Not Done" ||
+                          selectedUser.hbsag === "Not Tested"
+                            ? "NA"
+                            : selectedUser.hbsag,
+                      },
+                      {
+                        label: "VDRL / Syphilis / वीडीआरएल / सिफलिस",
+                        value:
+                          selectedUser.vdrl_syphilis === "Not Done" ||
+                          selectedUser.vdrl_syphilis === "Not Tested"
+                            ? "NA"
+                            : selectedUser.vdrl_syphilis,
                       },
                       {
                         label: "Medical History / चिकित्सा इतिहास",
@@ -710,7 +706,7 @@ const GetPFAReports = () => {
                         value: selectedUser.jaundice,
                       },
                       {
-                        label: "Haematemesis / मलैना",
+                        label: "Haematemesis (Blood Vomiting) / खून की उल्टी",
                         value: selectedUser.haematemesis,
                       },
                       {
@@ -819,6 +815,14 @@ const GetPFAReports = () => {
                       </td>
                       <td colSpan="2" className="p-3">
                         {selectedUser.lymphadenopathy}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan="2" className="fw-semibold p-3">
+                        Using Medicine / उपयोग की जा रही दवा:
+                      </td>
+                      <td colSpan="2" className="p-3">
+                        {selectedUser.using_medicine || "—"}
                       </td>
                     </tr>
                     <tr>

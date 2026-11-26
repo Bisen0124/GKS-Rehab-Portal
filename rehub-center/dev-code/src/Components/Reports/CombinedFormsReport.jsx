@@ -21,6 +21,7 @@ import { getTranslation } from "../../utils/translator";
 import { Breadcrumbs } from "../../AbstractElements";
 import TableExportButtons from "../Common/TableExportButtons";
 import UserDetailsModal from "../Common/UserDetailsModal";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import { toast } from "react-toastify";
 
 const BASE_URL = "https://gks-yjdc.onrender.com";
@@ -687,30 +688,16 @@ const CombinedFormsReport = () => {
         width: "80px",
         ignoreExport: true,
         cell: (row) => (
-          <span
-            onClick={() => {
-              setSelectedUserId(row.user_id);
-              setViewUserModal(true);
-            }}
-            style={{ cursor: "pointer" }}
-            title={getTranslation("View Patient Profile/रोगी प्रोफाइल देखें", lang)}
-          >
-            <svg
-              style={{ color: "#d56337" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="19"
-              height="19"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </span>
+          <ActionButtonsGroup>
+            <TableActionButton
+              type="view"
+              onClick={() => {
+                setSelectedUserId(row.user_id);
+                setViewUserModal(true);
+              }}
+              title={getTranslation("View Patient Profile/रोगी प्रोफाइल देखें", lang)}
+            />
+          </ActionButtonsGroup>
         ),
       },
     ],

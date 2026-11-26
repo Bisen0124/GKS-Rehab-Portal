@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React, { Fragment, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 import { LI, UL, H6 } from '../../AbstractElements';
@@ -8,12 +8,20 @@ import { Label } from 'reactstrap';
 import Translated from '../../Components/Translated';
 import { useLang } from '../../contexts/LangContext';
 import { getTranslation } from '../../utils/translator';
+import CustomizerContext from '../../_helper/Customizer';
 
 const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
   const { lang } = useLang(); // get current language from context
+  const { setToggleIcon } = useContext(CustomizerContext);
   const { t } = useTranslation();
   const location = useLocation();
   const currentPath = (location.pathname || "").toLowerCase();
+
+  const closeMobileSidebar = () => {
+    if (window.innerWidth <= 991 && setToggleIcon) {
+      setToggleIcon(true);
+    }
+  };
 
   const isPathActive = (itemPath) => {
     if (!itemPath) return false;
@@ -66,7 +74,7 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
     <Fragment>
       <UL attrUL={{ className: 'nav-menu custom-scrollbar' }}>
         <LI attrLI={{ className: 'back-btn' }}>
-          <div className="mobile-back text-end"><span>Back</span><i className="fa fa-angle-right ps-2"></i></div>
+          <div className="mobile-back text-end" onClick={closeMobileSidebar}><span>{getTranslation("Back / वापस", lang)}</span><i className="fa fa-angle-right ps-2"></i></div>
         </LI>
 
         {MENUITEMS.map((Item, i) => (
@@ -103,7 +111,10 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                     to={menuItem.path}
                     id="nav-link"
                     className={`nav-link menu-title ${isMenuActive ? 'active' : ''}`}
-                    onClick={() => toggletNavActive(menuItem)}
+                    onClick={() => {
+                      toggletNavActive(menuItem);
+                      closeMobileSidebar();
+                    }}
                   >
                     {menuItem.icon !== undefined && <menuItem.icon />}
 
@@ -149,7 +160,10 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                             {childrenItem.type === 'link' && (
                               <Link
                                 to={childrenItem.path} className={`${isChildActive ? 'active' : ''}`}
-                                onClick={() => toggletNavActive(childrenItem)} >
+                                onClick={() => {
+                                  toggletNavActive(childrenItem);
+                                  closeMobileSidebar();
+                                }} >
                                 {t(getTranslation(childrenItem.title,lang))}
                               </Link>
                             )}
@@ -167,8 +181,10 @@ const SidebarMenuItems = ({ setMainMenu, sidebartoogle, setNavActive }) => {
                                         <Link
                                           to={childrenSubItem.path}
                                           className={`${childrenSubItem.active ? 'active' : ''}`}
-                                          onClick={() => toggletNavActive(
-                                            childrenSubItem)}>
+                                          onClick={() => {
+                                            toggletNavActive(childrenSubItem);
+                                            closeMobileSidebar();
+                                          }}>
                                           {t(childrenSubItem.title)}
                                         </Link>
                                       )}

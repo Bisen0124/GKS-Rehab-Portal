@@ -15,6 +15,7 @@ import {
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import DataTable from "react-data-table-component";
 import { toast } from "react-toastify";
 import Swal from "sweetalert2";
@@ -39,6 +40,7 @@ import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 import ModalActionButtons from "../Common/ModalActionButtons";
 import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
+import { pickCleanText } from "../../utils/unicodeHelper";
 
 const FirstExamination = () => {
   const { lang } = useLang();
@@ -209,6 +211,134 @@ const FirstExamination = () => {
     return getLatestAssessment(result);
   };
 
+  const loadLocalUserExtra = (userId, phone = "") => {
+    try {
+      const cleanPhone = String(phone || "").trim();
+      const byId = userId ? localStorage.getItem(`gks_user_extra_${userId}`) : null;
+      const byPhone = cleanPhone
+        ? localStorage.getItem(`gks_user_extra_phone_${cleanPhone}`)
+        : null;
+      const parsedId = byId ? JSON.parse(byId) : {};
+      const parsedPhone = byPhone ? JSON.parse(byPhone) : {};
+      return { ...parsedPhone, ...parsedId };
+    } catch {
+      return {};
+    }
+  };
+
+  const loadLocalPFAScreening = (userId, pfaId = null) => {
+    try {
+      const byPfa = pfaId ? localStorage.getItem(`gks_pfa_screening_pfa_${pfaId}`) : null;
+      const byUser = userId ? localStorage.getItem(`gks_pfa_screening_user_${userId}`) : null;
+      const raw = byPfa || byUser;
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  };
+
+  const saveLocalFEExtra = (evalId, userId, extraObj = {}) => {
+    try {
+      const record = {
+        spo2_percentage: extraObj.spo2_percentage ?? "",
+        location: extraObj.location ?? "",
+        patient_type: extraObj.patient_type ?? extraObj.addiction ?? "",
+        addiction: extraObj.addiction ?? extraObj.patient_type ?? "",
+        other_findings: extraObj.other_findings ?? "",
+        using_medicine: extraObj.using_medicine ?? "",
+        updatedAt: Date.now(),
+      };
+      if (evalId) {
+        localStorage.setItem(`gks_fe_extra_eval_${evalId}`, JSON.stringify(record));
+      }
+      if (userId) {
+        localStorage.setItem(`gks_fe_extra_user_${userId}`, JSON.stringify(record));
+      }
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const loadLocalFEExtra = (evalId, userId = null) => {
+    try {
+      const byEval = evalId ? localStorage.getItem(`gks_fe_extra_eval_${evalId}`) : null;
+      const byUser = userId ? localStorage.getItem(`gks_fe_extra_user_${userId}`) : null;
+      const parsedEval = byEval ? JSON.parse(byEval) : {};
+      const parsedUser = byUser ? JSON.parse(byUser) : {};
+      return { ...parsedUser, ...parsedEval };
+    } catch {
+      return {};
+    }
+  };
+
+  const fetchRegisteredUserDetails = async (userId, token, branchId) => {
+    if (!isValidValue(userId)) return null;
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    };
+    try {
+      let res = await fetch(
+        `https://gks-yjdc.onrender.com/api/users/${encodeURIComponent(
+          userId,
+        )}?branch_id=${branchId}`,
+        { method: "GET", headers },
+      );
+      let json = await res.json().catch(() => null);
+      let userObj = Array.isArray(json?.data) ? json.data[0] : json?.data || json;
+      if (!res.ok || !userObj || (typeof userObj === "object" && !userObj.name && !userObj.address && !userObj.user_id && !userObj.id)) {
+        const fallbackRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/users/${encodeURIComponent(userId)}`,
+          { method: "GET", headers },
+        );
+        if (fallbackRes.ok) {
+          const fallbackJson = await fallbackRes.json().catch(() => null);
+          userObj = Array.isArray(fallbackJson?.data)
+            ? fallbackJson.data[0]
+            : fallbackJson?.data || fallbackJson;
+        }
+      }
+      return userObj && typeof userObj === "object" ? userObj : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const FE_EXTENDED_KEYS = ["other_findings", "using_medicine", "patient_type", "spo2"];
+
+  const submitFEWithFallback = async (url, method, token, payloadObj) => {
+    const doFetch = async (bodyObj) => {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(bodyObj),
+      });
+      const json = await res.json().catch(() => null);
+      return { response: res, result: json };
+    };
+
+    const firstTry = await doFetch(payloadObj);
+    if (firstTry.response.ok) return firstTry;
+
+    const errStr = JSON.stringify(firstTry.result || "").toLowerCase();
+    const mentionsExtended = FE_EXTENDED_KEYS.some((k) => errStr.includes(k));
+    if (
+      firstTry.response.status === 400 &&
+      (mentionsExtended || errStr.includes("not allowed") || errStr.includes("unknown"))
+    ) {
+      const stripped = { ...payloadObj };
+      FE_EXTENDED_KEYS.forEach((k) => {
+        delete stripped[k];
+      });
+      return doFetch(stripped);
+    }
+
+    return firstTry;
+  };
+
   // First Table Data: ONLY PFA Completed Data List
   const [data, setData] = useState([]);
   const [stillLoading, setstillLoading] = useState(true);
@@ -307,50 +437,28 @@ const FirstExamination = () => {
         const canCreateFE = Boolean(row.userId);
 
         return (
-          <div className="d-flex gap-2">
-            {/* View User Details Icon */}
-            <span
+          <ActionButtonsGroup>
+            <TableActionButton
+              type="view"
               onClick={() => handleViewUserDetails(row.userId || row.id)}
-              style={{ cursor: "pointer" }}
               title={getTranslation("View/देखना", lang)}
-            >
-              <svg
-                style={{ color: "#d56337" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-eye"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </span>
+            />
 
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
-              <span
+              <TableActionButton
+                type="edit"
                 onClick={() => handleFEprefill(row.recent_first_eval_id)}
-                style={{ cursor: "pointer" }}
                 title={getTranslation("Readmission FE/पुनः प्रवेश FE", lang)}
-              >
-                ✏️
-              </span>
+              />
             )}
 
             {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-              <span
+              <TableActionButton
+                type="create"
+                disabled={!canCreateFE}
                 onClick={() =>
                   canCreateFE ? createFEform(row.userId, row.pfaRaw) : null
                 }
-                style={{
-                  cursor: canCreateFE ? "pointer" : "not-allowed",
-                  opacity: canCreateFE ? 1 : 0.5,
-                }}
                 title={
                   !row.userId
                     ? getTranslation(
@@ -359,25 +467,9 @@ const FirstExamination = () => {
                       )
                     : getTranslation("Create FE/FE बनाएँ", lang)
                 }
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="12" y1="8" x2="12" y2="16"></line>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-              </span>
+              />
             )}
-          </div>
+          </ActionButtonsGroup>
         );
       },
     },
@@ -417,29 +509,49 @@ const FirstExamination = () => {
       })
       .then((res) => {
         const evalEntries = res.data || [];
-        const formatted = evalEntries.map((item) => ({
-          first_eval_id: item.first_eval_id,
-          user_id: item.user_id,
-          entry_id: item.entry_id,
-          visit_no: item.visit_no,
-          status: item.status,
-          date_of_assessment: item.date_of_assessment,
-          patient_name: item.patient_name,
-          weight: item.weight,
-          pulse_rate: item.pulse_rate,
-          blood_pressure: item.blood_pressure,
-          spo2_percentage: item.spo2_percentage,
-          location: item.location,
-          addiction: item.addiction,
-          intoxicated_at_admission: item.intoxicated_at_admission,
-          name: item.name,
-          phone: item.phone,
-          email: item.email,
-          gks_id: item.gks_id,
-          dob: item.dob,
-          gender: item.gender,
-          age: item.age,
-        }));
+        const formatted = evalEntries.map((item) => {
+          const localExtra = loadLocalFEExtra(item.first_eval_id, item.user_id);
+          return {
+            first_eval_id: item.first_eval_id,
+            user_id: item.user_id,
+            entry_id: item.entry_id,
+            visit_no: item.visit_no,
+            status: item.status,
+            date_of_assessment: item.date_of_assessment,
+            patient_name: item.patient_name,
+            weight: item.weight,
+            pulse_rate: item.pulse_rate,
+            blood_pressure: item.blood_pressure,
+            spo2_percentage: pickValue(
+              item.spo2_percentage,
+              item.spo2,
+              localExtra.spo2_percentage,
+            ),
+            location: pickValue(item.location, localExtra.location),
+            addiction: pickValue(
+              item.patient_type,
+              item.addiction,
+              localExtra.patient_type,
+              localExtra.addiction,
+            ),
+            other_findings: pickValue(
+              item.other_findings,
+              localExtra.other_findings,
+            ),
+            using_medicine: pickValue(
+              item.using_medicine,
+              localExtra.using_medicine,
+            ),
+            intoxicated_at_admission: item.intoxicated_at_admission,
+            name: item.name,
+            phone: item.phone,
+            email: item.email,
+            gks_id: item.gks_id,
+            dob: item.dob,
+            gender: item.gender,
+            age: item.age,
+          };
+        });
 
         setfdaData(formatted);
         setFilteredDataone(formatted);
@@ -485,50 +597,18 @@ const FirstExamination = () => {
       name: getTranslation("Action/क्रिया", lang),
       center: true,
       cell: (row) => (
-        <div className="d-flex gap-2">
-          <span
+        <ActionButtonsGroup>
+          <TableActionButton
+            type="view"
             onClick={() => viewFEFormData(row.first_eval_id)}
-            style={{ cursor: "pointer" }}
             title={getTranslation("View/देखना", lang)}
-          >
-            <svg
-              style={{ color: "#d56337" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </span>
-          <span
+          />
+          <TableActionButton
+            type="edit"
             onClick={() => handleFEindividualEdit(row.first_eval_id)}
-            style={{ cursor: "pointer", marginLeft: "10px" }}
             title={getTranslation("Edit/संपादन करना", lang)}
-          >
-            <svg
-              style={{ color: "green" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-          </span>
-        </div>
+          />
+        </ActionButtonsGroup>
       ),
     },
   ];
@@ -543,6 +623,8 @@ const FirstExamination = () => {
     spo2_percentage: "",
     location: "",
     addiction: "",
+    using_medicine: "",
+    other_findings: "",
     intoxicated_at_admission: "No",
   };
 
@@ -571,32 +653,106 @@ const FirstExamination = () => {
 
   const [isFEModalOpen, setIsFEModalOpen] = useState(false);
 
-  // Auto-fill helper: maps a raw PFA assessment object (whichever field
-  // variant it comes in as) onto the FE create-form state.
-  const applyPFAAutoFill = (pfa) => {
-    const patientName = getPFAName(pfa);
+  // Auto-fill helper: maps PFA assessment + Register user details onto the FE create-form state.
+  const applyPFAAutoFill = (pfa = {}, userDetails = null, draftData = null) => {
+    const resolvedUserId =
+      getPFAUserId(pfa) ||
+      userDetails?.user_id ||
+      userDetails?.id ||
+      currentFEUserId;
+    const resolvedPfaId = pickValue(pfa?.pfa_id, pfa?.id);
+    const localUserExtra = loadLocalUserExtra(
+      resolvedUserId,
+      userDetails?.phone || pfa?.phone,
+    );
+    const localPfaExtra = loadLocalPFAScreening(resolvedUserId, resolvedPfaId);
+
+    const patientName = pickValue(
+      getPFAName(pfa),
+      pickCleanText(userDetails?.name, localUserExtra?.name),
+    );
+    const weightVal = pickValue(pfa?.weight, pfa?.health_metrics?.weight, "");
+    const pulseVal = pickValue(
+      pfa?.pulse_rate,
+      pfa?.health_metrics?.pulse_rate,
+      "",
+    );
+    const bpVal = pickValue(
+      pfa?.blood_pressure,
+      pfa?.health_metrics?.blood_pressure,
+      "",
+    );
+    const spo2Val = pickValue(
+      pfa?.spo2,
+      pfa?.spo2_percentage,
+      pfa?.health_metrics?.spo2,
+      pfa?.health_metrics?.spo2_percentage,
+      pfa?.vitals?.spo2,
+      "",
+    );
+    const addressVal = pickValue(
+      pickCleanText(userDetails?.address, localUserExtra?.address),
+      pfa?.address,
+      pfa?.user?.address,
+      pfa?.location,
+      "",
+    );
+    const patientTypeVal = pickValue(
+      pickCleanText(userDetails?.patient_type, localUserExtra?.patient_type),
+      pfa?.patient_type,
+      pfa?.user?.patient_type,
+      "",
+    );
+    const usingMedicineVal = pickValue(
+      pfa?.using_medicine,
+      pfa?.health_metrics?.using_medicine,
+      pfa?.assessment?.using_medicine,
+      localPfaExtra?.using_medicine,
+      "",
+    );
+    const otherFindingsVal = pickValue(
+      pfa?.other_findings,
+      pfa?.health_metrics?.other_findings,
+      pfa?.assessment?.other_findings,
+      "",
+    );
 
     setSelectedUser({
-      ...pfa,
-      user_id: getPFAUserId(pfa),
+      ...(userDetails || {}),
+      ...(pfa || {}),
+      user_id: resolvedUserId,
       name: patientName,
       patient_name: patientName,
-      gks_id: getPFAGksId(pfa),
+      gks_id: pickValue(getPFAGksId(pfa), userDetails?.gks_id),
+      dob: pickValue(pfa?.dob, userDetails?.dob, localUserExtra?.dob),
+      gender: pickValue(pfa?.gender, userDetails?.gender),
+      date_of_admission: pickValue(
+        pfa?.date_of_admission,
+        pfa?.admit_date,
+        userDetails?.date_of_admission,
+        localUserExtra?.date_of_admission,
+      ),
     });
-    setFormData((prev) => ({
-      ...prev,
-      dateOfAssessment: new Date(),
-      patient_name: patientName || "",
-      weight: pfa?.weight ?? "",
-      pulse_rate: pfa?.pulse_rate ?? "",
-      blood_pressure: pfa?.blood_pressure ?? "",
-      spo2_percentage: pfa?.spo2_percentage ?? "",
-      location: "",
-      addiction: "",
-    }));
+
+    setFormData({
+      dateOfAssessment: draftData?.dateOfAssessment
+        ? safeDate(draftData.dateOfAssessment)
+        : new Date(),
+      patient_name: pickValue(draftData?.patient_name, patientName),
+      weight: pickValue(draftData?.weight, weightVal),
+      pulse_rate: pickValue(draftData?.pulse_rate, pulseVal),
+      blood_pressure: pickValue(draftData?.blood_pressure, bpVal),
+      spo2_percentage: pickValue(draftData?.spo2_percentage, spo2Val),
+      location: pickValue(draftData?.location, addressVal),
+      addiction: pickValue(draftData?.addiction, patientTypeVal),
+      using_medicine: pickValue(draftData?.using_medicine, usingMedicineVal),
+      other_findings: pickValue(draftData?.other_findings, otherFindingsVal),
+      intoxicated_at_admission:
+        draftData?.intoxicated_at_admission === "Yes" ? "Yes" : "No",
+    });
   };
 
-  // Auto fill FE form using PFA assessment data
+  // Auto fill FE form using PFA assessment + Register patient data
   const createFEform = async (userId = null, pfaDataRow = null) => {
     if (typeof userId === "object" && userId !== null) {
       pfaDataRow = userId.pfaRaw || userId;
@@ -614,10 +770,12 @@ const FirstExamination = () => {
     }
 
     const saved = loadDraft("first_examination", userId);
-    if (saved && saved.data) {
-      setFormData(saved.data);
+    const savedDraft = saved && saved.data ? saved.data : null;
+    if (savedDraft) {
+      setFormData(savedDraft);
       setDraftTimestamp(saved.savedAt);
     } else {
+      setFormData(initialFEFormData);
       setDraftTimestamp(null);
     }
 
@@ -628,26 +786,20 @@ const FirstExamination = () => {
     setIsLoading(true);
 
     try {
-      const latestPFA =
-        (await fetchLatestPFAAssessment(userId, token, branch_id)) ||
-        pfaDataRow;
+      const [latestPFARes, userDetails] = await Promise.all([
+        fetchLatestPFAAssessment(userId, token, branch_id).catch(() => null),
+        fetchRegisteredUserDetails(userId, token, branch_id).catch(() => null),
+      ]);
 
-      if (!latestPFA) {
-        console.warn(
-          "No PFA assessment data found to auto-fill FE form for user",
-          userId,
-        );
-        return;
-      }
+      const mergedPFA = {
+        ...(pfaDataRow || {}),
+        ...(latestPFARes || {}),
+      };
 
-      applyPFAAutoFill(latestPFA);
+      applyPFAAutoFill(mergedPFA, userDetails, savedDraft);
     } catch (error) {
-      console.error("Error fetching PFA details for FE create form:", error);
-      // Fallback: use whatever row data we already have rather than leaving
-      // the form completely blank.
-      if (pfaDataRow) {
-        applyPFAAutoFill(pfaDataRow);
-      }
+      console.error("Error fetching PFA/user details for FE create form:", error);
+      applyPFAAutoFill(pfaDataRow || {}, null, savedDraft);
     } finally {
       setIsLoading(false);
     }
@@ -681,7 +833,7 @@ const FirstExamination = () => {
         value: formData.spo2_percentage,
       },
       {
-        label: getTranslation("Location / स्थान", lang),
+        label: getTranslation("Address / पता", lang),
         value: formData.location,
       },
     ];
@@ -692,18 +844,28 @@ const FirstExamination = () => {
 
     setIsLoading(true);
 
+    const parsedSpo2 = Math.max(parseInt(formData.spo2_percentage, 10) || 0, 70);
+    const trimmedPatientType = formData.addiction?.trim() || "";
+    const trimmedAddress = formData.location?.trim() || "";
+    const trimmedUsingMed = formData.using_medicine?.trim() || "";
+    const trimmedOtherFindings = formData.other_findings?.trim() || "";
+
     const payload = {
-      user_id: getPFAUserId(selectedUser),
+      user_id: getPFAUserId(selectedUser) || currentFEUserId,
       date_of_assessment: formData.dateOfAssessment
         ? new Date(formData.dateOfAssessment).toISOString().split("T")[0]
         : null,
       patient_name: formData.patient_name?.trim() || null,
       weight: parseFloat(formData.weight) || 0,
-      pulse_rate: Math.max(parseInt(formData.pulse_rate) || 0, 30),
+      pulse_rate: Math.max(parseInt(formData.pulse_rate, 10) || 0, 30),
       blood_pressure: formData.blood_pressure?.trim() || null,
-      spo2_percentage: Math.max(parseInt(formData.spo2_percentage) || 0, 70),
-      location: formData.location?.trim() || null,
-      addiction: formData.addiction?.trim() || null,
+      spo2_percentage: parsedSpo2,
+      spo2: parsedSpo2,
+      location: trimmedAddress || null,
+      addiction: trimmedPatientType || null,
+      patient_type: trimmedPatientType || null,
+      using_medicine: trimmedUsingMed || "",
+      other_findings: trimmedOtherFindings || "",
       intoxicated_at_admission:
         formData.intoxicated_at_admission === "Yes" ? "Yes" : "No",
     };
@@ -712,19 +874,12 @@ const FirstExamination = () => {
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch;
 
-      const response = await fetch(
+      const { response, result } = await submitFEWithFallback(
         `https://gks-yjdc.onrender.com/api/first-evaluation/create-assessment?branch_id=${branch_id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify(payload),
-        },
+        "POST",
+        token,
+        payload,
       );
-
-      const result = await response.json().catch(() => null);
 
       if (!response.ok) {
         setIsLoading(false);
@@ -732,8 +887,15 @@ const FirstExamination = () => {
         return;
       }
 
-      setIsLoading(false);
       const userTargetId = getPFAUserId(selectedUser) || currentFEUserId;
+      const createdEvalId =
+        result?.data?.first_eval_id ||
+        result?.data?.insertId ||
+        result?.first_eval_id ||
+        null;
+      saveLocalFEExtra(createdEvalId, userTargetId, payload);
+
+      setIsLoading(false);
       clearDraft("first_examination", userTargetId);
       setDraftTimestamp(null);
 
@@ -769,7 +931,7 @@ const FirstExamination = () => {
   const viewFEFormData = async (FEID) => {
     setViewFEModal(true);
     if (typeof FEID === "object" && FEID !== null) {
-      FEID = FEID.first_evaluation_id || FEID.intake_fe_id;
+      FEID = FEID.first_evaluation_id || FEID.first_eval_id || FEID.intake_fe_id;
     }
 
     if (!FEID) return;
@@ -796,8 +958,35 @@ const FirstExamination = () => {
       const fetchedData = data?.data || null;
 
       if (fetchedData) {
-        setViewFEData(fetchedData);
-        setSelectedUser(fetchedData);
+        const localExtra = loadLocalFEExtra(
+          fetchedData.first_eval_id || FEID,
+          fetchedData.user_id,
+        );
+        const enriched = {
+          ...fetchedData,
+          spo2_percentage: pickValue(
+            fetchedData.spo2_percentage,
+            fetchedData.spo2,
+            localExtra.spo2_percentage,
+          ),
+          location: pickValue(fetchedData.location, localExtra.location),
+          addiction: pickValue(
+            fetchedData.patient_type,
+            fetchedData.addiction,
+            localExtra.patient_type,
+            localExtra.addiction,
+          ),
+          using_medicine: pickValue(
+            fetchedData.using_medicine,
+            localExtra.using_medicine,
+          ),
+          other_findings: pickValue(
+            fetchedData.other_findings,
+            localExtra.other_findings,
+          ),
+        };
+        setViewFEData(enriched);
+        setSelectedUser(enriched);
       }
     } catch (error) {
       console.error("Fetch error:", error);
@@ -837,6 +1026,23 @@ const FirstExamination = () => {
       const latestAssessment = data.data || null;
 
       if (latestAssessment) {
+        const localExtra = loadLocalFEExtra(
+          latestAssessment.first_eval_id || editFEID,
+          latestAssessment.user_id,
+        );
+        const [latestPFA, userDetails] = await Promise.all([
+          fetchLatestPFAAssessment(latestAssessment.user_id, token, branch_id).catch(() => null),
+          fetchRegisteredUserDetails(latestAssessment.user_id, token, branch_id).catch(() => null),
+        ]);
+        const localUserExtra = loadLocalUserExtra(
+          latestAssessment.user_id,
+          userDetails?.phone || latestAssessment.phone,
+        );
+        const localPfaExtra = loadLocalPFAScreening(
+          latestAssessment.user_id,
+          latestPFA?.pfa_id || latestPFA?.id,
+        );
+
         setSelectedUser(latestAssessment);
         setFEEditData({
           first_eval_id: latestAssessment.first_eval_id,
@@ -850,9 +1056,38 @@ const FirstExamination = () => {
           weight: latestAssessment.weight,
           pulse_rate: latestAssessment.pulse_rate,
           blood_pressure: latestAssessment.blood_pressure,
-          spo2_percentage: latestAssessment.spo2_percentage,
-          location: latestAssessment.location,
-          addiction: latestAssessment.addiction,
+          spo2_percentage: pickValue(
+            latestAssessment.spo2_percentage,
+            latestAssessment.spo2,
+            localExtra.spo2_percentage,
+            latestPFA?.spo2,
+            latestPFA?.health_metrics?.spo2,
+          ),
+          location: pickValue(
+            latestAssessment.location,
+            localExtra.location,
+            pickCleanText(userDetails?.address, localUserExtra?.address),
+          ),
+          addiction: pickValue(
+            latestAssessment.patient_type,
+            latestAssessment.addiction,
+            localExtra.patient_type,
+            localExtra.addiction,
+            pickCleanText(userDetails?.patient_type, localUserExtra?.patient_type),
+          ),
+          using_medicine: pickValue(
+            latestAssessment.using_medicine,
+            localExtra.using_medicine,
+            latestPFA?.using_medicine,
+            latestPFA?.health_metrics?.using_medicine,
+            localPfaExtra?.using_medicine,
+          ),
+          other_findings: pickValue(
+            latestAssessment.other_findings,
+            localExtra.other_findings,
+            latestPFA?.other_findings,
+            latestPFA?.health_metrics?.other_findings,
+          ),
           intoxicated_at_admission: latestAssessment.intoxicated_at_admission,
           status: latestAssessment.status,
           isActive: latestAssessment.isActive,
@@ -889,7 +1124,7 @@ const FirstExamination = () => {
         value: FEEditData?.spo2_percentage,
       },
       {
-        label: getTranslation("Location / स्थान", lang),
+        label: getTranslation("Address / पता", lang),
         value: FEEditData?.location,
       },
     ];
@@ -899,8 +1134,9 @@ const FirstExamination = () => {
     }
 
     setIsLoading(true);
+    const trimmedPatientType = String(FEEditData?.addiction || "").trim();
     const payload = {
-      user_id: selectedUser?.user_id,
+      user_id: selectedUser?.user_id || FEEditData?.user_id,
       entry_id: FEEditData?.entry_id,
       branch_id: FEEditData?.branch_id,
       visit_no: FEEditData?.visit_no,
@@ -911,8 +1147,12 @@ const FirstExamination = () => {
       pulse_rate: FEEditData?.pulse_rate || "",
       blood_pressure: FEEditData?.blood_pressure || "",
       spo2_percentage: FEEditData?.spo2_percentage || "",
-      location: FEEditData?.location || "",
-      addiction: FEEditData?.addiction || "",
+      spo2: FEEditData?.spo2_percentage || "",
+      location: String(FEEditData?.location || "").trim(),
+      addiction: trimmedPatientType,
+      patient_type: trimmedPatientType,
+      using_medicine: String(FEEditData?.using_medicine || "").trim(),
+      other_findings: String(FEEditData?.other_findings || "").trim(),
       intoxicated_at_admission: FEEditData?.intoxicated_at_admission || "",
       status: FEEditData?.status || "",
       isActive: FEEditData?.isActive || 1,
@@ -922,25 +1162,20 @@ const FirstExamination = () => {
       const branch_id = selectedBranch;
       const token = localStorage.getItem("Authorization");
 
-      const response = await fetch(
+      const { response, result } = await submitFEWithFallback(
         `https://gks-yjdc.onrender.com/api/first-evaluation/update-assessment/${FEEditData.first_eval_id}?branch_id=${branch_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify(payload),
-        },
+        "PUT",
+        token,
+        payload,
       );
-
-      const result = await response.json().catch(() => null);
 
       if (!response.ok) {
         setIsLoading(false);
         showApiErrorAlert(result, lang, getTranslation("FE Update Failed / एफई अद्यतन विफल", lang));
         return;
       }
+
+      saveLocalFEExtra(FEEditData.first_eval_id, payload.user_id, payload);
 
       setIsLoading(false);
       Swal.fire({
@@ -964,7 +1199,7 @@ const FirstExamination = () => {
     }
   };
 
-  // Pre-fill readmission modal with latest existing FE
+  // Pre-fill readmission modal with latest existing FE + PFA + Register data
   const [FEPrefillModal, setFEPrefillModal] = useState(false);
   const [FEPrefillData, setFEPrefillData] = useState(null);
 
@@ -993,17 +1228,72 @@ const FirstExamination = () => {
       const latestAssessment = data?.assessment || data?.data;
 
       if (latestAssessment) {
+        const localExtra = loadLocalFEExtra(
+          latestAssessment.first_eval_id || prefillFEID,
+          latestAssessment.user_id,
+        );
+        const [latestPFA, userDetails] = await Promise.all([
+          fetchLatestPFAAssessment(latestAssessment.user_id, token, branch_id).catch(() => null),
+          fetchRegisteredUserDetails(latestAssessment.user_id, token, branch_id).catch(() => null),
+        ]);
+        const localUserExtra = loadLocalUserExtra(
+          latestAssessment.user_id,
+          userDetails?.phone || latestAssessment.phone,
+        );
+        const localPfaExtra = loadLocalPFAScreening(
+          latestAssessment.user_id,
+          latestPFA?.pfa_id || latestPFA?.id,
+        );
+
         setFEPrefillData({
           user_id: latestAssessment.user_id,
           date_of_assessment: latestAssessment.date_of_assessment
             ? new Date(latestAssessment.date_of_assessment)
-            : null,
-          weight: latestAssessment.weight || "",
-          pulse_rate: latestAssessment.pulse_rate || "",
-          blood_pressure: latestAssessment.blood_pressure || "",
-          spo2_percentage: latestAssessment.spo2_percentage || "",
-          location: latestAssessment.location || "",
-          addiction: latestAssessment.addiction || "",
+            : new Date(),
+          weight: pickValue(latestPFA?.weight, latestAssessment.weight, ""),
+          pulse_rate: pickValue(latestPFA?.pulse_rate, latestAssessment.pulse_rate, ""),
+          blood_pressure: pickValue(
+            latestPFA?.blood_pressure,
+            latestAssessment.blood_pressure,
+            "",
+          ),
+          spo2_percentage: pickValue(
+            latestPFA?.spo2,
+            latestPFA?.health_metrics?.spo2,
+            latestAssessment.spo2_percentage,
+            latestAssessment.spo2,
+            localExtra.spo2_percentage,
+            "",
+          ),
+          location: pickValue(
+            pickCleanText(userDetails?.address, localUserExtra?.address),
+            latestAssessment.location,
+            localExtra.location,
+            "",
+          ),
+          addiction: pickValue(
+            pickCleanText(userDetails?.patient_type, localUserExtra?.patient_type),
+            latestAssessment.patient_type,
+            latestAssessment.addiction,
+            localExtra.patient_type,
+            localExtra.addiction,
+            "",
+          ),
+          using_medicine: pickValue(
+            latestPFA?.using_medicine,
+            latestPFA?.health_metrics?.using_medicine,
+            localPfaExtra?.using_medicine,
+            latestAssessment.using_medicine,
+            localExtra.using_medicine,
+            "",
+          ),
+          other_findings: pickValue(
+            latestPFA?.other_findings,
+            latestPFA?.health_metrics?.other_findings,
+            latestAssessment.other_findings,
+            localExtra.other_findings,
+            "",
+          ),
           intoxicated_at_admission:
             latestAssessment.intoxicated_at_admission || "No",
           patient_name:
@@ -1040,7 +1330,7 @@ const FirstExamination = () => {
         value: FEPrefillData?.spo2_percentage,
       },
       {
-        label: getTranslation("Location / स्थान", lang),
+        label: getTranslation("Address / पता", lang),
         value: FEPrefillData?.location,
       },
     ];
@@ -1051,6 +1341,11 @@ const FirstExamination = () => {
 
     setIsLoading(true);
 
+    const parsedSpo2 = Math.max(
+      parseInt(FEPrefillData?.spo2_percentage, 10) || 0,
+      70,
+    );
+    const trimmedPatientType = FEPrefillData?.addiction?.trim() || "";
     const payload = {
       user_id: FEPrefillData?.user_id,
       date_of_assessment: FEPrefillData?.date_of_assessment
@@ -1058,14 +1353,15 @@ const FirstExamination = () => {
         : null,
       patient_name: FEPrefillData?.patient_name?.trim() || null,
       weight: parseFloat(FEPrefillData?.weight) || 0,
-      pulse_rate: Math.max(parseInt(FEPrefillData?.pulse_rate) || 0, 30),
+      pulse_rate: Math.max(parseInt(FEPrefillData?.pulse_rate, 10) || 0, 30),
       blood_pressure: FEPrefillData?.blood_pressure?.trim() || null,
-      spo2_percentage: Math.max(
-        parseInt(FEPrefillData?.spo2_percentage) || 0,
-        70,
-      ),
+      spo2_percentage: parsedSpo2,
+      spo2: parsedSpo2,
       location: FEPrefillData?.location?.trim() || null,
-      addiction: FEPrefillData?.addiction?.trim() || null,
+      addiction: trimmedPatientType || null,
+      patient_type: trimmedPatientType || null,
+      using_medicine: FEPrefillData?.using_medicine?.trim() || "",
+      other_findings: FEPrefillData?.other_findings?.trim() || "",
       intoxicated_at_admission:
         FEPrefillData?.intoxicated_at_admission === "Yes" ? "Yes" : "No",
     };
@@ -1074,25 +1370,25 @@ const FirstExamination = () => {
       const token = localStorage.getItem("Authorization");
       const branch_id = selectedBranch;
 
-      const response = await fetch(
+      const { response, result } = await submitFEWithFallback(
         `https://gks-yjdc.onrender.com/api/first-evaluation/create-assessment?branch_id=${branch_id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify(payload),
-        },
+        "POST",
+        token,
+        payload,
       );
-
-      const result = await response.json().catch(() => null);
 
       if (!response.ok) {
         setIsLoading(false);
         showApiErrorAlert(result, lang, getTranslation("FE Readmission Failed / एफई पुनः प्रवेश विफल", lang));
         return;
       }
+
+      const createdEvalId =
+        result?.data?.first_eval_id ||
+        result?.data?.insertId ||
+        result?.first_eval_id ||
+        null;
+      saveLocalFEExtra(createdEvalId, FEPrefillData?.user_id, payload);
 
       setIsLoading(false);
       Swal.fire({
@@ -1355,8 +1651,11 @@ const FirstExamination = () => {
                   id="spo2"
                   name="spo2_percentage"
                   className="form-control"
+                  min="0"
+                  max="100"
+                  placeholder="e.g. 98"
                   value={formData.spo2_percentage}
-                  disabled
+                  onChange={handleChange}
                 />
               </div>
             </div>
@@ -1364,27 +1663,60 @@ const FirstExamination = () => {
             <div className="row mb-3">
               <div className="col-md-6">
                 <label htmlFor="location">
-                  {getTranslation("Location/जगह", lang)}
+                  {getTranslation("Address / पता", lang)}
                 </label>
                 <input
                   type="text"
                   id="location"
                   name="location"
                   className="form-control"
+                  placeholder={getTranslation("Enter patient address... / रोगी का पता दर्ज करें...", lang)}
                   value={formData.location}
                   onChange={handleChange}
                 />
               </div>
               <div className="col-md-6">
                 <label htmlFor="addiction">
-                  {getTranslation("Addiction/लत", lang)}
+                  {getTranslation("Patient Type / रोगी का प्रकार", lang)}
                 </label>
                 <input
                   type="text"
                   id="addiction"
                   name="addiction"
                   className="form-control"
+                  placeholder={getTranslation("Enter patient type... / रोगी का प्रकार दर्ज करें...", lang)}
                   value={formData.addiction}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <div className="row mb-3">
+              <div className="col-md-6">
+                <label htmlFor="using_medicine">
+                  {getTranslation("Using Medicine / उपयोग की जा रही दवा", lang)}
+                </label>
+                <input
+                  type="text"
+                  id="using_medicine"
+                  name="using_medicine"
+                  className="form-control"
+                  placeholder={getTranslation("Enter currently using medicine... / वर्तमान में उपयोग की जा रही दवा दर्ज करें...", lang)}
+                  value={formData.using_medicine}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="col-md-6">
+                <label htmlFor="other_findings">
+                  {getTranslation("Any Other Findings / अन्य निष्कर्ष", lang)}
+                </label>
+                <textarea
+                  id="other_findings"
+                  name="other_findings"
+                  rows="2"
+                  className="form-control"
+                  placeholder={getTranslation("Enter any other findings... / कोई अन्य निष्कर्ष दर्ज करें...", lang)}
+                  value={formData.other_findings}
                   onChange={handleChange}
                 />
               </div>
@@ -1492,7 +1824,7 @@ const FirstExamination = () => {
                     <div className="col-12 col-sm-6 col-lg-4">
                       <div className="p-2 px-3 rounded-3 bg-light border">
                         <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
-                          {getTranslation("Location/जगह", lang)}
+                          {getTranslation("Address / पता", lang)}
                         </div>
                         <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
                           📍 {viewFEData?.location || "-"}
@@ -1547,7 +1879,7 @@ const FirstExamination = () => {
                 </div>
               </div>
 
-              {/* Card 2: Addiction & Admission Status */}
+              {/* Card 2: Patient Type, Medications & Admission Status */}
               <div
                 className="card shadow-sm border-0 mb-4"
                 style={{
@@ -1564,7 +1896,7 @@ const FirstExamination = () => {
                   }}
                 >
                   <h6 className="fw-bold text-dark mb-0" style={{ fontSize: "15px" }}>
-                    ⚠️ {getTranslation("Addiction & Admission Status / लत एवं प्रवेश स्थिति", lang)}
+                    ⚠️ {getTranslation("Patient Type & Clinical Details / रोगी का प्रकार एवं नैदानिक विवरण", lang)}
                   </h6>
                 </div>
                 <div className="card-body p-3 p-md-4">
@@ -1572,7 +1904,7 @@ const FirstExamination = () => {
                     <div className="col-12 col-md-6">
                       <div className="p-2 px-3 rounded-3 bg-light border">
                         <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
-                          {getTranslation("Addiction/लत", lang)}
+                          {getTranslation("Patient Type / रोगी का प्रकार", lang)}
                         </div>
                         <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
                           {viewFEData?.addiction || "-"}
@@ -1590,6 +1922,28 @@ const FirstExamination = () => {
                         </div>
                         <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
                           {viewFEData?.intoxicated_at_admission || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Using Medicine / उपयोग की जा रही दवा", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          💊 {viewFEData?.using_medicine || "-"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-12 col-md-6">
+                      <div className="p-2 px-3 rounded-3 bg-light border">
+                        <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                          {getTranslation("Any Other Findings / अन्य निष्कर्ष", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                          {viewFEData?.other_findings || "-"}
                         </div>
                       </div>
                     </div>
@@ -1701,26 +2055,35 @@ const FirstExamination = () => {
                 />
               </div>
               <div className="col-md-3">
-                <label htmlFor="spo2">SpO2 (%)</label>
+                <label htmlFor="edit-spo2">SpO2 (%)</label>
                 <input
                   type="number"
-                  id="spo2"
+                  id="edit-spo2"
                   className="form-control"
+                  min="0"
+                  max="100"
+                  placeholder="e.g. 98"
                   value={FEEditData?.spo2_percentage || ""}
-                  disabled
+                  onChange={(e) =>
+                    setFEEditData((prev) => ({
+                      ...prev,
+                      spo2_percentage: e.target.value,
+                    }))
+                  }
                 />
               </div>
             </div>
 
             <div className="row mb-3">
               <div className="col-md-6">
-                <label htmlFor="location">
-                  {getTranslation("Location/जगह", lang)}
+                <label htmlFor="edit-location">
+                  {getTranslation("Address / पता", lang)}
                 </label>
                 <input
                   type="text"
-                  id="location"
+                  id="edit-location"
                   className="form-control"
+                  placeholder={getTranslation("Enter patient address... / रोगी का पता दर्ज करें...", lang)}
                   value={FEEditData?.location || ""}
                   onChange={(e) =>
                     setFEEditData((prev) => ({
@@ -1731,13 +2094,14 @@ const FirstExamination = () => {
                 />
               </div>
               <div className="col-md-6">
-                <label htmlFor="addiction">
-                  {getTranslation("Addiction/लत", lang)}
+                <label htmlFor="edit-addiction">
+                  {getTranslation("Patient Type / रोगी का प्रकार", lang)}
                 </label>
                 <input
                   type="text"
-                  id="addiction"
+                  id="edit-addiction"
                   className="form-control"
+                  placeholder={getTranslation("Enter patient type... / रोगी का प्रकार दर्ज करें...", lang)}
                   value={FEEditData?.addiction || ""}
                   onChange={(e) =>
                     setFEEditData((prev) => ({
@@ -1749,10 +2113,49 @@ const FirstExamination = () => {
               </div>
             </div>
 
+            <div className="row mb-3">
+              <div className="col-md-6">
+                <label htmlFor="edit-using-medicine">
+                  {getTranslation("Using Medicine / उपयोग की जा रही दवा", lang)}
+                </label>
+                <input
+                  type="text"
+                  id="edit-using-medicine"
+                  className="form-control"
+                  placeholder={getTranslation("Enter currently using medicine... / वर्तमान में उपयोग की जा रही दवा दर्ज करें...", lang)}
+                  value={FEEditData?.using_medicine || ""}
+                  onChange={(e) =>
+                    setFEEditData((prev) => ({
+                      ...prev,
+                      using_medicine: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="col-md-6">
+                <label htmlFor="edit-other-findings">
+                  {getTranslation("Any Other Findings / अन्य निष्कर्ष", lang)}
+                </label>
+                <textarea
+                  id="edit-other-findings"
+                  rows="2"
+                  className="form-control"
+                  placeholder={getTranslation("Enter any other findings... / कोई अन्य निष्कर्ष दर्ज करें...", lang)}
+                  value={FEEditData?.other_findings || ""}
+                  onChange={(e) =>
+                    setFEEditData((prev) => ({
+                      ...prev,
+                      other_findings: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
             <div className="form-check mb-3">
               <input
                 type="checkbox"
-                id="intoxicated"
+                id="edit-intoxicated"
                 className="form-check-input checkbox_animated"
                 checked={FEEditData?.intoxicated_at_admission === "Yes"}
                 onChange={(e) =>
@@ -1762,7 +2165,7 @@ const FirstExamination = () => {
                   }))
                 }
               />
-              <label className="form-check-label" htmlFor="intoxicated">
+              <label className="form-check-label" htmlFor="edit-intoxicated">
                 {getTranslation(
                   "Intoxicated at the time of admission/प्रवेश के समय नशे में",
                   lang,
@@ -1862,26 +2265,35 @@ const FirstExamination = () => {
                 />
               </div>
               <div className="col-md-3">
-                <label htmlFor="spo2">SpO2 (%)</label>
+                <label htmlFor="readmit-spo2">SpO2 (%)</label>
                 <input
                   type="number"
-                  id="spo2"
+                  id="readmit-spo2"
                   className="form-control"
+                  min="0"
+                  max="100"
+                  placeholder="e.g. 98"
                   value={FEPrefillData?.spo2_percentage || ""}
-                  disabled
+                  onChange={(e) =>
+                    setFEPrefillData((prev) => ({
+                      ...prev,
+                      spo2_percentage: e.target.value,
+                    }))
+                  }
                 />
               </div>
             </div>
 
             <div className="row mb-3">
               <div className="col-md-6">
-                <label htmlFor="location">
-                  {getTranslation("Location/जगह", lang)}
+                <label htmlFor="readmit-location">
+                  {getTranslation("Address / पता", lang)}
                 </label>
                 <input
                   type="text"
-                  id="location"
+                  id="readmit-location"
                   className="form-control"
+                  placeholder={getTranslation("Enter patient address... / रोगी का पता दर्ज करें...", lang)}
                   value={FEPrefillData?.location || ""}
                   onChange={(e) =>
                     setFEPrefillData((prev) => ({
@@ -1892,13 +2304,14 @@ const FirstExamination = () => {
                 />
               </div>
               <div className="col-md-6">
-                <label htmlFor="addiction">
-                  {getTranslation("Addiction/लत", lang)}
+                <label htmlFor="readmit-addiction">
+                  {getTranslation("Patient Type / रोगी का प्रकार", lang)}
                 </label>
                 <input
                   type="text"
-                  id="addiction"
+                  id="readmit-addiction"
                   className="form-control"
+                  placeholder={getTranslation("Enter patient type... / रोगी का प्रकार दर्ज करें...", lang)}
                   value={FEPrefillData?.addiction || ""}
                   onChange={(e) =>
                     setFEPrefillData((prev) => ({
@@ -1910,10 +2323,49 @@ const FirstExamination = () => {
               </div>
             </div>
 
+            <div className="row mb-3">
+              <div className="col-md-6">
+                <label htmlFor="readmit-using-medicine">
+                  {getTranslation("Using Medicine / उपयोग की जा रही दवा", lang)}
+                </label>
+                <input
+                  type="text"
+                  id="readmit-using-medicine"
+                  className="form-control"
+                  placeholder={getTranslation("Enter currently using medicine... / वर्तमान में उपयोग की जा रही दवा दर्ज करें...", lang)}
+                  value={FEPrefillData?.using_medicine || ""}
+                  onChange={(e) =>
+                    setFEPrefillData((prev) => ({
+                      ...prev,
+                      using_medicine: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="col-md-6">
+                <label htmlFor="readmit-other-findings">
+                  {getTranslation("Any Other Findings / अन्य निष्कर्ष", lang)}
+                </label>
+                <textarea
+                  id="readmit-other-findings"
+                  rows="2"
+                  className="form-control"
+                  placeholder={getTranslation("Enter any other findings... / कोई अन्य निष्कर्ष दर्ज करें...", lang)}
+                  value={FEPrefillData?.other_findings || ""}
+                  onChange={(e) =>
+                    setFEPrefillData((prev) => ({
+                      ...prev,
+                      other_findings: e.target.value,
+                    }))
+                  }
+                />
+              </div>
+            </div>
+
             <div className="form-check mb-3">
               <input
                 type="checkbox"
-                id="intoxicated"
+                id="readmit-intoxicated"
                 className="form-check-input checkbox_animated"
                 checked={FEPrefillData?.intoxicated_at_admission === "Yes"}
                 onChange={(e) =>
@@ -1923,7 +2375,7 @@ const FirstExamination = () => {
                   }))
                 }
               />
-              <label className="form-check-label" htmlFor="intoxicated">
+              <label className="form-check-label" htmlFor="readmit-intoxicated">
                 {getTranslation(
                   "Intoxicated at the time of admission/प्रवेश के समय नशे में",
                   lang,

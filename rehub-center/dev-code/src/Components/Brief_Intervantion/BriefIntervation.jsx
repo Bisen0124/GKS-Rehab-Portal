@@ -16,6 +16,7 @@ import {
 } from "reactstrap";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 import html2pdf from "html2pdf.js";
@@ -595,9 +596,9 @@ function BriefIntervation() {
       center: true,
       cell: (row) => (
         <Button
-          color="success"
+          color="primary"
           size="sm"
-          className="d-flex align-items-center gap-1"
+          className="d-inline-flex align-items-center gap-1 shadow-sm"
           onClick={() => createBIHandler(row)}
         >
           <i className="fa fa-plus-circle" />
@@ -654,55 +655,18 @@ function BriefIntervation() {
       name: getTranslation("Action/कार्रवाई", lang),
       center: true,
       cell: (row) => (
-        <div className="d-flex align-items-center justify-content-center">
-          {/* View */}
-          <span
+        <ActionButtonsGroup>
+          <TableActionButton
+            type="view"
             onClick={() => viewBIHandler(row)}
-            style={{ cursor: "pointer" }}
             title={getTranslation("View / देखना", lang)}
-          >
-            <svg
-              style={{ color: "#d56337" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-eye"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </span>
-
-          {/* Edit */}
-          <span
+          />
+          <TableActionButton
+            type="edit"
             onClick={() => editBIHandler(row)}
-            style={{ cursor: "pointer", marginLeft: "10px" }}
             title={getTranslation("Edit / संपादन", lang)}
-          >
-            <svg
-              style={{ color: "green" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-edit"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          </span>
-        </div>
+          />
+        </ActionButtonsGroup>
       ),
     },
   ];

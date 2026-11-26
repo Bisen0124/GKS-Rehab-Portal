@@ -9,6 +9,7 @@ import html2pdf from "html2pdf.js";
 import { printElementAsPdf } from "../../utils/pdfPrintHelper";
 import { toast } from "react-toastify";
 import ModalActionButtons from "./ModalActionButtons";
+import { pickCleanText } from "../../utils/unicodeHelper";
 
 const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onClose }) => {
   const handleClose = toggler || toggle || onClose || (() => {});
@@ -45,10 +46,19 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
     try {
       const byId = uid ? localStorage.getItem(`gks_user_extra_${uid}`) : null;
       const byPhone = cleanPhone ? localStorage.getItem(`gks_user_extra_phone_${cleanPhone}`) : null;
-      localExtra = JSON.parse(byId || byPhone || "{}");
+      const parsedId = byId ? JSON.parse(byId) : {};
+      const parsedPhone = byPhone ? JSON.parse(byPhone) : {};
+      localExtra = { ...parsedPhone, ...parsedId };
     } catch {
       localExtra = {};
     }
+
+    userCopy.name = pickCleanText(userCopy.name, localExtra.name) || userCopy.name || "";
+    userCopy.address = pickCleanText(userCopy.address, localExtra.address) || "";
+    userCopy.patient_type = pickCleanText(userCopy.patient_type, localExtra.patient_type) || "";
+    userCopy.relative_name = pickCleanText(userCopy.relative_name, localExtra.relative_name) || "";
+    userCopy.relative_address = pickCleanText(userCopy.relative_address, localExtra.relative_address) || "";
+    userCopy.relation_with_patient = pickCleanText(userCopy.relation_with_patient, localExtra.relation_with_patient) || "";
 
     // Parse relative_contacts
     let parsedContacts = [];
@@ -531,8 +541,8 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
                     borderLeft: "6px solid #24695c",
                   }}
                 >
-                  <div className="card-body p-4">
-                    <div className="d-flex flex-column flex-sm-row align-items-center gap-4">
+                  <div className="card-body p-3 p-md-4">
+                    <div className="d-flex flex-column flex-sm-row align-items-center gap-3 gap-md-4">
                       {profilePic ? (
                         <img
                           src={profilePic}
@@ -608,7 +618,7 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
                         </p>
                       </div>
 
-                  <div className="mt-2 mt-sm-0 d-flex align-items-center gap-2 flex-wrap">
+                  <div className="mt-2 mt-sm-0 d-flex align-items-center justify-content-center justify-content-sm-end gap-2 flex-wrap user-modal-banner-actions">
                     {(profilePic ||
                       selectedUser.admission_form_url ||
                       selectedUser.admission_form ||
@@ -670,7 +680,7 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
               {/* Personal Information Card */}
               <Col md="6">
                 <Card className="h-100 border-0 shadow-sm" style={{ borderRadius: "14px" }}>
-                  <CardBody className="p-4">
+                  <CardBody className="p-3 p-md-4">
                     <div className="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
                       <h5 className="mb-0 fw-bold text-dark d-flex align-items-center gap-2" style={{ fontSize: "15px" }}>
                         <span style={{ color: "#d56337" }}>👤</span>
@@ -713,7 +723,7 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
               {/* Admission & Ward Details Card */}
               <Col md="6">
                 <Card className="h-100 border-0 shadow-sm" style={{ borderRadius: "14px" }}>
-                  <CardBody className="p-4">
+                  <CardBody className="p-3 p-md-4">
                     <div className="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
                       <h5 className="mb-0 fw-bold text-dark d-flex align-items-center gap-2" style={{ fontSize: "15px" }}>
                         <span style={{ color: "#d56337" }}>🏥</span>
@@ -740,6 +750,29 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
                             <Badge color="info" className="text-white px-2 py-1" style={{ borderRadius: "6px" }}>
                               {selectedUser.ward_name}
                             </Badge>
+                          ) : (
+                            "—"
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="col-12">
+                        <div className="text-muted mb-1" style={{ fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                          {getTranslation("Patient Type / रोगी का प्रकार", lang)}
+                        </div>
+                        <div className="fw-semibold text-dark" style={{ fontSize: "14px" }}>
+                          {selectedUser.patient_type ? (
+                            <span
+                              className="d-inline-block px-2 py-1 rounded-2"
+                              style={{
+                                backgroundColor: "#ecfdf5",
+                                color: "#14532d",
+                                border: "1px solid #a7f3d0",
+                                fontSize: "13px",
+                              }}
+                            >
+                              {selectedUser.patient_type}
+                            </span>
                           ) : (
                             "—"
                           )}
@@ -803,7 +836,7 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
                               {selectedUser.admission_files.map((fileItem, idx) => (
                                 <div
                                   key={idx}
-                                  className="d-flex align-items-center justify-content-between p-2 px-3"
+                                  className="d-flex align-items-center justify-content-between flex-wrap gap-2 p-2 px-3"
                                   style={{
                                     borderRadius: "10px",
                                     backgroundColor: "#ffffff",
@@ -925,7 +958,7 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
               {/* Contact & Relative Details Card */}
               <Col xs="12">
                 <Card className="border-0 shadow-sm" style={{ borderRadius: "14px" }}>
-                  <CardBody className="p-4">
+                  <CardBody className="p-3 p-md-4">
                     <div className="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom">
                       <h5 className="mb-0 fw-bold text-dark d-flex align-items-center gap-2" style={{ fontSize: "15px" }}>
                         <span style={{ color: "#d56337" }}>📞</span>

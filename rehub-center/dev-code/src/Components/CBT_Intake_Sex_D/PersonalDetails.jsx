@@ -19,6 +19,7 @@ import {
 } from "reactstrap";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2";
 
@@ -320,70 +321,34 @@ function PersonalDetails() {
         if (row.dischargeStatus === 1) return null;
 
         return (
-          <div className="d-flex gap-2">
-            {/* View User Details Icon */}
-            <span
+          <ActionButtonsGroup>
+            <TableActionButton
+              type="view"
               onClick={() => handleViewUserDetails(row.id)}
-              style={{ cursor: "pointer" }}
               title={getTranslation("View/देखना", lang)}
-            >
-              <svg
-                style={{ color: "#d56337" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-eye"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </span>
+            />
 
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
-              <span
-                style={{ cursor: "pointer" }}
+              <TableActionButton
+                type="edit"
                 title={getTranslation(
                   "Readmission CBT Form/पुनः प्रवेश सीबीटी फॉर्म",
                   lang
                 )}
-              >
-                ✏️
-              </span>
+              />
             )}
 
             {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-              <span
+              <TableActionButton
+                type="create"
                 onClick={() => createPDHandler(row.id)}
-                style={{ cursor: "pointer" }}
                 title={getTranslation(
                   "Create Personal Data Form/व्यक्तिगत डेटा फ़ॉर्म बनाएँ",
                   lang
                 )}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                  <line x1="12" y1="8" x2="12" y2="16" />
-                  <line x1="8" y1="12" x2="16" y2="12" />
-                </svg>
-              </span>
+              />
             )}
-          </div>
+          </ActionButtonsGroup>
         );
       },
     },
@@ -432,84 +397,26 @@ function PersonalDetails() {
       name: `${getTranslation("Action/क्रिया", lang)}`,
       center: true,
       cell: (row) => (
-        <div className="d-flex gap-2">
-          {/* View */}
-          <span
+        <ActionButtonsGroup>
+          <TableActionButton
+            type="view"
             onClick={() => viewPDToggle(row.user_id)}
-            style={{ cursor: "pointer" }}
             title={getTranslation("View/देखना", lang)}
-          >
-            <svg
-              style={{ color: "#d56337" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-eye"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-          </span>
-
-          {/* Edit */}
-          <span
+          />
+          <TableActionButton
+            type="edit"
             onClick={() => editPDHandler(row.user_id)}
-            style={{ cursor: "pointer", marginLeft: "10px" }}
             title={getTranslation("Edit/संपादन करना", lang)}
-          >
-            <svg
-              style={{ color: "green" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-edit"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-            </svg>
-          </span>
-
-          {/* Delete */}
-          <span
+          />
+          <TableActionButton
+            type="delete"
             onClick={() => deletePDHandler(row.user_id)}
-            style={{ cursor: "pointer", marginLeft: "10px" }}
             title={getTranslation(
               "Delete Personal Data Form/व्यक्तिगत डेटा फ़ॉर्म हटाएँ",
               lang
             )}
-          >
-            <svg
-              style={{ color: "red" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-trash-2"
-            >
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              <line x1="10" y1="11" x2="10" y2="17" />
-              <line x1="14" y1="11" x2="14" y2="17" />
-            </svg>
-          </span>
-        </div>
+          />
+        </ActionButtonsGroup>
       ),
     },
   ];

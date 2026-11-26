@@ -86,6 +86,7 @@ import { H5 } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import DataTable from "react-data-table-component";
 import { Data } from "../UiKits/Spinners/SpinnerData";
 import { toast } from "react-toastify";
@@ -272,69 +273,30 @@ function Childhood() {
           return null;
         }
         return (
-          //Showing action buttons on register user list on FDA page
-          <div className="d-flex gap-2">
-            {/* View User Details Icon */}
-            <span
+          <ActionButtonsGroup>
+            <TableActionButton
+              type="view"
               onClick={() => handleViewUserDetails(row.id)}
-              style={{ cursor: "pointer" }}
               title={getTranslation("View/देखना", lang)}
-            >
-              <svg
-                style={{ color: "#d56337" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-eye"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </span>
+            />
 
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
-              <span
+              <TableActionButton
+                type="edit"
                 onClick={() => handleChildhoodPreFill(row.recentChildhoodIDs)}
-                style={{ cursor: "pointer" }}
-                title={getTranslation("Readmission Childhood Form/पुनः प्रवेश बचपन फॉर्म",lang)}
-              >
-                ✏️
-              </span>
+                title={getTranslation("Readmission Childhood Form/पुनः प्रवेश बचपन फॉर्म", lang)}
+              />
             )}
 
-{row.dischargeStatus === 0 && row.isReadmission === 0 && (
-  <span
-    onClick={() => CreateChildHoodHandler(row.id)}
-    style={{
-      cursor: "pointer",
-    }}
-    title={getTranslation("Create Childhood Form/बचपन प्रपत्र बनाएं",lang)}
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-      <line x1="12" y1="8" x2="12" y2="16"></line>
-      <line x1="8" y1="12" x2="16" y2="12"></line>
-    </svg>
-  </span>
-)}
-          </div>
+            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+              <TableActionButton
+                type="create"
+                onClick={() => CreateChildHoodHandler(row.id)}
+                title={getTranslation("Create Childhood Form/बचपन प्रपत्र बनाएं", lang)}
+              />
+            )}
+          </ActionButtonsGroup>
         );
       },
     },
@@ -481,54 +443,20 @@ function Childhood() {
       name: getTranslation("Action/कार्रवाई",lang),
       center: true,
       cell: (row) => (
-        <div className="d-flex gap-2">
-          <span
+        <ActionButtonsGroup>
+          <TableActionButton
+            type="view"
             onClick={() => viewChildhoodFormData(row.intake_childhood_id)}
-            style={{ cursor: "pointer" }}
-            title={getTranslation("View/देखना",lang)}
-          >
-            <svg
-              style={{ color: "#d56337" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-eye"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </span>
-          <span
+            title={getTranslation("View/देखना", lang)}
+          />
+          <TableActionButton
+            type="edit"
             onClick={() =>
               handleChildhoodindividualEdit(row.intake_childhood_id)
             }
-            style={{ cursor: "pointer", marginLeft: "10px" }}
-            title={getTranslation("Edit/संपादन करना",lang)}
-          >
-            <svg
-              style={{ color: "green" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-edit"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-          </span>
-        </div>
+            title={getTranslation("Edit/संपादन करना", lang)}
+          />
+        </ActionButtonsGroup>
       ),
     },
   ];

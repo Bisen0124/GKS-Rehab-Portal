@@ -40,6 +40,7 @@ import { useLang } from "../../contexts/LangContext";
 import { useBranch } from "../../contexts/BranchContext";
 import { getTranslation } from "../../utils/translator";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import {
   fetchActiveItemTypes,
   fetchActiveItems,
@@ -1476,18 +1477,12 @@ const PatientBilling = ({ isTabMode = false }) => {
                         </td>
 
                         <td className="text-end pe-4" style={{ minWidth: "210px", whiteSpace: "nowrap", padding: "16px 14px" }}>
-                          <div className="d-flex align-items-center justify-content-end gap-2">
+                          <ActionButtonsGroup className="justify-content-end">
                             <Button
                               color="primary"
                               size="sm"
-                              className="d-flex align-items-center gap-1.5 fw-semibold shadow-sm px-3"
-                              style={{
-                                height: "36px",
-                                borderRadius: "8px",
-                                backgroundColor: "#24695c",
-                                borderColor: "#24695c",
-                                fontSize: "12.5px",
-                              }}
+                              className="d-inline-flex align-items-center gap-1.5 fw-semibold shadow-sm px-3"
+                              style={{ height: "34px" }}
                               onClick={() => handleOpenBillModal(patient)}
                             >
                               <CreditCard size={14} />
@@ -1495,26 +1490,13 @@ const PatientBilling = ({ isTabMode = false }) => {
                             </Button>
 
                             {hasBill && (
-                              <button
-                                type="button"
-                                className="btn btn-sm d-flex align-items-center justify-content-center shadow-sm"
-                                style={{
-                                  width: "36px",
-                                  height: "36px",
-                                  minWidth: "36px",
-                                  borderRadius: "8px",
-                                  backgroundColor: "#e6f4f1",
-                                  border: "1px solid #b2dfdb",
-                                  padding: 0,
-                                  cursor: "pointer",
-                                }}
+                              <TableActionButton
+                                type="print"
                                 onClick={() => handleOpenReceipt(patient, bill)}
                                 title={getTranslation("Print Invoice Receipt / रसीद प्रिंट करें", lang)}
-                              >
-                                <Printer size={16} color="#24695c" stroke="#24695c" strokeWidth={2.2} />
-                              </button>
+                              />
                             )}
-                          </div>
+                          </ActionButtonsGroup>
                         </td>
                       </tr>
                     );

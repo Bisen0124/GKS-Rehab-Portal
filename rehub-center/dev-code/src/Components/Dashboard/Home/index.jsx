@@ -39,6 +39,7 @@ import {
   ExternalLink,
 } from "react-feather";
 import { useBranch } from "../../../contexts/BranchContext";
+import { ActionButtonsGroup, TableActionButton } from "../../Common/Component/ActionButtons";
 import { useLang } from "../../../contexts/LangContext";
 import { getTranslation } from "../../../utils/translator";
 import {
@@ -253,8 +254,11 @@ const ProfileGreetingCard = ({
       <CardBody className="p-3.5">
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
           <div>
-            <div className="d-flex align-items-center gap-2 mb-1.5">
-              <h3 className="fw-bold mb-0 text-dark" style={{ letterSpacing: "-0.3px" }}>
+            <div className="d-flex align-items-center flex-wrap gap-2 mb-2">
+              <h3
+                className="fw-bold mb-0 text-dark"
+                style={{ letterSpacing: "-0.3px", fontSize: "clamp(1.15rem, 4vw, 1.55rem)" }}
+              >
                 {getTranslation("Welcome Back, /वापसी पर स्वागत है, ", lang)}
                 <span style={{ color: "#24695c" }}>{userName}</span>
               </h3>
@@ -278,7 +282,7 @@ const ProfileGreetingCard = ({
             </div>
           </div>
 
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center flex-wrap gap-2 w-100 w-sm-auto dashboard-greeting-actions">
             <Button
               color="light"
               size="sm"
@@ -1105,7 +1109,7 @@ const Dashboard = () => {
         {/* ------------------------------------------------------------- */}
         <Row className="mb-1 g-3">
           {/* 1. Total Registered Patients */}
-          <Col xl="3" md="6">
+          <Col xl="3" sm="6" xs="12">
             <div
               className="stat-metric-card card-primary"
               onClick={() =>
@@ -1139,7 +1143,7 @@ const Dashboard = () => {
           </Col>
 
           {/* 2. Currently Admitted (On Bed) */}
-          <Col xl="3" md="6">
+          <Col xl="3" sm="6" xs="12">
             <div
               className="stat-metric-card card-info"
               onClick={() =>
@@ -1173,7 +1177,7 @@ const Dashboard = () => {
           </Col>
 
           {/* 3. Discharged Patients */}
-          <Col xl="3" md="6">
+          <Col xl="3" sm="6" xs="12">
             <div
               className="stat-metric-card card-success"
               onClick={() =>
@@ -1207,7 +1211,7 @@ const Dashboard = () => {
           </Col>
 
           {/* 4. Total Follow-ups & Missed */}
-          <Col xl="3" md="6">
+          <Col xl="3" sm="6" xs="12">
             <div
               className="stat-metric-card card-warning"
               onClick={() =>
@@ -1254,8 +1258,8 @@ const Dashboard = () => {
           {/* Ward Wise On Bed Patients & Occupancy */}
           <Col xl="7" lg="12">
             <Card className="dashboard-card h-100">
-              <CardBody className="p-4">
-                <div className="d-flex justify-content-between align-items-center mb-3">
+              <CardBody className="p-3 p-md-4">
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                   <div>
                     <h5 className="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
                       <Layers size={18} color="#24695c" />
@@ -1416,21 +1420,20 @@ const Dashboard = () => {
                             <td className="text-center">{w.this_month ?? 0}</td>
                             <td className="text-center fw-bold">{w.overall ?? 0}</td>
                             <td className="text-end">
-                              <Button
-                                color="light"
-                                size="sm"
-                                className="py-0 px-2 extra-small border"
-                                onClick={() =>
-                                  openDrilldown(
-                                    "ward_wise_on_bed",
-                                    `${w.ward_name || "Ward"} - ${getTranslation("On Bed Patients", lang)}`,
-                                    getTranslation("Patients admitted in this ward", lang),
-                                    w.ward_type_id ? { ward_type_id: w.ward_type_id } : {}
-                                  )
-                                }
-                              >
-                                {getTranslation("View / देखें", lang)}
-                              </Button>
+                              <ActionButtonsGroup className="justify-content-end">
+                                <TableActionButton
+                                  type="view"
+                                  title={getTranslation("View / देखें", lang)}
+                                  onClick={() =>
+                                    openDrilldown(
+                                      "ward_wise_on_bed",
+                                      `${w.ward_name || "Ward"} - ${getTranslation("On Bed Patients", lang)}`,
+                                      getTranslation("Patients admitted in this ward", lang),
+                                      w.ward_type_id ? { ward_type_id: w.ward_type_id } : {}
+                                    )
+                                  }
+                                />
+                              </ActionButtonsGroup>
                             </td>
                           </tr>
                         ))}
@@ -1445,8 +1448,8 @@ const Dashboard = () => {
           {/* Treatment In Progress (CIWA Withdrawal Severity) */}
           <Col xl="5" lg="12">
             <Card className="dashboard-card h-100">
-              <CardBody className="p-4">
-                <div className="d-flex justify-content-between align-items-center mb-3">
+              <CardBody className="p-3 p-md-4">
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                   <div>
                     <h5 className="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
                       <Heart size={18} color="#dc2626" />
@@ -1589,8 +1592,8 @@ const Dashboard = () => {
           {/* Medical Observations & Lab Analysis Pipeline */}
           <Col xl="6" md="12">
             <Card className="dashboard-card h-100">
-              <CardBody className="p-4">
-                <div className="d-flex justify-content-between align-items-center mb-3">
+              <CardBody className="p-3 p-md-4">
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                   <div>
                     <h5 className="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
                       <CheckSquare size={18} color="#24695c" />
@@ -1727,8 +1730,8 @@ const Dashboard = () => {
           {/* Follow-up Care Tracking & Missed Follow-ups */}
           <Col xl="6" md="12">
             <Card className="dashboard-card h-100">
-              <CardBody className="p-4">
-                <div className="d-flex justify-content-between align-items-center mb-3">
+              <CardBody className="p-3 p-md-4">
+                <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
                   <div>
                     <h5 className="fw-bold mb-0 text-dark d-flex align-items-center gap-2">
                       <Clock size={18} color="#d97706" />
@@ -1882,7 +1885,7 @@ const Dashboard = () => {
                   </div>
 
                   {/* Patient Scope Tabs */}
-                  <div className="d-flex align-items-center gap-1.5 bg-light p-1 rounded-pill border">
+                  <div className="d-flex align-items-center flex-wrap gap-1 bg-light p-1 rounded-3 border">
                     <button
                       type="button"
                       className={`period-tab-btn ${patientWiseScope === "not_discharged" ? "active" : ""}`}

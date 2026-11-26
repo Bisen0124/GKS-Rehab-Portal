@@ -29,6 +29,7 @@ import {
   Eye,
 } from "react-feather";
 import { toast } from "react-toastify";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import Swal from "sweetalert2";
 import { getTranslation } from "../../utils/translator";
 import {
@@ -737,26 +738,18 @@ const BillingSettings = ({
                           </Badge>
                         </td>
                         <td className="text-end pe-3">
-                          <div className="d-flex justify-content-end gap-1">
-                            <Button
-                              color="light"
-                              size="sm"
-                              className="p-1.5 text-primary border"
+                          <ActionButtonsGroup className="justify-content-end">
+                            <TableActionButton
+                              type="edit"
                               onClick={() => openEditTypeModal(type)}
                               title="Edit item type"
-                            >
-                              <Edit2 size={13} />
-                            </Button>
-                            <Button
-                              color="light"
-                              size="sm"
-                              className="p-1.5 text-danger border"
+                            />
+                            <TableActionButton
+                              type="delete"
                               onClick={() => handleDeleteType(type)}
                               title="Delete item type"
-                            >
-                              <Trash2 size={13} />
-                            </Button>
-                          </div>
+                            />
+                          </ActionButtonsGroup>
                         </td>
                       </tr>
                     );
@@ -960,26 +953,18 @@ const BillingSettings = ({
                         </Badge>
                       </td>
                       <td className="text-end pe-3">
-                        <div className="d-flex justify-content-end gap-1">
-                          <Button
-                            color="light"
-                            size="sm"
-                            className="p-1.5 text-primary border"
+                        <ActionButtonsGroup className="justify-content-end">
+                          <TableActionButton
+                            type="edit"
                             onClick={() => openEditItemModal(item)}
                             title="Edit billing item"
-                          >
-                            <Edit2 size={13} />
-                          </Button>
-                          <Button
-                            color="light"
-                            size="sm"
-                            className="p-1.5 text-danger border"
+                          />
+                          <TableActionButton
+                            type="delete"
                             onClick={() => handleDeleteItem(item)}
                             title="Delete billing item"
-                          >
-                            <Trash2 size={13} />
-                          </Button>
-                        </div>
+                          />
+                        </ActionButtonsGroup>
                       </td>
                     </tr>
                   ))

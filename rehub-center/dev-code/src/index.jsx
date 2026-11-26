@@ -5,10 +5,13 @@ import "./i18n";
 import App from "./App";
 import reportWebVitals from "./reportWebVitals";
 import { unstable_batchedUpdates } from "react-dom";
-import {LangProvider} from './contexts/LangContext';
+import { LangProvider } from "./contexts/LangContext";
+import { installUnicodeFetchGuard } from "./utils/unicodeHelper";
 unstable_batchedUpdates(() => {
   console.error = () => {};
 });
+
+installUnicodeFetchGuard();
 
 class ErrorBoundary extends React.Component {
   componentDidCatch(error) {

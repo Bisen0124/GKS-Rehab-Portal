@@ -37,6 +37,7 @@ import CommonModal from "../UiKits/Modals/common/modal";
 import DataTable from "react-data-table-component";
 import { toast } from "react-toastify";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import { Data } from "../UiKits/Spinners/SpinnerData";
 
 import Swal from "sweetalert2"; // ✅ Make sure this is imported at the top
@@ -54,6 +55,7 @@ import TableExportButtons from "../Common/TableExportButtons";
 import { SaveDraftButton, DraftNoticeBanner } from "../Common/SaveDraftButton";
 import { loadDraft, clearDraft, safeDate } from "../../utils/formDraftManager";
 import { validateCompulsoryFields, showApiErrorAlert } from "../../utils/formValidationHelper";
+import { pickCleanText, isGarbledQuestionMarks } from "../../utils/unicodeHelper";
 
 import VoiceTextarea from "../VoiceTextarea/VoiceTextarea";
 
@@ -178,6 +180,271 @@ function Register() {
       text: phones.length > 0 ? phones.map((p) => p.number).join(", ") : "N/A",
     };
   }, []);
+
+  // =========================================================================
+  // Patient Type Multi-Select Checkboxes + Custom Add Option (Client-Managed)
+  // =========================================================================
+  const CUSTOM_PATIENT_TYPE_STORAGE_KEY = "gks_register_custom_patient_types";
+  const DEFAULT_PATIENT_TYPE_OPTIONS = [
+    { value: "Alcohol", label: "Alcohol / शराब" },
+    { value: "Drug / Substance Abuse", label: "Drug / Substance Abuse / नशा (ड्रग्स)" },
+    { value: "Opioid / Smack / Heroin", label: "Opioid / Smack / Heroin / अफीम / स्मैक / हेरोइन" },
+    { value: "Cannabis (Ganja / Bhang / Charas)", label: "Cannabis (Ganja / Bhang / Charas) / गांजा / भांग / चरस" },
+    { value: "Psychiatric", label: "Psychiatric / मानसिक रोग" },
+    { value: "Dual Diagnosis", label: "Dual Diagnosis / दोहरा निदान" },
+    { value: "Depression / Anxiety", label: "Depression / Anxiety / अवसाद / चिंता" },
+    { value: "Behavioral Addiction", label: "Behavioral Addiction / व्यावहारिक लत" },
+  ];
+
+  const [customPatientTypeOptions, setCustomPatientTypeOptions] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CUSTOM_PATIENT_TYPE_STORAGE_KEY) || "[]");
+      return Array.isArray(saved)
+        ? saved.filter((item) => typeof item === "string" && item.trim())
+        : [];
+    } catch {
+      return [];
+    }
+  });
+  const [customPatientTypeInput, setCustomPatientTypeInput] = useState("");
+
+  const parsePatientTypeSelection = (rawVal) => {
+    if (!rawVal) return [];
+    if (Array.isArray(rawVal)) {
+      return Array.from(new Set(rawVal.map((x) => String(x).trim()).filter(Boolean)));
+    }
+    const str = String(rawVal).trim();
+    if (!str) return [];
+    const delimiter = str.includes("|") ? "|" : ",";
+    return Array.from(
+      new Set(
+        str
+          .split(delimiter)
+          .map((s) => s.trim())
+          .filter(Boolean)
+      )
+    );
+  };
+
+  const serializePatientTypeSelection = (list) => {
+    const cleaned = Array.from(
+      new Set((list || []).map((item) => String(item).trim()).filter(Boolean))
+    );
+    const hasInternalComma = cleaned.some((item) => item.includes(","));
+    return cleaned.join(hasInternalComma ? " | " : ", ");
+  };
+
+  const handleAddCustomPatientType = (currentVal, onChangeVal) => {
+    const trimmed = String(customPatientTypeInput || "").trim();
+    if (!trimmed) return;
+
+    const allExisting = [
+      ...DEFAULT_PATIENT_TYPE_OPTIONS.map((o) => o.value),
+      ...customPatientTypeOptions,
+    ];
+    const matched = allExisting.find((x) => x.toLowerCase() === trimmed.toLowerCase());
+    const finalValue = matched || trimmed;
+
+    if (!matched) {
+      const nextCustom = [...customPatientTypeOptions, trimmed];
+      setCustomPatientTypeOptions(nextCustom);
+      try {
+        localStorage.setItem(CUSTOM_PATIENT_TYPE_STORAGE_KEY, JSON.stringify(nextCustom));
+      } catch {
+        // ignore storage errors
+      }
+    }
+
+    const currentSelected = parsePatientTypeSelection(currentVal);
+    if (!currentSelected.some((x) => x.toLowerCase() === finalValue.toLowerCase())) {
+      onChangeVal(serializePatientTypeSelection([...currentSelected, finalValue]));
+    }
+    setCustomPatientTypeInput("");
+  };
+
+  const handleRemoveCustomPatientType = (optVal, currentVal, onChangeVal) => {
+    const nextCustom = customPatientTypeOptions.filter(
+      (x) => x.toLowerCase() !== optVal.toLowerCase()
+    );
+    setCustomPatientTypeOptions(nextCustom);
+    try {
+      localStorage.setItem(CUSTOM_PATIENT_TYPE_STORAGE_KEY, JSON.stringify(nextCustom));
+    } catch {
+      // ignore storage errors
+    }
+    const currentSelected = parsePatientTypeSelection(currentVal);
+    const nextSelected = currentSelected.filter(
+      (x) => x.toLowerCase() !== optVal.toLowerCase()
+    );
+    onChangeVal(serializePatientTypeSelection(nextSelected));
+  };
+
+  const renderPatientTypeField = (currentVal, onChangeVal, idPrefix = "reg") => {
+    const selectedList = parsePatientTypeSelection(currentVal);
+    const knownLower = new Set([
+      ...DEFAULT_PATIENT_TYPE_OPTIONS.map((o) => o.value.toLowerCase()),
+      ...customPatientTypeOptions.map((c) => c.toLowerCase()),
+    ]);
+    const extraSelected = selectedList.filter((s) => !knownLower.has(s.toLowerCase()));
+
+    const allOptions = [
+      ...DEFAULT_PATIENT_TYPE_OPTIONS.map((o) => ({ ...o, isCustom: false })),
+      ...customPatientTypeOptions.map((c) => ({ value: c, label: c, isCustom: true })),
+      ...extraSelected.map((e) => ({ value: e, label: e, isCustom: false })),
+    ];
+
+    const toggleOption = (optVal, checked) => {
+      let nextList;
+      if (checked) {
+        nextList = selectedList.some((x) => x.toLowerCase() === optVal.toLowerCase())
+          ? selectedList
+          : [...selectedList, optVal];
+      } else {
+        nextList = selectedList.filter((x) => x.toLowerCase() !== optVal.toLowerCase());
+      }
+      onChangeVal(serializePatientTypeSelection(nextList));
+    };
+
+    return (
+      <div className="col-12">
+        <div className="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+          <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
+            {getTranslation("Patient Type / रोगी का प्रकार", lang)}
+          </Label>
+          <span
+            style={{
+              fontSize: "11px",
+              fontWeight: 600,
+              padding: "2px 10px",
+              borderRadius: "999px",
+              backgroundColor: selectedList.length > 0 ? "#24695c" : "#64748b",
+              color: "#ffffff",
+            }}
+          >
+            {selectedList.length} {getTranslation("Selected / चयनित", lang)}
+          </span>
+        </div>
+
+        <div
+          className="p-3 rounded-3 border"
+          style={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }}
+        >
+          <div className="d-flex flex-wrap gap-2">
+            {allOptions.map((opt, idx) => {
+              const isChecked = selectedList.some(
+                (x) => x.toLowerCase() === opt.value.toLowerCase()
+              );
+              const inputId = `${idPrefix}-patient-type-${idx}`;
+              return (
+                <div
+                  key={`${opt.value}-${idx}`}
+                  className="form-check form-check-inline m-0"
+                  style={{
+                    backgroundColor: isChecked ? "#ecfdf5" : "#ffffff",
+                    border: isChecked ? "1px solid #24695c" : "1px solid #cbd5e1",
+                    borderRadius: "8px",
+                    padding: "5px 10px",
+                  }}
+                >
+                  <Input
+                    id={inputId}
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={isChecked}
+                    onChange={(e) => toggleOption(opt.value, e.target.checked)}
+                  />
+                  <Label
+                    htmlFor={inputId}
+                    className="form-check-label"
+                    style={{
+                      fontWeight: isChecked ? "600" : "500",
+                      color: isChecked ? "#14532d" : "#334155",
+                      fontSize: "13px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {opt.label.includes(" / ") ? getTranslation(opt.label, lang) : opt.label}
+                  </Label>
+                  {opt.isCustom && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveCustomPatientType(opt.value, currentVal, onChangeVal);
+                      }}
+                      title={getTranslation("Remove custom patient type / हटाएँ", lang)}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "#dc2626",
+                        fontWeight: "700",
+                        fontSize: "13px",
+                        lineHeight: 1,
+                        marginLeft: "6px",
+                        padding: "0 2px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="d-flex align-items-center gap-2 mt-3 flex-wrap">
+            <Input
+              type="text"
+              value={customPatientTypeInput}
+              onChange={(e) => setCustomPatientTypeInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddCustomPatientType(currentVal, onChangeVal);
+                }
+              }}
+              placeholder={getTranslation(
+                "Add custom patient type... / कस्टम रोगी प्रकार जोड़ें...",
+                lang
+              )}
+              className="form-control"
+              style={{ maxWidth: "340px", height: "38px", backgroundColor: "#ffffff", borderRadius: "8px" }}
+            />
+            <Button
+              type="button"
+              color="primary"
+              size="sm"
+              onClick={() => handleAddCustomPatientType(currentVal, onChangeVal)}
+              className="d-inline-flex align-items-center gap-1 fw-semibold"
+              style={{
+                minHeight: "38px",
+                padding: "6px 14px",
+                borderRadius: "8px",
+              }}
+            >
+              <span style={{ fontSize: "15px", lineHeight: 1 }}>+</span>
+              <span>{getTranslation("Add / जोड़ें", lang)}</span>
+            </Button>
+          </div>
+
+          <div className="mt-2">
+            <Input
+              type="text"
+              readOnly
+              value={selectedList.join(", ")}
+              placeholder={getTranslation(
+                "Selected patient type(s) will appear here... / चयनित रोगी का प्रकार यहाँ दिखेगा...",
+                lang
+              )}
+              className="form-control bg-white fw-semibold"
+              style={{ borderRadius: "8px", height: "38px" }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   //spinner extract from other file
   const selectedSpinner = Data.find(
@@ -601,6 +868,7 @@ function Register() {
     is_role: 4, // Default Patient role (4)
     ward_type_id: "",
     ward_name: "",
+    patient_type: "",
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -826,16 +1094,18 @@ function Register() {
           }));
 
     saveUserExtraMetadata(createdUserId, formData.phone, {
+      name: pickCleanText(formData.patientName, createdUser?.name),
       ward_type_id: createdUser?.ward?.ward_type_id || formData.ward_type_id,
       ward_name: createdUser?.ward?.ward_name || formData.ward_name,
+      patient_type: pickCleanText(formData.patient_type, createdUser?.patient_type),
       date_of_admission: formatDateStr(formData.date_of_admission),
       secondary_phone: (formData.secondary_phone || "").trim(),
       whatsapp_no: (formData.whatsapp_no || "").trim(),
       dob: formatDateStr(formData.dob),
-      address: (formData.address || "").trim(),
-      relative_name: (formData.patientRelativeName || "").trim(),
-      relative_address: (formData.relativeaddress || "").trim(),
-      relation_with_patient: formData.relation_with_patient || "",
+      address: pickCleanText(formData.address),
+      relative_name: pickCleanText(formData.patientRelativeName),
+      relative_address: pickCleanText(formData.relativeaddress),
+      relation_with_patient: pickCleanText(formData.relation_with_patient),
       relative_contacts: formData.relative_contacts,
       admission_files: storedAdmissionFiles,
     });
@@ -1002,6 +1272,10 @@ function Register() {
         payload.append("relation_with_patient", formToSubmit.relation_with_patient.trim());
       }
 
+      if (formToSubmit.patient_type && formToSubmit.patient_type.trim()) {
+        payload.append("patient_type", formToSubmit.patient_type.trim());
+      }
+
       // Clean relative_contacts: optional — every sent entry must have name + 10-digit phone + use_for_whatsapp + use_for_sms
       const cleanedRelativeContacts = (formToSubmit.relative_contacts || [])
         .map((c) => ({
@@ -1039,7 +1313,7 @@ function Register() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 120000);
 
-      const response = await fetch(
+      let response = await fetch(
         `https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`,
         {
           method: "POST",
@@ -1050,10 +1324,30 @@ function Register() {
           signal: controller.signal,
         }
       );
+
+      let result = await response.json().catch(() => ({}));
+
+      if (!response.ok && response.status === 400 && payload.has("patient_type")) {
+        const ptErr = JSON.stringify(result || "").toLowerCase();
+        if (ptErr.includes("patient_type") && (ptErr.includes("not allowed") || ptErr.includes("unknown"))) {
+          payload.delete("patient_type");
+          response = await fetch(
+            `https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `${authToken}`,
+              },
+              body: payload,
+              signal: controller.signal,
+            }
+          );
+          result = await response.json().catch(() => ({}));
+        }
+      }
+
       clearTimeout(timeoutId);
       clearAllProgressTimers();
-
-      const result = await response.json();
 
       if (!response.ok) {
         let errorMsg = result.message || result.error || "";
@@ -1404,6 +1698,7 @@ function Register() {
     email: "",
     ward_type_id: "",
     ward_name: "",
+    patient_type: "",
     relative_contacts: [{ name: "", phone: "", is_whatsapp: false }],
     relativeaddress: "",
     address: "",
@@ -1426,6 +1721,7 @@ function Register() {
 
     const rowFallback = (data || []).find((u) => String(u.id) === String(userId)) || {};
     const defaultWard = (wardList && wardList.length > 0 ? wardList : wardOptions)[0] || {};
+    const localExtraRereg = loadUserExtraMetadata(userId, rowFallback.phone);
 
     // Initialize immediately from row while fetching full user details
     setReregFormData({
@@ -1442,6 +1738,7 @@ function Register() {
       email: rowFallback.email || "",
       ward_type_id: defaultWard.ward_type_id || defaultWard.id || "",
       ward_name: defaultWard.ward_name || defaultWard.name || "",
+      patient_type: pickCleanText(rowFallback.patient_type, localExtraRereg.patient_type) || "",
       relative_contacts: [{ name: "", phone: "", is_whatsapp: false }],
       relativeaddress: "",
       address: "",
@@ -1473,6 +1770,7 @@ function Register() {
             email: u.email || "",
             phone: u.phone || prev.phone || "",
             dob: u.dob ? parseDateString(u.dob) || new Date() : prev.dob,
+            patient_type: pickCleanText(u.patient_type, localExtraRereg.patient_type, prev.patient_type) || "",
             // Ensure all remaining fields stay empty as required for readmission
             patientRelativeName: "",
             relation_with_patient: "",
@@ -1552,6 +1850,9 @@ function Register() {
       updateForm.append("whatsapp_no", /^\d{10}$/.test(waTrimmed) ? waTrimmed : "");
       updateForm.append("relative_address", (reregFormData.relativeaddress || "").trim());
       updateForm.append("relation_with_patient", reregFormData.relation_with_patient || "");
+      if (reregFormData.patient_type && reregFormData.patient_type.trim()) {
+        updateForm.append("patient_type", reregFormData.patient_type.trim());
+      }
       updateForm.append("relative_contacts", JSON.stringify(cleanedReregContacts));
       if (reregImage instanceof File) {
         updateForm.append("profile_pic", reregImage);
@@ -1564,14 +1865,26 @@ function Register() {
         });
       }
 
-      await fetch(
+      const reregPutRes = await fetch(
         `https://gks-yjdc.onrender.com/api/users/${selectedUserId}?branch_id=${branch_id}`,
         {
           method: "PUT",
           headers: { Authorization: `${authToken}` },
           body: updateForm,
         }
-      ).catch(() => {});
+      ).catch(() => null);
+
+      if (reregPutRes && !reregPutRes.ok && reregPutRes.status === 400 && updateForm.has("patient_type")) {
+        updateForm.delete("patient_type");
+        await fetch(
+          `https://gks-yjdc.onrender.com/api/users/${selectedUserId}?branch_id=${branch_id}`,
+          {
+            method: "PUT",
+            headers: { Authorization: `${authToken}` },
+            body: updateForm,
+          }
+        ).catch(() => {});
+      }
 
       // Step 2: Create new IPD readmission entry
       const ipdPayload = {
@@ -1596,16 +1909,18 @@ function Register() {
 
       // Save local extra metadata for readmission
       saveUserExtraMetadata(selectedUserId, reregFormData.phone, {
+        name: pickCleanText(reregFormData.patientName),
         ward_type_id: reregFormData.ward_type_id,
         ward_name: reregFormData.ward_name,
+        patient_type: pickCleanText(reregFormData.patient_type),
         date_of_admission: formatDateStr(reregFormData.date_of_admission),
         secondary_phone: secTrimmed,
         whatsapp_no: waTrimmed,
         dob: formatDateStr(reregFormData.dob),
-        address: (reregFormData.address || "").trim(),
-        relative_name: (reregFormData.patientRelativeName || "").trim(),
-        relative_address: (reregFormData.relativeaddress || "").trim(),
-        relation_with_patient: reregFormData.relation_with_patient || "",
+        address: pickCleanText(reregFormData.address),
+        relative_name: pickCleanText(reregFormData.patientRelativeName),
+        relative_address: pickCleanText(reregFormData.relativeaddress),
+        relation_with_patient: pickCleanText(reregFormData.relation_with_patient),
         relative_contacts: cleanedReregContacts,
         admission_files: (reregAdmissionFiles || []).map((f) => ({
           name: f.name,
@@ -1817,9 +2132,9 @@ function Register() {
 
       // Handle null/undefined safely and set editData
       setEditData({
-        id: user.user_id || "",
-        name: user.name || "",
-        patientRelativeName: user.relative_name || localExtra.relative_name || "",
+        id: user.user_id || user.id || "",
+        name: pickCleanText(user.name, localExtra.name, matchedUserRow?.name) || "",
+        patientRelativeName: pickCleanText(user.relative_name, localExtra.relative_name) || "",
         dob: (user.dob || localExtra.dob) ? parseDateString(user.dob || localExtra.dob) : "",
         email: user.email || "",
         phone: user.phone || "",
@@ -1828,13 +2143,14 @@ function Register() {
         isWhatsApp:
           user.isWhatsApp ||
           (Boolean(resolvedWhatsAppNo) && String(resolvedWhatsAppNo).trim() === String(user.phone || "").trim()),
-        address: user.address || localExtra.address || "",
-        relativeaddress: user.relative_address || localExtra.relative_address || "",
-        relation_with_patient: user.relation_with_patient || localExtra.relation_with_patient || "",
+        address: pickCleanText(user.address, localExtra.address) || "",
+        relativeaddress: pickCleanText(user.relative_address, localExtra.relative_address) || "",
+        relation_with_patient: pickCleanText(user.relation_with_patient, localExtra.relation_with_patient) || "",
         relative_contacts: parsedRelativeContacts,
         ward_type_id: resolvedWardTypeId,
         initial_ward_type_id: resolvedWardTypeId,
         ward_name: resolvedWardName || matchedWardOption?.ward_name || matchedWardOption?.name || "",
+        patient_type: pickCleanText(user.patient_type, localExtra.patient_type) || "",
         discharge_status: userDischargeStatus,
         is_role: Number(user.isRole) || 4,
         password: "",
@@ -1932,36 +2248,45 @@ function Register() {
       return;
     }
 
-    const updatedData = new FormData();
-    updatedData.append("name", (editData.name || "").trim());
+    const trimmedName = (editData.name || "").trim();
+    const trimmedRelativeName = (editData.patientRelativeName || "").trim();
+    const trimmedAddress = (editData.address || "").trim();
+    const trimmedRelativeAddress = (editData.relativeaddress || "").trim();
+
+    const jsonPayload = {
+      name: trimmedName,
+      secondary_phone: secEditTrimmed,
+      whatsapp_no: waEditTrimmed,
+      relative_contacts: cleanedEditContacts,
+    };
+
     if (editData.patientRelativeName !== undefined) {
-      updatedData.append("relative_name", (editData.patientRelativeName || "").trim());
+      jsonPayload.relative_name = trimmedRelativeName;
     }
     if (editData.email && editData.email.trim()) {
-      updatedData.append("email", editData.email.trim());
+      jsonPayload.email = editData.email.trim();
     }
     if (editData.gender) {
-      updatedData.append("gender", editData.gender);
+      jsonPayload.gender = editData.gender;
     }
     if (editData.address !== undefined) {
-      updatedData.append("address", (editData.address || "").trim());
+      jsonPayload.address = trimmedAddress;
     }
     if (editData.dob) {
-      updatedData.append("dob", formatDate(editData.dob));
+      jsonPayload.dob = formatDate(editData.dob);
     }
     if (editData.phone) {
-      updatedData.append("phone", (editData.phone || "").trim());
+      jsonPayload.phone = (editData.phone || "").trim();
     }
-
-    // secondary_phone & whatsapp_no: 10 digits, or "" to clear
-    updatedData.append("secondary_phone", secEditTrimmed);
-    updatedData.append("whatsapp_no", waEditTrimmed);
-
-    updatedData.append("relative_address", (editData.relativeaddress || "").trim());
+    if (editData.relativeaddress !== undefined) {
+      jsonPayload.relative_address = trimmedRelativeAddress;
+    }
     if (editData.relation_with_patient) {
-      updatedData.append("relation_with_patient", editData.relation_with_patient);
+      jsonPayload.relation_with_patient = editData.relation_with_patient;
     }
-    updatedData.append("relative_contacts", JSON.stringify(cleanedEditContacts));
+    if (editData.patient_type !== undefined) {
+      jsonPayload.patient_type = String(editData.patient_type || "").trim();
+    }
 
     // Change Ward (only for non-discharged active IPD patients when ward_type_id is provided)
     if (
@@ -1969,54 +2294,115 @@ function Register() {
       Number(editData.discharge_status) !== 1 &&
       String(editData.ward_type_id) !== String(editData.initial_ward_type_id || "")
     ) {
-      updatedData.append("ward_type_id", editData.ward_type_id);
+      jsonPayload.ward_type_id = editData.ward_type_id;
       if (editData.ward_name) {
-        updatedData.append("ward_name", editData.ward_name);
+        jsonPayload.ward_name = editData.ward_name;
       }
     }
 
-    // Remove chosen stored admission form URLs (also deleted from Cloudinary by backend)
-    if (Array.isArray(editData.remove_admission_form_urls) && editData.remove_admission_form_urls.length > 0) {
-      updatedData.append(
-        "remove_admission_form_urls",
-        JSON.stringify(editData.remove_admission_form_urls)
-      );
-    }
-
-    if (editData.profile_pic instanceof File) {
-      updatedData.append("profile_pic", editData.profile_pic);
-    }
-
-    // Append all newly uploaded admission form files (repeat key admission_form_url for each file, max 10)
-    if (Array.isArray(editData.admission_form_files) && editData.admission_form_files.length > 0) {
-      editData.admission_form_files.slice(0, 10).forEach((item) => {
-        if (item?.file instanceof File) {
-          updatedData.append("admission_form_url", item.file);
-        }
-      });
-    } else if (editData.admission_form_file instanceof File) {
-      updatedData.append("admission_form_url", editData.admission_form_file);
-    }
+    const newAdmissionFilesToUpload = Array.isArray(editData.admission_form_files)
+      ? editData.admission_form_files.slice(0, 10).filter((item) => item?.file instanceof File)
+      : [];
+    const hasFileChanges =
+      editData.profile_pic instanceof File ||
+      newAdmissionFilesToUpload.length > 0 ||
+      editData.admission_form_file instanceof File ||
+      (Array.isArray(editData.remove_admission_form_urls) && editData.remove_admission_form_urls.length > 0);
 
     console.log("User ID:", editData.id, typeof editData.id);
 
     try {
       const branch_id = branchId;
-      const response = await fetch(
+      // Step 1: Send text & ward updates as UTF-8 JSON (API #1/#2) to avoid multipart latin1 corruption
+      let response = await fetch(
         `https://gks-yjdc.onrender.com/api/users/${editData.id}?branch_id=${branch_id}`,
-
         {
           method: "PUT",
           headers: {
             Authorization: `${token}`,
+            "Content-Type": "application/json; charset=utf-8",
           },
-          body: updatedData, // Send multipart form-data for text + file fields
+          body: JSON.stringify(jsonPayload),
         }
       );
 
+      if (!response.ok && response.status === 400 && Object.prototype.hasOwnProperty.call(jsonPayload, "patient_type")) {
+        const errCheck = await response.clone().json().catch(() => ({}));
+        const errText = JSON.stringify(errCheck || "").toLowerCase();
+        if (errText.includes("patient_type") && (errText.includes("not allowed") || errText.includes("unknown"))) {
+          const fallbackPayload = { ...jsonPayload };
+          delete fallbackPayload.patient_type;
+          response = await fetch(
+            `https://gks-yjdc.onrender.com/api/users/${editData.id}?branch_id=${branch_id}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `${token}`,
+                "Content-Type": "application/json; charset=utf-8",
+              },
+              body: JSON.stringify(fallbackPayload),
+            }
+          );
+        }
+      }
+
       if (response.ok) {
         const resJson = await response.json().catch(() => ({}));
-        const updatedUserObj = resJson?.data || {};
+        let updatedUserObj = resJson?.data || {};
+        const preservedWardChange = updatedUserObj?.ward_change;
+
+        // Step 2: Only upload/remove files via multipart/form-data if files were actually modified
+        if (hasFileChanges) {
+          const fileFormData = new FormData();
+          if (Array.isArray(editData.remove_admission_form_urls) && editData.remove_admission_form_urls.length > 0) {
+            fileFormData.append(
+              "remove_admission_form_urls",
+              JSON.stringify(editData.remove_admission_form_urls)
+            );
+          }
+          if (editData.profile_pic instanceof File) {
+            fileFormData.append("profile_pic", editData.profile_pic);
+          }
+          if (newAdmissionFilesToUpload.length > 0) {
+            newAdmissionFilesToUpload.forEach((item) => {
+              fileFormData.append("admission_form_url", item.file);
+            });
+          } else if (editData.admission_form_file instanceof File) {
+            fileFormData.append("admission_form_url", editData.admission_form_file);
+          }
+
+          const fileRes = await fetch(
+            `https://gks-yjdc.onrender.com/api/users/${editData.id}?branch_id=${branch_id}`,
+            {
+              method: "PUT",
+              headers: {
+                Authorization: `${token}`,
+              },
+              body: fileFormData,
+            }
+          );
+
+          if (!fileRes.ok) {
+            const fileErrData = await fileRes.json().catch(() => ({}));
+            showApiErrorAlert(
+              fileErrData,
+              lang,
+              getTranslation("User details saved, but failed to update files/उपयोगकर्ता विवरण सहेजा गया, लेकिन फ़ाइलें अपडेट करने में विफल", lang)
+            );
+            setIsLoading(false);
+            return;
+          }
+
+          const fileJson = await fileRes.json().catch(() => ({}));
+          if (fileJson?.data && typeof fileJson.data === "object") {
+            updatedUserObj = {
+              ...updatedUserObj,
+              ...fileJson.data,
+              ...(preservedWardChange ? { ward_change: preservedWardChange } : {}),
+            };
+          }
+        }
+
         const returnedUrls = Array.isArray(updatedUserObj.admission_form_urls)
           ? updatedUserObj.admission_form_urls
           : Array.isArray(updatedUserObj.admission_form_url)
@@ -2046,16 +2432,18 @@ function Register() {
               ];
 
           saveUserExtraMetadata(editData.id, editData.phone, {
+            name: pickCleanText(trimmedName, updatedUserObj.name),
             ward_type_id: updatedUserObj.ward_type_id || editData.ward_type_id,
             ward_name: updatedUserObj.ward_name || editData.ward_name,
+            patient_type: pickCleanText(editData.patient_type, updatedUserObj.patient_type),
             secondary_phone: secEditTrimmed,
             whatsapp_no: waEditTrimmed,
             isWhatsApp: !!editData.isWhatsApp,
             dob: formatDate(editData.dob),
-            address: (editData.address || "").trim(),
-            relative_name: (editData.patientRelativeName || "").trim(),
-            relative_address: (editData.relativeaddress || "").trim(),
-            relation_with_patient: editData.relation_with_patient || "",
+            address: pickCleanText(trimmedAddress, updatedUserObj.address),
+            relative_name: pickCleanText(trimmedRelativeName, updatedUserObj.relative_name),
+            relative_address: pickCleanText(trimmedRelativeAddress, updatedUserObj.relative_address),
+            relation_with_patient: pickCleanText(editData.relation_with_patient, updatedUserObj.relation_with_patient),
             relative_contacts: cleanedEditContacts,
             admission_files: mergedEditAdmissionFiles,
           });
@@ -2141,11 +2529,12 @@ function Register() {
           if (!u || typeof u !== "object") continue;
 
           saveUserExtraMetadata(uid, u.phone, {
-            dob: u.dob || "",
-            address: u.address || "",
-            relative_name: u.relative_name || "",
-            relative_address: u.relative_address || "",
-            relation_with_patient: u.relation_with_patient || "",
+            ...(u.name && !isGarbledQuestionMarks(u.name) ? { name: u.name } : {}),
+            ...(u.dob ? { dob: u.dob } : {}),
+            ...(u.address && !isGarbledQuestionMarks(u.address) ? { address: u.address } : {}),
+            ...(u.relative_name && !isGarbledQuestionMarks(u.relative_name) ? { relative_name: u.relative_name } : {}),
+            ...(u.relative_address && !isGarbledQuestionMarks(u.relative_address) ? { relative_address: u.relative_address } : {}),
+            ...(u.relation_with_patient && !isGarbledQuestionMarks(u.relation_with_patient) ? { relation_with_patient: u.relation_with_patient } : {}),
             ...(u.relative_contacts ? { relative_contacts: u.relative_contacts } : {}),
             ...(u.ward_name ? { ward_name: u.ward_name } : {}),
           });
@@ -2153,14 +2542,16 @@ function Register() {
           const localExtra = loadUserExtraMetadata(uid, u.phone);
           const phonesObj = collectAllPhones(u, localExtra);
           const ageStr = calculateAgeFromDob(u.dob || localExtra.dob, u.age);
-          const addressStr = u.address || localExtra.address || "N/A";
-          const relNameStr = u.relative_name || localExtra.relative_name || "N/A";
+          const cleanNameStr = pickCleanText(u.name, localExtra.name);
+          const addressStr = pickCleanText(u.address, localExtra.address) || "N/A";
+          const relNameStr = pickCleanText(u.relative_name, localExtra.relative_name) || "N/A";
 
           setData((prev) =>
             prev.map((row) =>
               String(row.id) === String(uid)
                 ? {
                     ...row,
+                    ...(cleanNameStr ? { name: cleanNameStr } : {}),
                     rawDob: u.dob || row.rawDob,
                     age: ageStr !== "N/A" ? ageStr : row.age,
                     address: addressStr !== "N/A" ? addressStr : row.address,
@@ -2176,6 +2567,7 @@ function Register() {
               String(row.id) === String(uid)
                 ? {
                     ...row,
+                    ...(cleanNameStr ? { name: cleanNameStr } : {}),
                     rawDob: u.dob || row.rawDob,
                     age: ageStr !== "N/A" ? ageStr : row.age,
                     address: addressStr !== "N/A" ? addressStr : row.address,
@@ -2191,6 +2583,7 @@ function Register() {
               String(row.id) === String(uid)
                 ? {
                     ...row,
+                    ...(cleanNameStr ? { name: cleanNameStr } : {}),
                     age: ageStr !== "N/A" ? ageStr : row.age,
                     address: addressStr !== "N/A" ? addressStr : row.address,
                     relative_name: relNameStr !== "N/A" ? relNameStr : row.relative_name,
@@ -2205,6 +2598,7 @@ function Register() {
               String(row.id) === String(uid)
                 ? {
                     ...row,
+                    ...(cleanNameStr ? { name: cleanNameStr } : {}),
                     age: ageStr !== "N/A" ? ageStr : row.age,
                     address: addressStr !== "N/A" ? addressStr : row.address,
                     relative_name: relNameStr !== "N/A" ? relNameStr : row.relative_name,
@@ -2247,8 +2641,9 @@ function Register() {
           const localExtra = loadUserExtraMetadata(user.user_id, user.phone);
           const dobVal = user.dob || localExtra.dob || "";
           const ageVal = calculateAgeFromDob(dobVal, user.age);
-          const addrVal = user.address || localExtra.address || "";
-          const relNameVal = user.relative_name || localExtra.relative_name || "";
+          const cleanNameVal = pickCleanText(user.name, localExtra.name) || user.name || "N/A";
+          const addrVal = pickCleanText(user.address, localExtra.address);
+          const relNameVal = pickCleanText(user.relative_name, localExtra.relative_name);
           const phonesObj = collectAllPhones(user, localExtra);
 
           if (user.age === undefined && user.dob === undefined && user.address === undefined) {
@@ -2257,7 +2652,7 @@ function Register() {
 
           return {
             id: user.user_id,
-            name: user.name,
+            name: cleanNameVal,
             gender: user.gender,
             email: user.email,
             phone: user.phone,
@@ -2579,132 +2974,36 @@ function Register() {
       name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => (
-        <div className="d-flex gap-2">
-          {/* View icon */}
-          <span
+        <ActionButtonsGroup>
+          <TableActionButton
+            type="view"
             onClick={() => userViewToggle(row.id)}
-            style={{ cursor: "pointer" }}
-            title={getTranslation("View/देखना",lang)}
-          >
-            <svg
-              style={{ color: "#d56337" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-eye"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </span>
-
-          {/* Edit icon */}
-          <span
+            title={getTranslation("View/देखना", lang)}
+          />
+          <TableActionButton
+            type="edit"
             onClick={() => handleEdit(row.id)}
-            style={{ cursor: "pointer" }}
-            title={getTranslation("Edit/संपादन करना",lang)}
-          >
-            {/* Edit/Pencil icon */}
-            <svg
-              style={{ color: "green" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-edit"
-            >
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-          </span>
-
-          {/* Delete icon */}
-          <span
+            title={getTranslation("Edit/संपादन करना", lang)}
+          />
+          <TableActionButton
+            type="delete"
             onClick={() => handleDelete(row.id)}
-            style={{ cursor: "pointer" }}
-            title={getTranslation("Delete/मिटाना",lang)}
-          >
-            <svg
-              style={{ color: "red" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-trash-2"
-            >
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              <line x1="10" y1="11" x2="10" y2="17"></line>
-              <line x1="14" y1="11" x2="14" y2="17"></line>
-            </svg>
-          </span>
-
-          {/* Re-register icon */}
-          {/* Conditionally render Re-register or Tooltip-only icon */}
+            title={getTranslation("Delete/मिटाना", lang)}
+          />
           {row.discharge_status === 1 ? (
-            <span
+            <TableActionButton
+              type="refresh"
               onClick={() => handleReregisterUserID(row.id)}
-              style={{ cursor: "pointer" }}
-              title={getTranslation("Re-register/पुन: पंजीकृत",lang)}
-            >
-              {/* Re-register SVG */}
-              <svg
-                style={{ color: "blue" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-refresh-ccw"
-              >
-                <polyline points="1 4 1 10 7 10"></polyline>
-                <polyline points="23 20 23 14 17 14"></polyline>
-                <path d="M20.49 9A9 9 0 0 0 5.51 15M3.51 15A9 9 0 0 0 18.49 9"></path>
-              </svg>
-            </span>
+              title={getTranslation("Re-register/पुन: पंजीकृत", lang)}
+            />
           ) : (
-            <span title={getTranslation("User not discharged/उपयोगकर्ता को छुट्टी नहीं दी गई",lang)}>
-              {/* Disabled or info-only icon */}
-              <svg
-                style={{ color: "gray", opacity: 0.5 }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-alert-circle"
-              >
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="8" x2="12" y2="12"></line>
-                <line x1="12" y1="16" x2="12" y2="16"></line>
-              </svg>
-            </span>
+            <TableActionButton
+              type="disabled"
+              disabled={true}
+              title={getTranslation("User not discharged/उपयोगकर्ता को छुट्टी नहीं दी गई", lang)}
+            />
           )}
-        </div>
+        </ActionButtonsGroup>
       ),
     },
   ];
@@ -2753,17 +3052,19 @@ function Register() {
             { ...matchedUser, ...entry },
             localExtra
           );
+          const cleanNameVal =
+            pickCleanText(entry.name, matchedUser?.name, localExtra.name) || entry.name || "N/A";
           const relNameVal =
-            entry.relative_name ||
-            matchedUser?.relative_name ||
-            localExtra.relative_name ||
+            pickCleanText(entry.relative_name, matchedUser?.relative_name, localExtra.relative_name) ||
             "N/A";
           const addrVal =
-            entry.address ||
-            entry.relative_address ||
-            matchedUser?.address ||
-            localExtra.address ||
-            localExtra.relative_address ||
+            pickCleanText(
+              entry.address,
+              entry.relative_address,
+              matchedUser?.address,
+              localExtra.address,
+              localExtra.relative_address
+            ) ||
             "N/A";
           const rawAdmitDate =
             entry.admit_date ||
@@ -2782,7 +3083,7 @@ function Register() {
           return {
             id: uid,
             gks_id: entry.gks_id,
-            name: entry.name,
+            name: cleanNameVal,
             age: ageVal,
             phone: entry.phone,
             allPhonesList: phonesObj.list,
@@ -2886,31 +3187,13 @@ function Register() {
       name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => (
-        <div className="d-flex gap-2">
-          {/* View icon */}
-          <span
+        <ActionButtonsGroup>
+          <TableActionButton
+            type="view"
             onClick={() => userViewToggle(row.id)}
-            style={{ cursor: "pointer" }}
-            title="View"
-          >
-            <svg
-              style={{ color: "#d56337" }}
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="feather feather-eye"
-            >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </span>
-        </div>
+            title={getTranslation("View/देखना", lang)}
+          />
+        </ActionButtonsGroup>
       ),
     },
   ];
@@ -3583,6 +3866,13 @@ function Register() {
                   )}
                 </div>
               </div>
+
+              {/* Patient Type (Multi-select Checkboxes + Custom Add) */}
+              {renderPatientTypeField(
+                formData.patient_type,
+                (val) => setFormData((prev) => ({ ...prev, patient_type: val })),
+                "create"
+              )}
 
               {/* Patient Photo Upload with Modern Camera Icon & Optimization (.jpg / .jpeg / .pdf, max 5 MB) — Mandatory */}
               <div className="col-md-6">
@@ -4347,6 +4637,13 @@ function Register() {
                     })}
                   </div>
                 </div>
+
+                {/* Patient Type (Multi-select Checkboxes + Custom Add) */}
+                {renderPatientTypeField(
+                  editData.patient_type,
+                  (val) => setEditData((prev) => ({ ...prev, patient_type: val })),
+                  "edit"
+                )}
 
                 {/* Profile Pic Upload with Camera Support */}
                 <div className="col-md-6">
@@ -5156,6 +5453,13 @@ function Register() {
                     })}
                   </div>
                 </div>
+
+                {/* Patient Type (Multi-select Checkboxes + Custom Add) */}
+                {renderPatientTypeField(
+                  reregFormData.patient_type,
+                  (val) => setReregFormData((prev) => ({ ...prev, patient_type: val })),
+                  "rereg"
+                )}
 
                 {/* Upload Patient Profile Image (Empty on Readmission, Mandatory) */}
                 <div className="col-md-6">

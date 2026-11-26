@@ -12,7 +12,7 @@ const ModalActionButtons = ({
   printText,
   closeText,
   style = {},
-  className = "d-flex justify-content-end align-items-center gap-2 p-3 border-top bg-white flex-wrap",
+  className = "d-flex justify-content-end align-items-center gap-2 px-3 py-2 py-md-3 border-top bg-white flex-wrap modal-action-buttons-bar",
 }) => {
   const { lang } = useLang();
   const [isPrinting, setIsPrinting] = useState(false);
@@ -28,7 +28,7 @@ const ModalActionButtons = ({
   };
 
   return (
-    <div className={className} style={{ margin: "0 10px 10px 10px", ...style }}>
+    <div className={className} style={{ margin: "0", ...style }}>
       {onClose && (
         <Button
           color="light"

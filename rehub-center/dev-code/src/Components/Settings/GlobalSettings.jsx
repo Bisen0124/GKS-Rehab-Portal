@@ -46,6 +46,7 @@ import {
 } from "react-feather";
 
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import { useBranch } from "../../contexts/BranchContext";
 import { useLang } from "../../contexts/LangContext";
 import { getTranslation } from "../../utils/translator";
@@ -1042,38 +1043,26 @@ const GlobalSettings = ({ initialTab }) => {
                                 </Badge>
                               </td>
                               <td className="text-end pe-3">
-                                <div className="d-flex justify-content-end gap-1">
-                                  <Button
-                                    color="light"
-                                    size="sm"
-                                    className="p-1.5 text-primary border"
+                                <ActionButtonsGroup className="justify-content-end">
+                                  <TableActionButton
+                                    type="view"
                                     onClick={() => {
                                       setSelectedUserForPermissions(adm);
                                       setPermissionsModalOpen(true);
                                     }}
                                     title="View Permissions"
-                                  >
-                                    <Eye size={14} />
-                                  </Button>
-                                  <Button
-                                    color="light"
-                                    size="sm"
-                                    className="p-1.5 text-secondary border"
+                                  />
+                                  <TableActionButton
+                                    type="edit"
                                     onClick={() => openEditAdminModal(adm)}
                                     title="Edit Admin"
-                                  >
-                                    <Edit2 size={14} />
-                                  </Button>
-                                  <Button
-                                    color="light"
-                                    size="sm"
-                                    className="p-1.5 text-danger border"
+                                  />
+                                  <TableActionButton
+                                    type="delete"
                                     onClick={() => handleDeleteAdmin(adm)}
                                     title="Delete Admin"
-                                  >
-                                    <Trash2 size={14} />
-                                  </Button>
-                                </div>
+                                  />
+                                </ActionButtonsGroup>
                               </td>
                             </tr>
                           );
@@ -1194,38 +1183,26 @@ const GlobalSettings = ({ initialTab }) => {
                               </Badge>
                             </td>
                             <td className="text-end pe-3">
-                              <div className="d-flex justify-content-end gap-1">
-                                <Button
-                                  color="light"
-                                  size="sm"
-                                  className="p-1.5 text-primary border"
+                              <ActionButtonsGroup className="justify-content-end">
+                                <TableActionButton
+                                  type="view"
                                   onClick={() => {
                                     setSelectedUserForPermissions(op);
                                     setPermissionsModalOpen(true);
                                   }}
                                   title="View Permissions"
-                                >
-                                  <Eye size={14} />
-                                </Button>
-                                <Button
-                                  color="light"
-                                  size="sm"
-                                  className="p-1.5 text-secondary border"
+                                />
+                                <TableActionButton
+                                  type="edit"
                                   onClick={() => openEditOperatorModal(op)}
                                   title="Edit Operator"
-                                >
-                                  <Edit2 size={14} />
-                                </Button>
-                                <Button
-                                  color="light"
-                                  size="sm"
-                                  className="p-1.5 text-danger border"
+                                />
+                                <TableActionButton
+                                  type="delete"
                                   onClick={() => handleDeleteOperator(op)}
                                   title="Delete Operator"
-                                >
-                                  <Trash2 size={14} />
-                                </Button>
-                              </div>
+                                />
+                              </ActionButtonsGroup>
                             </td>
                           </tr>
                         );
@@ -1289,28 +1266,20 @@ const GlobalSettings = ({ initialTab }) => {
                                 </Badge>
                               </td>
                               <td className="text-end pe-3">
-                                <div className="d-flex justify-content-end gap-1">
-                                  <Button
-                                    color="light"
-                                    size="sm"
-                                    className="p-1.5 text-secondary border"
+                                <ActionButtonsGroup className="justify-content-end">
+                                  <TableActionButton
+                                    type="edit"
                                     onClick={() => openEditBranchModal(b)}
                                     title="Edit Branch"
-                                  >
-                                    <Edit2 size={14} />
-                                  </Button>
+                                  />
                                   {b.isActive && (
-                                    <Button
-                                      color="light"
-                                      size="sm"
-                                      className="p-1.5 text-danger border"
+                                    <TableActionButton
+                                      type="delete"
                                       onClick={() => handleDeleteBranch(b)}
                                       title="Deactivate Branch"
-                                    >
-                                      <Trash2 size={14} />
-                                    </Button>
+                                    />
                                   )}
-                                </div>
+                                </ActionButtonsGroup>
                               </td>
                             </tr>
                           ))

@@ -1,7 +1,6 @@
-import React, { Fragment, useContext, useState } from 'react';
+import React, { Fragment, useContext } from 'react';
 import { AlignCenter } from 'react-feather';
 import { Link } from 'react-router-dom';
-import { Image } from '../../AbstractElements';
 import CheckContext from '../../_helper/Customizer';
 
 //Logo
@@ -9,13 +8,14 @@ import logo from "../../../src/assets/images/GKS/gks-logo1.webp";
 
 const Leftbar = () => {
 
-    const { mixLayout, toggleSidebar } = useContext(CheckContext);
-    const [toggle, setToggle] = useState(false);
-
+    const { mixLayout, toggleSidebar, toggleIcon, toggleSidebarResponsive } = useContext(CheckContext);
 
     const openCloseSidebar = () => {
-        setToggle(!toggle);
-        toggleSidebar(toggle);
+        const nextClosed = !toggleIcon;
+        toggleSidebar(nextClosed);
+        if (!nextClosed && toggleSidebarResponsive) {
+            toggleSidebarResponsive(false);
+        }
     };
 
     return (

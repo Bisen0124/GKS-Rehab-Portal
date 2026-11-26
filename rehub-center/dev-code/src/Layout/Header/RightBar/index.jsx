@@ -14,7 +14,7 @@ import LanguageSwitcher from '../../../Components/LanguageSwitcher';
 import ApiTranslated from '../../../Components/ApiTranslated';
 
 const Rightbar = () => {
-  const { sidebarResponsive } = useContext(CustomizerContext);
+  const { sidebarResponsive, toggleSidebarResponsive } = useContext(CustomizerContext);
   const { lang } = useLang();
 
   // ✅ Global branch state from context
@@ -74,11 +74,11 @@ const Rightbar = () => {
     <Fragment>
      
       <div className="nav-right col pull-right right-menu p-0">
-        <UL attrUL={{ className: `simple-list d-flex flex-row nav-menus gap-4 align-items-center ${sidebarResponsive ? 'open' : ''}` }}>
+        <UL attrUL={{ className: `simple-list d-flex flex-row nav-menus gap-2 gap-xl-3 align-items-center ${sidebarResponsive ? 'open' : ''}` }}>
          
-         <LanguageSwitcher/>
+         <LanguageSwitcher className="d-none d-lg-inline-flex" />
 
-         <LI attrLI={{ className: 'd-flex align-items-center' }}>
+         <LI attrLI={{ className: 'd-none d-md-inline-flex align-items-center' }}>
            <button
              type="button"
              onClick={toggleFullScreen}
@@ -151,7 +151,11 @@ const Rightbar = () => {
           {/* Settings Button */}
           <LI attrLI={{ className: 'onhover-dropdown p-0 me-2' }}>
             <Btn attrBtn={{ as: Card.Header, className: 'btn btn-primary-light settings-btn', color: 'default' }}>
-              <Link to={`${process.env.PUBLIC_URL}/settings`} style={{ display: 'flex', alignItems: 'center' }}>
+              <Link
+                to={`${process.env.PUBLIC_URL}/settings`}
+                onClick={() => toggleSidebarResponsive && toggleSidebarResponsive(false)}
+                style={{ display: 'flex', alignItems: 'center' }}
+              >
                 <Settings style={{ marginRight: '8px' }} />
                 {getTranslation("Settings/सेटिंग्स", lang)}
               </Link>

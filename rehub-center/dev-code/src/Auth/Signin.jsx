@@ -6,10 +6,14 @@ import { toast } from "react-toastify";
 import man from "../assets/images/dashboard/1.png";
 import SocialAuth from "./Tabs/LoginTab/SocialAuth";
 import { Outlet, Link } from "react-router-dom";
+import LanguageSwitcher from "../Components/LanguageSwitcher";
+import { useLang } from "../contexts/LangContext";
+import { getTranslation } from "../utils/translator";
 
 import rehabImg from '../assets/images/GKS/gks-logo1.webp';
 
 const Login = ({ selected }) => {
+  const { lang } = useLang();
   const [identifier, setIdentifier] = useState(""); // ✅ Updated state name
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -229,12 +233,15 @@ const Login = ({ selected }) => {
           <Col className="col-12">
             <div className="login-card">
               <div className="login-main login-tab">
+                <div className="d-flex justify-content-end mb-2">
+                  <LanguageSwitcher compact />
+                </div>
                 <Form className="theme-form" onSubmit={loginAuth}>
                   <img src={rehabImg} alt="rehab logo" className="d-flex" />
-                  <H4>{LoginTitle}</H4>
-                  <P>{LoginsubTitle}</P>
+                  <H4>{getTranslation("Sign in to Rehab Center / रिहैब सेंटर में साइन इन करें", lang)}</H4>
+                  <P>{getTranslation("Enter your email or phone & password to login / लॉगिन करने के लिए अपना ईमेल या फोन और पासवर्ड दर्ज करें", lang)}</P>
                   <FormGroup>
-                    <Label className="col-form-label">{EmailPhone}</Label>
+                    <Label className="col-form-label">{getTranslation("Email or Phone / ईमेल या फोन", lang)}</Label>
                     <Input
                       className="form-control"
                       type="text"
@@ -245,7 +252,7 @@ const Login = ({ selected }) => {
                     />
                   </FormGroup>
                   <FormGroup className="position-relative">
-                    <Label className="col-form-label">{Password}</Label>
+                    <Label className="col-form-label">{getTranslation(Password, lang)}</Label>
                     <Input
                       className="form-control"
                       type={togglePassword ? "text" : "password"}
@@ -263,15 +270,17 @@ const Login = ({ selected }) => {
                       <Input id="checkbox1" type="checkbox" checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)} />
                       <Label className="text-muted" for="checkbox1">
-                        {RememberPassword}
+                        {getTranslation("Remember password / पासवर्ड याद रखें", lang)}
                       </Label>
                     </div>
                     <Link className="link" to={`${process.env.PUBLIC_URL}/pages/authentication/forget-pwd`}>
-                      {ForgotPassword}
+                      {getTranslation("Forgot password? / पासवर्ड भूल गए?", lang)}
                     </Link>
 
                     <Btn attrBtn={{ color: "primary", className: "btn-block w-100", disabled: loading }}>
-                      {loading ? "Logging in..." : "Login"}
+                      {loading
+                        ? getTranslation("Logging in... / लॉगिन हो रहा है...", lang)
+                        : getTranslation("Login / लॉगिन", lang)}
                     </Btn>
                   </div>
                   <SocialAuth />

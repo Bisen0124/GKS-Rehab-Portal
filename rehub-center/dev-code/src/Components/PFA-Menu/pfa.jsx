@@ -14,6 +14,8 @@ import {
   patientAge,
   dependentTo,
   substanceUsePattern,
+  substanceUseFrequency,
+  usingMedicine,
   last30DaysQuantity,
   tableNumber,
   genralPhysicalExamination,
@@ -76,6 +78,7 @@ import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import { toast } from "react-toastify";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import DataTable from "react-data-table-component";
 import { Data } from "../UiKits/Spinners/SpinnerData";
 
@@ -122,24 +125,164 @@ function PFA() {
     (item) => item.spinnerClass === "loader-37"
   );
 
-  const SCREENING_KEYS = ["hiv", "hcv", "hbsag", "vdrl", "syphilis"];
+  const CUSTOM_DEPENDENT_STORAGE_KEY = "gks_pfa_custom_dependent_options_v1";
+
+  const DEFAULT_DEPENDENT_OPTIONS = [
+    { value: "Alcohol", label: "Alcohol / शराब" },
+    { value: "Afeem, Doada Chura", label: "Afeem, Doada Chura / अफीम, डोडा चुरा" },
+    { value: "Samke Heroin", label: "Samke Heroin / समके हेरोइन" },
+    { value: "Coacine", label: "Coacine / कोकीन" },
+    { value: "MD", label: "MD / एमडी" },
+    { value: "Ganja, Bhang, Charas, Munnka", label: "Ganja, Bhang, Charas, Munnka / गांजा, भांग, चरस, मुन्नका" },
+    { value: "Inhalant Abuse", label: "Inhalant Abuse / इनहेलेंट का दुरुपयोग" },
+    { value: "Medical Abuse", label: "Medical Abuse / चिकित्सा दुरुपयोग" },
+    { value: "Multi Addict", label: "Multi Addict / मल्टी एडिक्ट" },
+  ];
+
+  const SUBSTANCE_USE_PATTERN_OPTIONS = [
+    { value: "Orally", label: "Orally / मौखिक" },
+    { value: "Smoke", label: "Smoke / धूम्रपान" },
+    { value: "Inhale", label: "Inhale / साँस द्वारा" },
+    { value: "Drink", label: "Drink / पीना" },
+    { value: "Inject", label: "Inject / इंजेक्शन" },
+    { value: "Snorting", label: "Snorting / नाक से खींचना" },
+    { value: "Sniff", label: "Sniff / सूंघना" },
+    { value: "Chase", label: "Chase / चेज़" },
+  ];
+
+  const [customDependentOptions, setCustomDependentOptions] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CUSTOM_DEPENDENT_STORAGE_KEY) || "[]");
+      return Array.isArray(saved) ? saved.filter((item) => typeof item === "string" && item.trim()) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [customDependentInput, setCustomDependentInput] = useState("");
+
+  const parseDependentSelection = (rawVal, knownList = []) => {
+    if (!rawVal) return [];
+    if (Array.isArray(rawVal)) {
+      return Array.from(new Set(rawVal.map((x) => String(x).trim()).filter(Boolean)));
+    }
+    const str = String(rawVal).trim();
+    if (!str) return [];
+
+    if (str.includes("|")) {
+      return Array.from(new Set(str.split("|").map((s) => s.trim()).filter(Boolean)));
+    }
+
+    const allKnown = [
+      ...DEFAULT_DEPENDENT_OPTIONS.map((o) => o.value),
+      ...knownList,
+    ].filter(Boolean);
+
+    const exact = allKnown.find((k) => k.toLowerCase() === str.toLowerCase());
+    if (exact) return [exact];
+
+    // Extract known values that contain commas before splitting remaining values on commas
+    const multiCommaKnown = Array.from(new Set(allKnown.filter((k) => k.includes(","))))
+      .sort((a, b) => b.length - a.length);
+
+    let working = str;
+    const placeholders = [];
+    multiCommaKnown.forEach((opt) => {
+      const idx = working.toLowerCase().indexOf(opt.toLowerCase());
+      if (idx !== -1) {
+        const token = `__GKS_DEP_${placeholders.length}__`;
+        placeholders.push(opt);
+        working = working.slice(0, idx) + token + working.slice(idx + opt.length);
+      }
+    });
+
+    const parts = working
+      .split(",")
+      .map((part) => {
+        const p = part.trim();
+        const m = p.match(/^__GKS_DEP_(\d+)__$/);
+        return m ? placeholders[Number(m[1])] : p;
+      })
+      .filter(Boolean);
+
+    return Array.from(new Set(parts));
+  };
+
+  const serializeDependentSelection = (list) => {
+    return Array.from(
+      new Set((list || []).map((item) => String(item).trim()).filter(Boolean))
+    ).join(" | ");
+  };
+
+  const parseUsePatternSelection = (rawVal) => {
+    if (!rawVal) return [];
+    const items = Array.isArray(rawVal) ? rawVal : String(rawVal).split(/[,|]/);
+    const cleaned = items
+      .map((s) => {
+        const trimmed = String(s).trim();
+        if (!trimmed) return "";
+        if (trimmed.toLowerCase() === "snotting") return "Snorting";
+        const canonical = SUBSTANCE_USE_PATTERN_OPTIONS.find(
+          (o) => o.value.toLowerCase() === trimmed.toLowerCase()
+        );
+        return canonical ? canonical.value : trimmed;
+      })
+      .filter(Boolean);
+    return Array.from(new Set(cleaned));
+  };
+
+  const serializeUsePatternSelection = (list) => {
+    return Array.from(
+      new Set((list || []).map((item) => String(item).trim()).filter(Boolean))
+    ).join(", ");
+  };
+
+  const SCREENING_KEYS = ["hiv", "hcv", "hbsag", "vdrl", "syphilis", "vdrl_syphilis"];
+  const EXTENDED_PFA_KEYS = [
+    ...SCREENING_KEYS,
+    "diabetes",
+    "substance_use_frequency",
+    "using_medicine",
+  ];
 
   const normalizeScreeningValue = (val) => {
     if (val === null || val === undefined || val === "") return "";
     const trimmed = String(val).trim();
-    if (trimmed === "Not Tested") return "Not Done";
-    if (["Positive", "Negative", "Not Done"].includes(trimmed)) return trimmed;
+    const lower = trimmed.toLowerCase();
+    if (["not done", "not_done", "not tested", "not_tested", "na", "n/a"].includes(lower)) {
+      return "NA";
+    }
+    if (lower === "positive") return "Positive";
+    if (lower === "negative") return "Negative";
+    return "";
+  };
+
+  const normalizeDiabetesValue = (val) => {
+    if (val === null || val === undefined || val === "") return "";
+    const trimmed = String(val).trim();
+    const lower = trimmed.toLowerCase();
+    if (lower === "yes" || lower === "हाँ") return "Yes";
+    if (lower === "no" || lower === "नहीं") return "No";
+    if (["na", "n/a", "not done", "not_done", "not tested"].includes(lower)) return "NA";
     return "";
   };
 
   const saveLocalPFAScreening = (userId, pfaId, dataObj) => {
     try {
+      const combinedVdrlSyph = normalizeScreeningValue(
+        dataObj?.vdrl_syphilis ?? dataObj?.vdrl ?? dataObj?.syphilis
+      );
       const record = {
         hiv: normalizeScreeningValue(dataObj?.hiv),
         hcv: normalizeScreeningValue(dataObj?.hcv ?? dataObj?.hepatitis_c),
         hbsag: normalizeScreeningValue(dataObj?.hbsag ?? dataObj?.hepatitis_b),
-        vdrl: normalizeScreeningValue(dataObj?.vdrl),
-        syphilis: normalizeScreeningValue(dataObj?.syphilis),
+        vdrl_syphilis: combinedVdrlSyph,
+        vdrl: combinedVdrlSyph,
+        syphilis: combinedVdrlSyph,
+        diabetes: normalizeDiabetesValue(dataObj?.diabetes),
+        substance_use_frequency: String(
+          dataObj?.substance_use_frequency ?? dataObj?.substanceUseFrequencyData ?? ""
+        ),
+        using_medicine: String(dataObj?.using_medicine ?? ""),
       };
       if (pfaId) localStorage.setItem(`gks_pfa_screening_pfa_${pfaId}`, JSON.stringify(record));
       if (userId) localStorage.setItem(`gks_pfa_screening_user_${userId}`, JSON.stringify(record));
@@ -155,12 +298,19 @@ function PFA() {
       const raw = byPfa || byUser;
       if (!raw) return {};
       const parsed = JSON.parse(raw);
+      const combinedVdrlSyph = normalizeScreeningValue(
+        parsed?.vdrl_syphilis ?? parsed?.vdrl ?? parsed?.syphilis
+      );
       return {
         hiv: normalizeScreeningValue(parsed?.hiv),
         hcv: normalizeScreeningValue(parsed?.hcv ?? parsed?.hepatitis_c),
         hbsag: normalizeScreeningValue(parsed?.hbsag ?? parsed?.hepatitis_b),
-        vdrl: normalizeScreeningValue(parsed?.vdrl),
-        syphilis: normalizeScreeningValue(parsed?.syphilis),
+        vdrl_syphilis: combinedVdrlSyph,
+        vdrl: combinedVdrlSyph,
+        syphilis: combinedVdrlSyph,
+        diabetes: normalizeDiabetesValue(parsed?.diabetes),
+        substance_use_frequency: parsed?.substance_use_frequency || "",
+        using_medicine: parsed?.using_medicine || "",
       };
     } catch {
       return {};
@@ -183,17 +333,36 @@ function PFA() {
 
     let { response, result } = await doFetch(payloadObj);
 
-    if (!response.ok) {
+    let currentPayload = { ...payloadObj };
+    for (let attempt = 0; attempt < 2 && !response.ok; attempt++) {
       const errStr = JSON.stringify(result || "").toLowerCase();
-      const hasUnknownScreeningKey =
-        (errStr.includes("not allowed") || errStr.includes("unknown")) &&
-        SCREENING_KEYS.some((k) => errStr.includes(k));
-      if (hasUnknownScreeningKey) {
-        const cleanPayload = { ...payloadObj };
-        SCREENING_KEYS.forEach((k) => delete cleanPayload[k]);
-        ({ response, result } = await doFetch(cleanPayload));
+      let modified = false;
+
+      if (errStr.includes("not allowed") || errStr.includes("unknown") || errStr.includes("not permitted")) {
+        EXTENDED_PFA_KEYS.forEach((k) => {
+          if (Object.prototype.hasOwnProperty.call(currentPayload, k) && errStr.includes(k)) {
+            delete currentPayload[k];
+            modified = true;
+          }
+        });
       }
+
+      if (
+        (errStr.includes("not done") || errStr.includes("must be one of") || errStr.includes("invalid")) &&
+        ["hiv", "hcv", "hbsag", "vdrl", "syphilis"].some((k) => currentPayload[k] === "NA")
+      ) {
+        ["hiv", "hcv", "hbsag", "vdrl", "syphilis"].forEach((k) => {
+          if (currentPayload[k] === "NA") {
+            currentPayload[k] = "Not Done";
+            modified = true;
+          }
+        });
+      }
+
+      if (!modified) break;
+      ({ response, result } = await doFetch(currentPayload));
     }
+
     return { response, result };
   };
 
@@ -201,6 +370,7 @@ function PFA() {
     dateOfAdmission: new Date(),
     dateOfAssessment: new Date(),
     dependentToData: "",
+    substanceUseFrequencyData: "",
     substanceUsePatternData: "",
     last30DaysQuantityData: "",
 
@@ -211,11 +381,11 @@ function PFA() {
     blood_pressure: "",
     temperature: "",
     spo2: "",
-    sugar: "",
-    hb: "",
+    diabetes: "",
     hiv: "",
     hcv: "",
     hbsag: "",
+    vdrl_syphilis: "",
     vdrl: "",
     syphilis: "",
 
@@ -246,6 +416,7 @@ function PFA() {
 
     nutritional_status: "",
 
+    using_medicine: "",
     other_findings: "",
 
     consent: "No", // or "Yes" if checked by default
@@ -502,104 +673,31 @@ function PFA() {
     }
 
     return (
-      <div className="d-flex gap-2">
-        {/* View User Details Icon */}
-        <span
+      <ActionButtonsGroup>
+        <TableActionButton
+          type="view"
           onClick={() => handleViewUserDetails(row.id)}
-          style={{ cursor: "pointer" }}
           title={getTranslation("View/देखना", lang)}
-        >
-          <svg
-            style={{ color: "#d56337" }}
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="feather feather-eye"
-          >
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
-        </span>
+        />
 
         {/* Show Edit only if not discharged and readmission */}
         {row.dischargeStatus === 0 && row.isReadmission === 1 && (
-          <span
+          <TableActionButton
+            type="edit"
             onClick={() => handlePreeFillCreateReadmissionPFA(row.recent_pfa_id)}
-            style={{ cursor: "pointer" }}
-            title={getTranslation("Readmission PFA/पुनः प्रवेश पीएफए",lang)}
-          >
-            ✏️
-          </span>
+            title={getTranslation("Readmission PFA/पुनः प्रवेश पीएफए", lang)}
+          />
         )}
 
- 
-          {/* <span
-            onClick={() => handlePreeFillCreateReadmissionPFA(row.recent_pfa_id)}
-            style={{ cursor: "pointer" }}
-            title="Readmission PFA"
-          >
-            ✏️
-          </span> */}
-     
-
         {/* Show Create PFA if not discharged and not readmission */}
-        {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-          <span
+        {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+          <TableActionButton
+            type="create"
             onClick={() => toggle(row.id)}
-            style={{ cursor: "pointer" }}
-            title="Create PFA"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="12" y1="8" x2="12" y2="16"></line>
-              <line x1="8" y1="12" x2="16" y2="12"></line>
-            </svg>
-          </span>
-        )} */}
-
-{row.dischargeStatus === 0 && row.isReadmission === 0 && (
-  <span
-    onClick={() => toggle(row.id)}
-    style={{
-      cursor: "pointer",
-    }}
-    title={getTranslation("Create PFA/पीएफए ​​बनाएं",lang)}
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-      <line x1="12" y1="8" x2="12" y2="16"></line>
-      <line x1="8" y1="12" x2="16" y2="12"></line>
-    </svg>
-  </span>
-)}
-
-      </div>
+            title={getTranslation("Create PFA/पीएफए ​​बनाएं", lang)}
+          />
+        )}
+      </ActionButtonsGroup>
     );
   },
 }
@@ -660,80 +758,18 @@ const tablePFAPatientListColumns = [
     name: `${getTranslation('Action/क्रिया' , lang)}`,
     center: true,
     cell: (row) => (
-      <div className="d-flex gap-2">
-          <>
-            <span
-              onClick={() => viewPFAToggle(row.user_id)}
-              style={{ cursor: "pointer" }}
-              title={getTranslation("View/देखना",lang)}
-            >
-              <svg
-                style={{ color: "#d56337" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-eye"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </span>
-            <span
-              onClick={() => handleAllPFAEditData(row.user_id)}
-              style={{ cursor: "pointer", marginLeft: "10px" }}
-              title={getTranslation("Edit/संपादन करना",lang)}
-            >
-            <svg
-                style={{ color: "green" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-edit"
-              >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </span>
-            {/* <span
-              onClick={() => handlePFADelete(row.id)}
-              style={{ cursor: "pointer", marginLeft: "10px" }}
-              title="Delete"
-            >
-              <svg
-                style={{ color: "red" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-trash-2"
-              >
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>
-            </span> */}
-            
-          </>
-        
-      </div>
+      <ActionButtonsGroup>
+        <TableActionButton
+          type="view"
+          onClick={() => viewPFAToggle(row.user_id)}
+          title={getTranslation("View/देखना", lang)}
+        />
+        <TableActionButton
+          type="edit"
+          onClick={() => handleAllPFAEditData(row.user_id)}
+          title={getTranslation("Edit/संपादन करना", lang)}
+        />
+      </ActionButtonsGroup>
     ),
   },
 
@@ -792,17 +828,34 @@ const tablePFAPatientListColumns = [
         latestAssessment.pfa_id || latestAssessment.id
       );
 
+      const combinedVdrlSyphView = normalizeScreeningValue(
+        latestAssessment.vdrl_syphilis ??
+        latestAssessment.screening_tests?.vdrl_syphilis ??
+        latestAssessment.health_metrics?.vdrl_syphilis ??
+        latestAssessment.vdrl ??
+        latestAssessment.screening_tests?.vdrl ??
+        latestAssessment.health_metrics?.vdrl ??
+        latestAssessment.syphilis ??
+        latestAssessment.screening_tests?.syphilis ??
+        latestAssessment.health_metrics?.syphilis ??
+        localScreening.vdrl_syphilis ??
+        localScreening.vdrl ??
+        localScreening.syphilis
+      );
+
       const assessmentData = latestAssessment ? {
         ...latestAssessment,
+        substance_use_frequency: latestAssessment.substance_use_frequency ?? latestAssessment.assessment?.substance_use_frequency ?? localScreening.substance_use_frequency ?? "",
+        using_medicine: latestAssessment.using_medicine ?? latestAssessment.health_metrics?.using_medicine ?? localScreening.using_medicine ?? "",
         temperature: latestAssessment.temperature ?? latestAssessment.health_metrics?.temperature,
         spo2: latestAssessment.spo2 ?? latestAssessment.health_metrics?.spo2,
-        sugar: latestAssessment.sugar ?? latestAssessment.health_metrics?.sugar,
-        hb: latestAssessment.hb ?? latestAssessment.health_metrics?.hb,
+        diabetes: normalizeDiabetesValue(latestAssessment.diabetes ?? latestAssessment.health_metrics?.diabetes ?? localScreening.diabetes),
         hiv: normalizeScreeningValue(latestAssessment.hiv ?? latestAssessment.screening_tests?.hiv ?? latestAssessment.health_metrics?.hiv ?? localScreening.hiv),
         hcv: normalizeScreeningValue(latestAssessment.hcv ?? latestAssessment.screening_tests?.hcv ?? latestAssessment.health_metrics?.hcv ?? latestAssessment.hepatitis_c ?? localScreening.hcv),
         hbsag: normalizeScreeningValue(latestAssessment.hbsag ?? latestAssessment.screening_tests?.hbsag ?? latestAssessment.health_metrics?.hbsag ?? latestAssessment.hepatitis_b ?? localScreening.hbsag),
-        vdrl: normalizeScreeningValue(latestAssessment.vdrl ?? latestAssessment.screening_tests?.vdrl ?? latestAssessment.health_metrics?.vdrl ?? localScreening.vdrl),
-        syphilis: normalizeScreeningValue(latestAssessment.syphilis ?? latestAssessment.screening_tests?.syphilis ?? latestAssessment.health_metrics?.syphilis ?? localScreening.syphilis),
+        vdrl_syphilis: combinedVdrlSyphView,
+        vdrl: combinedVdrlSyphView,
+        syphilis: combinedVdrlSyphView,
         verification: latestAssessment.verification ?? latestAssessment.consent?.verification ?? "No",
       } : null;
 
@@ -960,7 +1013,7 @@ const tablePFAPatientListColumns = [
       { label: getTranslation("Complications (Ulcer) / अल्सर", lang), value: formData.complications?.ulcer },
       { label: getTranslation("Complications (Respiratory) / श्वसन समस्या", lang), value: formData.complications?.respiratory_problem },
       { label: getTranslation("Complications (Jaundice) / पीलिया", lang), value: formData.complications?.jaundice },
-      { label: getTranslation("Complications (Haematemesis) / रक्त वमन", lang), value: formData.complications?.haematemesis },
+      { label: getTranslation("Complications (Haematemesis (Blood Vomiting)) / खून की उल्टी", lang), value: formData.complications?.haematemesis },
       { label: getTranslation("Complications (Abdominal) / पेट की शिकायतें", lang), value: formData.complications?.abdominal_complaints },
       { label: getTranslation("Complications (Cardiovascular) / हृदय संबंधी", lang), value: formData.complications?.cardiovascular },
       { label: getTranslation("Neurological (Delirium) / प्रलाप", lang), value: formData.neurological?.delirium },
@@ -995,11 +1048,16 @@ const tablePFAPatientListColumns = [
       return;
     }
 
+    const combinedVdrlSyphSubmit = normalizeScreeningValue(
+      formData.vdrl_syphilis ?? formData.vdrl ?? formData.syphilis
+    );
+
     const payload = {
       user_id: selectedUser[0].user_id,
       // date_of_admission: formData.dateOfAdmission?.toISOString(),
       date_of_assessment: formData.dateOfAssessment?.toISOString(),
       dependent_to: formData.dependentToData,
+      substance_use_frequency: formData.substanceUseFrequencyData || "",
       substance_use_pattern: formData.substanceUsePatternData,
       last_30_days_quantity: formData.last30DaysQuantityData,
       medical_history: formData.medicalConfirmationData,
@@ -1008,13 +1066,15 @@ const tablePFAPatientListColumns = [
       blood_pressure: formData.blood_pressure || "", // optional (omit, "" or null)
       temperature: tempVal,
       spo2: formData.spo2 !== "" && formData.spo2 !== null && formData.spo2 !== undefined ? Number(formData.spo2) : null,
-      sugar: formData.sugar !== "" && formData.sugar !== null && formData.sugar !== undefined ? Number(formData.sugar) : null,
-      hb: formData.hb !== "" && formData.hb !== null && formData.hb !== undefined ? Number(formData.hb) : null,
+      diabetes: normalizeDiabetesValue(formData.diabetes),
+      sugar: null,
+      hb: null,
       hiv: normalizeScreeningValue(formData.hiv),
       hcv: normalizeScreeningValue(formData.hcv ?? formData.hepatitis_c),
       hbsag: normalizeScreeningValue(formData.hbsag ?? formData.hepatitis_b),
-      vdrl: normalizeScreeningValue(formData.vdrl),
-      syphilis: normalizeScreeningValue(formData.syphilis),
+      vdrl_syphilis: combinedVdrlSyphSubmit,
+      vdrl: combinedVdrlSyphSubmit,
+      syphilis: combinedVdrlSyphSubmit,
       lymphadenopathy: formData.lymphadenopathy,
       blood_transfusion_history: formData.bloodConfirmationData,
       medical_or_blood_history_details: formData.bloodTransfusionHistoryData,
@@ -1022,6 +1082,7 @@ const tablePFAPatientListColumns = [
       ...formData.neurological,
       complication_description: formData.complication_description,
       neuro_description: formData.neuro_description,
+      using_medicine: formData.using_medicine || "",
       other_findings: formData.other_findings,
       consent: formData.consent,
       verification: formData.verification || "No",
@@ -1228,15 +1289,37 @@ const parseDateString = (dateStr) => {
     console.log(latestAssessment.date_of_assessment)
     
 
+    const localReadmitScreening = loadLocalPFAScreening(
+      latestAssessment?.user_id,
+      latestAssessment?.pfa_id || latestAssessment?.id
+    );
+    const combinedReadmitVdrlSyph = normalizeScreeningValue(
+      latestAssessment?.vdrl_syphilis ??
+      latestAssessment?.screening_tests?.vdrl_syphilis ??
+      latestAssessment?.health_metrics?.vdrl_syphilis ??
+      latestAssessment?.vdrl ??
+      latestAssessment?.screening_tests?.vdrl ??
+      latestAssessment?.health_metrics?.vdrl ??
+      latestAssessment?.syphilis ??
+      latestAssessment?.screening_tests?.syphilis ??
+      latestAssessment?.health_metrics?.syphilis ??
+      localReadmitScreening?.vdrl_syphilis ??
+      localReadmitScreening?.vdrl ??
+      localReadmitScreening?.syphilis
+    );
+
     setPFAeditData({
       date_of_assessment: latestAssessment.date_of_assessment
         ? new Date(latestAssessment.date_of_assessment) // ✅ always Date object
         : null,
     
       dependent_to: latestAssessment.dependent_to || "",
+      substance_use_frequency: latestAssessment.substance_use_frequency || localReadmitScreening?.substance_use_frequency || "",
       substance_use_pattern: latestAssessment.substance_use_pattern || "",
       last_30_days_quantity: latestAssessment.last_30_days_quantity || "",
     
+      medical_history: latestAssessment?.medical_history || "",
+      blood_transfusion_history: latestAssessment?.blood_transfusion_history || "",
       medicalConfirmationData: latestAssessment?.medical_history || "",
       bloodConfirmationData: latestAssessment?.blood_transfusion_history || "",
     
@@ -1245,19 +1328,20 @@ const parseDateString = (dateStr) => {
       blood_pressure: latestAssessment?.blood_pressure || "",
       temperature: Number(latestAssessment?.temperature ?? latestAssessment?.health_metrics?.temperature) || 0,
       spo2: latestAssessment?.spo2 ?? latestAssessment?.health_metrics?.spo2 ?? "",
-      sugar: latestAssessment?.sugar ?? latestAssessment?.health_metrics?.sugar ?? "",
-      hb: latestAssessment?.hb ?? latestAssessment?.health_metrics?.hb ?? "",
-      hiv: normalizeScreeningValue(latestAssessment?.hiv ?? latestAssessment?.screening_tests?.hiv ?? latestAssessment?.health_metrics?.hiv ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hiv),
-      hcv: normalizeScreeningValue(latestAssessment?.hcv ?? latestAssessment?.screening_tests?.hcv ?? latestAssessment?.health_metrics?.hcv ?? latestAssessment?.hepatitis_c ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hcv),
-      hbsag: normalizeScreeningValue(latestAssessment?.hbsag ?? latestAssessment?.screening_tests?.hbsag ?? latestAssessment?.health_metrics?.hbsag ?? latestAssessment?.hepatitis_b ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.hbsag),
-      vdrl: normalizeScreeningValue(latestAssessment?.vdrl ?? latestAssessment?.screening_tests?.vdrl ?? latestAssessment?.health_metrics?.vdrl ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.vdrl),
-      syphilis: normalizeScreeningValue(latestAssessment?.syphilis ?? latestAssessment?.screening_tests?.syphilis ?? latestAssessment?.health_metrics?.syphilis ?? loadLocalPFAScreening(latestAssessment?.user_id, latestAssessment?.pfa_id)?.syphilis),
+      diabetes: normalizeDiabetesValue(latestAssessment?.diabetes ?? latestAssessment?.health_metrics?.diabetes ?? localReadmitScreening?.diabetes),
+      hiv: normalizeScreeningValue(latestAssessment?.hiv ?? latestAssessment?.screening_tests?.hiv ?? latestAssessment?.health_metrics?.hiv ?? localReadmitScreening?.hiv),
+      hcv: normalizeScreeningValue(latestAssessment?.hcv ?? latestAssessment?.screening_tests?.hcv ?? latestAssessment?.health_metrics?.hcv ?? latestAssessment?.hepatitis_c ?? localReadmitScreening?.hcv),
+      hbsag: normalizeScreeningValue(latestAssessment?.hbsag ?? latestAssessment?.screening_tests?.hbsag ?? latestAssessment?.health_metrics?.hbsag ?? latestAssessment?.hepatitis_b ?? localReadmitScreening?.hbsag),
+      vdrl_syphilis: combinedReadmitVdrlSyph,
+      vdrl: combinedReadmitVdrlSyph,
+      syphilis: combinedReadmitVdrlSyph,
       lymphadenopathy: latestAssessment?.lymphadenopathy || "",
     
       medical_or_blood_history_details:
         latestAssessment.medical_or_blood_history_details || "",
       complication_description: latestAssessment.complication_description || "",
       neuro_description: latestAssessment.neuro_description || "",
+      using_medicine: latestAssessment.using_medicine ?? latestAssessment.health_metrics?.using_medicine ?? localReadmitScreening?.using_medicine ?? "",
       other_findings: latestAssessment.other_findings || "",
       consent_name: latestAssessment.consent_name || "",
       consent_relationship: latestAssessment.consent_relationship || "",
@@ -1301,9 +1385,14 @@ const parseDateString = (dateStr) => {
   const handleReadmissionAssessment = async () => {
     setIsLoading(true); // Start loading
 
+    const combinedReadmitSubmitVdrlSyph = normalizeScreeningValue(
+      PFAeditData.vdrl_syphilis ?? PFAeditData.vdrl ?? PFAeditData.syphilis
+    );
+
     const payload = {
       date_of_assessment: PFAeditData.date_of_assessment?.toISOString(),
       dependent_to: PFAeditData.dependent_to,
+      substance_use_frequency: PFAeditData.substance_use_frequency || "",
       substance_use_pattern: PFAeditData.substance_use_pattern,
       last_30_days_quantity: PFAeditData.last_30_days_quantity,
       medical_history: PFAeditData.medical_history,
@@ -1316,13 +1405,15 @@ const parseDateString = (dateStr) => {
       blood_pressure: PFAeditData.blood_pressure || "",
       temperature: Number(PFAeditData?.temperature) || 0,
       spo2: PFAeditData.spo2 !== "" && PFAeditData.spo2 !== null && PFAeditData.spo2 !== undefined ? Number(PFAeditData.spo2) : null,
-      sugar: PFAeditData.sugar !== "" && PFAeditData.sugar !== null && PFAeditData.sugar !== undefined ? Number(PFAeditData.sugar) : null,
-      hb: PFAeditData.hb !== "" && PFAeditData.hb !== null && PFAeditData.hb !== undefined ? Number(PFAeditData.hb) : null,
+      diabetes: normalizeDiabetesValue(PFAeditData.diabetes),
+      sugar: null,
+      hb: null,
       hiv: normalizeScreeningValue(PFAeditData.hiv),
       hcv: normalizeScreeningValue(PFAeditData.hcv ?? PFAeditData.hepatitis_c),
       hbsag: normalizeScreeningValue(PFAeditData.hbsag ?? PFAeditData.hepatitis_b),
-      vdrl: normalizeScreeningValue(PFAeditData.vdrl),
-      syphilis: normalizeScreeningValue(PFAeditData.syphilis),
+      vdrl_syphilis: combinedReadmitSubmitVdrlSyph,
+      vdrl: combinedReadmitSubmitVdrlSyph,
+      syphilis: combinedReadmitSubmitVdrlSyph,
       lymphadenopathy: PFAeditData.lymphadenopathy,
 
       // Complications
@@ -1345,6 +1436,7 @@ const parseDateString = (dateStr) => {
       blackout: PFAeditData.neurological?.blackout || "",
       neuro_description: PFAeditData.neuro_description,
 
+      using_medicine: PFAeditData.using_medicine || "",
       other_findings: PFAeditData.other_findings,
 
       consent_name: PFAeditData.consent_name,
@@ -1536,18 +1628,34 @@ const parseDateString = (dateStr) => {
       // Save data into state
       setSelectedUser(latestAssessment);
       const localEditScreening = loadLocalPFAScreening(latestAssessment.user_id, pfaId);
+      const combinedEditVdrlSyph = normalizeScreeningValue(
+        latestAssessment.vdrl_syphilis ??
+        latestAssessment.screening_tests?.vdrl_syphilis ??
+        latestAssessment.health_metrics?.vdrl_syphilis ??
+        latestAssessment.vdrl ??
+        latestAssessment.screening_tests?.vdrl ??
+        latestAssessment.health_metrics?.vdrl ??
+        latestAssessment.syphilis ??
+        latestAssessment.screening_tests?.syphilis ??
+        latestAssessment.health_metrics?.syphilis ??
+        localEditScreening.vdrl_syphilis ??
+        localEditScreening.vdrl ??
+        localEditScreening.syphilis
+      );
       setPFAeditData({
         pfa_id: pfaId,
         ...latestAssessment,
+        substance_use_frequency: latestAssessment.substance_use_frequency ?? latestAssessment.assessment?.substance_use_frequency ?? localEditScreening.substance_use_frequency ?? "",
+        using_medicine: latestAssessment.using_medicine ?? latestAssessment.health_metrics?.using_medicine ?? localEditScreening.using_medicine ?? "",
         temperature: latestAssessment.temperature ?? latestAssessment.health_metrics?.temperature ?? "",
         spo2: latestAssessment.spo2 ?? latestAssessment.health_metrics?.spo2 ?? "",
-        sugar: latestAssessment.sugar ?? latestAssessment.health_metrics?.sugar ?? "",
-        hb: latestAssessment.hb ?? latestAssessment.health_metrics?.hb ?? "",
+        diabetes: normalizeDiabetesValue(latestAssessment.diabetes ?? latestAssessment.health_metrics?.diabetes ?? localEditScreening.diabetes),
         hiv: normalizeScreeningValue(latestAssessment.hiv ?? latestAssessment.screening_tests?.hiv ?? latestAssessment.health_metrics?.hiv ?? localEditScreening.hiv),
         hcv: normalizeScreeningValue(latestAssessment.hcv ?? latestAssessment.screening_tests?.hcv ?? latestAssessment.health_metrics?.hcv ?? latestAssessment.hepatitis_c ?? localEditScreening.hcv),
         hbsag: normalizeScreeningValue(latestAssessment.hbsag ?? latestAssessment.screening_tests?.hbsag ?? latestAssessment.health_metrics?.hbsag ?? latestAssessment.hepatitis_b ?? localEditScreening.hbsag),
-        vdrl: normalizeScreeningValue(latestAssessment.vdrl ?? latestAssessment.screening_tests?.vdrl ?? latestAssessment.health_metrics?.vdrl ?? localEditScreening.vdrl),
-        syphilis: normalizeScreeningValue(latestAssessment.syphilis ?? latestAssessment.screening_tests?.syphilis ?? latestAssessment.health_metrics?.syphilis ?? localEditScreening.syphilis),
+        vdrl_syphilis: combinedEditVdrlSyph,
+        vdrl: combinedEditVdrlSyph,
+        syphilis: combinedEditVdrlSyph,
         verification: latestAssessment.verification ?? latestAssessment.consent?.verification ?? "No",
         date_of_assessment: latestAssessment.date_of_assessment
           ? new Date(latestAssessment.date_of_assessment) // Convert string → Date object
@@ -1573,12 +1681,17 @@ const parseDateString = (dateStr) => {
   
     const yesNo = (val) => (val === "Yes" ? "Yes" : "No"); // Ensures Yes/No only
   
+    const combinedEditSubmitVdrlSyph = normalizeScreeningValue(
+      PFAeditData.vdrl_syphilis ?? PFAeditData.vdrl ?? PFAeditData.syphilis
+    );
+
     const payload = {
       date_of_assessment: PFAeditData.date_of_assessment
       ? PFAeditData.date_of_assessment.toISOString()
       : null,
   
       dependent_to: PFAeditData.dependent_to,
+      substance_use_frequency: PFAeditData.substance_use_frequency || "",
       substance_use_pattern: PFAeditData.substance_use_pattern,
       last_30_days_quantity: PFAeditData.last_30_days_quantity,
       medical_history: PFAeditData.medical_history,
@@ -1590,13 +1703,15 @@ const parseDateString = (dateStr) => {
       blood_pressure: PFAeditData.blood_pressure ?? "",
       temperature: Number(PFAeditData.temperature) || 0,
       spo2: PFAeditData.spo2 !== "" && PFAeditData.spo2 !== null && PFAeditData.spo2 !== undefined ? Number(PFAeditData.spo2) : null,
-      sugar: PFAeditData.sugar !== "" && PFAeditData.sugar !== null && PFAeditData.sugar !== undefined ? Number(PFAeditData.sugar) : null,
-      hb: PFAeditData.hb !== "" && PFAeditData.hb !== null && PFAeditData.hb !== undefined ? Number(PFAeditData.hb) : null,
+      diabetes: normalizeDiabetesValue(PFAeditData.diabetes),
+      sugar: null,
+      hb: null,
       hiv: normalizeScreeningValue(PFAeditData.hiv),
       hcv: normalizeScreeningValue(PFAeditData.hcv ?? PFAeditData.hepatitis_c),
       hbsag: normalizeScreeningValue(PFAeditData.hbsag ?? PFAeditData.hepatitis_b),
-      vdrl: normalizeScreeningValue(PFAeditData.vdrl),
-      syphilis: normalizeScreeningValue(PFAeditData.syphilis),
+      vdrl_syphilis: combinedEditSubmitVdrlSyph,
+      vdrl: combinedEditSubmitVdrlSyph,
+      syphilis: combinedEditSubmitVdrlSyph,
       lymphadenopathy: PFAeditData.lymphadenopathy,
   
       // Complications - flat
@@ -1618,6 +1733,7 @@ const parseDateString = (dateStr) => {
   blackout: yesNo(PFAeditData.blackout),
   neuro_description: PFAeditData.neuro_description,
   
+      using_medicine: PFAeditData.using_medicine || "",
       other_findings: PFAeditData.other_findings,
       consent_name: PFAeditData.consent_name,
       consent_relationship: PFAeditData.consent_relationship,
@@ -1803,6 +1919,7 @@ const parseDateString = (dateStr) => {
               assessment_date: item.assessment?.date_of_assessment,
               age: item.assessment?.age,
               dependent_to: item.assessment?.dependent_to,
+              substance_use_frequency: item.assessment?.substance_use_frequency ?? "",
               substance_use_pattern: item.assessment?.substance_use_pattern,
               last_30_days_quantity: item.assessment?.last_30_days_quantity,
     
@@ -1832,15 +1949,27 @@ const parseDateString = (dateStr) => {
               blood_pressure: item.health_metrics?.blood_pressure ?? item.blood_pressure,
               temperature: item.health_metrics?.temperature ?? item.temperature,
               spo2: item.health_metrics?.spo2 ?? item.spo2,
-              sugar: item.health_metrics?.sugar ?? item.sugar,
-              hb: item.health_metrics?.hb ?? item.hb,
-              hiv: item.screening_tests?.hiv ?? item.health_metrics?.hiv ?? item.hiv ?? "",
-              hcv: item.screening_tests?.hcv ?? item.health_metrics?.hcv ?? item.hcv ?? "",
-              hbsag: item.screening_tests?.hbsag ?? item.health_metrics?.hbsag ?? item.hbsag ?? "",
-              vdrl: item.screening_tests?.vdrl ?? item.health_metrics?.vdrl ?? item.vdrl ?? "",
-              syphilis: item.screening_tests?.syphilis ?? item.health_metrics?.syphilis ?? item.syphilis ?? "",
+              diabetes: normalizeDiabetesValue(item.health_metrics?.diabetes ?? item.diabetes),
+              hiv: normalizeScreeningValue(item.screening_tests?.hiv ?? item.health_metrics?.hiv ?? item.hiv ?? ""),
+              hcv: normalizeScreeningValue(item.screening_tests?.hcv ?? item.health_metrics?.hcv ?? item.hcv ?? ""),
+              hbsag: normalizeScreeningValue(item.screening_tests?.hbsag ?? item.health_metrics?.hbsag ?? item.hbsag ?? ""),
+              vdrl_syphilis: normalizeScreeningValue(
+                item.screening_tests?.vdrl_syphilis ??
+                item.health_metrics?.vdrl_syphilis ??
+                item.vdrl_syphilis ??
+                item.screening_tests?.vdrl ??
+                item.health_metrics?.vdrl ??
+                item.vdrl ??
+                item.screening_tests?.syphilis ??
+                item.health_metrics?.syphilis ??
+                item.syphilis ??
+                ""
+              ),
+              vdrl: normalizeScreeningValue(item.screening_tests?.vdrl ?? item.health_metrics?.vdrl ?? item.vdrl ?? ""),
+              syphilis: normalizeScreeningValue(item.screening_tests?.syphilis ?? item.health_metrics?.syphilis ?? item.syphilis ?? ""),
               lymphadenopathy: item.health_metrics?.lymphadenopathy ?? item.lymphadenopathy,
               nutritional_status: item.health_metrics?.nutritional_status ?? item.nutritional_status,
+              using_medicine: item.health_metrics?.using_medicine ?? item.using_medicine ?? "",
               other_findings: item.health_metrics?.other_findings ?? item.other_findings,
     
               consent: item.consent?.consent ?? item.consent,
@@ -1886,6 +2015,543 @@ const parseDateString = (dateStr) => {
       printElementAsPdf(pdfRef.current, {
         title: `PFA_${selectedUser?.name || "Report"}`,
       });
+
+  const handleAddCustomDependentOption = (currentVal, onChangeVal) => {
+    const trimmed = String(customDependentInput || "").trim();
+    if (!trimmed) return;
+
+    const allKnown = [
+      ...DEFAULT_DEPENDENT_OPTIONS.map((o) => o.value),
+      ...customDependentOptions,
+    ];
+    const existingCanonical = allKnown.find(
+      (k) => k.toLowerCase() === trimmed.toLowerCase()
+    );
+    const valueToUse = existingCanonical || trimmed;
+
+    if (!existingCanonical) {
+      const nextCustom = [...customDependentOptions, valueToUse];
+      setCustomDependentOptions(nextCustom);
+      try {
+        localStorage.setItem(CUSTOM_DEPENDENT_STORAGE_KEY, JSON.stringify(nextCustom));
+      } catch {
+        // ignore storage errors
+      }
+    }
+
+    const currentList = parseDependentSelection(currentVal, allKnown);
+    if (!currentList.some((x) => x.toLowerCase() === valueToUse.toLowerCase())) {
+      onChangeVal(serializeDependentSelection([...currentList, valueToUse]));
+    }
+    setCustomDependentInput("");
+  };
+
+  const handleRemoveCustomDependentOption = (optVal, currentVal, onChangeVal) => {
+    const nextCustom = customDependentOptions.filter(
+      (o) => o.toLowerCase() !== optVal.toLowerCase()
+    );
+    setCustomDependentOptions(nextCustom);
+    try {
+      localStorage.setItem(CUSTOM_DEPENDENT_STORAGE_KEY, JSON.stringify(nextCustom));
+    } catch {
+      // ignore storage errors
+    }
+    const allKnown = [
+      ...DEFAULT_DEPENDENT_OPTIONS.map((o) => o.value),
+      ...nextCustom,
+    ];
+    const currentList = parseDependentSelection(currentVal, allKnown);
+    const updatedList = currentList.filter(
+      (x) => x.toLowerCase() !== optVal.toLowerCase()
+    );
+    onChangeVal(serializeDependentSelection(updatedList));
+  };
+
+  const renderDependentToField = (currentVal, onChangeVal, idPrefix = "pfa") => {
+    const allKnown = [
+      ...DEFAULT_DEPENDENT_OPTIONS.map((o) => o.value),
+      ...customDependentOptions,
+    ];
+    const selectedList = parseDependentSelection(currentVal, allKnown);
+
+    const optionItems = [
+      ...DEFAULT_DEPENDENT_OPTIONS.map((o) => ({ ...o, isCustom: false })),
+      ...customDependentOptions
+        .filter(
+          (c) =>
+            !DEFAULT_DEPENDENT_OPTIONS.some(
+              (d) => d.value.toLowerCase() === c.toLowerCase()
+            )
+        )
+        .map((c) => ({ value: c, label: c, isCustom: true })),
+    ];
+
+    selectedList.forEach((sel) => {
+      if (!optionItems.some((o) => o.value.toLowerCase() === sel.toLowerCase())) {
+        optionItems.push({ value: sel, label: sel, isCustom: false });
+      }
+    });
+
+    const toggleDepOption = (optVal, checked) => {
+      let nextList;
+      if (checked) {
+        nextList = selectedList.some((x) => x.toLowerCase() === optVal.toLowerCase())
+          ? selectedList
+          : [...selectedList, optVal];
+      } else {
+        nextList = selectedList.filter(
+          (x) => x.toLowerCase() !== optVal.toLowerCase()
+        );
+      }
+      onChangeVal(serializeDependentSelection(nextList));
+    };
+
+    return (
+      <FormGroup className="mb-3">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <Label className="mb-0 fw-semibold">
+            {getTranslation(dependentTo, lang)}
+          </Label>
+          <Badge
+            color={selectedList.length > 0 ? "success" : "secondary"}
+            pill
+            style={{
+              backgroundColor: selectedList.length > 0 ? "#24695c" : "#64748b",
+              color: "#ffffff",
+              fontSize: "11.5px",
+              padding: "4px 10px",
+            }}
+          >
+            {getTranslation("Selected / चयनित", lang)}: {selectedList.length}
+          </Badge>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "10px",
+            padding: "12px",
+          }}
+        >
+          <div className="d-flex flex-wrap gap-2">
+            {optionItems.map((opt, idx) => {
+              const inputId = `${idPrefix}-dep-${idx}`;
+              const isChecked = selectedList.some(
+                (x) => x.toLowerCase() === opt.value.toLowerCase()
+              );
+              return (
+                <div
+                  key={`${opt.value}-${idx}`}
+                  className="form-check form-check-inline m-0"
+                  style={{
+                    backgroundColor: isChecked ? "#ecfdf5" : "#ffffff",
+                    border: isChecked ? "1px solid #24695c" : "1px solid #cbd5e1",
+                    borderRadius: "8px",
+                    padding: "5px 10px",
+                  }}
+                >
+                  <Input
+                    id={inputId}
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={isChecked}
+                    onChange={(e) => toggleDepOption(opt.value, e.target.checked)}
+                  />
+                  <Label
+                    htmlFor={inputId}
+                    className="form-check-label"
+                    style={{
+                      fontWeight: isChecked ? "600" : "500",
+                      color: isChecked ? "#14532d" : "#334155",
+                    }}
+                  >
+                    {opt.label.includes("/") ? getTranslation(opt.label, lang) : opt.label}
+                  </Label>
+                  {opt.isCustom && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveCustomDependentOption(opt.value, currentVal, onChangeVal);
+                      }}
+                      title={getTranslation("Remove custom option / हटाएँ", lang)}
+                      style={{
+                        border: "none",
+                        background: "transparent",
+                        color: "#dc2626",
+                        fontWeight: "700",
+                        fontSize: "13px",
+                        lineHeight: 1,
+                        marginLeft: "6px",
+                        padding: "0 2px",
+                        cursor: "pointer",
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="d-flex align-items-center gap-2 mt-3 flex-wrap">
+            <Input
+              type="text"
+              value={customDependentInput}
+              onChange={(e) => setCustomDependentInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddCustomDependentOption(currentVal, onChangeVal);
+                }
+              }}
+              placeholder={getTranslation(
+                "Add custom dependent option... / कस्टम निर्भरता जोड़ें...",
+                lang
+              )}
+              className="form-control"
+              style={{ maxWidth: "340px", backgroundColor: "#ffffff" }}
+            />
+            <Button
+              type="button"
+              color="primary"
+              size="sm"
+              onClick={() => handleAddCustomDependentOption(currentVal, onChangeVal)}
+              className="d-inline-flex align-items-center gap-1 fw-semibold"
+              style={{
+                minHeight: "38px",
+                padding: "6px 14px",
+                backgroundColor: "#24695c",
+                borderColor: "#24695c",
+                borderRadius: "8px",
+              }}
+            >
+              <span style={{ fontSize: "15px", lineHeight: 1 }}>+</span>
+              <span>{getTranslation("Add / जोड़ें", lang)}</span>
+            </Button>
+          </div>
+
+          <div className="mt-2">
+            <Input
+              type="text"
+              readOnly
+              value={
+                selectedList.length > 0
+                  ? `(${selectedList.length} ${getTranslation("Selected / चयनित", lang)}) ${selectedList.join(" | ")}`
+                  : ""
+              }
+              placeholder={getTranslation(
+                "Selected dependencies will appear here... / चयनित निर्भरता यहाँ दिखाई देगी...",
+                lang
+              )}
+              className="form-control bg-white fw-semibold"
+            />
+          </div>
+        </div>
+      </FormGroup>
+    );
+  };
+
+  const renderFrequencyAndPatternSection = ({
+    frequencyVal,
+    onFrequencyChange,
+    patternVal,
+    onPatternChange,
+    idPrefix = "pfa",
+  }) => {
+    const selectedPatterns = parseUsePatternSelection(patternVal);
+
+    const togglePatternOption = (optVal, checked) => {
+      let nextList;
+      if (checked) {
+        nextList = selectedPatterns.some((x) => x.toLowerCase() === optVal.toLowerCase())
+          ? selectedPatterns
+          : [...selectedPatterns, optVal];
+      } else {
+        nextList = selectedPatterns.filter(
+          (x) => x.toLowerCase() !== optVal.toLowerCase()
+        );
+      }
+      onPatternChange(serializeUsePatternSelection(nextList));
+    };
+
+    const extraPatterns = selectedPatterns.filter(
+      (sel) =>
+        !SUBSTANCE_USE_PATTERN_OPTIONS.some(
+          (o) => o.value.toLowerCase() === sel.toLowerCase()
+        )
+    );
+    const allPatternItems = [
+      ...SUBSTANCE_USE_PATTERN_OPTIONS,
+      ...extraPatterns.map((p) => ({ value: p, label: p })),
+    ];
+
+    return (
+      <div className="row g-3 mt-1 mb-3 align-items-stretch">
+        <div className="col-12 col-lg-6">
+          <VoiceTextarea
+            label={<Translated text={getTranslation(substanceUseFrequency, lang)} />}
+            name="substanceUseFrequencyData"
+            value={frequencyVal || ""}
+            onChange={(e) => onFrequencyChange(e.target.value)}
+            rows={4}
+          />
+        </div>
+
+        <div className="col-12 col-lg-6">
+          <FormGroup className="mb-0">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+              <Label className="mb-0 fw-semibold">
+                {getTranslation(substanceUsePattern, lang)}
+              </Label>
+              <Badge
+                color={selectedPatterns.length > 0 ? "success" : "secondary"}
+                pill
+                style={{
+                  backgroundColor: selectedPatterns.length > 0 ? "#24695c" : "#64748b",
+                  color: "#ffffff",
+                  fontSize: "11px",
+                  padding: "3px 9px",
+                }}
+              >
+                {selectedPatterns.length} {getTranslation("Selected / चयनित", lang)}
+              </Badge>
+            </div>
+
+            <div
+              style={{
+                backgroundColor: "#f8fafc",
+                border: "1px solid #e2e8f0",
+                borderRadius: "10px",
+                padding: "12px",
+              }}
+            >
+              <div className="d-flex flex-wrap gap-2">
+                {allPatternItems.map((opt, idx) => {
+                  const inputId = `${idPrefix}-pattern-${idx}`;
+                  const isChecked = selectedPatterns.some(
+                    (x) => x.toLowerCase() === opt.value.toLowerCase()
+                  );
+                  return (
+                    <div
+                      key={`${opt.value}-${idx}`}
+                      className="form-check form-check-inline m-0"
+                      style={{
+                        backgroundColor: isChecked ? "#ecfdf5" : "#ffffff",
+                        border: isChecked ? "1px solid #24695c" : "1px solid #cbd5e1",
+                        borderRadius: "8px",
+                        padding: "5px 10px",
+                      }}
+                    >
+                      <Input
+                        id={inputId}
+                        type="checkbox"
+                        className="form-check-input"
+                        checked={isChecked}
+                        onChange={(e) => togglePatternOption(opt.value, e.target.checked)}
+                      />
+                      <Label
+                        htmlFor={inputId}
+                        className="form-check-label"
+                        style={{
+                          fontWeight: isChecked ? "600" : "500",
+                          color: isChecked ? "#14532d" : "#334155",
+                        }}
+                      >
+                        {opt.label.includes("/") ? getTranslation(opt.label, lang) : opt.label}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-2">
+                <Input
+                  type="text"
+                  readOnly
+                  value={selectedPatterns.join(", ")}
+                  placeholder={getTranslation(
+                    "Selected substance use pattern(s) will appear here... / चयनित उपयोग पैटर्न यहाँ दिखेगा...",
+                    lang
+                  )}
+                  className="form-control bg-white fw-semibold"
+                />
+              </div>
+            </div>
+          </FormGroup>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPhysicalExamTable = (dataObj, onFieldChange, isCreateMode = false) => {
+    const medField = isCreateMode ? "medicalConfirmationData" : "medical_history";
+    const bloodField = isCreateMode
+      ? "bloodConfirmationData"
+      : "blood_transfusion_history";
+
+    const rows = [
+      {
+        id: "1",
+        question: getTranslation(anyMedicalHistory, lang),
+        name: medField,
+        type: "yesno",
+      },
+      {
+        id: "2",
+        question: getTranslation(anyBloodTransfusionHistory, lang),
+        name: bloodField,
+        type: "yesno",
+      },
+      {
+        id: "3",
+        question: getTranslation(Weight, lang),
+        name: "weight",
+        type: "number",
+      },
+      {
+        id: "4",
+        question: getTranslation(PulseRate, lang),
+        name: "pulse_rate",
+        type: "number",
+      },
+      {
+        id: "5",
+        question: getTranslation(Bloodpressure, lang),
+        name: "blood_pressure",
+        type: "text",
+      },
+      {
+        id: "6",
+        question: getTranslation("Temperature (°F) / तापमान (°F)", lang),
+        name: "temperature",
+        type: "number",
+        min: 86,
+        max: 113,
+        step: "0.1",
+        placeholder: getTranslation(
+          "86 - 113 °F (e.g. 98.6 - 100 °F) / जैसे 98.6 - 100 °F",
+          lang
+        ),
+      },
+      {
+        id: "7",
+        question: getTranslation("SpO2 (%) / एसपीओ२ (%)", lang),
+        name: "spo2",
+        type: "number",
+        min: 0,
+        max: 100,
+        step: 1,
+        placeholder: getTranslation("0 - 100 %", lang),
+      },
+      {
+        id: "8",
+        question: getTranslation("Diabetes / मधुमेह", lang),
+        name: "diabetes",
+        type: "yesnona",
+      },
+      {
+        id: "9",
+        question: getTranslation("HIV / एचआईवी", lang),
+        name: "hiv",
+        type: "screening",
+      },
+      {
+        id: "10",
+        question: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी (HCV)", lang),
+        name: "hcv",
+        type: "screening",
+      },
+      {
+        id: "11",
+        question: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी (HBsAg)", lang),
+        name: "hbsag",
+        type: "screening",
+      },
+      {
+        id: "12",
+        question: getTranslation("VDRL / Syphilis / वीडीआरएल / सिफलिस", lang),
+        name: "vdrl_syphilis",
+        type: "screening",
+      },
+    ];
+
+    return (
+      <Table bordered>
+        <thead>
+          <tr>
+            <th scope="col">{getTranslation(tableNumber, lang)}</th>
+            <th scope="col">{getTranslation(genralPhysicalExamination, lang)}</th>
+            <th scope="col">{getTranslation(Observation, lang)}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ id, question, name, type, min, max, step, placeholder }) => (
+            <tr key={id}>
+              <td>{id}</td>
+              <td>{question}</td>
+              <td>
+                {type === "yesno" ? (
+                  <select
+                    className="form-control"
+                    name={name}
+                    value={dataObj?.[name] || ""}
+                    onChange={(e) => onFieldChange(name, e.target.value)}
+                  >
+                    <option value="">{getTranslation("Select / चुनें", lang)}</option>
+                    <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
+                    <option value="No">{getTranslation("No / नहीं", lang)}</option>
+                  </select>
+                ) : type === "yesnona" ? (
+                  <select
+                    className="form-control"
+                    name={name}
+                    value={normalizeDiabetesValue(dataObj?.[name])}
+                    onChange={(e) => onFieldChange(name, e.target.value)}
+                  >
+                    <option value="">{getTranslation("Select / चुनें", lang)}</option>
+                    <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
+                    <option value="No">{getTranslation("No / नहीं", lang)}</option>
+                    <option value="NA">{getTranslation("NA / लागू नहीं", lang)}</option>
+                  </select>
+                ) : type === "screening" ? (
+                  <select
+                    className="form-control"
+                    name={name}
+                    value={normalizeScreeningValue(
+                      name === "vdrl_syphilis"
+                        ? dataObj?.vdrl_syphilis ?? dataObj?.vdrl ?? dataObj?.syphilis
+                        : dataObj?.[name]
+                    )}
+                    onChange={(e) => onFieldChange(name, e.target.value)}
+                  >
+                    <option value="">{getTranslation("Select / चुनें", lang)}</option>
+                    <option value="Negative">{getTranslation("Negative / नेगेटिव", lang)}</option>
+                    <option value="Positive">{getTranslation("Positive / पॉजिटिव", lang)}</option>
+                    <option value="NA">{getTranslation("NA / लागू नहीं", lang)}</option>
+                  </select>
+                ) : (
+                  <Input
+                    type={type === "number" ? "number" : "text"}
+                    name={name}
+                    value={dataObj?.[name] ?? ""}
+                    min={min}
+                    max={max}
+                    step={step}
+                    onChange={(e) => onFieldChange(name, e.target.value)}
+                    placeholder={placeholder || getTranslation("Enter details / विवरण दर्ज करें", lang)}
+                    className="form-control"
+                  />
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+    );
+  };
 
 
   return (
@@ -2099,350 +2765,57 @@ const parseDateString = (dateStr) => {
                   <div className="row px-3">
                     {/*Dependent to section/उपयोगकर्ता :*/}
                     <div className="col-md-12">
-                      <FormGroup className="mb-4">
-                        <Label>{getTranslation(dependentTo,lang)}</Label>
-                        {/* <Input
-                          type="textarea"
-                          className="form-control"
-                          rows="3"
-                          name="dependentToData"
-                          value={formData.dependentToData}
-                          onChange={handleChange}
-                        /> */}
-                        <select
-  className="form-control"
-  name="dependentToData"
-  value={formData.dependentToData}
-  onChange={handleChange}
->
-  <option value="">
-    {getTranslation("Select Dependency / निर्भरता चुनें", lang)}
-  </option>
-
-  <option value="Alcohol">
-    {getTranslation("Alcohol / शराब", lang)}
-  </option>
-
-  <option value="Afeem, Doada Chura">
-    {getTranslation("Afeem, Doada Chura / अफीम, डोडा चुरा", lang)}
-  </option>
-
-  <option value="Samke Heroin">
-    {getTranslation("Samke Heroin / समके हेरोइन", lang)}
-  </option>
-
-  <option value="Coacine">
-    {getTranslation("Coacine / कोकीन", lang)}
-  </option>
-
-  <option value="MD">
-    {getTranslation("MD / एमडी", lang)}
-  </option>
-
-  <option value="Ganja, Bhang, Charas, Munnka">
-    {getTranslation("Ganja, Bhang, Charas, Munnka / गांजा, भांग, चरस, मुन्नका", lang)}
-  </option>
-
-  <option value="Inhalant Abuse">
-    {getTranslation("Inhalant Abuse / इनहेलेंट का दुरुपयोग", lang)}
-  </option>
-
-  <option value="Medical Abuse">
-    {getTranslation("Medical Abuse / चिकित्सा दुरुपयोग", lang)}
-  </option>
-
-  <option value="Multi Addict">
-    {getTranslation("Multi Addict / मल्टी एडिक्ट", lang)}
-  </option>
-</select>
-
-
-
-{/* <VoiceTextarea
-  label={<Translated text={getTranslation(dependentTo,lang)} />}
-  name="dependentToData"
-  value={formData.dependentToData}
-  onChange={handleChange}
-/> */}
-                      </FormGroup>
+                      {renderDependentToField(
+                        formData.dependentToData,
+                        (val) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            dependentToData: val,
+                          })),
+                        "create"
+                      )}
                     </div>
-                    {/*Substance Use Pattern section/उपयोगकर्ता :*/}
+                    {/* Substance Use Frequency (Left) & Substance Use Pattern (Right) */}
                     <div className="col-md-12">
-                      <FormGroup className="mb-4 mt-4">
-                        {/* <Label>{getTranslation(substanceUsePattern,lang)}</Label> */}
-                        {/* <Input
-                          type="textarea"
-                          className="form-control"
-                          rows="3"
-                          name="substanceUsePatternData"
-                          value={formData.substanceUsePatternData}
-                          onChange={handleChange}
-                        /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(substanceUsePattern,lang)} />}
-  name="substanceUsePatternData"
-  value={formData.substanceUsePatternData}
-  onChange={handleChange}
-/>
-
-                      </FormGroup>
+                      {renderFrequencyAndPatternSection({
+                        frequencyVal: formData.substanceUseFrequencyData,
+                        onFrequencyChange: (val) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            substanceUseFrequencyData: val,
+                          })),
+                        patternVal: formData.substanceUsePatternData,
+                        onPatternChange: (val) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            substanceUsePatternData: val,
+                          })),
+                        idPrefix: "create",
+                      })}
                     </div>
                     {/*Last 30 Days Quantity section/उपयोगकर्ता :*/}
                     <div className="col-md-12">
                       <FormGroup className="mb-4 mt-4">
-                        {/* <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
-                        <Input
-                          type="textarea"
-                          className="form-control"
-                          rows="3"
+                        <VoiceTextarea
+                          label={<Translated text={getTranslation(last30DaysQuantity,lang)} />}
                           name="last30DaysQuantityData"
                           value={formData.last30DaysQuantityData}
                           onChange={handleChange}
-                        /> */}
-                        <VoiceTextarea
-  label={<Translated text={getTranslation(last30DaysQuantity,lang)} />}
-  name="last30DaysQuantityData"
-  value={formData.last30DaysQuantityData}
-  onChange={handleChange}
-/>
+                        />
                       </FormGroup>
                     </div>
                     {/* General Physical Examination / सामान्य शारीरिक परीक्षण */}
                     <div className="table-responsive">
-                      <Table bordered>
-                        <thead>
-                          <tr>
-                            <th scope="col">{getTranslation(tableNumber,lang)}</th>
-                            <th scope="col">{getTranslation(genralPhysicalExamination,lang)}</th>
-                            <th scope="col">{getTranslation(Observation,lang)}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-  {[
-    {
-      id: "1",
-      question: getTranslation(anyMedicalHistory, lang),
-      name: "medicalConfirmationData",
-      type: "yesno",
-    },
-    {
-      id: "2",
-      question: getTranslation(anyBloodTransfusionHistory, lang),
-      name: "bloodConfirmationData",
-      type: "yesno",
-    },
-    {
-      id: "3",
-      question: getTranslation(Weight, lang),
-      name: "weight",
-    },
-    {
-      id: "4",
-      question: getTranslation(PulseRate, lang),
-      name: "pulse_rate",
-    },
-    {
-      id: "5",
-      question: getTranslation(Bloodpressure, lang),
-      name: "blood_pressure",
-    },
-    {
-      id: "6",
-      question: getTranslation("Temperature (°F) / तापमान (°F)", lang),
-      name: "temperature",
-      type: "number",
-      min: 86,
-      max: 113,
-      step: "0.1",
-      placeholder: getTranslation("86 - 113 °F (e.g. 98.6 - 100 °F) / जैसे 98.6 - 100 °F", lang),
-    },
-    {
-      id: "7",
-      question: getTranslation("SpO2 (%) / एसपीओ२ (%)", lang),
-      name: "spo2",
-      type: "number",
-      min: 0,
-      max: 100,
-      step: 1,
-      placeholder: getTranslation("0 - 100 %", lang),
-    },
-    {
-      id: "8",
-      question: getTranslation("Blood Sugar (mg/dL) / ब्लड शुगर (mg/dL)", lang),
-      name: "sugar",
-      type: "number",
-      min: 0,
-      step: "0.1",
-      placeholder: getTranslation("mg/dL (e.g. 110.5)", lang),
-    },
-    {
-      id: "9",
-      question: getTranslation("Hemoglobin (Hb g/dL) / हीमोग्लोबिन (g/dL)", lang),
-      name: "hb",
-      type: "number",
-      min: 0,
-      step: "0.1",
-      placeholder: getTranslation("g/dL (e.g. 14.2)", lang),
-    },
-    {
-      id: "10",
-      question: getTranslation("HIV / एचआईवी", lang),
-      name: "hiv",
-      type: "screening",
-    },
-    {
-      id: "11",
-      question: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी (HCV)", lang),
-      name: "hcv",
-      type: "screening",
-    },
-    {
-      id: "12",
-      question: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी (HBsAg)", lang),
-      name: "hbsag",
-      type: "screening",
-    },
-    {
-      id: "13",
-      question: getTranslation("VDRL / वीडीआरएल", lang),
-      name: "vdrl",
-      type: "screening",
-    },
-    {
-      id: "14",
-      question: getTranslation("Syphilis / सिफलिस", lang),
-      name: "syphilis",
-      type: "screening",
-    },
-  ].map(({ id, question, name, type, min, max, step, placeholder }) => (
-    <tr key={id}>
-      <td>{id}</td>
-      <td>{question}</td>
-      <td>
-        {type === "yesno" ? (
-          <select
-            className="form-control"
-            name={name}
-            value={formData[name]}
-            onChange={(e) =>
-              setFormData((prevData) => ({
-                ...prevData,
-                [name]: e.target.value,
-              }))
-            }
-          >
-            <option value="">
-              {getTranslation("Select / चुनें", lang)}
-            </option>
-            <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
-            <option value="No">{getTranslation("No / नहीं", lang)}</option>
-          </select>
-        ) : type === "screening" ? (
-          <select
-            className="form-control"
-            name={name}
-            value={normalizeScreeningValue(formData[name])}
-            onChange={(e) =>
-              setFormData((prevData) => ({
-                ...prevData,
-                [name]: e.target.value,
-              }))
-            }
-          >
-            <option value="">
-              {getTranslation("Select / चुनें", lang)}
-            </option>
-            <option value="Negative">{getTranslation("Negative / नेगेटिव", lang)}</option>
-            <option value="Positive">{getTranslation("Positive / पॉजिटिव", lang)}</option>
-            <option value="Not Done">{getTranslation("Not Done / जांच नहीं हुई", lang)}</option>
-          </select>
-        ) : (
-          <Input
-            type={["weight", "pulse_rate", "temperature", "spo2", "sugar", "hb"].includes(name) || type === "number" ? "number" : "text"}
-            name={name}
-            value={formData[name] ?? ""}
-            min={min}
-            max={max}
-            step={step}
-            onChange={(e) =>
-              setFormData((prevData) => ({
-                ...prevData,
-                [name]: e.target.value,
-              }))
-            }
-            placeholder={placeholder || getTranslation("Enter details / विवरण दर्ज करें", lang)}
-            className="form-control"
-          />
-        )}
-      </td>
-    </tr>
-  ))}
-</tbody>
-
-                        {/* <tbody>
-                          {[
-                            {
-                              id: "5",
-                              question: getTranslation(anyMedicalHistory,lang),
-                              name: "medicalConfirmationData",
-                            },
-                            {
-                              id: "6",
-                              question: getTranslation(anyBloodTransfusionHistory,lang),
-                              name: "bloodConfirmationData",
-                            },
-                            {
-                              id: "7",
-                              question: getTranslation(Weight,lang),
-                              name: "weight",
-                            },
-                            {
-                              id: "8",
-                              question: getTranslation(PulseRate,lang),
-                              name: "pulse_rate",
-                            },
-                            {
-                              id: "9",
-                              question: getTranslation(Bloodpressure,lang),
-                              name: "blood_pressure",
-                            },
-                            {
-                              id: "10",
-                              question: getTranslation(Temperature,lang),
-                              name: "temperature",
-                            },
-                          ].map(({ id, question, name }) => (
-                            <tr key={id}>
-                              <td>{id}</td>
-                              <td>{question}</td>
-                              <td>
-                                <Input
-                                  type={
-                                    [
-                                      "weight",
-                                      "pulse_rate",
-                                      "temperature",
-                                    ].includes(name)
-                                      ? "number"
-                                      : "text"
-                                  }
-                                  name={name}
-                                  value={formData[name]}
-                                  onChange={(e) =>
-                                    setFormData((prevData) => ({
-                                      ...prevData,
-                                      [name]: e.target.value,
-                                    }))
-                                  }
-                                  placeholder={getTranslation("Enter details/विवरण दर्ज करें",lang)}
-                                  className="form-control"
-                                />
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody> */}
-                      </Table>
+                      {renderPhysicalExamTable(
+                        formData,
+                        (name, val) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            [name]: val,
+                            ...(name === "vdrl_syphilis" ? { vdrl: val, syphilis: val } : {}),
+                          })),
+                        true
+                      )}
 
                       <div className="col-md-12">
                         <FormGroup className="mb-4 mt-4">
@@ -2633,6 +3006,24 @@ const parseDateString = (dateStr) => {
 
                         </FormGroup>
                       </div>
+                    </div>
+
+                    {/* Using Medicine */}
+                    <div className="col-md-12">
+                      <FormGroup className="mb-3 mt-3">
+                        <Label>{getTranslation(usingMedicine, lang)}</Label>
+                        <Input
+                          type="text"
+                          name="using_medicine"
+                          value={formData.using_medicine || ""}
+                          onChange={handleChange}
+                          placeholder={getTranslation(
+                            "Enter currently using medicine... / वर्तमान में उपयोग की जा रही दवा दर्ज करें...",
+                            lang
+                          )}
+                          className="form-control"
+                        />
+                      </FormGroup>
                     </div>
 
                     {/* Any Other Findings */}
@@ -3046,21 +3437,10 @@ const parseDateString = (dateStr) => {
                         <div className="col-6 col-sm-4 col-lg-2">
                           <div className="p-2 px-3 rounded-3 bg-light border">
                             <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
-                              {getTranslation("Blood Sugar / ब्लड शुगर", lang)}
+                              {getTranslation("Diabetes / मधुमेह", lang)}
                             </div>
                             <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
-                              🍯 {selectedUser.sugar !== undefined && selectedUser.sugar !== null && selectedUser.sugar !== "" ? `${selectedUser.sugar} mg/dL` : "-"}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="col-6 col-sm-4 col-lg-2">
-                          <div className="p-2 px-3 rounded-3 bg-light border">
-                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
-                              {getTranslation("Hemoglobin (Hb) / हीमोग्लोबिन", lang)}
-                            </div>
-                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
-                              🧪 {selectedUser.hb !== undefined && selectedUser.hb !== null && selectedUser.hb !== "" ? `${selectedUser.hb} g/dL` : "-"}
+                              🩺 {normalizeDiabetesValue(selectedUser.diabetes) || "-"}
                             </div>
                           </div>
                         </div>
@@ -3069,10 +3449,13 @@ const parseDateString = (dateStr) => {
                           { key: "hiv", label: getTranslation("HIV / एचआईवी", lang) },
                           { key: "hcv", fallbackKey: "hepatitis_c", label: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी", lang) },
                           { key: "hbsag", fallbackKey: "hepatitis_b", label: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी", lang) },
-                          { key: "vdrl", label: getTranslation("VDRL / वीडीआरएल", lang) },
-                          { key: "syphilis", label: getTranslation("Syphilis / सिफलिस", lang) },
+                          { key: "vdrl_syphilis", fallbackKey: "vdrl", secondFallbackKey: "syphilis", label: getTranslation("VDRL / Syphilis / वीडीआरएल / सिफलिस", lang) },
                         ].map((item) => {
-                          const val = selectedUser[item.key] || (item.fallbackKey ? selectedUser[item.fallbackKey] : "");
+                          const rawVal =
+                            selectedUser[item.key] ||
+                            (item.fallbackKey ? selectedUser[item.fallbackKey] : "") ||
+                            (item.secondFallbackKey ? selectedUser[item.secondFallbackKey] : "");
+                          const val = rawVal ? normalizeScreeningValue(rawVal) : "";
                           const isPos = String(val || "").toLowerCase() === "positive";
                           const isNeg = String(val || "").toLowerCase() === "negative";
                           return (
@@ -3151,7 +3534,7 @@ const parseDateString = (dateStr) => {
                     </div>
                     <div className="card-body p-3 p-md-4">
                       <div className="row g-3">
-                        <div className="col-12 col-md-4">
+                        <div className="col-12 col-md-6">
                           <div className="p-2 px-3 rounded-3 bg-light border">
                             <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
                               {getTranslation("Dependent To / निर्भरता का प्रकार:", lang)}
@@ -3162,7 +3545,18 @@ const parseDateString = (dateStr) => {
                           </div>
                         </div>
 
-                        <div className="col-12 col-md-4">
+                        <div className="col-12 col-md-6">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation(substanceUseFrequency, lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.substance_use_frequency || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12 col-md-6">
                           <div className="p-2 px-3 rounded-3 bg-light border">
                             <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
                               {getTranslation("Substance Use Pattern / उपयोग का पैटर्न:", lang)}
@@ -3173,7 +3567,7 @@ const parseDateString = (dateStr) => {
                           </div>
                         </div>
 
-                        <div className="col-12 col-md-4">
+                        <div className="col-12 col-md-6">
                           <div className="p-2 px-3 rounded-3 bg-light border">
                             <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
                               {getTranslation("Last 30 Days Quantity / पिछले 30 दिनों की मात्रा:", lang)}
@@ -3267,7 +3661,7 @@ const parseDateString = (dateStr) => {
                         <div className="col-6 col-sm-4 col-md-3">
                           <div className="p-2 px-3 rounded-3 bg-light border">
                             <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
-                              {getTranslation("Haematemesis / मलैना", lang)}
+                              {getTranslation("Haematemesis (Blood Vomiting) / खून की उल्टी", lang)}
                             </div>
                             <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
                               {selectedUser.haematemesis || "-"}
@@ -3395,6 +3789,17 @@ const parseDateString = (dateStr) => {
                             </div>
                             <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
                               {selectedUser.blackout || "-"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="col-12">
+                          <div className="p-2 px-3 rounded-3 bg-light border">
+                            <div className="text-muted text-uppercase fw-semibold" style={{ fontSize: "11px" }}>
+                              {getTranslation(usingMedicine, lang)}
+                            </div>
+                            <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
+                              {selectedUser.using_medicine || "-"}
                             </div>
                           </div>
                         </div>
@@ -3559,127 +3964,41 @@ const parseDateString = (dateStr) => {
                     </div>
                   {/* Dependent To */}
                   <div className="col-md-12 pt-3">
-                    <FormGroup className="mb-0">
-                      <Label>{getTranslation(dependentTo,lang)}</Label>
-                      {/* <Input
-                        type="textarea"
-                        rows="3"
-                        name="dependentToData"
-                        value={PFAeditData.dependent_to}
-                        onChange={(e) =>
-                          setPFAeditData({
-                            ...PFAeditData,
-                            dependent_to: e.target.value,
-                          })
-                        }
-                      /> */}
-
-<select
-  className="form-control"
-  name="dependentToData"
-  value={PFAeditData.dependent_to}
-  onChange={(e) =>
-    setPFAeditData({
-      ...PFAeditData,
-      dependent_to: e.target.value,
-    })
-  }
->
-  <option value="">
-    {getTranslation("Select Dependency / निर्भरता चुनें", lang)}
-  </option>
-
-  <option value="Alcohol">
-    {getTranslation("Alcohol / शराब", lang)}
-  </option>
-
-  <option value="Afeem, Doada Chura">
-    {getTranslation("Afeem, Doada Chura / अफीम, डोडा चुरा", lang)}
-  </option>
-
-  <option value="Samke Heroin">
-    {getTranslation("Samke Heroin / समके हेरोइन", lang)}
-  </option>
-
-  <option value="Coacine">
-    {getTranslation("Coacine / कोकीन", lang)}
-  </option>
-
-  <option value="MD">
-    {getTranslation("MD / एमडी", lang)}
-  </option>
-
-  <option value="Ganja, Bhang, Charas, Munnka">
-    {getTranslation("Ganja, Bhang, Charas, Munnka / गांजा, भांग, चरस, मुन्नका", lang)}
-  </option>
-
-  <option value="Inhalant Abuse">
-    {getTranslation("Inhalant Abuse / इनहेलेंट का दुरुपयोग", lang)}
-  </option>
-
-  <option value="Medical Abuse">
-    {getTranslation("Medical Abuse / चिकित्सा दुरुपयोग", lang)}
-  </option>
-
-  <option value="Multi Addict">
-    {getTranslation("Multi Addict / मल्टी एडिक्ट", lang)}
-  </option>
-</select>
-
-
-                      {/* <VoiceTextarea
-  label={<Translated text={getTranslation(dependentTo,lang)} />}
-  name="dependentToData"
-  value={PFAeditData.dependent_to}
-  onChange={(e) =>
-    setPFAeditData({
-      ...PFAeditData,
-      dependent_to: e.target.value,
-    })
-  }
-/> */}
-                    </FormGroup>
+                    {renderDependentToField(
+                      PFAeditData?.dependent_to || "",
+                      (val) =>
+                        setPFAeditData((prev) => ({
+                          ...(prev || {}),
+                          dependent_to: val,
+                        })),
+                      "readmit"
+                    )}
                   </div>
 
-                  {/* Substance Use Pattern */}
+                  {/* Substance Use Frequency (Left) & Substance Use Pattern (Right) */}
                   <div className="col-md-12">
-                    <FormGroup className="mb-0">
-                      {/* <Label>{getTranslation(substanceUsePattern,lang)}</Label>
-                      <Input
-                        type="textarea"
-                        rows="3"
-                        name="substanceUsePatternData"
-                        value={PFAeditData.substance_use_pattern}
-                        onChange={(e) =>
-                          setPFAeditData({
-                            ...PFAeditData,
-                            substance_use_pattern: e.target.value,
-                          })
-                        }
-                      /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(substanceUsePattern,lang)} />}
-  name="substanceUsePatternData"
-  value={PFAeditData.substance_use_pattern}
-  onChange={(e) =>
-    setPFAeditData({
-      ...PFAeditData,
-      substance_use_pattern: e.target.value,
-    })
-  }
-/>
-
-                    </FormGroup>
+                    {renderFrequencyAndPatternSection({
+                      frequencyVal: PFAeditData?.substance_use_frequency || "",
+                      onFrequencyChange: (val) =>
+                        setPFAeditData((prev) => ({
+                          ...(prev || {}),
+                          substance_use_frequency: val,
+                        })),
+                      patternVal: PFAeditData?.substance_use_pattern || "",
+                      onPatternChange: (val) =>
+                        setPFAeditData((prev) => ({
+                          ...(prev || {}),
+                          substance_use_pattern: val,
+                        })),
+                      idPrefix: "readmit",
+                    })}
                   </div>
 
                   {/* Last 30 Days Quantity */}
                   <div className="col-md-12">
                     <FormGroup className="mb-0">
-                      {/* <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
-                      <Input
-                        type="textarea"
-                        rows="3"
+                      <VoiceTextarea
+                        label={<Translated text={getTranslation(last30DaysQuantity,lang)} />}
                         name="last30DaysQuantityData"
                         value={PFAeditData.last_30_days_quantity}
                         onChange={(e) =>
@@ -3688,260 +4007,22 @@ const parseDateString = (dateStr) => {
                             last_30_days_quantity: e.target.value,
                           })
                         }
-                      /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(last30DaysQuantity,lang)} />}
-  name="last30DaysQuantityData"
-                        value={PFAeditData.last_30_days_quantity}
-                        onChange={(e) =>
-                          setPFAeditData({
-                            ...PFAeditData,
-                            last_30_days_quantity: e.target.value,
-                          })
-                        }
-/>
-
+                      />
                     </FormGroup>
                   </div>
 
                   {/* General Physical Examination */}
                   <div className="table-responsive">
-                    <Table bordered>
-                      <thead>
-                        <tr>
-                          <th>{getTranslation(tableNumber,lang)}</th>
-                          <th>{getTranslation(genralPhysicalExamination,lang)}</th>
-                          <th>{getTranslation(Observation,lang)}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-  {[
-    {
-      id: "1",
-      question: getTranslation(anyMedicalHistory, lang),
-      name: "medical_history",
-      type: "yesno", // added type
-    },
-    {
-      id: "2",
-      question: getTranslation(anyBloodTransfusionHistory, lang),
-      name: "blood_transfusion_history",
-      type: "yesno", // added type
-    },
-    {
-      id: "3",
-      question: getTranslation(Weight, lang),
-      name: "weight",
-    },
-    {
-      id: "4",
-      question: getTranslation(PulseRate, lang),
-      name: "pulse_rate",
-    },
-    {
-      id: "5",
-      question: getTranslation(Bloodpressure, lang),
-      name: "blood_pressure",
-    },
-    {
-      id: "6",
-      question: getTranslation("Temperature (°F) / तापमान (°F)", lang),
-      name: "temperature",
-      type: "number",
-      min: 86,
-      max: 113,
-      step: "0.1",
-      placeholder: getTranslation("86 - 113 °F (e.g. 98.6 - 100 °F) / जैसे 98.6 - 100 °F", lang),
-    },
-    {
-      id: "7",
-      question: getTranslation("SpO2 (%) / एसपीओ२ (%)", lang),
-      name: "spo2",
-      type: "number",
-      min: 0,
-      max: 100,
-      step: 1,
-      placeholder: getTranslation("0 - 100 %", lang),
-    },
-    {
-      id: "8",
-      question: getTranslation("Blood Sugar (mg/dL) / ब्लड शुगर (mg/dL)", lang),
-      name: "sugar",
-      type: "number",
-      min: 0,
-      step: "0.1",
-      placeholder: getTranslation("mg/dL (e.g. 110.5)", lang),
-    },
-    {
-      id: "9",
-      question: getTranslation("Hemoglobin (Hb g/dL) / हीमोग्लोबिन (g/dL)", lang),
-      name: "hb",
-      type: "number",
-      min: 0,
-      step: "0.1",
-      placeholder: getTranslation("g/dL (e.g. 14.2)", lang),
-    },
-    {
-      id: "10",
-      question: getTranslation("HIV / एचआईवी", lang),
-      name: "hiv",
-      type: "screening",
-    },
-    {
-      id: "11",
-      question: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी (HCV)", lang),
-      name: "hcv",
-      type: "screening",
-    },
-    {
-      id: "12",
-      question: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी (HBsAg)", lang),
-      name: "hbsag",
-      type: "screening",
-    },
-    {
-      id: "13",
-      question: getTranslation("VDRL / वीडीआरएल", lang),
-      name: "vdrl",
-      type: "screening",
-    },
-    {
-      id: "14",
-      question: getTranslation("Syphilis / सिफलिस", lang),
-      name: "syphilis",
-      type: "screening",
-    },
-  ].map(({ id, question, name, type, min, max, step, placeholder }) => (
-    <tr key={id}>
-      <td>{id}</td>
-      <td>{question}</td>
-      <td>
-        {type === "yesno" ? (
-          <select
-            className="form-control"
-            name={name}
-            value={PFAeditData[name] || ""}
-            onChange={(e) => {
-              const { name, value } = e.target;
-              setPFAeditData((prev) => ({
-                ...prev,
-                [name]: value,
-              }));
-            }}
-          >
-            <option value="">
-              {getTranslation("Select / चुनें", lang)}
-            </option>
-            <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
-            <option value="No">{getTranslation("No / नहीं", lang)}</option>
-          </select>
-        ) : type === "screening" ? (
-          <select
-            className="form-control"
-            name={name}
-            value={normalizeScreeningValue(PFAeditData[name])}
-            onChange={(e) => {
-              const { name, value } = e.target;
-              setPFAeditData((prev) => ({
-                ...prev,
-                [name]: value,
-              }));
-            }}
-          >
-            <option value="">
-              {getTranslation("Select / चुनें", lang)}
-            </option>
-            <option value="Negative">{getTranslation("Negative / नेगेटिव", lang)}</option>
-            <option value="Positive">{getTranslation("Positive / पॉजिटिव", lang)}</option>
-            <option value="Not Done">{getTranslation("Not Done / जांच नहीं हुई", lang)}</option>
-          </select>
-        ) : (
-          <Input
-            type={["weight", "pulse_rate", "temperature", "spo2", "sugar", "hb"].includes(name) || type === "number" ? "number" : "text"}
-            name={name}
-            value={PFAeditData[name] ?? ""}
-            min={min}
-            max={max}
-            step={step}
-            placeholder={placeholder || getTranslation("Enter details / विवरण दर्ज करें", lang)}
-            onChange={(e) => {
-              const { name, value } = e.target;
-              setPFAeditData((prev) => ({
-                ...prev,
-                [name]: value,
-              }));
-            }}
-          />
-        )}
-      </td>
-    </tr>
-  ))}
-</tbody>
-
-                      {/* <tbody>
-                        {[
-                          {
-                            id: "5",
-                            question: getTranslation(anyMedicalHistory,lang),
-                            name: "medical_history",
-                          },
-                          {
-                            id: "6",
-                            question: getTranslation(anyBloodTransfusionHistory,lang),
-                            name: "blood_transfusion_history",
-                          },
-                          {
-                            id: "7",
-                            question: getTranslation(Weight,lang),
-                            name: "weight",
-                          },
-                          {
-                            id: "8",
-                            question: getTranslation(PulseRate,lang),
-                            name: "pulse_rate",
-                          },
-                          {
-                            id: "9",
-                            question: getTranslation(Bloodpressure,lang),
-                            name: "blood_pressure",
-                          },
-                          {
-                            id: "10",
-                            question: getTranslation(Temperature,lang),
-                            name: "temperature",
-                          },
-                        ].map(({ id, question, name }) => (
-                          <tr key={id}>
-                            <td>{id}</td>
-                            <td>{question}</td>
-                            <td>
-                              <Input
-                                type={
-                                  [
-                                    "weight",
-                                    "pulse_rate",
-                                    "temperature",
-                                  ].includes(name)
-                                    ? "number"
-                                    : "text"
-                                }
-                                name={name}
-                                value={PFAeditData[name] || ""}
-                                onChange={(e) => {
-                                  const { name, value, type } = e.target;
-                                  setPFAeditData((prev) => ({
-                                    ...prev,
-                                    [name]:
-                                      type === "number" ? Number(value) : value,
-                                  }));
-                                }}
-                              />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody> */}
-                    </Table>
+                    {renderPhysicalExamTable(
+                      PFAeditData,
+                      (name, val) =>
+                        setPFAeditData((prev) => ({
+                          ...(prev || {}),
+                          [name]: val,
+                          ...(name === "vdrl_syphilis" ? { vdrl: val, syphilis: val } : {}),
+                        })),
+                      false
+                    )}
 
                     <div className="col-md-12">
                       <FormGroup className="mb-0">
@@ -4170,6 +4251,29 @@ const parseDateString = (dateStr) => {
 
                       </FormGroup>
                     </div>
+                  </div>
+
+                  {/* Using Medicine */}
+                  <div className="col-md-12">
+                    <FormGroup className="mb-3 mt-3">
+                      <Label>{getTranslation(usingMedicine, lang)}</Label>
+                      <Input
+                        type="text"
+                        name="using_medicine"
+                        value={PFAeditData?.using_medicine || ""}
+                        onChange={(e) =>
+                          setPFAeditData((prev) => ({
+                            ...(prev || {}),
+                            using_medicine: e.target.value,
+                          }))
+                        }
+                        placeholder={getTranslation(
+                          "Enter currently using medicine... / वर्तमान में उपयोग की जा रही दवा दर्ज करें...",
+                          lang
+                        )}
+                        className="form-control"
+                      />
+                    </FormGroup>
                   </div>
 
                   {/* Any Other Findings */}
@@ -4441,130 +4545,41 @@ const parseDateString = (dateStr) => {
             </div>
           {/* Dependent To */}
           <div className="col-md-12 pt-3">
-            <FormGroup className="mb-0">
-              {/* <Label>{getTranslation(dependentTo,lang)}</Label>
-              <Input
-                type="textarea"
-                rows="3"
-                name="dependentToData"
-                value={PFAeditData?.dependent_to}
-                onChange={(e) =>
-                  setPFAeditData({
-                    ...PFAeditData,
-                    dependent_to: e.target.value,
-                  })
-                }
-              /> */}
-
-              {/* <Label>{getTranslation(dependentTo, lang)}</Label> */}
-<Label>{getTranslation("Dependent To / किस पर निर्भर", lang)}</Label>
-
-<select
-  className="form-control"
-  name="dependentToData"
-  value={PFAeditData?.dependent_to}
-  onChange={(e) =>
-    setPFAeditData({
-      ...PFAeditData,
-      dependent_to: e.target.value,
-    })
-  }
->
-  <option value="">
-    {getTranslation("Select Dependency / निर्भरता चुनें", lang)}
-  </option>
-
-  <option value="Alcohol">
-    {getTranslation("Alcohol / शराब", lang)}
-  </option>
-
-  <option value="Afeem, Doada Chura">
-    {getTranslation("Afeem, Doada Chura / अफीम, डोडा चुरा", lang)}
-  </option>
-
-  <option value="Samke Heroin">
-    {getTranslation("Samke Heroin / समके हेरोइन", lang)}
-  </option>
-
-  <option value="Coacine">
-    {getTranslation("Coacine / कोकीन", lang)}
-  </option>
-
-  <option value="MD">
-    {getTranslation("MD / एमडी", lang)}
-  </option>
-
-  <option value="Ganja, Bhang, Charas, Munnka">
-    {getTranslation("Ganja, Bhang, Charas, Munnka / गांजा, भांग, चरस, मुन्नका", lang)}
-  </option>
-
-  <option value="Inhalant Abuse">
-    {getTranslation("Inhalant Abuse / इनहेलेंट का दुरुपयोग", lang)}
-  </option>
-
-  <option value="Medical Abuse">
-    {getTranslation("Medical Abuse / चिकित्सा दुरुपयोग", lang)}
-  </option>
-
-  <option value="Multi Addict">
-    {getTranslation("Multi Addict / मल्टी एडिक्ट", lang)}
-  </option>
-</select>
-
-
-{/* <VoiceTextarea
-  label={<Translated text={getTranslation(dependentTo,lang)} />}
-  name="dependentToData"
-                value={PFAeditData?.dependent_to}
-                onChange={(e) =>
-                  setPFAeditData({
-                    ...PFAeditData,
-                    dependent_to: e.target.value,
-                  })
-                }
-/> */}
-
-            </FormGroup>
+            {renderDependentToField(
+              PFAeditData?.dependent_to || "",
+              (val) =>
+                setPFAeditData((prev) => ({
+                  ...(prev || {}),
+                  dependent_to: val,
+                })),
+              "edit"
+            )}
           </div>
 
-          {/* Substance Use Pattern */}
+          {/* Substance Use Frequency (Left) & Substance Use Pattern (Right) */}
           <div className="col-md-12">
-            <FormGroup className="mb-0">
-              {/* <Label>{getTranslation(substanceUsePattern,lang)}</Label>
-              <Input
-                type="textarea"
-                rows="3"
-                name="substanceUsePatternData"
-                value={PFAeditData?.substance_use_pattern}
-                onChange={(e) =>
-                  setPFAeditData({
-                    ...PFAeditData,
-                    substance_use_pattern: e.target.value,
-                  })
-                }
-              /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(substanceUsePattern,lang)} />}
-  name="substanceUsePatternData"
-                value={PFAeditData?.substance_use_pattern}
-                onChange={(e) =>
-                  setPFAeditData({
-                    ...PFAeditData,
-                    substance_use_pattern: e.target.value,
-                  })
-                }
-/>
-            </FormGroup>
+            {renderFrequencyAndPatternSection({
+              frequencyVal: PFAeditData?.substance_use_frequency || "",
+              onFrequencyChange: (val) =>
+                setPFAeditData((prev) => ({
+                  ...(prev || {}),
+                  substance_use_frequency: val,
+                })),
+              patternVal: PFAeditData?.substance_use_pattern || "",
+              onPatternChange: (val) =>
+                setPFAeditData((prev) => ({
+                  ...(prev || {}),
+                  substance_use_pattern: val,
+                })),
+              idPrefix: "edit",
+            })}
           </div>
 
           {/* Last 30 Days Quantity */}
           <div className="col-md-12">
             <FormGroup className="mb-0">
-              {/* <Label>{getTranslation(last30DaysQuantity,lang)}</Label>
-              <Input
-                type="textarea"
-                rows="3"
+              <VoiceTextarea
+                label={<Translated text={getTranslation(last30DaysQuantity,lang)} />}
                 name="last30DaysQuantityData"
                 value={PFAeditData?.last_30_days_quantity}
                 onChange={(e) =>
@@ -4573,259 +4588,22 @@ const parseDateString = (dateStr) => {
                     last_30_days_quantity: e.target.value,
                   })
                 }
-              /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(last30DaysQuantity,lang)} />}
-  name="last30DaysQuantityData"
-  value={PFAeditData?.last_30_days_quantity}
-  onChange={(e) =>
-    setPFAeditData({
-      ...PFAeditData,
-      last_30_days_quantity: e.target.value,
-    })
-  }
-/>
+              />
             </FormGroup>
           </div>
 
           {/* General Physical Examination */}
           <div className="table-responsive">
-            <Table bordered>
-              <thead>
-                <tr>
-                  <th>{getTranslation(tableNumber,lang)}</th>
-                  <th>{getTranslation(genralPhysicalExamination,lang)}</th>
-                  <th>{getTranslation(Observation,lang)}</th>
-                </tr>
-              </thead>
-              <tbody>
-  {[
-    {
-      id: "1",
-      question: getTranslation(anyMedicalHistory, lang),
-      name: "medical_history",
-      type: "yesno", // added type
-    },
-    {
-      id: "2",
-      question: getTranslation(anyBloodTransfusionHistory, lang),
-      name: "blood_transfusion_history",
-      type: "yesno", // added type
-    },
-    {
-      id: "3",
-      question: getTranslation(Weight, lang),
-      name: "weight",
-    },
-    {
-      id: "4",
-      question: getTranslation(PulseRate, lang),
-      name: "pulse_rate",
-    },
-    {
-      id: "5",
-      question: getTranslation(Bloodpressure, lang),
-      name: "blood_pressure",
-    },
-    {
-      id: "6",
-      question: getTranslation("Temperature (°F) / तापमान (°F)", lang),
-      name: "temperature",
-      type: "number",
-      min: 86,
-      max: 113,
-      step: "0.1",
-      placeholder: getTranslation("86 - 113 °F (e.g. 98.6 - 100 °F) / जैसे 98.6 - 100 °F", lang),
-    },
-    {
-      id: "7",
-      question: getTranslation("SpO2 (%) / एसपीओ२ (%)", lang),
-      name: "spo2",
-      type: "number",
-      min: 0,
-      max: 100,
-      step: 1,
-      placeholder: getTranslation("0 - 100 %", lang),
-    },
-    {
-      id: "8",
-      question: getTranslation("Blood Sugar (mg/dL) / ब्लड शुगर (mg/dL)", lang),
-      name: "sugar",
-      type: "number",
-      min: 0,
-      step: "0.1",
-      placeholder: getTranslation("mg/dL (e.g. 110.5)", lang),
-    },
-    {
-      id: "9",
-      question: getTranslation("Hemoglobin (Hb g/dL) / हीमोग्लोबिन (g/dL)", lang),
-      name: "hb",
-      type: "number",
-      min: 0,
-      step: "0.1",
-      placeholder: getTranslation("g/dL (e.g. 14.2)", lang),
-    },
-    {
-      id: "10",
-      question: getTranslation("HIV / एचआईवी", lang),
-      name: "hiv",
-      type: "screening",
-    },
-    {
-      id: "11",
-      question: getTranslation("Hepatitis C (HCV) / हेपेटाइटिस सी (HCV)", lang),
-      name: "hcv",
-      type: "screening",
-    },
-    {
-      id: "12",
-      question: getTranslation("Hepatitis B (HBsAg) / हेपेटाइटिस बी (HBsAg)", lang),
-      name: "hbsag",
-      type: "screening",
-    },
-    {
-      id: "13",
-      question: getTranslation("VDRL / वीडीआरएल", lang),
-      name: "vdrl",
-      type: "screening",
-    },
-    {
-      id: "14",
-      question: getTranslation("Syphilis / सिफलिस", lang),
-      name: "syphilis",
-      type: "screening",
-    },
-  ].map(({ id, question, name, type, min, max, step, placeholder }) => (
-    <tr key={id}>
-      <td>{id}</td>
-      <td>{question}</td>
-      <td>
-        {type === "yesno" ? (
-          <select
-            className="form-control"
-            name={name}
-            value={PFAeditData[name] || ""}
-            onChange={(e) => {
-              const { name, value } = e.target;
-              setPFAeditData((prev) => ({
-                ...prev,
-                [name]: value,
-              }));
-            }}
-          >
-            <option value="">
-              {getTranslation("Select / चुनें", lang)}
-            </option>
-            <option value="Yes">{getTranslation("Yes / हाँ", lang)}</option>
-            <option value="No">{getTranslation("No / नहीं", lang)}</option>
-          </select>
-        ) : type === "screening" ? (
-          <select
-            className="form-control"
-            name={name}
-            value={normalizeScreeningValue(PFAeditData[name])}
-            onChange={(e) => {
-              const { name, value } = e.target;
-              setPFAeditData((prev) => ({
-                ...prev,
-                [name]: value,
-              }));
-            }}
-          >
-            <option value="">
-              {getTranslation("Select / चुनें", lang)}
-            </option>
-            <option value="Negative">{getTranslation("Negative / नेगेटिव", lang)}</option>
-            <option value="Positive">{getTranslation("Positive / पॉजिटिव", lang)}</option>
-            <option value="Not Done">{getTranslation("Not Done / जांच नहीं हुई", lang)}</option>
-          </select>
-        ) : (
-          <Input
-            type={["weight", "pulse_rate", "temperature", "spo2", "sugar", "hb"].includes(name) || type === "number" ? "number" : "text"}
-            name={name}
-            value={PFAeditData[name] ?? ""}
-            min={min}
-            max={max}
-            step={step}
-            placeholder={placeholder || getTranslation("Enter details / विवरण दर्ज करें", lang)}
-            onChange={(e) => {
-              const { name, value } = e.target;
-              setPFAeditData((prev) => ({
-                ...prev,
-                [name]: value,
-              }));
-            }}
-          />
-        )}
-      </td>
-    </tr>
-  ))}
-</tbody>
-
-              {/* <tbody>
-                {[
-                  {
-                    id: "5",
-                    question: getTranslation(anyMedicalHistory,lang),
-                    name: "medical_history",
-                  },
-                  {
-                    id: "6",
-                    question: getTranslation(anyBloodTransfusionHistory,lang),
-                    name: "blood_transfusion_history",
-                  },
-                  {
-                    id: "7",
-                    question: getTranslation(Weight,lang),
-                    name: "weight",
-                  },
-                  {
-                    id: "8",
-                    question: getTranslation(PulseRate,lang),
-                    name: "pulse_rate",
-                  },
-                  {
-                    id: "9",
-                    question: getTranslation(Bloodpressure,lang),
-                    name: "blood_pressure",
-                  },
-                  {
-                    id: "10",
-                    question: getTranslation(Temperature,lang),
-                    name: "temperature",
-                  },
-                ].map(({ id, question, name }) => (
-                  <tr key={id}>
-                    <td>{id}</td>
-                    <td>{question}</td>
-                    <td>
-                      <Input
-                        type={
-                          [
-                            "weight",
-                            "pulse_rate",
-                            "temperature",
-                          ].includes(name)
-                            ? "number"
-                            : "text"
-                        }
-                        name={name}
-                        value={PFAeditData[name] || ""}
-                        onChange={(e) => {
-                          const { name, value, type } = e.target;
-                          setPFAeditData((prev) => ({
-                            ...prev,
-                            [name]:
-                              type === "number" ? Number(value) : value,
-                          }));
-                        }}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody> */}
-            </Table>
+            {renderPhysicalExamTable(
+              PFAeditData,
+              (name, val) =>
+                setPFAeditData((prev) => ({
+                  ...(prev || {}),
+                  [name]: val,
+                  ...(name === "vdrl_syphilis" ? { vdrl: val, syphilis: val } : {}),
+                })),
+              false
+            )}
 
             <div className="col-md-12">
               <FormGroup className="mb-0 mt-4 mb-4">
@@ -5039,6 +4817,29 @@ const parseDateString = (dateStr) => {
   </div>
 </div>
 
+
+          {/* Using Medicine */}
+          <div className="col-md-12">
+            <FormGroup className="mb-3 mt-3">
+              <Label>{getTranslation(usingMedicine, lang)}</Label>
+              <Input
+                type="text"
+                name="using_medicine"
+                value={PFAeditData?.using_medicine || ""}
+                onChange={(e) =>
+                  setPFAeditData((prev) => ({
+                    ...(prev || {}),
+                    using_medicine: e.target.value,
+                  }))
+                }
+                placeholder={getTranslation(
+                  "Enter currently using medicine... / वर्तमान में उपयोग की जा रही दवा दर्ज करें...",
+                  lang
+                )}
+                className="form-control"
+              />
+            </FormGroup>
+          </div>
 
           {/* Any Other Findings */}
           <div className="col-md-12">

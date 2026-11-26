@@ -1,8 +1,11 @@
 import React, { useRef, useState } from "react";
+import { useLang } from "../../contexts/LangContext";
 
 const VoiceTextarea = ({ label, name, value, onChange, lang = "", rows = 3 }) => {
   const textareaRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
+  const langCtx = useLang();
+  const contextLang = langCtx?.lang || "en";
 
   const handleSpeech = () => {
     const SpeechRecognition =
@@ -14,7 +17,7 @@ const VoiceTextarea = ({ label, name, value, onChange, lang = "", rows = 3 }) =>
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = lang;
+    recognition.lang = lang || (contextLang === "hi" ? "hi-IN" : "en-IN");
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 

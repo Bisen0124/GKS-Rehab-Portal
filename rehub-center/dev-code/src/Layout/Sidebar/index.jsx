@@ -5,7 +5,7 @@ import { MENUITEMS } from './Menu';
 import Profile from './Profile';
 
 const SideBarLayout = (props) => {
-  const { toggleIcon } = useContext(CustomizerContext);
+  const { toggleIcon, setToggleIcon } = useContext(CustomizerContext);
   const [currentUrl] = useState(window.location.pathname);
   const id = window.location.pathname.split('/').pop();
   // eslint-disable-next-line
@@ -31,7 +31,7 @@ const SideBarLayout = (props) => {
       menuItems.Items.filter(Items => {
         if (Items !== item) {
           Items.active = false;
-          document.getElementById('bg-overlay1').classList.remove('active');
+          document.getElementById('bg-overlay1')?.classList.remove('active');
         }
         if (Items.children && Items.children.includes(item)) {
           Items.active = true;
@@ -91,15 +91,22 @@ const SideBarLayout = (props) => {
   }, [layout, currentUrl]);
 
   const closeOverlay = () => {
-    document.getElementById('bg-overlay1').classList.remove('active');
-    document.getElementById('nav-link').classList.remove('active');
+    document.getElementById('bg-overlay1')?.classList.remove('active');
+    document.getElementById('nav-link')?.classList.remove('active');
+    if (window.innerWidth <= 991 && setToggleIcon) {
+      setToggleIcon(true);
+    }
   };
 
   return (
     <Fragment>
-      <div id="bg-overlay1" onClick={() => {
-        closeOverlay();
-      }} ></div>
+      <div
+        id="bg-overlay1"
+        className={!toggleIcon ? "mobile-drawer-backdrop" : ""}
+        onClick={() => {
+          closeOverlay();
+        }}
+      ></div>
       <header className={`main-nav ${toggleIcon ? 'close_icon' : ''}`}>
         {/* <Profile /> */}
         <SidebarMenu setMainMenu={setMainMenu} props={props} sidebartoogle={true} setNavActive={setNavActive} width={width} />

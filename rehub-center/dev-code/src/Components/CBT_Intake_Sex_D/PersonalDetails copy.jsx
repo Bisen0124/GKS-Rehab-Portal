@@ -88,6 +88,7 @@ import { H5 } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import DataTable from "react-data-table-component";
 import Swal from "sweetalert2"; // ✅ Make sure this is imported at the top
 
@@ -255,71 +256,24 @@ function PersonalDetails() {
             return null;
           }
           return (
-            //Showing action buttons on register user list on FDA page
-            <div className="d-flex gap-2">
+            <ActionButtonsGroup>
               {/* Show Edit only if not discharged and readmission */}
               {row.dischargeStatus === 0 && row.isReadmission === 1 && (
-                <span
-                // onClick={() => handleCBTPreFill(row.recent_cbt_id)}
-                style={{ cursor: "pointer" }}
-                title={getTranslation("Readmission CBT Form/पुनः प्रवेश सीबीटी फॉर्म",lang)}
-                >
-                  ✏️
-                </span>
+                <TableActionButton
+                  type="edit"
+                  title={getTranslation("Readmission CBT Form/पुनः प्रवेश सीबीटी फॉर्म", lang)}
+                />
               )}
-  
-              {/* Show Create PFA if not discharged and not readmission */}
-              {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-                <span
-                  onClick={() => createCBTHandler(row.id)}
-                  style={{ cursor: "pointer" }}
-                  title="Create CBT From"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                  </svg>
-                </span>
-              )} */}
-  
-  {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-    <span
-      onClick={() => (row.isCBTCompleted ? null : createPDHandler(row.id))}
-      style={{
-        cursor: row.isCBTCompleted ? "not-allowed" : "pointer",
-        opacity: row.isCBTCompleted ? 0.5 : 1,
-      }}
-      title={row.isCBTCompleted ? getTranslation("Personal Data Form Completed/पर्सनल डेटा फ़ॉर्म पूरा हुआ",lang) : getTranslation("Create Personal Data Form/व्यक्तिगत डेटा फ़ॉर्म बनाएँ",lang)}
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-        <line x1="12" y1="8" x2="12" y2="16"></line>
-        <line x1="8" y1="12" x2="16" y2="12"></line>
-      </svg>
-    </span>
-  )}
-            </div>
+
+              {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+                <TableActionButton
+                  type="create"
+                  disabled={Boolean(row.isCBTCompleted)}
+                  onClick={() => (row.isCBTCompleted ? null : createPDHandler(row.id))}
+                  title={row.isCBTCompleted ? getTranslation("Personal Data Form Completed/पर्सनल डेटा फ़ॉर्म पूरा हुआ", lang) : getTranslation("Create Personal Data Form/व्यक्तिगत डेटा फ़ॉर्म बनाएँ", lang)}
+                />
+              )}
+            </ActionButtonsGroup>
           );
         },
       }

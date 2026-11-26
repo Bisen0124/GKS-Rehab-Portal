@@ -156,6 +156,7 @@ import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import { toast } from "react-toastify";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import DataTable from "react-data-table-component";
 import { Data } from "../UiKits/Spinners/SpinnerData";
 import Swal from "sweetalert2"; // ✅ Make sure this is imported at the top
@@ -677,93 +678,30 @@ function GenFamily() {
         }
 
         return (
-          <div className="d-flex gap-2">
-            {/* View User Details Icon */}
-            <span
+          <ActionButtonsGroup>
+            <TableActionButton
+              type="view"
               onClick={() => handleViewUserDetails(row.id)}
-              style={{ cursor: "pointer" }}
               title={getTranslation("View/देखना", lang)}
-            >
-              <svg
-                style={{ color: "#d56337" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-eye"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </span>
+            />
 
             {/* Show Edit only if not discharged and readmission */}
             {row.dischargeStatus === 0 && row.isReadmission === 1 && (
-              <span
+              <TableActionButton
+                type="edit"
                 onClick={() => handleGenEditPreeFillData(row.recentGenfamID)}
-                style={{ cursor: "pointer" }}
-                title={getTranslation("Readmission PFA/पुनः प्रवेश पीएफए",lang)}
-              >
-                ✏️
-              </span>
+                title={getTranslation("Readmission PFA/पुनः प्रवेश पीएफए", lang)}
+              />
             )}
 
-            {/* Show Create PFA if not discharged and not readmission */}
-            {/* {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-              <span
+            {row.dischargeStatus === 0 && row.isReadmission === 0 && (
+              <TableActionButton
+                type="create"
                 onClick={() => createGenFamilyToggle(row.id)}
-                style={{ cursor: "pointer" }}
-                title="Create Gen Family Form"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <line x1="12" y1="8" x2="12" y2="16"></line>
-                  <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-              </span>
-            )} */}
-
-{row.dischargeStatus === 0 && row.isReadmission === 0 && (
-  <span
-    onClick={() => createGenFamilyToggle(row.id)}
-    style={{
-      cursor: "pointer",
-    }}
-    title={getTranslation("Create Gen Family Form/जनरल फैमिली फॉर्म बनाएं",lang)}
-  >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-      <line x1="12" y1="8" x2="12" y2="16"></line>
-      <line x1="8" y1="12" x2="16" y2="12"></line>
-    </svg>
-  </span>
-)}
-          </div>
+                title={getTranslation("Create Gen Family Form/जनरल फैमिली फॉर्म बनाएं", lang)}
+              />
+            )}
+          </ActionButtonsGroup>
         );
       },
     }
@@ -802,83 +740,28 @@ function GenFamily() {
      name: `${getTranslation('Action/क्रिया' , lang)}`,
       center: true,
       cell: (row) => (
-        <div className="d-flex gap-2">
+        <ActionButtonsGroup>
           {row.status === "Pending" ? (
-            // Show only Create icon for Pending
-            <span
+            <TableActionButton
+              type="create"
               onClick={() => createGenFamilyToggle(row.id)}
-              style={{ cursor: "pointer" }}
-              title={getTranslation("Create PFA/पीएफए ​​बनाएं",lang)}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="12" y1="8" x2="12" y2="16"></line>
-                <line x1="8" y1="12" x2="16" y2="12"></line>
-              </svg>
-            </span>
+              title={getTranslation("Create PFA/पीएफए ​​बनाएं", lang)}
+            />
           ) : (
-            // Show View, Edit, Delete for Completed
             <>
-              <span
+              <TableActionButton
+                type="view"
                 onClick={() => viewGenFamily(row.user_id)}
-                style={{ cursor: "pointer" }}
-                title={getTranslation("View/देखना",lang)}
-              >
-                <svg
-                  style={{ color: "#d56337" }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="feather feather-eye"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </span>
-
-              <span
+                title={getTranslation("View/देखना", lang)}
+              />
+              <TableActionButton
+                type="edit"
                 onClick={() => handleGenFamilyData(row.user_id)}
-                style={{ cursor: "pointer", marginLeft: "10px" }}
-                title={getTranslation("Edit/संपादन करना",lang)}
-              >
-                <svg
-                  style={{ color: "green" }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="feather feather-edit"
-                >
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-              </span>
-
-
+                title={getTranslation("Edit/संपादन करना", lang)}
+              />
             </>
           )}
-        </div>
+        </ActionButtonsGroup>
       ),
     },
   ];

@@ -2,6 +2,7 @@ import React from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
+import html2canvas from "html2canvas";
 
 /**
  * Extract clean string text from React elements or raw values.
@@ -32,10 +33,11 @@ export const extractText = (val) => {
  */
 export const cleanFilename = (name) => {
   if (!name) return "table_export";
-  return String(name)
+  const cleaned = String(name)
     .trim()
-    .replace(/[^\w\s-]/g, "")
+    .replace(/[^\p{L}\p{N}\s_-]/gu, "")
     .replace(/\s+/g, "_");
+  return cleaned || "table_export";
 };
 
 /**
@@ -283,10 +285,17 @@ export const exportToExcel = ({
   XLSX.writeFile(workbook, `${cleanFilename(filename)}.xlsx`);
 };
 
+const escapeHtml = (str) =>
+  String(str ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
 /**
- * Export data array to PDF document using pure jsPDF + autoTable in ascending order
+ * Export data array to PDF document using pure jsPDF + autoTable (or HTML canvas fallback for Hindi/Unicode text) in ascending order
  */
-export const exportToPDF = ({
+export const exportToPDF = async ({
   data = [],
   columns = [],
   filename = "table_data",
@@ -306,6 +315,124 @@ export const exportToPDF = ({
   });
 
   const isLandscape = exportableCols.length >= 5;
+  const hasNonLatin1 =
+    /[^\u0000-\u00FF]/.test(String(title || "")) ||
+    headers.some((h) => /[^\u0000-\u00FF]/.test(String(h || ""))) ||
+    rows.some((r) => r.some((cell) => /[^\u0000-\u00FF]/.test(String(cell || ""))));
+
+  const dateStr = `Date: ${new Date().toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })}   |   Total Records: ${sortedData.length}`;
+
+  if (hasNonLatin1 && typeof document !== "undefined") {
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.left = "-10000px";
+    container.style.top = "0";
+    container.style.width = isLandscape ? "1120px" : "790px";
+    container.style.padding = "24px 28px";
+    container.style.backgroundColor = "#ffffff";
+    container.style.color = "#0f172a";
+    container.style.fontFamily =
+      "'Noto Sans Devanagari', 'Rubik', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif";
+    container.style.zIndex = "-1";
+
+    const headerHtml = headers
+      .map(
+        (h) =>
+          `<th style="background:#24695c;color:#ffffff;font-weight:700;font-size:12px;padding:8px 10px;border:1px solid #cbd5e1;text-align:left;">${escapeHtml(
+            h
+          )}</th>`
+      )
+      .join("");
+
+    const bodyHtml = rows
+      .map(
+        (r, idx) =>
+          `<tr style="background:${idx % 2 === 1 ? "#f8fafc" : "#ffffff"};">${r
+            .map(
+              (c) =>
+                `<td style="padding:7px 10px;border:1px solid #cbd5e1;font-size:11.5px;color:#1e293b;vertical-align:top;word-break:break-word;">${escapeHtml(
+                  c
+                )}</td>`
+            )
+            .join("")}</tr>`
+      )
+      .join("");
+
+    container.innerHTML = `
+      <div style="margin-bottom:14px;border-bottom:2px solid #24695c;padding-bottom:10px;">
+        <div style="font-size:18px;font-weight:700;color:#24695c;margin-bottom:4px;">${escapeHtml(
+          title || "Report"
+        )}</div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;">
+          <span>GKS Rehabilitation Center</span>
+          <span>${escapeHtml(dateStr)}</span>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead><tr>${headerHtml}</tr></thead>
+        <tbody>${bodyHtml}</tbody>
+      </table>
+    `;
+
+    document.body.appendChild(container);
+    try {
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const doc = new jsPDF({
+        orientation: isLandscape ? "landscape" : "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const marginMm = 10;
+      const printableW = pageWidth - marginMm * 2;
+      const printableH = pageHeight - marginMm * 2;
+      const pageSlicePx = Math.floor(canvas.width * (printableH / printableW));
+
+      let offsetY = 0;
+      let pageIndex = 0;
+      while (offsetY < canvas.height) {
+        const sliceH = Math.min(pageSlicePx, canvas.height - offsetY);
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sliceH;
+        const pCtx = pageCanvas.getContext("2d");
+        pCtx.fillStyle = "#ffffff";
+        pCtx.fillRect(0, 0, canvas.width, sliceH);
+        pCtx.drawImage(canvas, 0, offsetY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+
+        if (pageIndex > 0) doc.addPage();
+        const imgHeightMm = (sliceH * printableW) / canvas.width;
+        doc.addImage(pageCanvas.toDataURL("image/jpeg", 0.95), "JPEG", marginMm, marginMm, printableW, imgHeightMm);
+
+        doc.setFontSize(7.5);
+        doc.setTextColor(148, 163, 184);
+        doc.text(`Page ${pageIndex + 1}`, pageWidth - marginMm, pageHeight - 4, { align: "right" });
+
+        offsetY += sliceH;
+        pageIndex += 1;
+      }
+
+      doc.save(`${cleanFilename(filename)}.pdf`);
+      return;
+    } finally {
+      if (container.parentNode) {
+        container.parentNode.removeChild(container);
+      }
+    }
+  }
+
   const doc = new jsPDF({
     orientation: isLandscape ? "landscape" : "portrait",
     unit: "mm",
@@ -328,11 +455,6 @@ export const exportToPDF = ({
   doc.text("GKS Rehabilitation Center", 14, 19);
 
   // Date and total records on right
-  const dateStr = `Date: ${new Date().toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })}   |   Total Records: ${sortedData.length}`;
   doc.text(dateStr, pageWidth - 14, 19, { align: "right" });
 
   // Draw separator line

@@ -1427,6 +1427,7 @@ export const other="Other/अन्य";
 export const patientAge = "Age/उम्र :";
 export const dependentTo = "Dependent To/निर्भरता का प्रकार :";
 export const substanceUsePattern = "Substance Use Pattern / पदार्थ उपयोग पैटर्न :";
+export const substanceUseFrequency = "Substance Use Frequency / पदार्थ उपयोग आवृत्ति :";
 export const last30DaysQuantity = "Last 30 Days Quantity / पिछले 30 दिनों की मात्रा :";
 
 //section 2
@@ -1445,7 +1446,7 @@ export const no = "No / नहीं ";
 export const ulcers = "Ulcers / अल्सर";
 export const respiratoryProblem = "Respiratory Problem COPD/TB / श्वसन संबंधी समस्याएं सी. ओ. पी. डी. /टीबी";
 export const jaundice = "Jaundice / पीलिया";
-export const Haematemesis = "Haematemesis / खून की उल्टी";
+export const Haematemesis = "Haematemesis (Blood Vomiting) / खून की उल्टी";
 export const otherAbdominalComplaints = "Other Abdominal Complaints / पेट की अन्य शिकायतें";
 export const cardiovascular = "Cardiovascular (Chest Pain, Dyspnoea) / हृदय संबंधी (सीने में दर्द, श्वास कष्ट)";
 export const mentionIfAny2 = "If any Complications Describe / अगर कोई परेशानी हुई हो विवरण दें ?";
@@ -1465,6 +1466,7 @@ export const blackout = "Blackout / ब्लैक आउट ";
 export const mentionIfAny3 = "If any Complications Describe / अगर कोई परेशानी हुई हो विवरण दें ?";
 
 //section 4
+export const usingMedicine = "Using Medicine / उपयोग की जा रही दवा";
 export const anyOtherFindings = "Any Other Findings / कोई अन्य निष्कर्ष";
 
 //section 5
@@ -1884,7 +1886,7 @@ export const complicationsDetailsData = [
   { id: 1, label: "Ulcers / अल्सर" },
   { id: 2, label: "Respiratory Problem COPD/TB / श्वसन संबंधी समस्याएं सी. ओ. पी. डी. /टीबी" },
   { id: 3, label: "Jaundice / पीलिया" },
-  { id: 4, label: "Haematemesis / Malena / खून की उल्टी" },
+  { id: 4, label: "Haematemesis (Blood Vomiting) / खून की उल्टी" },
   { id: 5, label: "Other Abdominal Complaints / पेट की अन्य शिकायतें" },
   { id: 6, label: "Cardiovascular (Chest Pain, Dyspnoea) / हृदय संबंधी (सीने में दर्द, श्वास कष्ट)" }
 ];

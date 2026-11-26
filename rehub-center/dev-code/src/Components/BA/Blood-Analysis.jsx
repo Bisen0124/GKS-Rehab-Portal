@@ -36,6 +36,7 @@ import {
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
+import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
 import DataTable from "react-data-table-component";
 import { Data } from "../UiKits/Spinners/SpinnerData";
 import { toast } from "react-toastify";
@@ -356,69 +357,29 @@ const BloodAnalysis = () => {
             return null;
           }
           return (
-            //Showing action buttons on register user list on FDA page
-            <div className="d-flex gap-2">
-              {/* View User Details Icon */}
-              <span
+            <ActionButtonsGroup>
+              <TableActionButton
+                type="view"
                 onClick={() => handleViewUserDetails(row.id)}
-                style={{ cursor: "pointer" }}
                 title={getTranslation("View/देखना", lang)}
-              >
-                <svg
-                  style={{ color: "#d56337" }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="feather feather-eye"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
-              </span>
+              />
 
-              {/* Show Edit only if not discharged and readmission */}
               {row.dischargeStatus === 0 && row.isReadmission === 1 && (
-                <span
+                <TableActionButton
+                  type="edit"
                   onClick={() => handleBAprefill(row.recentBAId)}
-                  style={{ cursor: "pointer" }}
-                  title={getTranslation("Readmission Blood Analysis Form/पुनः प्रवेश रक्त विश्लेषण प्रपत्र",lang)}
-                >
-                  ✏️
-                </span>
+                  title={getTranslation("Readmission Blood Analysis Form/पुनः प्रवेश रक्त विश्लेषण प्रपत्र", lang)}
+                />
               )}
 
               {row.dischargeStatus === 0 && row.isReadmission === 0 && (
-                <span
+                <TableActionButton
+                  type="create"
                   onClick={() => createSUDBrief(row.id)}
-                  style={{
-                    cursor: "pointer",
-                  }}
-                  title={getTranslation("Create Blood Analysis/रक्त विश्लेषण बनाएँ",lang)}
-                >
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-      <line x1="12" y1="8" x2="12" y2="16"></line>
-      <line x1="8" y1="12" x2="16" y2="12"></line>
-    </svg>
-  </span>
-)}
-            </div>
+                  title={getTranslation("Create Blood Analysis/रक्त विश्लेषण बनाएँ", lang)}
+                />
+              )}
+            </ActionButtonsGroup>
           );
         },
       },
@@ -931,61 +892,25 @@ const BloodAnalysis = () => {
         name: `${getTranslation('Action/क्रिया' , lang)}`,
         center: true,
         cell: (row) => (
-          <div className="d-flex gap-2">
-            <span
+          <ActionButtonsGroup>
+            <TableActionButton
+              type="view"
               onClick={() => viewBAFormData(row.blood_analysis_id)}
-              style={{ cursor: "pointer" }}
-              title="View/देखना"
-            >
-              <svg
-                style={{ color: "#d56337" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-eye"
-              >
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
-            </span>
+              title={getTranslation("View/देखना", lang)}
+            />
             {row.status === "Report_Uploaded" && (
-              <span
+              <TableActionButton
+                type="check"
                 onClick={() => handleOpenReviewModal(row)}
-                style={{ cursor: "pointer", marginLeft: "6px" }}
                 title={getTranslation("Review Report & Follow-up / रिपोर्ट समीक्षा", lang)}
-              >
-                <CheckCircle size={18} color="#24695c" />
-              </span>
+              />
             )}
-            <span
+            <TableActionButton
+              type="edit"
               onClick={() => handleBAindividualEdit(row.blood_analysis_id)}
-              style={{ cursor: "pointer", marginLeft: "10px" }}
-              title="Edit/संपादन करना"
-            >
-              <svg
-                style={{ color: "green" }}
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="feather feather-edit"
-              >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-            </span>
-          </div>
+              title={getTranslation("Edit/संपादन करना", lang)}
+            />
+          </ActionButtonsGroup>
         ),
       },
     ];
@@ -1152,30 +1077,13 @@ const BloodAnalysis = () => {
         cell: (row) => {
           const s = row.status || "Scheduled";
           return (
-            <div className="d-flex align-items-center justify-content-center gap-2">
+            <ActionButtonsGroup>
               {/* View Observation (Left) */}
-              <button
-                type="button"
-                className="btn btn-action-icon btn-action-view"
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  minWidth: "32px",
-                  padding: "0",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "7px",
-                  backgroundColor: "#f0fdf4",
-                  border: "1px solid #bbf7d0",
-                  color: "#166534",
-                  cursor: "pointer",
-                }}
+              <TableActionButton
+                type="view"
                 onClick={() => viewBAFormData(row.blood_analysis_id || row.id)}
                 title={getTranslation("View Observation / विवरण देखें", lang)}
-              >
-                <Eye size={16} color="#166534" strokeWidth={2.2} />
-              </button>
+              />
 
               {/* Step 1: Collect Sample (Scheduled) */}
               {(s === "Scheduled" || row.sample_collected !== "Yes") && (
@@ -1183,7 +1091,7 @@ const BloodAnalysis = () => {
                   color="warning"
                   size="sm"
                   className="py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm text-dark fw-semibold"
-                  style={{ borderRadius: "7px", fontSize: "12px", height: "32px" }}
+                  style={{ borderRadius: "8px", fontSize: "12px", height: "34px" }}
                   onClick={() => handleCollectSample(row)}
                   title={getTranslation("Collect Sample (48h SLA) / नमूना एकत्र करें", lang)}
                 >
@@ -1198,7 +1106,7 @@ const BloodAnalysis = () => {
                   color="info"
                   size="sm"
                   className="py-1 px-2.5 d-inline-flex align-items-center gap-1 text-white shadow-sm fw-semibold"
-                  style={{ borderRadius: "7px", fontSize: "12px", height: "32px", backgroundColor: "#0284c7", borderColor: "#0284c7" }}
+                  style={{ borderRadius: "8px", fontSize: "12px", height: "34px", backgroundColor: "#0284c7", borderColor: "#0284c7" }}
                   onClick={() => handleOpenUploadModal(row)}
                   title={getTranslation("Upload Report (72h SLA) / रिपोर्ट अपलोड करें", lang)}
                 >
@@ -1210,10 +1118,10 @@ const BloodAnalysis = () => {
               {/* Step 3: Review Report (Report_Uploaded) - only if SuperAdmin/BranchAdmin/BranchOperator */}
               {s === "Report_Uploaded" && !isLabOperator && (
                 <Button
-                  color="success"
+                  color="primary"
                   size="sm"
                   className="py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm fw-semibold"
-                  style={{ borderRadius: "7px", fontSize: "12px", height: "32px" }}
+                  style={{ borderRadius: "8px", fontSize: "12px", height: "34px" }}
                   onClick={() => handleOpenReviewModal(row)}
                   title={getTranslation("Review Report & Next Follow-up / समीक्षा", lang)}
                 >
@@ -1224,30 +1132,13 @@ const BloodAnalysis = () => {
 
               {/* Delete Observation (Right - SuperAdmin / BranchAdmin) */}
               {(currentUserRole === 1 || currentUserRole === 2) && (
-                <button
-                  type="button"
-                  className="btn btn-action-icon btn-action-delete"
-                  style={{
-                    width: "32px",
-                    height: "32px",
-                    minWidth: "32px",
-                    padding: "0",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "7px",
-                    backgroundColor: "#fef2f2",
-                    border: "1px solid #fecaca",
-                    color: "#dc2626",
-                    cursor: "pointer",
-                  }}
+                <TableActionButton
+                  type="delete"
                   onClick={() => handleDeleteObservation(row.blood_analysis_id || row.id, row.name)}
                   title={getTranslation("Delete Observation / हटाएं", lang)}
-                >
-                  <Trash2 size={16} color="#dc2626" strokeWidth={2.2} />
-                </button>
+                />
               )}
-            </div>
+            </ActionButtonsGroup>
           );
         },
       },
@@ -1344,41 +1235,24 @@ const BloodAnalysis = () => {
         center: true,
         minWidth: "180px",
         cell: (row) => (
-          <div className="d-flex align-items-center justify-content-center gap-2">
-            <button
-              type="button"
-              className="btn btn-action-icon btn-action-neutral"
-              style={{
-                width: "32px",
-                height: "32px",
-                minWidth: "32px",
-                padding: "0",
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                borderRadius: "7px",
-                backgroundColor: "#f8fafc",
-                border: "1px solid #e2e8f0",
-                color: "#475569",
-                cursor: "pointer",
-              }}
+          <ActionButtonsGroup>
+            <TableActionButton
+              type="view"
               title={getTranslation("View Patient / देखना", lang)}
               onClick={() => handleViewUserDetails(row.id)}
-            >
-              <Eye size={16} color="#475569" strokeWidth={2.2} />
-            </button>
+            />
             <Button
               color="primary"
               size="sm"
               className="py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm"
-              style={{ borderRadius: "6px", fontSize: "12.5px" }}
+              style={{ borderRadius: "8px", fontSize: "12.5px" }}
               onClick={() => createSUDBrief(row.id)}
               title={getTranslation("Create Blood Analysis / रक्त विश्लेषण बनाएं", lang)}
             >
               <Plus size={14} />
               <span>{getTranslation("Order Lab Test", lang)}</span>
             </Button>
-          </div>
+          </ActionButtonsGroup>
         ),
       },
     ];
@@ -1536,44 +1410,27 @@ const BloodAnalysis = () => {
         cell: (row) => {
           const obs = patientObservations[String(row.id)];
           return (
-            <div className="d-flex align-items-center justify-content-center gap-2">
+            <ActionButtonsGroup>
               {obs && (
-                <button
-                  type="button"
-                  className="btn btn-action-icon btn-action-neutral"
-                  style={{
-                    width: "32px",
-                    height: "32px",
-                    minWidth: "32px",
-                    padding: "0",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "7px",
-                    backgroundColor: "#f8fafc",
-                    border: "1px solid #e2e8f0",
-                    color: "#475569",
-                    cursor: "pointer",
-                  }}
+                <TableActionButton
+                  type="view"
                   title={getTranslation("View Observation / विवरण देखें", lang)}
                   onClick={() => handleViewPatientObservation(row)}
-                >
-                  <Eye size={16} color="#475569" strokeWidth={2.2} />
-                </button>
+                />
               )}
 
               <Button
                 color="primary"
                 size="sm"
                 className="py-1 px-2.5 d-inline-flex align-items-center gap-1 shadow-sm"
-                style={{ borderRadius: "6px", fontSize: "12px" }}
+                style={{ borderRadius: "8px", fontSize: "12.5px" }}
                 onClick={() => handleOpenObservationModal(row)}
                 title={getTranslation("Record Patient Observation / अवलोकन दर्ज करें", lang)}
               >
                 <Heart size={13} />
                 <span>{obs ? getTranslation("Update Vitals", lang) : getTranslation("Record Vitals", lang)}</span>
               </Button>
-            </div>
+            </ActionButtonsGroup>
           );
         },
       },
@@ -3145,34 +3002,18 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                                     </Badge>
                                   </td>
                                   <td className="px-3 py-2 text-center">
-                                    <div className="d-inline-flex align-items-center gap-2">
-                                      <button
-                                        type="button"
-                                        className="btn btn-action-icon btn-action-view"
-                                        style={{
-                                          width: "30px",
-                                          height: "30px",
-                                          minWidth: "30px",
-                                          padding: 0,
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                          borderRadius: "6px",
-                                          backgroundColor: "#f0fdf4",
-                                          border: "1px solid #bbf7d0",
-                                          color: "#166534",
-                                        }}
+                                    <ActionButtonsGroup>
+                                      <TableActionButton
+                                        type="view"
                                         onClick={() => viewBAFormData(rowId)}
                                         title={getTranslation("View Observation / विवरण देखें", lang)}
-                                      >
-                                        <Eye size={15} color="#166534" strokeWidth={2.2} />
-                                      </button>
+                                      />
                                       {(s === "Scheduled" || row.sample_collected !== "Yes") && (
                                         <Button
                                           color="warning"
                                           size="sm"
                                           className="py-1 px-2 text-dark fw-semibold d-inline-flex align-items-center gap-1"
-                                          style={{ borderRadius: "6px", fontSize: "11.5px" }}
+                                          style={{ borderRadius: "8px", fontSize: "12px" }}
                                           onClick={() => handleCollectSample(row)}
                                         >
                                           <Activity size={12} color="#212529" />
@@ -3184,7 +3025,7 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                                           color="info"
                                           size="sm"
                                           className="py-1 px-2 text-white fw-semibold d-inline-flex align-items-center gap-1"
-                                          style={{ borderRadius: "6px", fontSize: "11.5px", backgroundColor: "#0284c7", borderColor: "#0284c7" }}
+                                          style={{ borderRadius: "8px", fontSize: "12px", backgroundColor: "#0284c7", borderColor: "#0284c7" }}
                                           onClick={() => handleOpenUploadModal(row)}
                                         >
                                           <Upload size={12} color="#ffffff" />
@@ -3193,17 +3034,17 @@ const SubmitBAReadmissionFormHandler = async (e) => {
                                       )}
                                       {s === "Report_Uploaded" && !isLabOperator && (
                                         <Button
-                                          color="success"
+                                          color="primary"
                                           size="sm"
                                           className="py-1 px-2 fw-semibold d-inline-flex align-items-center gap-1"
-                                          style={{ borderRadius: "6px", fontSize: "11.5px" }}
+                                          style={{ borderRadius: "8px", fontSize: "12px" }}
                                           onClick={() => handleOpenReviewModal(row)}
                                         >
                                           <CheckCircle size={12} color="#ffffff" />
                                           <span>{getTranslation("Review", lang)}</span>
                                         </Button>
                                       )}
-                                    </div>
+                                    </ActionButtonsGroup>
                                   </td>
                                 </tr>
                               );
