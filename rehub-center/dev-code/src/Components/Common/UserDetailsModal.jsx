@@ -53,9 +53,32 @@ const UserDetailsModal = ({ isOpen, userId, user: propUser, toggler, toggle, onC
       localExtra = {};
     }
 
+    const formatPatientTypeToText = (val) => {
+      if (!val) return "";
+      if (Array.isArray(val)) {
+        return val.map((x) => String(x).trim()).filter(Boolean).join(", ");
+      }
+      const str = String(val).trim();
+      if (!str || str === "N/A") return "";
+      if (str.startsWith("[") && str.endsWith("]")) {
+        try {
+          const parsed = JSON.parse(str);
+          if (Array.isArray(parsed)) {
+            return parsed.map((x) => String(x).trim()).filter(Boolean).join(", ");
+          }
+        } catch {
+          // fallback below
+        }
+      }
+      return pickCleanText(str);
+    };
+
     userCopy.name = pickCleanText(userCopy.name, localExtra.name) || userCopy.name || "";
     userCopy.address = pickCleanText(userCopy.address, localExtra.address) || "";
-    userCopy.patient_type = pickCleanText(userCopy.patient_type, localExtra.patient_type) || "";
+    userCopy.patient_type =
+      formatPatientTypeToText(userCopy.patient_type) ||
+      formatPatientTypeToText(localExtra.patient_type) ||
+      "";
     userCopy.relative_name = pickCleanText(userCopy.relative_name, localExtra.relative_name) || "";
     userCopy.relative_address = pickCleanText(userCopy.relative_address, localExtra.relative_address) || "";
     userCopy.relation_with_patient = pickCleanText(userCopy.relation_with_patient, localExtra.relation_with_patient) || "";

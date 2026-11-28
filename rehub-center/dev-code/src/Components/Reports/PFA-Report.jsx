@@ -565,7 +565,9 @@ const GetPFAReports = () => {
                       </td>
                       <td colSpan="2" className="p-3">
                         <span colSpan="2" className="fw-normal">
-                          {selectedUser.dependent_to}
+                          {Array.isArray(selectedUser.dependent_to)
+                            ? selectedUser.dependent_to.filter(Boolean).join(", ")
+                            : selectedUser.dependent_to}
                         </span>
                       </td>
                     </tr>

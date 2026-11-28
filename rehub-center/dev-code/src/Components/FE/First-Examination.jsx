@@ -91,8 +91,51 @@ const FirstExamination = () => {
   const dob = selectedUser?.dob;
   const patientCalAge = useCalculateAge(dob);
 
-  const isValidValue = (value) =>
-    value !== undefined && value !== null && value !== "" && value !== "N/A";
+  const isValidValue = (value) => {
+    if (Array.isArray(value)) return value.filter(Boolean).length > 0;
+    return value !== undefined && value !== null && value !== "" && value !== "N/A";
+  };
+
+  const formatPatientTypeText = (...candidates) => {
+    const extractItemText = (item) => {
+      if (typeof item === "string") return item.trim();
+      if (item && typeof item === "object") {
+        return String(
+          item.custom_patient_type_name ||
+            item.patient_type_name ||
+            item.name ||
+            item.label ||
+            item.value ||
+            "",
+        ).trim();
+      }
+      return item !== undefined && item !== null ? String(item).trim() : "";
+    };
+
+    for (const c of candidates) {
+      if (Array.isArray(c)) {
+        const joined = c.map(extractItemText).filter(Boolean).join(", ");
+        if (joined) return joined;
+      } else if (typeof c === "string") {
+        const str = c.trim();
+        if (!str || str === "N/A") continue;
+        if (str.startsWith("[") && str.endsWith("]")) {
+          try {
+            const parsed = JSON.parse(str);
+            if (Array.isArray(parsed)) {
+              const joined = parsed.map(extractItemText).filter(Boolean).join(", ");
+              if (joined) return joined;
+            }
+          } catch {
+            // fallback below
+          }
+        }
+        const cleaned = pickCleanText(str);
+        if (cleaned) return cleaned;
+      }
+    }
+    return "";
+  };
 
   const pickValue = (...values) => {
     for (const value of values) {
@@ -191,24 +234,85 @@ const FirstExamination = () => {
 
   const fetchLatestPFAAssessment = async (userId, token, branchId) => {
     if (!isValidValue(userId)) return null;
+    const resolvedBranchId =
+      branchId?.branch_id || branchId?.id || branchId || "";
+    const branchQuery = resolvedBranchId
+      ? `?branch_id=${encodeURIComponent(resolvedBranchId)}`
+      : "";
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    };
 
-    const response = await fetch(
-      `https://gks-yjdc.onrender.com/api/pfa/user-assessments/${encodeURIComponent(
-        userId,
-      )}?branch_id=${branchId}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${token}`,
-        },
-      },
-    );
+    try {
+      let latest = null;
 
-    if (!response.ok) return null;
+      // 1. Try dedicated latest-assessment endpoint first
+      const latestRes = await fetch(
+        `https://gks-yjdc.onrender.com/api/pfa/latest-assessment/${encodeURIComponent(
+          userId,
+        )}${branchQuery}`,
+        { method: "GET", headers },
+      ).catch(() => null);
+      if (latestRes && latestRes.ok) {
+        const latestJson = await latestRes.json().catch(() => null);
+        latest = latestJson?.data || latestJson?.assessment || null;
+        if (Array.isArray(latest)) latest = getLatestAssessment(latest);
+      }
 
-    const result = await response.json();
-    return getLatestAssessment(result);
+      // 2. Fallback to user-assessments list
+      if (!latest) {
+        const listRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/pfa/user-assessments/${encodeURIComponent(
+            userId,
+          )}${branchQuery}`,
+          { method: "GET", headers },
+        ).catch(() => null);
+        if (listRes && listRes.ok) {
+          const listJson = await listRes.json().catch(() => null);
+          latest = getLatestAssessment(listJson);
+        }
+      }
+
+      // 3. If pfa_id is available and detail fields (using_medicine / other_findings / spo2) are missing, fetch full assessment detail
+      const pfaId = latest?.pfa_id || latest?.id;
+      const hasUsingMed = Boolean(
+        pickValue(
+          latest?.using_medicine,
+          latest?.health_metrics?.using_medicine,
+          latest?.assessment?.using_medicine,
+        ),
+      );
+      const hasOtherFindings = Boolean(
+        pickValue(
+          latest?.other_findings,
+          latest?.health_metrics?.other_findings,
+          latest?.assessment?.other_findings,
+        ),
+      );
+      if (pfaId && (!hasUsingMed || !hasOtherFindings)) {
+        const detailRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/pfa/assessment/${encodeURIComponent(
+            pfaId,
+          )}${branchQuery}`,
+          { method: "GET", headers },
+        ).catch(() => null);
+        if (detailRes && detailRes.ok) {
+          const detailJson = await detailRes.json().catch(() => null);
+          const detailObj = detailJson?.data || detailJson?.assessment || null;
+          if (detailObj && typeof detailObj === "object") {
+            latest = {
+              ...(latest || {}),
+              ...detailObj,
+            };
+          }
+        }
+      }
+
+      return latest;
+    } catch {
+      return null;
+    }
   };
 
   const loadLocalUserExtra = (userId, phone = "") => {
@@ -230,8 +334,17 @@ const FirstExamination = () => {
     try {
       const byPfa = pfaId ? localStorage.getItem(`gks_pfa_screening_pfa_${pfaId}`) : null;
       const byUser = userId ? localStorage.getItem(`gks_pfa_screening_user_${userId}`) : null;
-      const raw = byPfa || byUser;
-      return raw ? JSON.parse(raw) : {};
+      const parsedPfa = byPfa ? JSON.parse(byPfa) : {};
+      const parsedUser = byUser ? JSON.parse(byUser) : {};
+      return {
+        ...parsedUser,
+        ...parsedPfa,
+        using_medicine: pickValue(
+          parsedPfa?.using_medicine,
+          parsedUser?.using_medicine,
+          "",
+        ),
+      };
     } catch {
       return {};
     }
@@ -273,31 +386,86 @@ const FirstExamination = () => {
 
   const fetchRegisteredUserDetails = async (userId, token, branchId) => {
     if (!isValidValue(userId)) return null;
+    const resolvedBranchId =
+      branchId?.branch_id || branchId?.id || branchId || "";
+    const branchQuery = resolvedBranchId
+      ? `?branch_id=${encodeURIComponent(resolvedBranchId)}`
+      : "";
     const headers = {
       "Content-Type": "application/json",
       Authorization: `${token}`,
     };
+
+    const unwrapUser = (json) => {
+      if (!json || typeof json !== "object") return null;
+      const raw = Array.isArray(json.data)
+        ? json.data[0]
+        : json.data?.user || json.data || json.user || json;
+      if (!raw || typeof raw !== "object") return null;
+      if (!raw.user_id && !raw.id && !raw.name && !raw.phone && !raw.patient_type) {
+        return null;
+      }
+      return raw;
+    };
+
     try {
-      let res = await fetch(
+      let userObj = null;
+      const res = await fetch(
         `https://gks-yjdc.onrender.com/api/users/${encodeURIComponent(
           userId,
-        )}?branch_id=${branchId}`,
+        )}${branchQuery}`,
         { method: "GET", headers },
-      );
-      let json = await res.json().catch(() => null);
-      let userObj = Array.isArray(json?.data) ? json.data[0] : json?.data || json;
-      if (!res.ok || !userObj || (typeof userObj === "object" && !userObj.name && !userObj.address && !userObj.user_id && !userObj.id)) {
+      ).catch(() => null);
+
+      if (res && res.ok) {
+        const json = await res.json().catch(() => null);
+        userObj = unwrapUser(json);
+      }
+
+      if (!userObj && branchQuery) {
         const fallbackRes = await fetch(
           `https://gks-yjdc.onrender.com/api/users/${encodeURIComponent(userId)}`,
           { method: "GET", headers },
-        );
-        if (fallbackRes.ok) {
+        ).catch(() => null);
+        if (fallbackRes && fallbackRes.ok) {
           const fallbackJson = await fallbackRes.json().catch(() => null);
-          userObj = Array.isArray(fallbackJson?.data)
-            ? fallbackJson.data[0]
-            : fallbackJson?.data || fallbackJson;
+          userObj = unwrapUser(fallbackJson);
         }
       }
+
+      // If patient_type or address is missing from single-user response, merge from the branch registered patient list
+      const hasPatientType = Boolean(
+        formatPatientTypeText(userObj?.patient_type, userObj?.user?.patient_type),
+      );
+      if (!userObj || !hasPatientType || !userObj.address) {
+        const listRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/users${branchQuery}`,
+          { method: "GET", headers },
+        ).catch(() => null);
+        if (listRes && listRes.ok) {
+          const listJson = await listRes.json().catch(() => null);
+          const listArr = Array.isArray(listJson?.data)
+            ? listJson.data
+            : Array.isArray(listJson)
+            ? listJson
+            : [];
+          const matchedRow = listArr.find(
+            (u) => String(u?.user_id || u?.id) === String(userId),
+          );
+          if (matchedRow) {
+            userObj = {
+              ...matchedRow,
+              ...(userObj || {}),
+              patient_type:
+                formatPatientTypeText(userObj?.patient_type)
+                  ? userObj.patient_type
+                  : matchedRow.patient_type,
+              address: userObj?.address || matchedRow.address,
+            };
+          }
+        }
+      }
+
       return userObj && typeof userObj === "object" ? userObj : null;
     } catch {
       return null;
@@ -528,7 +696,7 @@ const FirstExamination = () => {
               localExtra.spo2_percentage,
             ),
             location: pickValue(item.location, localExtra.location),
-            addiction: pickValue(
+            addiction: formatPatientTypeText(
               item.patient_type,
               item.addiction,
               localExtra.patient_type,
@@ -697,11 +865,11 @@ const FirstExamination = () => {
       pfa?.location,
       "",
     );
-    const patientTypeVal = pickValue(
-      pickCleanText(userDetails?.patient_type, localUserExtra?.patient_type),
+    const patientTypeVal = formatPatientTypeText(
+      userDetails?.patient_type,
+      localUserExtra?.patient_type,
       pfa?.patient_type,
       pfa?.user?.patient_type,
-      "",
     );
     const usingMedicineVal = pickValue(
       pfa?.using_medicine,
@@ -958,9 +1126,22 @@ const FirstExamination = () => {
       const fetchedData = data?.data || null;
 
       if (fetchedData) {
+        const viewUserId = getPFAUserId(fetchedData);
         const localExtra = loadLocalFEExtra(
           fetchedData.first_eval_id || FEID,
-          fetchedData.user_id,
+          viewUserId,
+        );
+        const [userDetails, latestPFA] = await Promise.all([
+          fetchRegisteredUserDetails(viewUserId, token, branch_id).catch(() => null),
+          fetchLatestPFAAssessment(viewUserId, token, branch_id).catch(() => null),
+        ]);
+        const localUserExtra = loadLocalUserExtra(
+          viewUserId,
+          userDetails?.phone || fetchedData.phone,
+        );
+        const localPfaExtra = loadLocalPFAScreening(
+          viewUserId,
+          latestPFA?.pfa_id || latestPFA?.id,
         );
         const enriched = {
           ...fetchedData,
@@ -968,20 +1149,35 @@ const FirstExamination = () => {
             fetchedData.spo2_percentage,
             fetchedData.spo2,
             localExtra.spo2_percentage,
+            latestPFA?.spo2,
+            latestPFA?.health_metrics?.spo2,
           ),
-          location: pickValue(fetchedData.location, localExtra.location),
-          addiction: pickValue(
+          location: pickValue(
+            fetchedData.location,
+            localExtra.location,
+            pickCleanText(userDetails?.address, localUserExtra?.address),
+          ),
+          addiction: formatPatientTypeText(
             fetchedData.patient_type,
             fetchedData.addiction,
+            userDetails?.patient_type,
+            localUserExtra?.patient_type,
             localExtra.patient_type,
             localExtra.addiction,
           ),
           using_medicine: pickValue(
             fetchedData.using_medicine,
+            latestPFA?.using_medicine,
+            latestPFA?.health_metrics?.using_medicine,
+            latestPFA?.assessment?.using_medicine,
+            localPfaExtra?.using_medicine,
             localExtra.using_medicine,
           ),
           other_findings: pickValue(
             fetchedData.other_findings,
+            latestPFA?.other_findings,
+            latestPFA?.health_metrics?.other_findings,
+            latestPFA?.assessment?.other_findings,
             localExtra.other_findings,
           ),
         };
@@ -1026,27 +1222,28 @@ const FirstExamination = () => {
       const latestAssessment = data.data || null;
 
       if (latestAssessment) {
+        const editUserId = getPFAUserId(latestAssessment);
         const localExtra = loadLocalFEExtra(
           latestAssessment.first_eval_id || editFEID,
-          latestAssessment.user_id,
+          editUserId,
         );
         const [latestPFA, userDetails] = await Promise.all([
-          fetchLatestPFAAssessment(latestAssessment.user_id, token, branch_id).catch(() => null),
-          fetchRegisteredUserDetails(latestAssessment.user_id, token, branch_id).catch(() => null),
+          fetchLatestPFAAssessment(editUserId, token, branch_id).catch(() => null),
+          fetchRegisteredUserDetails(editUserId, token, branch_id).catch(() => null),
         ]);
         const localUserExtra = loadLocalUserExtra(
-          latestAssessment.user_id,
+          editUserId,
           userDetails?.phone || latestAssessment.phone,
         );
         const localPfaExtra = loadLocalPFAScreening(
-          latestAssessment.user_id,
+          editUserId,
           latestPFA?.pfa_id || latestPFA?.id,
         );
 
         setSelectedUser(latestAssessment);
         setFEEditData({
           first_eval_id: latestAssessment.first_eval_id,
-          user_id: latestAssessment.user_id,
+          user_id: editUserId,
           entry_id: latestAssessment.entry_id,
           branch_id: latestAssessment.branch_id,
           visit_no: latestAssessment.visit_no,
@@ -1065,28 +1262,31 @@ const FirstExamination = () => {
           ),
           location: pickValue(
             latestAssessment.location,
-            localExtra.location,
             pickCleanText(userDetails?.address, localUserExtra?.address),
+            localExtra.location,
           ),
-          addiction: pickValue(
+          addiction: formatPatientTypeText(
+            userDetails?.patient_type,
             latestAssessment.patient_type,
             latestAssessment.addiction,
+            localUserExtra?.patient_type,
             localExtra.patient_type,
             localExtra.addiction,
-            pickCleanText(userDetails?.patient_type, localUserExtra?.patient_type),
           ),
           using_medicine: pickValue(
-            latestAssessment.using_medicine,
-            localExtra.using_medicine,
             latestPFA?.using_medicine,
             latestPFA?.health_metrics?.using_medicine,
+            latestPFA?.assessment?.using_medicine,
             localPfaExtra?.using_medicine,
+            latestAssessment.using_medicine,
+            localExtra.using_medicine,
           ),
           other_findings: pickValue(
-            latestAssessment.other_findings,
-            localExtra.other_findings,
             latestPFA?.other_findings,
             latestPFA?.health_metrics?.other_findings,
+            latestPFA?.assessment?.other_findings,
+            latestAssessment.other_findings,
+            localExtra.other_findings,
           ),
           intoxicated_at_admission: latestAssessment.intoxicated_at_admission,
           status: latestAssessment.status,
@@ -1228,25 +1428,26 @@ const FirstExamination = () => {
       const latestAssessment = data?.assessment || data?.data;
 
       if (latestAssessment) {
+        const prefillUserId = getPFAUserId(latestAssessment);
         const localExtra = loadLocalFEExtra(
           latestAssessment.first_eval_id || prefillFEID,
-          latestAssessment.user_id,
+          prefillUserId,
         );
         const [latestPFA, userDetails] = await Promise.all([
-          fetchLatestPFAAssessment(latestAssessment.user_id, token, branch_id).catch(() => null),
-          fetchRegisteredUserDetails(latestAssessment.user_id, token, branch_id).catch(() => null),
+          fetchLatestPFAAssessment(prefillUserId, token, branch_id).catch(() => null),
+          fetchRegisteredUserDetails(prefillUserId, token, branch_id).catch(() => null),
         ]);
         const localUserExtra = loadLocalUserExtra(
-          latestAssessment.user_id,
+          prefillUserId,
           userDetails?.phone || latestAssessment.phone,
         );
         const localPfaExtra = loadLocalPFAScreening(
-          latestAssessment.user_id,
+          prefillUserId,
           latestPFA?.pfa_id || latestPFA?.id,
         );
 
         setFEPrefillData({
-          user_id: latestAssessment.user_id,
+          user_id: prefillUserId,
           date_of_assessment: latestAssessment.date_of_assessment
             ? new Date(latestAssessment.date_of_assessment)
             : new Date(),
@@ -1271,13 +1472,13 @@ const FirstExamination = () => {
             localExtra.location,
             "",
           ),
-          addiction: pickValue(
-            pickCleanText(userDetails?.patient_type, localUserExtra?.patient_type),
+          addiction: formatPatientTypeText(
+            userDetails?.patient_type,
+            localUserExtra?.patient_type,
             latestAssessment.patient_type,
             latestAssessment.addiction,
             localExtra.patient_type,
             localExtra.addiction,
-            "",
           ),
           using_medicine: pickValue(
             latestPFA?.using_medicine,

@@ -207,6 +207,15 @@ function Register() {
     }
   });
   const [customPatientTypeInput, setCustomPatientTypeInput] = useState("");
+  const [branchPatientTypes, setBranchPatientTypes] = useState([]);
+  const [allBranchPatientTypes, setAllBranchPatientTypes] = useState([]);
+  const [isPatientTypesLoading, setIsPatientTypesLoading] = useState(false);
+  const [isAddingPatientType, setIsAddingPatientType] = useState(false);
+  const [managePtModalOpen, setManagePtModalOpen] = useState(false);
+  const [ptSearchQuery, setPtSearchQuery] = useState("");
+  const [editingPtTypeId, setEditingPtTypeId] = useState(null);
+  const [editingPtTypeName, setEditingPtTypeName] = useState("");
+  const [isMutatingPtType, setIsMutatingPtType] = useState(false);
 
   const parsePatientTypeSelection = (rawVal) => {
     if (!rawVal) return [];
@@ -215,6 +224,16 @@ function Register() {
     }
     const str = String(rawVal).trim();
     if (!str) return [];
+    if (str.startsWith("[") && str.endsWith("]")) {
+      try {
+        const parsedArr = JSON.parse(str);
+        if (Array.isArray(parsedArr)) {
+          return Array.from(new Set(parsedArr.map((x) => String(x).trim()).filter(Boolean)));
+        }
+      } catch {
+        // fallback to delimiter parsing below
+      }
+    }
     const delimiter = str.includes("|") ? "|" : ",";
     return Array.from(
       new Set(
@@ -227,42 +246,352 @@ function Register() {
   };
 
   const serializePatientTypeSelection = (list) => {
-    const cleaned = Array.from(
+    return Array.from(
       new Set((list || []).map((item) => String(item).trim()).filter(Boolean))
     );
-    const hasInternalComma = cleaned.some((item) => item.includes(","));
-    return cleaned.join(hasInternalComma ? " | " : ", ");
   };
 
-  const handleAddCustomPatientType = (currentVal, onChangeVal) => {
+  const formatPatientTypeDisplay = (rawVal) => {
+    const parsed = parsePatientTypeSelection(rawVal);
+    return parsed.length > 0 ? parsed.join(", ") : "";
+  };
+
+  const pickPatientTypeArray = (...candidates) => {
+    for (const c of candidates) {
+      const parsed = parsePatientTypeSelection(c);
+      if (parsed.length > 0) return parsed;
+    }
+    return [];
+  };
+
+  const fetchBranchPatientTypes = useCallback(
+    async (targetBranch = branchId, search = "") => {
+      if (!targetBranch) return { active: [], all: [] };
+      const authToken = localStorage.getItem("Authorization");
+      setIsPatientTypesLoading(true);
+      try {
+        const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
+        const [activeRes, allRes] = await Promise.all([
+          fetch(
+            `https://gks-yjdc.onrender.com/api/custom-patient-types?branch_id=${targetBranch}${searchParam}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `${authToken}`,
+              },
+            }
+          ).catch(() => null),
+          fetch(
+            `https://gks-yjdc.onrender.com/api/custom-patient-types/all?branch_id=${targetBranch}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `${authToken}`,
+              },
+            }
+          ).catch(() => null),
+        ]);
+
+        let activeData = [];
+        let allData = [];
+
+        if (activeRes && activeRes.ok) {
+          const activeJson = await activeRes.json().catch(() => ({}));
+          activeData = Array.isArray(activeJson?.data) ? activeJson.data : [];
+        }
+        if (allRes && allRes.ok) {
+          const allJson = await allRes.json().catch(() => ({}));
+          allData = Array.isArray(allJson?.data) ? allJson.data : [];
+        } else if (activeData.length > 0) {
+          allData = activeData;
+        }
+
+        // If branch has 0 records in /all (unseeded branch) and no search filter is active, auto-seed standard clinical patient types
+        if (!search && allRes && allRes.ok && allData.length === 0) {
+          const seededItems = [];
+          for (const defOpt of DEFAULT_PATIENT_TYPE_OPTIONS) {
+            const createRes = await fetch(
+              `https://gks-yjdc.onrender.com/api/custom-patient-types?branch_id=${targetBranch}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `${authToken}`,
+                },
+                body: JSON.stringify({ custom_patient_type_name: defOpt.value }),
+              }
+            ).catch(() => null);
+            if (createRes && createRes.ok) {
+              const createdJson = await createRes.json().catch(() => ({}));
+              if (createdJson?.data) {
+                seededItems.push(createdJson.data);
+              }
+            }
+          }
+          if (seededItems.length > 0) {
+            activeData = seededItems;
+            allData = seededItems;
+          }
+        }
+
+        setBranchPatientTypes(activeData);
+        if (!search) {
+          setAllBranchPatientTypes(allData);
+        }
+        return { active: activeData, all: allData };
+      } catch (err) {
+        console.error("Failed to fetch custom patient types:", err);
+        return { active: [], all: [] };
+      } finally {
+        setIsPatientTypesLoading(false);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [branchId]
+  );
+
+  useEffect(() => {
+    if (!branchId) return;
+    fetchBranchPatientTypes(branchId);
+  }, [branchId, fetchBranchPatientTypes]);
+
+  const ensureBranchPatientTypesExist = async (selectedNames = []) => {
+    const cleanNames = parsePatientTypeSelection(selectedNames);
+    if (!branchId || cleanNames.length === 0) return cleanNames;
+    const authToken = localStorage.getItem("Authorization");
+
+    let currentActive = branchPatientTypes;
+    let currentAll = allBranchPatientTypes;
+    if (currentActive.length === 0 && currentAll.length === 0) {
+      const fetched = await fetchBranchPatientTypes(branchId);
+      currentActive = fetched.active || [];
+      currentAll = fetched.all || [];
+    }
+
+    let didMutate = false;
+    const canonicalSelections = [];
+
+    for (const name of cleanNames) {
+      const activeMatch = currentActive.find(
+        (item) =>
+          String(item.custom_patient_type_name || "").toLowerCase() ===
+          name.toLowerCase()
+      );
+      if (activeMatch) {
+        canonicalSelections.push(activeMatch.custom_patient_type_name);
+        continue;
+      }
+
+      const inactiveMatch = currentAll.find(
+        (item) =>
+          String(item.custom_patient_type_name || "").toLowerCase() ===
+          name.toLowerCase()
+      );
+      if (inactiveMatch && inactiveMatch.custom_patient_type_id) {
+        const reactivateRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/custom-patient-types/${inactiveMatch.custom_patient_type_id}?branch_id=${branchId}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${authToken}`,
+            },
+            body: JSON.stringify({ isActive: true }),
+          }
+        ).catch(() => null);
+        if (reactivateRes && reactivateRes.ok) {
+          didMutate = true;
+          canonicalSelections.push(inactiveMatch.custom_patient_type_name);
+          continue;
+        }
+      }
+
+      const createRes = await fetch(
+        `https://gks-yjdc.onrender.com/api/custom-patient-types?branch_id=${branchId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${authToken}`,
+          },
+          body: JSON.stringify({ custom_patient_type_name: name }),
+        }
+      ).catch(() => null);
+
+      if (createRes && createRes.ok) {
+        const createJson = await createRes.json().catch(() => ({}));
+        didMutate = true;
+        canonicalSelections.push(
+          createJson?.data?.custom_patient_type_name || name
+        );
+      } else {
+        canonicalSelections.push(name);
+      }
+    }
+
+    if (didMutate) {
+      await fetchBranchPatientTypes(branchId);
+    }
+
+    return Array.from(new Set(canonicalSelections));
+  };
+
+  const handleAddCustomPatientType = async (currentVal, onChangeVal) => {
     const trimmed = String(customPatientTypeInput || "").trim();
     if (!trimmed) return;
 
     const allExisting = [
       ...DEFAULT_PATIENT_TYPE_OPTIONS.map((o) => o.value),
+      ...branchPatientTypes.map((o) => o.custom_patient_type_name),
+      ...allBranchPatientTypes.map((o) => o.custom_patient_type_name),
       ...customPatientTypeOptions,
-    ];
-    const matched = allExisting.find((x) => x.toLowerCase() === trimmed.toLowerCase());
-    const finalValue = matched || trimmed;
+    ].filter(Boolean);
 
-    if (!matched) {
-      const nextCustom = [...customPatientTypeOptions, trimmed];
-      setCustomPatientTypeOptions(nextCustom);
+    const authToken = localStorage.getItem("Authorization");
+    setIsAddingPatientType(true);
+
+    try {
+      let finalValue = trimmed;
+
+      if (branchId && authToken) {
+        const res = await fetch(
+          `https://gks-yjdc.onrender.com/api/custom-patient-types?branch_id=${branchId}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${authToken}`,
+            },
+            body: JSON.stringify({ custom_patient_type_name: trimmed }),
+          }
+        ).catch(() => null);
+
+        if (res) {
+          const result = await res.json().catch(() => ({}));
+          if (res.ok && result?.data) {
+            finalValue = result.data.custom_patient_type_name || trimmed;
+            await fetchBranchPatientTypes(branchId);
+            toast.success(
+              getTranslation(
+                "Custom patient type added! / कस्टम रोगी प्रकार जोड़ा गया!",
+                lang
+              )
+            );
+          } else if (res.status === 409) {
+            const existingAll = allBranchPatientTypes.find(
+              (item) =>
+                String(item.custom_patient_type_name || "").toLowerCase() ===
+                trimmed.toLowerCase()
+            );
+            if (existingAll) {
+              finalValue = existingAll.custom_patient_type_name;
+              if (!existingAll.isActive && existingAll.custom_patient_type_id) {
+                await fetch(
+                  `https://gks-yjdc.onrender.com/api/custom-patient-types/${existingAll.custom_patient_type_id}?branch_id=${branchId}`,
+                  {
+                    method: "PUT",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `${authToken}`,
+                    },
+                    body: JSON.stringify({ isActive: true }),
+                  }
+                ).catch(() => null);
+                await fetchBranchPatientTypes(branchId);
+                toast.success(
+                  getTranslation(
+                    "Patient type reactivated and selected! / रोगी प्रकार पुनः सक्रिय और चयनित किया गया!",
+                    lang
+                  )
+                );
+              }
+            }
+          } else if (!res.ok) {
+            toast.error(
+              result?.error ||
+                result?.message ||
+                getTranslation("Failed to add patient type", lang)
+            );
+            return;
+          }
+        }
+      }
+
+      const matched = allExisting.find(
+        (x) => x.toLowerCase() === finalValue.toLowerCase()
+      );
+      if (matched) {
+        finalValue = matched;
+      } else {
+        const nextCustom = [...customPatientTypeOptions, finalValue];
+        setCustomPatientTypeOptions(nextCustom);
+        try {
+          localStorage.setItem(CUSTOM_PATIENT_TYPE_STORAGE_KEY, JSON.stringify(nextCustom));
+        } catch {
+          // ignore storage errors
+        }
+      }
+
+      const currentSelected = parsePatientTypeSelection(currentVal);
+      if (!currentSelected.some((x) => x.toLowerCase() === finalValue.toLowerCase())) {
+        onChangeVal(serializePatientTypeSelection([...currentSelected, finalValue]));
+      }
+      setCustomPatientTypeInput("");
+    } finally {
+      setIsAddingPatientType(false);
+    }
+  };
+
+  const handleRemoveCustomPatientType = async (optItem, currentVal, onChangeVal) => {
+    const optVal =
+      typeof optItem === "object" && optItem !== null
+        ? optItem.value
+        : String(optItem || "");
+    const ptId =
+      typeof optItem === "object" && optItem !== null
+        ? optItem.custom_patient_type_id
+        : null;
+    const authToken = localStorage.getItem("Authorization");
+
+    if (ptId && branchId && authToken) {
+      setIsMutatingPtType(true);
       try {
-        localStorage.setItem(CUSTOM_PATIENT_TYPE_STORAGE_KEY, JSON.stringify(nextCustom));
-      } catch {
-        // ignore storage errors
+        const res = await fetch(
+          `https://gks-yjdc.onrender.com/api/custom-patient-types/${ptId}?branch_id=${branchId}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${authToken}`,
+            },
+          }
+        ).catch(() => null);
+
+        if (res) {
+          const result = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            toast.error(
+              result?.error ||
+                result?.message ||
+                getTranslation("Cannot delete patient type", lang)
+            );
+            return;
+          }
+          await fetchBranchPatientTypes(branchId);
+          toast.success(
+            getTranslation(
+              "Custom patient type deleted / कस्टम रोगी प्रकार हटाया गया",
+              lang
+            )
+          );
+        }
+      } finally {
+        setIsMutatingPtType(false);
       }
     }
 
-    const currentSelected = parsePatientTypeSelection(currentVal);
-    if (!currentSelected.some((x) => x.toLowerCase() === finalValue.toLowerCase())) {
-      onChangeVal(serializePatientTypeSelection([...currentSelected, finalValue]));
-    }
-    setCustomPatientTypeInput("");
-  };
-
-  const handleRemoveCustomPatientType = (optVal, currentVal, onChangeVal) => {
     const nextCustom = customPatientTypeOptions.filter(
       (x) => x.toLowerCase() !== optVal.toLowerCase()
     );
@@ -279,19 +608,216 @@ function Register() {
     onChangeVal(serializePatientTypeSelection(nextSelected));
   };
 
+  const handleRenamePatientType = async (item) => {
+    const trimmedNewName = String(editingPtTypeName || "").trim();
+    const oldName = String(item?.custom_patient_type_name || "");
+    if (!trimmedNewName || !item?.custom_patient_type_id) return;
+    if (trimmedNewName === oldName) {
+      setEditingPtTypeId(null);
+      setEditingPtTypeName("");
+      return;
+    }
+
+    const authToken = localStorage.getItem("Authorization");
+    setIsMutatingPtType(true);
+    try {
+      const res = await fetch(
+        `https://gks-yjdc.onrender.com/api/custom-patient-types/${item.custom_patient_type_id}?branch_id=${branchId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${authToken}`,
+          },
+          body: JSON.stringify({ custom_patient_type_name: trimmedNewName }),
+        }
+      );
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(
+          result?.error ||
+            result?.message ||
+            getTranslation("Failed to rename patient type", lang)
+        );
+        return;
+      }
+
+      const replaceSelectionName = (rawVal) => {
+        const list = parsePatientTypeSelection(rawVal);
+        if (!list.some((x) => x.toLowerCase() === oldName.toLowerCase())) return rawVal;
+        return serializePatientTypeSelection(
+          list.map((x) => (x.toLowerCase() === oldName.toLowerCase() ? trimmedNewName : x))
+        );
+      };
+
+      setFormData((prev) => ({
+        ...prev,
+        patient_type: replaceSelectionName(prev.patient_type),
+      }));
+      setEditData((prev) =>
+        prev
+          ? {
+              ...prev,
+              patient_type: replaceSelectionName(prev.patient_type),
+            }
+          : prev
+      );
+      setReregFormData((prev) => ({
+        ...prev,
+        patient_type: replaceSelectionName(prev.patient_type),
+      }));
+
+      setEditingPtTypeId(null);
+      setEditingPtTypeName("");
+      await fetchBranchPatientTypes(branchId, ptSearchQuery);
+      await fetchBranchPatientTypes(branchId);
+      fetchUsers();
+      toast.success(
+        getTranslation(
+          "Patient type updated! / रोगी प्रकार अपडेट किया गया!",
+          lang
+        )
+      );
+    } catch {
+      toast.error(getTranslation("Error updating patient type", lang));
+    } finally {
+      setIsMutatingPtType(false);
+    }
+  };
+
+  const handleTogglePatientTypeActive = async (item) => {
+    if (!item?.custom_patient_type_id) return;
+    const nextActive = !(item.isActive === 1 || item.isActive === true);
+    const authToken = localStorage.getItem("Authorization");
+    setIsMutatingPtType(true);
+    try {
+      const res = await fetch(
+        `https://gks-yjdc.onrender.com/api/custom-patient-types/${item.custom_patient_type_id}?branch_id=${branchId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${authToken}`,
+          },
+          body: JSON.stringify({ isActive: nextActive }),
+        }
+      );
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(
+          result?.error ||
+            result?.message ||
+            getTranslation("Cannot change status of patient type", lang)
+        );
+        return;
+      }
+
+      if (!nextActive) {
+        const removeFromVal = (rawVal) => {
+          const list = parsePatientTypeSelection(rawVal);
+          return serializePatientTypeSelection(
+            list.filter(
+              (x) =>
+                x.toLowerCase() !==
+                String(item.custom_patient_type_name || "").toLowerCase()
+            )
+          );
+        };
+        setFormData((prev) => ({
+          ...prev,
+          patient_type: removeFromVal(prev.patient_type),
+        }));
+        setEditData((prev) =>
+          prev
+            ? {
+                ...prev,
+                patient_type: removeFromVal(prev.patient_type),
+              }
+            : prev
+        );
+        setReregFormData((prev) => ({
+          ...prev,
+          patient_type: removeFromVal(prev.patient_type),
+        }));
+      }
+
+      await fetchBranchPatientTypes(branchId);
+      toast.success(
+        nextActive
+          ? getTranslation("Patient type re-activated! / रोगी प्रकार पुनः सक्रिय!", lang)
+          : getTranslation("Patient type deactivated! / रोगी प्रकार निष्क्रिय!", lang)
+      );
+    } catch {
+      toast.error(getTranslation("Error updating patient type status", lang));
+    } finally {
+      setIsMutatingPtType(false);
+    }
+  };
+
   const renderPatientTypeField = (currentVal, onChangeVal, idPrefix = "reg") => {
     const selectedList = parsePatientTypeSelection(currentVal);
-    const knownLower = new Set([
-      ...DEFAULT_PATIENT_TYPE_OPTIONS.map((o) => o.value.toLowerCase()),
-      ...customPatientTypeOptions.map((c) => c.toLowerCase()),
-    ]);
-    const extraSelected = selectedList.filter((s) => !knownLower.has(s.toLowerCase()));
 
-    const allOptions = [
-      ...DEFAULT_PATIENT_TYPE_OPTIONS.map((o) => ({ ...o, isCustom: false })),
-      ...customPatientTypeOptions.map((c) => ({ value: c, label: c, isCustom: true })),
-      ...extraSelected.map((e) => ({ value: e, label: e, isCustom: false })),
-    ];
+    let allOptions = [];
+    if (branchPatientTypes.length > 0) {
+      allOptions = branchPatientTypes.map((item) => {
+        const defaultMatch = DEFAULT_PATIENT_TYPE_OPTIONS.find(
+          (d) =>
+            d.value.toLowerCase() ===
+            String(item.custom_patient_type_name || "").toLowerCase()
+        );
+        return {
+          value: item.custom_patient_type_name,
+          label: defaultMatch ? defaultMatch.label : item.custom_patient_type_name,
+          isCustom: !defaultMatch,
+          custom_patient_type_id: item.custom_patient_type_id,
+          active_patient_count: Number(item.active_patient_count || 0),
+          isHistorical: false,
+        };
+      });
+    } else {
+      allOptions = [
+        ...DEFAULT_PATIENT_TYPE_OPTIONS.map((o) => ({
+          ...o,
+          isCustom: false,
+          custom_patient_type_id: null,
+          active_patient_count: 0,
+          isHistorical: false,
+        })),
+        ...customPatientTypeOptions
+          .filter(
+            (c) =>
+              !DEFAULT_PATIENT_TYPE_OPTIONS.some(
+                (d) => d.value.toLowerCase() === c.toLowerCase()
+              )
+          )
+          .map((c) => ({
+            value: c,
+            label: c,
+            isCustom: true,
+            custom_patient_type_id: null,
+            active_patient_count: 0,
+            isHistorical: false,
+          })),
+      ];
+    }
+
+    selectedList.forEach((sel) => {
+      if (!allOptions.some((o) => o.value.toLowerCase() === sel.toLowerCase())) {
+        const inactiveMatch = allBranchPatientTypes.find(
+          (item) =>
+            String(item.custom_patient_type_name || "").toLowerCase() ===
+            sel.toLowerCase()
+        );
+        allOptions.push({
+          value: sel,
+          label: sel,
+          isCustom: false,
+          custom_patient_type_id: inactiveMatch?.custom_patient_type_id || null,
+          active_patient_count: Number(inactiveMatch?.active_patient_count || 0),
+          isHistorical: true,
+        });
+      }
+    });
 
     const toggleOption = (optVal, checked) => {
       let nextList;
@@ -311,18 +837,40 @@ function Register() {
           <Label className="form-label fw-semibold text-dark mb-0" style={{ fontSize: "13px" }}>
             {getTranslation("Patient Type / रोगी का प्रकार", lang)}
           </Label>
-          <span
-            style={{
-              fontSize: "11px",
-              fontWeight: 600,
-              padding: "2px 10px",
-              borderRadius: "999px",
-              backgroundColor: selectedList.length > 0 ? "#24695c" : "#64748b",
-              color: "#ffffff",
-            }}
-          >
-            {selectedList.length} {getTranslation("Selected / चयनित", lang)}
-          </span>
+          <div className="d-flex align-items-center gap-2">
+            <Button
+              type="button"
+              color="light"
+              size="sm"
+              onClick={() => {
+                fetchBranchPatientTypes(branchId);
+                setManagePtModalOpen(true);
+              }}
+              style={{
+                fontSize: "11.5px",
+                padding: "2px 10px",
+                borderRadius: "6px",
+                border: "1px solid #cbd5e1",
+                color: "#24695c",
+                fontWeight: 600,
+                backgroundColor: "#ffffff",
+              }}
+            >
+              ⚙️ {getTranslation("Manage Options / विकल्प प्रबंधित करें", lang)}
+            </Button>
+            <span
+              style={{
+                fontSize: "11px",
+                fontWeight: 600,
+                padding: "2px 10px",
+                borderRadius: "999px",
+                backgroundColor: selectedList.length > 0 ? "#24695c" : "#64748b",
+                color: "#ffffff",
+              }}
+            >
+              {selectedList.length} {getTranslation("Selected / चयनित", lang)}
+            </span>
+          </div>
         </div>
 
         <div
@@ -338,39 +886,80 @@ function Register() {
               return (
                 <div
                   key={`${opt.value}-${idx}`}
-                  className="form-check form-check-inline m-0"
+                  className="d-inline-flex align-items-center"
                   style={{
-                    backgroundColor: isChecked ? "#ecfdf5" : "#ffffff",
-                    border: isChecked ? "1px solid #24695c" : "1px solid #cbd5e1",
+                    gap: "8px",
+                    backgroundColor: opt.isHistorical
+                      ? "#fffbeb"
+                      : isChecked
+                      ? "#ecfdf5"
+                      : "#ffffff",
+                    border: opt.isHistorical
+                      ? "1px dashed #d97706"
+                      : isChecked
+                      ? "1px solid #24695c"
+                      : "1px solid #cbd5e1",
                     borderRadius: "8px",
-                    padding: "5px 10px",
+                    padding: "6px 10px",
+                    minHeight: "34px",
+                    lineHeight: 1.2,
                   }}
                 >
                   <Input
                     id={inputId}
                     type="checkbox"
-                    className="form-check-input"
+                    className="form-check-input m-0"
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      margin: 0,
+                      flexShrink: 0,
+                      cursor: "pointer",
+                    }}
                     checked={isChecked}
                     onChange={(e) => toggleOption(opt.value, e.target.checked)}
                   />
                   <Label
                     htmlFor={inputId}
-                    className="form-check-label"
+                    className="m-0"
                     style={{
                       fontWeight: isChecked ? "600" : "500",
-                      color: isChecked ? "#14532d" : "#334155",
+                      color: opt.isHistorical
+                        ? "#92400e"
+                        : isChecked
+                        ? "#14532d"
+                        : "#334155",
                       fontSize: "13px",
+                      lineHeight: 1.2,
+                      margin: 0,
                       cursor: "pointer",
+                      userSelect: "none",
                     }}
                   >
                     {opt.label.includes(" / ") ? getTranslation(opt.label, lang) : opt.label}
                   </Label>
-                  {opt.isCustom && (
+                  {opt.isHistorical && (
+                    <span
+                      className="px-1 rounded"
+                      style={{
+                        fontSize: "10px",
+                        lineHeight: 1.2,
+                        backgroundColor: "#fef3c7",
+                        color: "#b45309",
+                        border: "1px solid #fde68a",
+                      }}
+                    >
+                      {getTranslation("Inactive", lang)}
+                    </span>
+                  )}
+                  {(opt.isCustom || opt.custom_patient_type_id) && (
                     <button
                       type="button"
+                      disabled={isMutatingPtType}
+                      className="d-inline-flex align-items-center justify-content-center"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleRemoveCustomPatientType(opt.value, currentVal, onChangeVal);
+                        handleRemoveCustomPatientType(opt, currentVal, onChangeVal);
                       }}
                       title={getTranslation("Remove custom patient type / हटाएँ", lang)}
                       style={{
@@ -378,11 +967,14 @@ function Register() {
                         background: "transparent",
                         color: "#dc2626",
                         fontWeight: "700",
-                        fontSize: "13px",
+                        fontSize: "15px",
                         lineHeight: 1,
-                        marginLeft: "6px",
-                        padding: "0 2px",
+                        width: "18px",
+                        height: "18px",
+                        margin: 0,
+                        padding: 0,
                         cursor: "pointer",
+                        flexShrink: 0,
                       }}
                     >
                       ×
@@ -415,6 +1007,7 @@ function Register() {
               type="button"
               color="primary"
               size="sm"
+              disabled={isAddingPatientType}
               onClick={() => handleAddCustomPatientType(currentVal, onChangeVal)}
               className="d-inline-flex align-items-center gap-1 fw-semibold"
               style={{
@@ -424,7 +1017,11 @@ function Register() {
               }}
             >
               <span style={{ fontSize: "15px", lineHeight: 1 }}>+</span>
-              <span>{getTranslation("Add / जोड़ें", lang)}</span>
+              <span>
+                {isAddingPatientType
+                  ? getTranslation("Adding... / जोड़ा जा रहा है...", lang)
+                  : getTranslation("Add / जोड़ें", lang)}
+              </span>
             </Button>
           </div>
 
@@ -432,7 +1029,11 @@ function Register() {
             <Input
               type="text"
               readOnly
-              value={selectedList.join(", ")}
+              value={
+                selectedList.length > 0
+                  ? `(${selectedList.length} ${getTranslation("Selected / चयनित", lang)}) ${selectedList.join(", ")}`
+                  : ""
+              }
               placeholder={getTranslation(
                 "Selected patient type(s) will appear here... / चयनित रोगी का प्रकार यहाँ दिखेगा...",
                 lang
@@ -868,7 +1469,7 @@ function Register() {
     is_role: 4, // Default Patient role (4)
     ward_type_id: "",
     ward_name: "",
-    patient_type: "",
+    patient_type: [],
   };
 
   const [formData, setFormData] = useState(initialFormData);
@@ -1097,7 +1698,7 @@ function Register() {
       name: pickCleanText(formData.patientName, createdUser?.name),
       ward_type_id: createdUser?.ward?.ward_type_id || formData.ward_type_id,
       ward_name: createdUser?.ward?.ward_name || formData.ward_name,
-      patient_type: pickCleanText(formData.patient_type, createdUser?.patient_type),
+      patient_type: pickPatientTypeArray(createdUser?.patient_type, formData.patient_type),
       date_of_admission: formatDateStr(formData.date_of_admission),
       secondary_phone: (formData.secondary_phone || "").trim(),
       whatsapp_no: (formData.whatsapp_no || "").trim(),
@@ -1272,8 +1873,12 @@ function Register() {
         payload.append("relation_with_patient", formToSubmit.relation_with_patient.trim());
       }
 
-      if (formToSubmit.patient_type && formToSubmit.patient_type.trim()) {
-        payload.append("patient_type", formToSubmit.patient_type.trim());
+      const parsedRegisterPatientTypes = parsePatientTypeSelection(formToSubmit.patient_type);
+      if (parsedRegisterPatientTypes.length > 0) {
+        const validatedRegisterPatientTypes = await ensureBranchPatientTypesExist(
+          parsedRegisterPatientTypes
+        );
+        payload.append("patient_type", JSON.stringify(validatedRegisterPatientTypes));
       }
 
       // Clean relative_contacts: optional — every sent entry must have name + 10-digit phone + use_for_whatsapp + use_for_sms
@@ -1497,6 +2102,7 @@ function Register() {
       setIsRegisterSubmitting(false);
       setSubmitStatusMessage("");
       fetchWards(branchId);
+      fetchBranchPatientTypes(branchId);
 
       // ✅ Pre-warm the backend on Render in background while user fills the form
       if (branchId) {
@@ -1718,6 +2324,7 @@ function Register() {
     setReregPreview(null);
     setReregAdmissionFiles([]);
     fetchWards(branchId);
+    fetchBranchPatientTypes(branchId);
 
     const rowFallback = (data || []).find((u) => String(u.id) === String(userId)) || {};
     const defaultWard = (wardList && wardList.length > 0 ? wardList : wardOptions)[0] || {};
@@ -1738,7 +2345,7 @@ function Register() {
       email: rowFallback.email || "",
       ward_type_id: defaultWard.ward_type_id || defaultWard.id || "",
       ward_name: defaultWard.ward_name || defaultWard.name || "",
-      patient_type: pickCleanText(rowFallback.patient_type, localExtraRereg.patient_type) || "",
+      patient_type: pickPatientTypeArray(rowFallback.patient_type, localExtraRereg.patient_type),
       relative_contacts: [{ name: "", phone: "", is_whatsapp: false }],
       relativeaddress: "",
       address: "",
@@ -1770,7 +2377,7 @@ function Register() {
             email: u.email || "",
             phone: u.phone || prev.phone || "",
             dob: u.dob ? parseDateString(u.dob) || new Date() : prev.dob,
-            patient_type: pickCleanText(u.patient_type, localExtraRereg.patient_type, prev.patient_type) || "",
+            patient_type: pickPatientTypeArray(u.patient_type, localExtraRereg.patient_type, prev.patient_type),
             // Ensure all remaining fields stay empty as required for readmission
             patientRelativeName: "",
             relation_with_patient: "",
@@ -1836,6 +2443,11 @@ function Register() {
       const secTrimmed = (reregFormData.secondary_phone || "").trim();
       const waTrimmed = (reregFormData.whatsapp_no || "").trim();
 
+      const parsedReregPatientTypes = parsePatientTypeSelection(reregFormData.patient_type);
+      const validatedReregPatientTypes = await ensureBranchPatientTypesExist(
+        parsedReregPatientTypes
+      );
+
       const updateForm = new FormData();
       updateForm.append("name", (reregFormData.patientName || "").trim());
       updateForm.append("relative_name", (reregFormData.patientRelativeName || "").trim());
@@ -1850,9 +2462,7 @@ function Register() {
       updateForm.append("whatsapp_no", /^\d{10}$/.test(waTrimmed) ? waTrimmed : "");
       updateForm.append("relative_address", (reregFormData.relativeaddress || "").trim());
       updateForm.append("relation_with_patient", reregFormData.relation_with_patient || "");
-      if (reregFormData.patient_type && reregFormData.patient_type.trim()) {
-        updateForm.append("patient_type", reregFormData.patient_type.trim());
-      }
+      updateForm.append("patient_type", JSON.stringify(validatedReregPatientTypes));
       updateForm.append("relative_contacts", JSON.stringify(cleanedReregContacts));
       if (reregImage instanceof File) {
         updateForm.append("profile_pic", reregImage);
@@ -1912,7 +2522,7 @@ function Register() {
         name: pickCleanText(reregFormData.patientName),
         ward_type_id: reregFormData.ward_type_id,
         ward_name: reregFormData.ward_name,
-        patient_type: pickCleanText(reregFormData.patient_type),
+        patient_type: validatedReregPatientTypes,
         date_of_admission: formatDateStr(reregFormData.date_of_admission),
         secondary_phone: secTrimmed,
         whatsapp_no: waTrimmed,
@@ -1991,6 +2601,7 @@ function Register() {
       return;
     }
 
+    fetchBranchPatientTypes(branchId);
     const token = localStorage.getItem("Authorization");
 
     try {
@@ -2150,7 +2761,7 @@ function Register() {
         ward_type_id: resolvedWardTypeId,
         initial_ward_type_id: resolvedWardTypeId,
         ward_name: resolvedWardName || matchedWardOption?.ward_name || matchedWardOption?.name || "",
-        patient_type: pickCleanText(user.patient_type, localExtra.patient_type) || "",
+        patient_type: pickPatientTypeArray(user.patient_type, localExtra.patient_type),
         discharge_status: userDischargeStatus,
         is_role: Number(user.isRole) || 4,
         password: "",
@@ -2285,7 +2896,11 @@ function Register() {
       jsonPayload.relation_with_patient = editData.relation_with_patient;
     }
     if (editData.patient_type !== undefined) {
-      jsonPayload.patient_type = String(editData.patient_type || "").trim();
+      const parsedEditPatientTypes = parsePatientTypeSelection(editData.patient_type);
+      const validatedEditPatientTypes = await ensureBranchPatientTypesExist(
+        parsedEditPatientTypes
+      );
+      jsonPayload.patient_type = validatedEditPatientTypes;
     }
 
     // Change Ward (only for non-discharged active IPD patients when ward_type_id is provided)
@@ -2435,7 +3050,7 @@ function Register() {
             name: pickCleanText(trimmedName, updatedUserObj.name),
             ward_type_id: updatedUserObj.ward_type_id || editData.ward_type_id,
             ward_name: updatedUserObj.ward_name || editData.ward_name,
-            patient_type: pickCleanText(editData.patient_type, updatedUserObj.patient_type),
+            patient_type: pickPatientTypeArray(updatedUserObj.patient_type, editData.patient_type),
             secondary_phone: secEditTrimmed,
             whatsapp_no: waEditTrimmed,
             isWhatsApp: !!editData.isWhatsApp,
@@ -2662,6 +3277,7 @@ function Register() {
             age: ageVal,
             address: addrVal || "N/A",
             relative_name: relNameVal || "N/A",
+            patient_type: pickPatientTypeArray(user.patient_type, localExtra.patient_type),
             gks_id: user.gks_id,
             discharge_status: user.discharge_status,
             discharge_status_text: user.discharge_status_text,
@@ -5753,6 +6369,211 @@ function Register() {
             </Form>
           </div>
         )}
+      </CommonModal>
+
+      {/* Manage Custom Patient Types Modal */}
+      <CommonModal
+        isOpen={managePtModalOpen}
+        title={getTranslation(
+          "Manage Patient Type Options / रोगी प्रकार विकल्प प्रबंधित करें",
+          lang
+        )}
+        toggler={() => {
+          setManagePtModalOpen(false);
+          setEditingPtTypeId(null);
+          setEditingPtTypeName("");
+          setPtSearchQuery("");
+        }}
+        maxWidth="700px"
+      >
+        <div className="p-2">
+          <div className="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
+            <Input
+              type="text"
+              value={ptSearchQuery}
+              onChange={(e) => setPtSearchQuery(e.target.value)}
+              placeholder={getTranslation(
+                "Search patient types... / रोगी प्रकार खोजें...",
+                lang
+              )}
+              style={{ maxWidth: "320px" }}
+            />
+            <Button
+              type="button"
+              color="light"
+              size="sm"
+              disabled={isPatientTypesLoading}
+              onClick={() => fetchBranchPatientTypes(branchId)}
+              style={{
+                border: "1px solid #cbd5e1",
+                borderRadius: "8px",
+                fontWeight: 600,
+              }}
+            >
+              🔄 {getTranslation("Refresh / रीफ़्रेश", lang)}
+            </Button>
+          </div>
+
+          {isPatientTypesLoading ? (
+            <div className="text-center py-4 text-muted">
+              {getTranslation("Loading options... / विकल्प लोड हो रहे हैं...", lang)}
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-bordered align-middle mb-0">
+                <thead className="table-light">
+                  <tr>
+                    <th>{getTranslation("Option Name / विकल्प का नाम", lang)}</th>
+                    <th className="text-center">
+                      {getTranslation("Linked Patients / जुड़े मरीज़", lang)}
+                    </th>
+                    <th className="text-center">
+                      {getTranslation("Status / स्थिति", lang)}
+                    </th>
+                    <th className="text-center">
+                      {getTranslation("Actions / क्रिया", lang)}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(allBranchPatientTypes.length > 0
+                    ? allBranchPatientTypes
+                    : branchPatientTypes
+                  )
+                    .filter((item) =>
+                      !ptSearchQuery
+                        ? true
+                        : String(item.custom_patient_type_name || "")
+                            .toLowerCase()
+                            .includes(ptSearchQuery.toLowerCase())
+                    )
+                    .map((item) => {
+                      const isEditing =
+                        editingPtTypeId === item.custom_patient_type_id;
+                      const isActive =
+                        item.isActive === 1 || item.isActive === true;
+                      const activeCount = Number(
+                        item.active_patient_count || 0
+                      );
+                      return (
+                        <tr key={item.custom_patient_type_id}>
+                          <td>
+                            {isEditing ? (
+                              <div className="d-flex align-items-center gap-2">
+                                <Input
+                                  type="text"
+                                  bsSize="sm"
+                                  value={editingPtTypeName}
+                                  onChange={(e) =>
+                                    setEditingPtTypeName(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      handleRenamePatientType(item);
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  color="success"
+                                  size="sm"
+                                  disabled={isMutatingPtType}
+                                  onClick={() => handleRenamePatientType(item)}
+                                >
+                                  {getTranslation("Save / सहेजें", lang)}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  color="secondary"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingPtTypeId(null);
+                                    setEditingPtTypeName("");
+                                  }}
+                                >
+                                  {getTranslation("Cancel / रद्द", lang)}
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="fw-semibold">
+                                {item.custom_patient_type_name}
+                              </span>
+                            )}
+                          </td>
+                          <td className="text-center">
+                            <span
+                              className="badge"
+                              style={{
+                                backgroundColor:
+                                  activeCount > 0 ? "#0ea5e9" : "#f1f5f9",
+                                color: activeCount > 0 ? "#ffffff" : "#334155",
+                              }}
+                            >
+                              {activeCount}
+                            </span>
+                          </td>
+                          <td className="text-center">
+                            <span
+                              className="badge"
+                              style={{
+                                backgroundColor: isActive ? "#16a34a" : "#64748b",
+                                color: "#ffffff",
+                              }}
+                            >
+                              {isActive
+                                ? getTranslation("Active / सक्रिय", lang)
+                                : getTranslation("Inactive / निष्क्रिय", lang)}
+                            </span>
+                          </td>
+                          <td className="text-center">
+                            <div className="d-inline-flex align-items-center gap-2">
+                              {!isEditing && (
+                                <Button
+                                  type="button"
+                                  color="light"
+                                  size="sm"
+                                  disabled={isMutatingPtType}
+                                  onClick={() => {
+                                    setEditingPtTypeId(
+                                      item.custom_patient_type_id
+                                    );
+                                    setEditingPtTypeName(
+                                      item.custom_patient_type_name || ""
+                                    );
+                                  }}
+                                  style={{
+                                    border: "1px solid #cbd5e1",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  {getTranslation("Rename / नाम बदलें", lang)}
+                                </Button>
+                              )}
+                              {!isActive && (
+                                <Button
+                                  type="button"
+                                  color="success"
+                                  size="sm"
+                                  disabled={isMutatingPtType}
+                                  onClick={() =>
+                                    handleTogglePatientTypeActive(item)
+                                  }
+                                  style={{ fontSize: "12px" }}
+                                >
+                                  {getTranslation("Activate / सक्रिय करें", lang)}
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </CommonModal>
     </Fragment>
   );

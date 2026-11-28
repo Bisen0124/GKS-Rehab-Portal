@@ -159,6 +159,15 @@ function PFA() {
     }
   });
   const [customDependentInput, setCustomDependentInput] = useState("");
+  const [branchDependentTypes, setBranchDependentTypes] = useState([]);
+  const [allBranchDependentTypes, setAllBranchDependentTypes] = useState([]);
+  const [isDependentTypesLoading, setIsDependentTypesLoading] = useState(false);
+  const [isAddingDependentType, setIsAddingDependentType] = useState(false);
+  const [manageDepModalOpen, setManageDepModalOpen] = useState(false);
+  const [depSearchQuery, setDepSearchQuery] = useState("");
+  const [editingDepTypeId, setEditingDepTypeId] = useState(null);
+  const [editingDepTypeName, setEditingDepTypeName] = useState("");
+  const [isMutatingDepType, setIsMutatingDepType] = useState(false);
 
   const parseDependentSelection = (rawVal, knownList = []) => {
     if (!rawVal) return [];
@@ -168,12 +177,26 @@ function PFA() {
     const str = String(rawVal).trim();
     if (!str) return [];
 
+    if (str.startsWith("[") && str.endsWith("]")) {
+      try {
+        const parsedArr = JSON.parse(str);
+        if (Array.isArray(parsedArr)) {
+          return Array.from(new Set(parsedArr.map((x) => String(x).trim()).filter(Boolean)));
+        }
+      } catch {
+        // fallback to string parsing below
+      }
+    }
+
     if (str.includes("|")) {
       return Array.from(new Set(str.split("|").map((s) => s.trim()).filter(Boolean)));
     }
 
     const allKnown = [
       ...DEFAULT_DEPENDENT_OPTIONS.map((o) => o.value),
+      ...branchDependentTypes.map((o) => o.custom_dependent_type_name),
+      ...allBranchDependentTypes.map((o) => o.custom_dependent_type_name),
+      ...customDependentOptions,
       ...knownList,
     ].filter(Boolean);
 
@@ -210,7 +233,183 @@ function PFA() {
   const serializeDependentSelection = (list) => {
     return Array.from(
       new Set((list || []).map((item) => String(item).trim()).filter(Boolean))
-    ).join(" | ");
+    );
+  };
+
+  const formatDependentToDisplay = (rawVal) => {
+    const parsed = parseDependentSelection(rawVal);
+    return parsed.length > 0 ? parsed.join(", ") : "";
+  };
+
+  const fetchBranchDependentTypes = async (branchId = selectedBranch, search = "") => {
+    if (!branchId) return { active: [], all: [] };
+    const token = localStorage.getItem("Authorization");
+    setIsDependentTypesLoading(true);
+    try {
+      const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
+      const [activeRes, allRes] = await Promise.all([
+        fetch(
+          `https://gks-yjdc.onrender.com/api/custom-dependent-types?branch_id=${branchId}${searchParam}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        ).catch(() => null),
+        fetch(
+          `https://gks-yjdc.onrender.com/api/custom-dependent-types/all?branch_id=${branchId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        ).catch(() => null),
+      ]);
+
+      let activeData = [];
+      let allData = [];
+
+      if (activeRes && activeRes.ok) {
+        const activeJson = await activeRes.json().catch(() => ({}));
+        activeData = Array.isArray(activeJson?.data) ? activeJson.data : [];
+      }
+      if (allRes && allRes.ok) {
+        const allJson = await allRes.json().catch(() => ({}));
+        allData = Array.isArray(allJson?.data) ? allJson.data : [];
+      } else if (activeData.length > 0) {
+        allData = activeData;
+      }
+
+      // If branch has 0 records in /all (unseeded branch) and no search filter is active, auto-seed standard clinical options in order
+      if (!search && allRes && allRes.ok && allData.length === 0) {
+        const seededItems = [];
+        for (const defOpt of DEFAULT_DEPENDENT_OPTIONS) {
+          const createRes = await fetch(
+            `https://gks-yjdc.onrender.com/api/custom-dependent-types?branch_id=${branchId}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `${token}`,
+              },
+              body: JSON.stringify({ custom_dependent_type_name: defOpt.value }),
+            }
+          ).catch(() => null);
+          if (createRes && createRes.ok) {
+            const createdJson = await createRes.json().catch(() => ({}));
+            if (createdJson?.data) {
+              seededItems.push(createdJson.data);
+            }
+          }
+        }
+        if (seededItems.length > 0) {
+          activeData = seededItems;
+          allData = seededItems;
+        }
+      }
+
+      setBranchDependentTypes(activeData);
+      if (!search) {
+        setAllBranchDependentTypes(allData);
+      }
+      return { active: activeData, all: allData };
+    } catch (err) {
+      console.error("Failed to fetch custom dependent types:", err);
+      return { active: branchDependentTypes, all: allBranchDependentTypes };
+    } finally {
+      setIsDependentTypesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!selectedBranch) return;
+    fetchBranchDependentTypes(selectedBranch);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBranch]);
+
+  const ensureBranchDependentTypesExist = async (selectedNames = []) => {
+    const cleanNames = parseDependentSelection(selectedNames);
+    if (!selectedBranch || cleanNames.length === 0) return cleanNames;
+    const token = localStorage.getItem("Authorization");
+
+    let currentActive = branchDependentTypes;
+    let currentAll = allBranchDependentTypes;
+    if (currentActive.length === 0 && currentAll.length === 0) {
+      const fetched = await fetchBranchDependentTypes(selectedBranch);
+      currentActive = fetched.active || [];
+      currentAll = fetched.all || [];
+    }
+
+    let didMutate = false;
+    const canonicalSelections = [];
+
+    for (const name of cleanNames) {
+      const activeMatch = currentActive.find(
+        (item) =>
+          String(item.custom_dependent_type_name || "").toLowerCase() ===
+          name.toLowerCase()
+      );
+      if (activeMatch) {
+        canonicalSelections.push(activeMatch.custom_dependent_type_name);
+        continue;
+      }
+
+      const inactiveMatch = currentAll.find(
+        (item) =>
+          String(item.custom_dependent_type_name || "").toLowerCase() ===
+          name.toLowerCase()
+      );
+      if (inactiveMatch && inactiveMatch.custom_dependent_type_id) {
+        const reactivateRes = await fetch(
+          `https://gks-yjdc.onrender.com/api/custom-dependent-types/${inactiveMatch.custom_dependent_type_id}?branch_id=${selectedBranch}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+            body: JSON.stringify({ isActive: true }),
+          }
+        ).catch(() => null);
+        if (reactivateRes && reactivateRes.ok) {
+          didMutate = true;
+          canonicalSelections.push(inactiveMatch.custom_dependent_type_name);
+          continue;
+        }
+      }
+
+      const createRes = await fetch(
+        `https://gks-yjdc.onrender.com/api/custom-dependent-types?branch_id=${selectedBranch}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`,
+          },
+          body: JSON.stringify({ custom_dependent_type_name: name }),
+        }
+      ).catch(() => null);
+
+      if (createRes && createRes.ok) {
+        const createJson = await createRes.json().catch(() => ({}));
+        didMutate = true;
+        canonicalSelections.push(
+          createJson?.data?.custom_dependent_type_name || name
+        );
+      } else {
+        canonicalSelections.push(name);
+      }
+    }
+
+    if (didMutate) {
+      await fetchBranchDependentTypes(selectedBranch);
+    }
+
+    return Array.from(new Set(canonicalSelections));
   };
 
   const parseUsePatternSelection = (rawVal) => {
@@ -238,7 +437,7 @@ function PFA() {
 
   const SCREENING_KEYS = ["hiv", "hcv", "hbsag", "vdrl", "syphilis", "vdrl_syphilis"];
   const EXTENDED_PFA_KEYS = [
-    ...SCREENING_KEYS,
+    "vdrl_syphilis",
     "diabetes",
     "substance_use_frequency",
     "using_medicine",
@@ -347,18 +546,6 @@ function PFA() {
         });
       }
 
-      if (
-        (errStr.includes("not done") || errStr.includes("must be one of") || errStr.includes("invalid")) &&
-        ["hiv", "hcv", "hbsag", "vdrl", "syphilis"].some((k) => currentPayload[k] === "NA")
-      ) {
-        ["hiv", "hcv", "hbsag", "vdrl", "syphilis"].forEach((k) => {
-          if (currentPayload[k] === "NA") {
-            currentPayload[k] = "Not Done";
-            modified = true;
-          }
-        });
-      }
-
       if (!modified) break;
       ({ response, result } = await doFetch(currentPayload));
     }
@@ -369,7 +556,7 @@ function PFA() {
   const initialPFAFormData = {
     dateOfAdmission: new Date(),
     dateOfAssessment: new Date(),
-    dependentToData: "",
+    dependentToData: [],
     substanceUseFrequencyData: "",
     substanceUsePatternData: "",
     last30DaysQuantityData: "",
@@ -452,7 +639,7 @@ function PFA() {
   const [data, setData] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [stillLoading, setstillLoading] = useState(true);
-  useEffect(() => {
+  const fetchRegisteredUsersForPFA = () => {
     if (!selectedBranch) return; // avoid empty branch fetch
   
     const token = localStorage.getItem("Authorization");
@@ -504,17 +691,19 @@ function PFA() {
           };
         });
         
-  
-        setTimeout(() => {
-          setData(formatted);
-          setFilteredData(formatted);
-          setstillLoading(false);
-        }, 1000);
+        setData(formatted);
+        setFilteredData(formatted);
+        setstillLoading(false);
       })
       .catch((error) => {
         console.error("Error fetching PFA user data:", error);
-        setstillLoading(true);
+        setstillLoading(false);
       });
+  };
+
+  useEffect(() => {
+    fetchRegisteredUsersForPFA();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBranch]);
   
   
@@ -684,7 +873,7 @@ function PFA() {
         {row.dischargeStatus === 0 && row.isReadmission === 1 && (
           <TableActionButton
             type="edit"
-            onClick={() => handlePreeFillCreateReadmissionPFA(row.recent_pfa_id)}
+            onClick={() => handlePreeFillCreateReadmissionPFA(row)}
             title={getTranslation("Readmission PFA/पुनः प्रवेश पीएफए", lang)}
           />
         )}
@@ -947,6 +1136,7 @@ const tablePFAPatientListColumns = [
   const toggle = async (userId = null) => {
     // Always open modal
     setModal(true);
+    fetchBranchDependentTypes(selectedBranch);
     const targetUserId = userId || currentPFAUserId;
     if (userId) setCurrentPFAUserId(userId);
   
@@ -1000,9 +1190,11 @@ const tablePFAPatientListColumns = [
     e.preventDefault();
     setIsLoading(true); // Start loader
 
+    const parsedDependentTo = parseDependentSelection(formData.dependentToData);
+
     const compulsoryFieldDefinitions = [
       { label: getTranslation("Date of Assessment / मूल्यांकन की तिथि", lang), value: formData.dateOfAssessment },
-      { label: getTranslation("Dependent To / पर निर्भर", lang), value: formData.dependentToData },
+      { label: getTranslation("Dependent To / पर निर्भर", lang), value: parsedDependentTo.length > 0 ? "selected" : "" },
       { label: getTranslation("Substance Use Pattern / मादक पदार्थ उपयोग पैटर्न", lang), value: formData.substanceUsePatternData },
       { label: getTranslation("Last 30 Days Quantity / पिछले 30 दिनों की मात्रा", lang), value: formData.last30DaysQuantityData },
       { label: getTranslation("Medical History / चिकित्सा इतिहास", lang), value: formData.medicalConfirmationData },
@@ -1052,11 +1244,13 @@ const tablePFAPatientListColumns = [
       formData.vdrl_syphilis ?? formData.vdrl ?? formData.syphilis
     );
 
+    const validatedDependentArray = await ensureBranchDependentTypesExist(parsedDependentTo);
+
     const payload = {
       user_id: selectedUser[0].user_id,
       // date_of_admission: formData.dateOfAdmission?.toISOString(),
       date_of_assessment: formData.dateOfAssessment?.toISOString(),
-      dependent_to: formData.dependentToData,
+      dependent_to: validatedDependentArray,
       substance_use_frequency: formData.substanceUseFrequencyData || "",
       substance_use_pattern: formData.substanceUsePatternData,
       last_30_days_quantity: formData.last30DaysQuantityData,
@@ -1069,12 +1263,12 @@ const tablePFAPatientListColumns = [
       diabetes: normalizeDiabetesValue(formData.diabetes),
       sugar: null,
       hb: null,
-      hiv: normalizeScreeningValue(formData.hiv),
-      hcv: normalizeScreeningValue(formData.hcv ?? formData.hepatitis_c),
-      hbsag: normalizeScreeningValue(formData.hbsag ?? formData.hepatitis_b),
-      vdrl_syphilis: combinedVdrlSyphSubmit,
-      vdrl: combinedVdrlSyphSubmit,
-      syphilis: combinedVdrlSyphSubmit,
+      hiv: normalizeScreeningValue(formData.hiv) || null,
+      hcv: normalizeScreeningValue(formData.hcv ?? formData.hepatitis_c) || null,
+      hbsag: normalizeScreeningValue(formData.hbsag ?? formData.hepatitis_b) || null,
+      vdrl_syphilis: combinedVdrlSyphSubmit || null,
+      vdrl: combinedVdrlSyphSubmit || null,
+      syphilis: combinedVdrlSyphSubmit || null,
       lymphadenopathy: formData.lymphadenopathy,
       blood_transfusion_history: formData.bloodConfirmationData,
       medical_or_blood_history_details: formData.bloodTransfusionHistoryData,
@@ -1126,9 +1320,11 @@ const tablePFAPatientListColumns = [
     title: getTranslation("PFA Created Successfully/PFA सफलतापूर्वक बनाया गया",lang),
     text: getTranslation("The PFA assessment was submitted successfully./PFA असेसमेंट सक्सेसफुली सबमिट हो गया।",lang),
   }).then(() => {
-  // This runs after the user clicks "OK"
-  setModal(false);
-});
+    // This runs after the user clicks "OK"
+    setModal(false);
+    fetchAllPFAEntries();
+    fetchRegisteredUsersForPFA();
+  });
     } catch (error) {
       setIsLoading(false);
       Swal.fire({
@@ -1242,48 +1438,96 @@ const parseDateString = (dateStr) => {
   const date = new Date(dateStr);
   return isNaN(date.getTime()) ? null : date;
 };
- const handlePreeFillCreateReadmissionPFA = async (recentPFAiD = null) => {
-  if (typeof recentPFAiD === "object" && recentPFAiD !== null) {
-    recentPFAiD = recentPFAiD.recent_pfa_id;
+ const handlePreeFillCreateReadmissionPFA = async (recentPFAiDOrRow = null) => {
+  let recentPFAiD = recentPFAiDOrRow;
+  let fallbackUserId = null;
+
+  if (typeof recentPFAiDOrRow === "object" && recentPFAiDOrRow !== null) {
+    recentPFAiD = recentPFAiDOrRow.recent_pfa_id || recentPFAiDOrRow.pfa_id || null;
+    fallbackUserId = recentPFAiDOrRow.id || recentPFAiDOrRow.user_id || null;
   }
 
-  if (!recentPFAiD) {
-    console.error("Invalid userId provided to toggle");
+  if (!recentPFAiD && !fallbackUserId) {
+    console.error("Invalid PFA ID or userId provided to readmission PFA");
+    toast.error(getTranslation("Unable to load patient PFA details", lang));
     return;
   }
 
   setPFAEditModal(true);
+  setIsLoading(true);
+  fetchBranchDependentTypes(selectedBranch);
 
   const token = localStorage.getItem("Authorization");
   try {
-    const branch_id = selectedBranch; // make sure `selectedBranch` 
-    const response = await fetch(
-      `https://gks-yjdc.onrender.com/api/pfa/assessment/${recentPFAiD}?branch_id=${branch_id}`,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `${token}`,
-        },
+    const branch_id = selectedBranch;
+    const headers = {
+      "Content-Type": "application/json",
+      Authorization: `${token}`,
+    };
+
+    let latestAssessment = null;
+
+    if (recentPFAiD) {
+      const response = await fetch(
+        `https://gks-yjdc.onrender.com/api/pfa/assessment/${recentPFAiD}?branch_id=${branch_id}`,
+        { method: "GET", headers }
+      ).catch(() => null);
+      if (response && response.ok) {
+        const data = await response.json().catch(() => ({}));
+        latestAssessment = data.data || data.assessment || null;
       }
-    );
-
-    const data = await response.json();
-    console.log("Latest PFA:", data);
-
-    if (!response.ok) {
-      console.error("User fetch error:", data);
-      return;
     }
 
-    const latestAssessment = data.data || data.assessment || data;
+    // Fallback 1: GET /api/pfa/latest-assessment/:userId
+    if (!latestAssessment && fallbackUserId) {
+      const latestRes = await fetch(
+        `https://gks-yjdc.onrender.com/api/pfa/latest-assessment/${fallbackUserId}?branch_id=${branch_id}`,
+        { method: "GET", headers }
+      ).catch(() => null);
+      if (latestRes && latestRes.ok) {
+        const latestJson = await latestRes.json().catch(() => ({}));
+        latestAssessment = latestJson.data || latestJson.assessment || null;
+      }
+    }
 
+    // Fallback 2: GET /api/pfa/user-assessments/:userId
+    if (!latestAssessment && fallbackUserId) {
+      const listRes = await fetch(
+        `https://gks-yjdc.onrender.com/api/pfa/user-assessments/${fallbackUserId}?branch_id=${branch_id}`,
+        { method: "GET", headers }
+      ).catch(() => null);
+      if (listRes && listRes.ok) {
+        const listJson = await listRes.json().catch(() => ({}));
+        const arr = Array.isArray(listJson?.data)
+          ? listJson.data
+          : listJson?.assessments || [];
+        if (arr.length > 0) {
+          latestAssessment = [...arr].sort(
+            (a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+          )[0];
+        }
+      }
+    }
+
+    // If this readmitted patient has no prior PFA record at all, open Create PFA modal directly
     if (!latestAssessment) {
-      console.warn("No assessment found for this user.");
+      setPFAEditModal(false);
+      setIsLoading(false);
+      if (fallbackUserId) {
+        toggle(fallbackUserId);
+      } else {
+        toast.info(
+          getTranslation(
+            "No previous PFA assessment found for this patient / इस रोगी का कोई पिछला पीएफए मूल्यांकन नहीं मिला",
+            lang
+          )
+        );
+      }
       return;
     }
 
     setSelectedUser(latestAssessment);
+    setIsLoading(false);
     console.log("Selected User Assessment:", latestAssessment);
 
     console.log(latestAssessment.date_of_assessment)
@@ -1313,7 +1557,7 @@ const parseDateString = (dateStr) => {
         ? new Date(latestAssessment.date_of_assessment) // ✅ always Date object
         : null,
     
-      dependent_to: latestAssessment.dependent_to || "",
+      dependent_to: parseDependentSelection(latestAssessment.dependent_to),
       substance_use_frequency: latestAssessment.substance_use_frequency || localReadmitScreening?.substance_use_frequency || "",
       substance_use_pattern: latestAssessment.substance_use_pattern || "",
       last_30_days_quantity: latestAssessment.last_30_days_quantity || "",
@@ -1371,11 +1615,13 @@ const parseDateString = (dateStr) => {
     
       readmissionConsent: latestAssessment.consent || "No",
       readmissionVerification: latestAssessment.verification || "No",
-      readmissionUserId: latestAssessment.user_id || null,
+      readmissionUserId: latestAssessment.user_id || fallbackUserId || null,
     });
     
   } catch (error) {
     console.error("Fetch error:", error);
+  } finally {
+    setIsLoading(false);
   }
 };
 
@@ -1389,9 +1635,13 @@ const parseDateString = (dateStr) => {
       PFAeditData.vdrl_syphilis ?? PFAeditData.vdrl ?? PFAeditData.syphilis
     );
 
+    const validatedReadmitDependentArray = await ensureBranchDependentTypesExist(
+      parseDependentSelection(PFAeditData.dependent_to)
+    );
+
     const payload = {
       date_of_assessment: PFAeditData.date_of_assessment?.toISOString(),
-      dependent_to: PFAeditData.dependent_to,
+      dependent_to: validatedReadmitDependentArray,
       substance_use_frequency: PFAeditData.substance_use_frequency || "",
       substance_use_pattern: PFAeditData.substance_use_pattern,
       last_30_days_quantity: PFAeditData.last_30_days_quantity,
@@ -1408,12 +1658,12 @@ const parseDateString = (dateStr) => {
       diabetes: normalizeDiabetesValue(PFAeditData.diabetes),
       sugar: null,
       hb: null,
-      hiv: normalizeScreeningValue(PFAeditData.hiv),
-      hcv: normalizeScreeningValue(PFAeditData.hcv ?? PFAeditData.hepatitis_c),
-      hbsag: normalizeScreeningValue(PFAeditData.hbsag ?? PFAeditData.hepatitis_b),
-      vdrl_syphilis: combinedReadmitSubmitVdrlSyph,
-      vdrl: combinedReadmitSubmitVdrlSyph,
-      syphilis: combinedReadmitSubmitVdrlSyph,
+      hiv: normalizeScreeningValue(PFAeditData.hiv) || null,
+      hcv: normalizeScreeningValue(PFAeditData.hcv ?? PFAeditData.hepatitis_c) || null,
+      hbsag: normalizeScreeningValue(PFAeditData.hbsag ?? PFAeditData.hepatitis_b) || null,
+      vdrl_syphilis: combinedReadmitSubmitVdrlSyph || null,
+      vdrl: combinedReadmitSubmitVdrlSyph || null,
+      syphilis: combinedReadmitSubmitVdrlSyph || null,
       lymphadenopathy: PFAeditData.lymphadenopathy,
 
       // Complications
@@ -1521,9 +1771,12 @@ const parseDateString = (dateStr) => {
     title: getTranslation("PFA Readmission Created Successfully/PFA रीडमिशन सफलतापूर्वक बनाया गया",lang),
     text: getTranslation("The PFA readmission was submitted successfully./PFA रीएडमिशन सफलतापूर्वक सबमिट कर दिया गया।",lang),
   }).then(() => {
-  // This runs after the user clicks "OK"
-  setModal(false);
-});
+    // This runs after the user clicks "OK"
+    setPFAEditModal(false);
+    setModal(false);
+    fetchAllPFAEntries();
+    fetchRegisteredUsersForPFA();
+  });
     } catch (error) {
       setIsLoading(false);
       Swal.fire({
@@ -1539,7 +1792,8 @@ const parseDateString = (dateStr) => {
   const handleAllPFAEditData = async (userId = null) => {
     // Open modal right away
     setPFAEditIndividualDataModal(true);
-    setIsLoading(true); 
+    setIsLoading(true);
+    fetchBranchDependentTypes(selectedBranch);
   
     // Handle if userId is an object
     if (typeof userId === "object" && userId !== null) {
@@ -1645,6 +1899,7 @@ const parseDateString = (dateStr) => {
       setPFAeditData({
         pfa_id: pfaId,
         ...latestAssessment,
+        dependent_to: parseDependentSelection(latestAssessment.dependent_to),
         substance_use_frequency: latestAssessment.substance_use_frequency ?? latestAssessment.assessment?.substance_use_frequency ?? localEditScreening.substance_use_frequency ?? "",
         using_medicine: latestAssessment.using_medicine ?? latestAssessment.health_metrics?.using_medicine ?? localEditScreening.using_medicine ?? "",
         temperature: latestAssessment.temperature ?? latestAssessment.health_metrics?.temperature ?? "",
@@ -1685,12 +1940,16 @@ const parseDateString = (dateStr) => {
       PFAeditData.vdrl_syphilis ?? PFAeditData.vdrl ?? PFAeditData.syphilis
     );
 
+    const validatedEditDependentArray = await ensureBranchDependentTypesExist(
+      parseDependentSelection(PFAeditData.dependent_to)
+    );
+
     const payload = {
       date_of_assessment: PFAeditData.date_of_assessment
       ? PFAeditData.date_of_assessment.toISOString()
       : null,
   
-      dependent_to: PFAeditData.dependent_to,
+      dependent_to: validatedEditDependentArray,
       substance_use_frequency: PFAeditData.substance_use_frequency || "",
       substance_use_pattern: PFAeditData.substance_use_pattern,
       last_30_days_quantity: PFAeditData.last_30_days_quantity,
@@ -1706,12 +1965,12 @@ const parseDateString = (dateStr) => {
       diabetes: normalizeDiabetesValue(PFAeditData.diabetes),
       sugar: null,
       hb: null,
-      hiv: normalizeScreeningValue(PFAeditData.hiv),
-      hcv: normalizeScreeningValue(PFAeditData.hcv ?? PFAeditData.hepatitis_c),
-      hbsag: normalizeScreeningValue(PFAeditData.hbsag ?? PFAeditData.hepatitis_b),
-      vdrl_syphilis: combinedEditSubmitVdrlSyph,
-      vdrl: combinedEditSubmitVdrlSyph,
-      syphilis: combinedEditSubmitVdrlSyph,
+      hiv: normalizeScreeningValue(PFAeditData.hiv) || null,
+      hcv: normalizeScreeningValue(PFAeditData.hcv ?? PFAeditData.hepatitis_c) || null,
+      hbsag: normalizeScreeningValue(PFAeditData.hbsag ?? PFAeditData.hepatitis_b) || null,
+      vdrl_syphilis: combinedEditSubmitVdrlSyph || null,
+      vdrl: combinedEditSubmitVdrlSyph || null,
+      syphilis: combinedEditSubmitVdrlSyph || null,
       lymphadenopathy: PFAeditData.lymphadenopathy,
   
       // Complications - flat
@@ -1766,7 +2025,22 @@ const parseDateString = (dateStr) => {
       }
 
       saveLocalPFAScreening(PFAeditData.user_id || PFAeditData.readmissionUserId, PFAeditData.pfa_id, PFAeditData);
-  
+
+      // Optimistically update Verification & edited fields in the PFA table right away
+      const updatedVerification = PFAeditData.verification || "No";
+      const patchUpdatedRow = (list) =>
+        (list || []).map((row) =>
+          String(row.pfa_id) === String(PFAeditData.pfa_id)
+            ? {
+                ...row,
+                verification: updatedVerification,
+                dependent_to: validatedEditDependentArray,
+              }
+            : row
+        );
+      setgetpfaData(patchUpdatedRow);
+      setpfaFilterData(patchUpdatedRow);
+
       Swal.fire({
         icon: "success",
         title: getTranslation("Assessment Updated/मूल्यांकन अद्यतन",lang),
@@ -1774,6 +2048,8 @@ const parseDateString = (dateStr) => {
       });
   
       setPFAEditIndividualDataModal(false);
+      fetchAllPFAEntries();
+      fetchRegisteredUsersForPFA();
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -1875,8 +2151,7 @@ const parseDateString = (dateStr) => {
     // All pfa patient data list state
     const [getpfaData, setgetpfaData]=useState([]);
     const [pfaFilterData, setpfaFilterData]=useState([]);
-    useEffect(() => {
-
+    const fetchAllPFAEntries = () => {
       if (!selectedBranch) return; // avoid empty branch fetch
 
       const token = localStorage.getItem("Authorization");
@@ -1987,18 +2262,36 @@ const parseDateString = (dateStr) => {
             };
           });
 
-          console.log(formattedPFAPatient)
-    
-          setTimeout(() => {
-            setgetpfaData(formattedPFAPatient);
+          console.log(formattedPFAPatient);
+
+          setgetpfaData(formattedPFAPatient);
+          if (PFAallDatasearchText) {
+            const q = PFAallDatasearchText.toLowerCase();
+            setpfaFilterData(
+              formattedPFAPatient.filter(
+                (item) =>
+                  item.name?.toLowerCase().includes(q) ||
+                  item.gks_id?.toLowerCase().includes(q) ||
+                  item.pfa_id?.toString().includes(q) ||
+                  item.user_id?.toString().includes(q) ||
+                  item.phone?.toLowerCase().includes(q) ||
+                  item.email?.toLowerCase().includes(q)
+              )
+            );
+          } else {
             setpfaFilterData(formattedPFAPatient);
-            setstillLoading(false);
-          }, 1000);
+          }
+          setstillLoading(false);
         })
         .catch((error) => {
           console.error("Error fetching PFA user data:", error);
-          setstillLoading(true);
+          setstillLoading(false);
         });
+    };
+
+    useEffect(() => {
+      fetchAllPFAEntries();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedBranch]);
     
 
@@ -2016,37 +2309,154 @@ const parseDateString = (dateStr) => {
         title: `PFA_${selectedUser?.name || "Report"}`,
       });
 
-  const handleAddCustomDependentOption = (currentVal, onChangeVal) => {
+  const handleAddCustomDependentOption = async (currentVal, onChangeVal) => {
     const trimmed = String(customDependentInput || "").trim();
     if (!trimmed) return;
 
     const allKnown = [
       ...DEFAULT_DEPENDENT_OPTIONS.map((o) => o.value),
+      ...branchDependentTypes.map((o) => o.custom_dependent_type_name),
+      ...allBranchDependentTypes.map((o) => o.custom_dependent_type_name),
       ...customDependentOptions,
-    ];
-    const existingCanonical = allKnown.find(
-      (k) => k.toLowerCase() === trimmed.toLowerCase()
-    );
-    const valueToUse = existingCanonical || trimmed;
+    ].filter(Boolean);
 
-    if (!existingCanonical) {
-      const nextCustom = [...customDependentOptions, valueToUse];
-      setCustomDependentOptions(nextCustom);
+    const token = localStorage.getItem("Authorization");
+    setIsAddingDependentType(true);
+
+    try {
+      let valueToUse = trimmed;
+
+      if (selectedBranch && token) {
+        const res = await fetch(
+          `https://gks-yjdc.onrender.com/api/custom-dependent-types?branch_id=${selectedBranch}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+            body: JSON.stringify({ custom_dependent_type_name: trimmed }),
+          }
+        ).catch(() => null);
+
+        if (res) {
+          const result = await res.json().catch(() => ({}));
+          if (res.ok && result?.data) {
+            valueToUse = result.data.custom_dependent_type_name || trimmed;
+            await fetchBranchDependentTypes(selectedBranch);
+            toast.success(
+              getTranslation(
+                "Custom dependent type added! / कस्टम निर्भरता जोड़ी गई!",
+                lang
+              )
+            );
+          } else if (res.status === 409) {
+            const existingAll = allBranchDependentTypes.find(
+              (item) =>
+                String(item.custom_dependent_type_name || "").toLowerCase() ===
+                trimmed.toLowerCase()
+            );
+            if (existingAll) {
+              valueToUse = existingAll.custom_dependent_type_name;
+              if (!existingAll.isActive && existingAll.custom_dependent_type_id) {
+                await fetch(
+                  `https://gks-yjdc.onrender.com/api/custom-dependent-types/${existingAll.custom_dependent_type_id}?branch_id=${selectedBranch}`,
+                  {
+                    method: "PUT",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `${token}`,
+                    },
+                    body: JSON.stringify({ isActive: true }),
+                  }
+                ).catch(() => null);
+                await fetchBranchDependentTypes(selectedBranch);
+                toast.success(
+                  getTranslation(
+                    "Dependent type reactivated and selected! / निर्भरता पुनः सक्रिय और चयनित की गई!",
+                    lang
+                  )
+                );
+              }
+            }
+          } else if (!res.ok) {
+            const errMsg =
+              result?.error ||
+              result?.message ||
+              getTranslation("Failed to add dependent type", lang);
+            toast.error(errMsg);
+            return;
+          }
+        }
+      }
+
+      const existingCanonical = allKnown.find(
+        (k) => k.toLowerCase() === valueToUse.toLowerCase()
+      );
+      if (existingCanonical) {
+        valueToUse = existingCanonical;
+      } else {
+        const nextCustom = [...customDependentOptions, valueToUse];
+        setCustomDependentOptions(nextCustom);
+        try {
+          localStorage.setItem(CUSTOM_DEPENDENT_STORAGE_KEY, JSON.stringify(nextCustom));
+        } catch {
+          // ignore storage errors
+        }
+      }
+
+      const currentList = parseDependentSelection(currentVal, allKnown);
+      if (!currentList.some((x) => x.toLowerCase() === valueToUse.toLowerCase())) {
+        onChangeVal(serializeDependentSelection([...currentList, valueToUse]));
+      }
+      setCustomDependentInput("");
+    } finally {
+      setIsAddingDependentType(false);
+    }
+  };
+
+  const handleRemoveCustomDependentOption = async (optItem, currentVal, onChangeVal) => {
+    const optVal = typeof optItem === "object" && optItem !== null ? optItem.value : String(optItem || "");
+    const depId = typeof optItem === "object" && optItem !== null ? optItem.custom_dependent_type_id : null;
+    const token = localStorage.getItem("Authorization");
+
+    if (depId && selectedBranch && token) {
+      setIsMutatingDepType(true);
       try {
-        localStorage.setItem(CUSTOM_DEPENDENT_STORAGE_KEY, JSON.stringify(nextCustom));
-      } catch {
-        // ignore storage errors
+        const res = await fetch(
+          `https://gks-yjdc.onrender.com/api/custom-dependent-types/${depId}?branch_id=${selectedBranch}`,
+          {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `${token}`,
+            },
+          }
+        ).catch(() => null);
+
+        if (res) {
+          const result = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            toast.error(
+              result?.error ||
+                result?.message ||
+                getTranslation("Cannot delete dependent type", lang)
+            );
+            return;
+          }
+          await fetchBranchDependentTypes(selectedBranch);
+          toast.success(
+            getTranslation(
+              "Custom dependent type deleted / कस्टम निर्भरता हटाई गई",
+              lang
+            )
+          );
+        }
+      } finally {
+        setIsMutatingDepType(false);
       }
     }
 
-    const currentList = parseDependentSelection(currentVal, allKnown);
-    if (!currentList.some((x) => x.toLowerCase() === valueToUse.toLowerCase())) {
-      onChangeVal(serializeDependentSelection([...currentList, valueToUse]));
-    }
-    setCustomDependentInput("");
-  };
-
-  const handleRemoveCustomDependentOption = (optVal, currentVal, onChangeVal) => {
     const nextCustom = customDependentOptions.filter(
       (o) => o.toLowerCase() !== optVal.toLowerCase()
     );
@@ -2058,6 +2468,7 @@ const parseDateString = (dateStr) => {
     }
     const allKnown = [
       ...DEFAULT_DEPENDENT_OPTIONS.map((o) => o.value),
+      ...branchDependentTypes.map((o) => o.custom_dependent_type_name),
       ...nextCustom,
     ];
     const currentList = parseDependentSelection(currentVal, allKnown);
@@ -2067,28 +2478,211 @@ const parseDateString = (dateStr) => {
     onChangeVal(serializeDependentSelection(updatedList));
   };
 
+  const handleRenameDependentType = async (item) => {
+    const trimmedNewName = String(editingDepTypeName || "").trim();
+    const oldName = String(item?.custom_dependent_type_name || "");
+    if (!trimmedNewName || !item?.custom_dependent_type_id) return;
+    if (trimmedNewName === oldName) {
+      setEditingDepTypeId(null);
+      setEditingDepTypeName("");
+      return;
+    }
+
+    const token = localStorage.getItem("Authorization");
+    setIsMutatingDepType(true);
+    try {
+      const res = await fetch(
+        `https://gks-yjdc.onrender.com/api/custom-dependent-types/${item.custom_dependent_type_id}?branch_id=${selectedBranch}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`,
+          },
+          body: JSON.stringify({ custom_dependent_type_name: trimmedNewName }),
+        }
+      );
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(
+          result?.error ||
+            result?.message ||
+            getTranslation("Failed to rename dependent type", lang)
+        );
+        return;
+      }
+
+      const replaceSelectionName = (rawVal) => {
+        const list = parseDependentSelection(rawVal);
+        if (!list.some((x) => x.toLowerCase() === oldName.toLowerCase())) return rawVal;
+        return serializeDependentSelection(
+          list.map((x) => (x.toLowerCase() === oldName.toLowerCase() ? trimmedNewName : x))
+        );
+      };
+
+      setFormData((prev) => ({
+        ...prev,
+        dependentToData: replaceSelectionName(prev.dependentToData),
+      }));
+      setPFAeditData((prev) =>
+        prev && Object.keys(prev).length > 0
+          ? {
+              ...prev,
+              dependent_to: replaceSelectionName(prev.dependent_to),
+            }
+          : prev
+      );
+
+      setEditingDepTypeId(null);
+      setEditingDepTypeName("");
+      await fetchBranchDependentTypes(selectedBranch, depSearchQuery);
+      await fetchBranchDependentTypes(selectedBranch);
+      toast.success(
+        getTranslation(
+          "Dependent type updated! / निर्भरता प्रकार अपडेट किया गया!",
+          lang
+        )
+      );
+    } catch {
+      toast.error(getTranslation("Error updating dependent type", lang));
+    } finally {
+      setIsMutatingDepType(false);
+    }
+  };
+
+  const handleToggleDependentTypeActive = async (item) => {
+    if (!item?.custom_dependent_type_id) return;
+    const nextActive = !(item.isActive === 1 || item.isActive === true);
+    const token = localStorage.getItem("Authorization");
+    setIsMutatingDepType(true);
+    try {
+      const res = await fetch(
+        `https://gks-yjdc.onrender.com/api/custom-dependent-types/${item.custom_dependent_type_id}?branch_id=${selectedBranch}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `${token}`,
+          },
+          body: JSON.stringify({ isActive: nextActive }),
+        }
+      );
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(
+          result?.error ||
+            result?.message ||
+            getTranslation("Cannot change status of dependent type", lang)
+        );
+        return;
+      }
+
+      if (!nextActive) {
+        const removeFromVal = (rawVal) => {
+          const list = parseDependentSelection(rawVal);
+          return serializeDependentSelection(
+            list.filter(
+              (x) =>
+                x.toLowerCase() !==
+                String(item.custom_dependent_type_name || "").toLowerCase()
+            )
+          );
+        };
+        setFormData((prev) => ({
+          ...prev,
+          dependentToData: removeFromVal(prev.dependentToData),
+        }));
+        setPFAeditData((prev) =>
+          prev && Object.keys(prev).length > 0
+            ? {
+                ...prev,
+                dependent_to: removeFromVal(prev.dependent_to),
+              }
+            : prev
+        );
+      }
+
+      await fetchBranchDependentTypes(selectedBranch);
+      toast.success(
+        nextActive
+          ? getTranslation("Dependent type re-activated! / निर्भरता पुनः सक्रिय!", lang)
+          : getTranslation("Dependent type deactivated! / निर्भरता निष्क्रिय!", lang)
+      );
+    } catch {
+      toast.error(getTranslation("Error updating dependent type status", lang));
+    } finally {
+      setIsMutatingDepType(false);
+    }
+  };
+
   const renderDependentToField = (currentVal, onChangeVal, idPrefix = "pfa") => {
     const allKnown = [
       ...DEFAULT_DEPENDENT_OPTIONS.map((o) => o.value),
+      ...branchDependentTypes.map((o) => o.custom_dependent_type_name),
+      ...allBranchDependentTypes.map((o) => o.custom_dependent_type_name),
       ...customDependentOptions,
-    ];
+    ].filter(Boolean);
     const selectedList = parseDependentSelection(currentVal, allKnown);
 
-    const optionItems = [
-      ...DEFAULT_DEPENDENT_OPTIONS.map((o) => ({ ...o, isCustom: false })),
-      ...customDependentOptions
-        .filter(
-          (c) =>
-            !DEFAULT_DEPENDENT_OPTIONS.some(
-              (d) => d.value.toLowerCase() === c.toLowerCase()
-            )
-        )
-        .map((c) => ({ value: c, label: c, isCustom: true })),
-    ];
+    let optionItems = [];
+    if (branchDependentTypes.length > 0) {
+      optionItems = branchDependentTypes.map((item) => {
+        const defaultMatch = DEFAULT_DEPENDENT_OPTIONS.find(
+          (d) =>
+            d.value.toLowerCase() ===
+            String(item.custom_dependent_type_name || "").toLowerCase()
+        );
+        return {
+          value: item.custom_dependent_type_name,
+          label: defaultMatch ? defaultMatch.label : item.custom_dependent_type_name,
+          isCustom: !defaultMatch,
+          custom_dependent_type_id: item.custom_dependent_type_id,
+          active_assessment_count: Number(item.active_assessment_count || 0),
+          isHistorical: false,
+        };
+      });
+    } else {
+      optionItems = [
+        ...DEFAULT_DEPENDENT_OPTIONS.map((o) => ({
+          ...o,
+          isCustom: false,
+          custom_dependent_type_id: null,
+          active_assessment_count: 0,
+          isHistorical: false,
+        })),
+        ...customDependentOptions
+          .filter(
+            (c) =>
+              !DEFAULT_DEPENDENT_OPTIONS.some(
+                (d) => d.value.toLowerCase() === c.toLowerCase()
+              )
+          )
+          .map((c) => ({
+            value: c,
+            label: c,
+            isCustom: true,
+            custom_dependent_type_id: null,
+            active_assessment_count: 0,
+            isHistorical: false,
+          })),
+      ];
+    }
 
     selectedList.forEach((sel) => {
       if (!optionItems.some((o) => o.value.toLowerCase() === sel.toLowerCase())) {
-        optionItems.push({ value: sel, label: sel, isCustom: false });
+        const inactiveMatch = allBranchDependentTypes.find(
+          (item) =>
+            String(item.custom_dependent_type_name || "").toLowerCase() ===
+            sel.toLowerCase()
+        );
+        optionItems.push({
+          value: sel,
+          label: sel,
+          isCustom: false,
+          custom_dependent_type_id: inactiveMatch?.custom_dependent_type_id || null,
+          active_assessment_count: Number(inactiveMatch?.active_assessment_count || 0),
+          isHistorical: true,
+        });
       }
     });
 
@@ -2112,18 +2706,40 @@ const parseDateString = (dateStr) => {
           <Label className="mb-0 fw-semibold">
             {getTranslation(dependentTo, lang)}
           </Label>
-          <Badge
-            color={selectedList.length > 0 ? "success" : "secondary"}
-            pill
-            style={{
-              backgroundColor: selectedList.length > 0 ? "#24695c" : "#64748b",
-              color: "#ffffff",
-              fontSize: "11.5px",
-              padding: "4px 10px",
-            }}
-          >
-            {getTranslation("Selected / चयनित", lang)}: {selectedList.length}
-          </Badge>
+          <div className="d-flex align-items-center gap-2">
+            <Button
+              type="button"
+              color="light"
+              size="sm"
+              onClick={() => {
+                fetchBranchDependentTypes(selectedBranch);
+                setManageDepModalOpen(true);
+              }}
+              style={{
+                fontSize: "11.5px",
+                padding: "3px 10px",
+                borderRadius: "6px",
+                border: "1px solid #cbd5e1",
+                color: "#24695c",
+                fontWeight: 600,
+                backgroundColor: "#ffffff",
+              }}
+            >
+              ⚙️ {getTranslation("Manage Options / विकल्प प्रबंधित करें", lang)}
+            </Button>
+            <Badge
+              color={selectedList.length > 0 ? "success" : "secondary"}
+              pill
+              style={{
+                backgroundColor: selectedList.length > 0 ? "#24695c" : "#64748b",
+                color: "#ffffff",
+                fontSize: "11.5px",
+                padding: "4px 10px",
+              }}
+            >
+              {getTranslation("Selected / चयनित", lang)}: {selectedList.length}
+            </Badge>
+          </div>
         </div>
 
         <div
@@ -2143,37 +2759,84 @@ const parseDateString = (dateStr) => {
               return (
                 <div
                   key={`${opt.value}-${idx}`}
-                  className="form-check form-check-inline m-0"
+                  className="d-inline-flex align-items-center"
                   style={{
-                    backgroundColor: isChecked ? "#ecfdf5" : "#ffffff",
-                    border: isChecked ? "1px solid #24695c" : "1px solid #cbd5e1",
+                    gap: "8px",
+                    backgroundColor: opt.isHistorical
+                      ? "#fffbeb"
+                      : isChecked
+                      ? "#ecfdf5"
+                      : "#ffffff",
+                    border: opt.isHistorical
+                      ? "1px dashed #d97706"
+                      : isChecked
+                      ? "1px solid #24695c"
+                      : "1px solid #cbd5e1",
                     borderRadius: "8px",
-                    padding: "5px 10px",
+                    padding: "6px 10px",
+                    minHeight: "34px",
+                    lineHeight: 1.2,
                   }}
                 >
                   <Input
                     id={inputId}
                     type="checkbox"
-                    className="form-check-input"
+                    className="form-check-input m-0"
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      margin: 0,
+                      flexShrink: 0,
+                      cursor: "pointer",
+                    }}
                     checked={isChecked}
                     onChange={(e) => toggleDepOption(opt.value, e.target.checked)}
                   />
                   <Label
                     htmlFor={inputId}
-                    className="form-check-label"
+                    className="m-0"
                     style={{
                       fontWeight: isChecked ? "600" : "500",
-                      color: isChecked ? "#14532d" : "#334155",
+                      color: opt.isHistorical
+                        ? "#92400e"
+                        : isChecked
+                        ? "#14532d"
+                        : "#334155",
+                      fontSize: "13px",
+                      lineHeight: 1.2,
+                      margin: 0,
+                      cursor: "pointer",
+                      userSelect: "none",
                     }}
                   >
                     {opt.label.includes("/") ? getTranslation(opt.label, lang) : opt.label}
                   </Label>
-                  {opt.isCustom && (
+                  {opt.isHistorical && (
+                    <span
+                      className="px-1 rounded"
+                      style={{
+                        fontSize: "10px",
+                        lineHeight: 1.2,
+                        backgroundColor: "#fef3c7",
+                        color: "#b45309",
+                        border: "1px solid #fde68a",
+                      }}
+                      title={getTranslation(
+                        "Historical / Inactive in branch master",
+                        lang
+                      )}
+                    >
+                      {getTranslation("Inactive", lang)}
+                    </span>
+                  )}
+                  {(opt.isCustom || opt.custom_dependent_type_id) && (
                     <button
                       type="button"
+                      disabled={isMutatingDepType}
+                      className="d-inline-flex align-items-center justify-content-center"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleRemoveCustomDependentOption(opt.value, currentVal, onChangeVal);
+                        handleRemoveCustomDependentOption(opt, currentVal, onChangeVal);
                       }}
                       title={getTranslation("Remove custom option / हटाएँ", lang)}
                       style={{
@@ -2181,11 +2844,14 @@ const parseDateString = (dateStr) => {
                         background: "transparent",
                         color: "#dc2626",
                         fontWeight: "700",
-                        fontSize: "13px",
+                        fontSize: "15px",
                         lineHeight: 1,
-                        marginLeft: "6px",
-                        padding: "0 2px",
+                        width: "18px",
+                        height: "18px",
+                        margin: 0,
+                        padding: 0,
                         cursor: "pointer",
+                        flexShrink: 0,
                       }}
                     >
                       ×
@@ -2218,6 +2884,7 @@ const parseDateString = (dateStr) => {
               type="button"
               color="primary"
               size="sm"
+              disabled={isAddingDependentType}
               onClick={() => handleAddCustomDependentOption(currentVal, onChangeVal)}
               className="d-inline-flex align-items-center gap-1 fw-semibold"
               style={{
@@ -2229,7 +2896,11 @@ const parseDateString = (dateStr) => {
               }}
             >
               <span style={{ fontSize: "15px", lineHeight: 1 }}>+</span>
-              <span>{getTranslation("Add / जोड़ें", lang)}</span>
+              <span>
+                {isAddingDependentType
+                  ? getTranslation("Adding... / जोड़ा जा रहा है...", lang)
+                  : getTranslation("Add / जोड़ें", lang)}
+              </span>
             </Button>
           </div>
 
@@ -2239,7 +2910,7 @@ const parseDateString = (dateStr) => {
               readOnly
               value={
                 selectedList.length > 0
-                  ? `(${selectedList.length} ${getTranslation("Selected / चयनित", lang)}) ${selectedList.join(" | ")}`
+                  ? `(${selectedList.length} ${getTranslation("Selected / चयनित", lang)}) ${selectedList.join(", ")}`
                   : ""
               }
               placeholder={getTranslation(
@@ -2337,27 +3008,42 @@ const parseDateString = (dateStr) => {
                   return (
                     <div
                       key={`${opt.value}-${idx}`}
-                      className="form-check form-check-inline m-0"
+                      className="d-inline-flex align-items-center"
                       style={{
+                        gap: "8px",
                         backgroundColor: isChecked ? "#ecfdf5" : "#ffffff",
                         border: isChecked ? "1px solid #24695c" : "1px solid #cbd5e1",
                         borderRadius: "8px",
-                        padding: "5px 10px",
+                        padding: "6px 10px",
+                        minHeight: "34px",
+                        lineHeight: 1.2,
                       }}
                     >
                       <Input
                         id={inputId}
                         type="checkbox"
-                        className="form-check-input"
+                        className="form-check-input m-0"
+                        style={{
+                          width: "16px",
+                          height: "16px",
+                          margin: 0,
+                          flexShrink: 0,
+                          cursor: "pointer",
+                        }}
                         checked={isChecked}
                         onChange={(e) => togglePatternOption(opt.value, e.target.checked)}
                       />
                       <Label
                         htmlFor={inputId}
-                        className="form-check-label"
+                        className="m-0"
                         style={{
                           fontWeight: isChecked ? "600" : "500",
                           color: isChecked ? "#14532d" : "#334155",
+                          fontSize: "13px",
+                          lineHeight: 1.2,
+                          margin: 0,
+                          cursor: "pointer",
+                          userSelect: "none",
                         }}
                       >
                         {opt.label.includes("/") ? getTranslation(opt.label, lang) : opt.label}
@@ -3540,7 +4226,7 @@ const parseDateString = (dateStr) => {
                               {getTranslation("Dependent To / निर्भरता का प्रकार:", lang)}
                             </div>
                             <div className="fw-semibold text-dark mt-1" style={{ fontSize: "13.5px" }}>
-                              {selectedUser.dependent_to || "-"}
+                              {formatDependentToDisplay(selectedUser.dependent_to) || "-"}
                             </div>
                           </div>
                         </div>
@@ -4699,10 +5385,8 @@ const parseDateString = (dateStr) => {
 
   <div className="col-md-12">
     <FormGroup className="mb-0 mt-4 mb-4">
-      <Label>{getTranslation(mentionIfAny2,lang)}</Label>
-      {/* <Input
-        type="textarea"
-        rows="3"
+      <VoiceTextarea
+        label={<Translated text={getTranslation(mentionIfAny2,lang)} />}
         name="complication_description"
         value={PFAeditData?.complication_description || ""}
         onChange={(e) =>
@@ -4711,19 +5395,7 @@ const parseDateString = (dateStr) => {
             complication_description: e.target.value,
           })
         }
-      /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(mentionIfAny2,lang)} />}
-  name="complication_description"
-        value={PFAeditData?.complication_description || ""}
-        onChange={(e) =>
-          setPFAeditData({
-            ...PFAeditData,
-            complication_description: e.target.value,
-          })
-        }
-/>
+      />
 
     </FormGroup>
   </div>
@@ -5071,6 +5743,201 @@ const parseDateString = (dateStr) => {
           </CommonModal>
         </div>
       </div>
+
+      {/* Manage Custom Dependent Types Modal */}
+      <CommonModal
+        isOpen={manageDepModalOpen}
+        title={getTranslation(
+          "Manage Dependent To Options / निर्भरता विकल्प प्रबंधित करें",
+          lang
+        )}
+        toggler={() => {
+          setManageDepModalOpen(false);
+          setEditingDepTypeId(null);
+          setEditingDepTypeName("");
+          setDepSearchQuery("");
+        }}
+        maxWidth="700px"
+      >
+        <div className="p-2">
+          <div className="d-flex align-items-center justify-content-between gap-2 mb-3 flex-wrap">
+            <Input
+              type="text"
+              value={depSearchQuery}
+              onChange={(e) => {
+                const val = e.target.value;
+                setDepSearchQuery(val);
+              }}
+              placeholder={getTranslation(
+                "Search dependent types... / निर्भरता प्रकार खोजें...",
+                lang
+              )}
+              style={{ maxWidth: "320px" }}
+            />
+            <Button
+              type="button"
+              color="light"
+              size="sm"
+              disabled={isDependentTypesLoading}
+              onClick={() => fetchBranchDependentTypes(selectedBranch)}
+              style={{
+                border: "1px solid #cbd5e1",
+                borderRadius: "8px",
+                fontWeight: 600,
+              }}
+            >
+              🔄 {getTranslation("Refresh / रीफ़्रेश", lang)}
+            </Button>
+          </div>
+
+          {isDependentTypesLoading ? (
+            <div className="text-center py-4 text-muted">
+              {getTranslation("Loading options... / विकल्प लोड हो रहे हैं...", lang)}
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-bordered align-middle mb-0">
+                <thead className="table-light">
+                  <tr>
+                    <th>{getTranslation("Option Name / विकल्प का नाम", lang)}</th>
+                    <th className="text-center">
+                      {getTranslation("Linked PFAs / जुड़े मूल्यांकन", lang)}
+                    </th>
+                    <th className="text-center">
+                      {getTranslation("Status / स्थिति", lang)}
+                    </th>
+                    <th className="text-center">
+                      {getTranslation("Actions / क्रिया", lang)}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(allBranchDependentTypes.length > 0
+                    ? allBranchDependentTypes
+                    : branchDependentTypes
+                  )
+                    .filter((item) =>
+                      !depSearchQuery
+                        ? true
+                        : String(item.custom_dependent_type_name || "")
+                            .toLowerCase()
+                            .includes(depSearchQuery.toLowerCase())
+                    )
+                    .map((item) => {
+                      const isEditing =
+                        editingDepTypeId === item.custom_dependent_type_id;
+                      const isActive =
+                        item.isActive === 1 || item.isActive === true;
+                      const activeCount = Number(
+                        item.active_assessment_count || 0
+                      );
+                      return (
+                        <tr key={item.custom_dependent_type_id}>
+                          <td>
+                            {isEditing ? (
+                              <div className="d-flex align-items-center gap-2">
+                                <Input
+                                  type="text"
+                                  bsSize="sm"
+                                  value={editingDepTypeName}
+                                  onChange={(e) =>
+                                    setEditingDepTypeName(e.target.value)
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      handleRenameDependentType(item);
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  type="button"
+                                  color="success"
+                                  size="sm"
+                                  disabled={isMutatingDepType}
+                                  onClick={() => handleRenameDependentType(item)}
+                                >
+                                  {getTranslation("Save / सहेजें", lang)}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  color="secondary"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingDepTypeId(null);
+                                    setEditingDepTypeName("");
+                                  }}
+                                >
+                                  {getTranslation("Cancel / रद्द", lang)}
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="fw-semibold">
+                                {item.custom_dependent_type_name}
+                              </span>
+                            )}
+                          </td>
+                          <td className="text-center">
+                            <Badge color={activeCount > 0 ? "info" : "light"} className={activeCount > 0 ? "" : "text-dark border"}>
+                              {activeCount}
+                            </Badge>
+                          </td>
+                          <td className="text-center">
+                            <Badge color={isActive ? "success" : "secondary"}>
+                              {isActive
+                                ? getTranslation("Active / सक्रिय", lang)
+                                : getTranslation("Inactive / निष्क्रिय", lang)}
+                            </Badge>
+                          </td>
+                          <td className="text-center">
+                            <div className="d-inline-flex align-items-center gap-2">
+                              {!isEditing && (
+                                <Button
+                                  type="button"
+                                  color="light"
+                                  size="sm"
+                                  disabled={isMutatingDepType}
+                                  onClick={() => {
+                                    setEditingDepTypeId(
+                                      item.custom_dependent_type_id
+                                    );
+                                    setEditingDepTypeName(
+                                      item.custom_dependent_type_name || ""
+                                    );
+                                  }}
+                                  style={{
+                                    border: "1px solid #cbd5e1",
+                                    fontSize: "12px",
+                                  }}
+                                >
+                                  {getTranslation("Rename / नाम बदलें", lang)}
+                                </Button>
+                              )}
+                              {!isActive && (
+                                <Button
+                                  type="button"
+                                  color="success"
+                                  size="sm"
+                                  disabled={isMutatingDepType}
+                                  onClick={() =>
+                                    handleToggleDependentTypeActive(item)
+                                  }
+                                  style={{ fontSize: "12px" }}
+                                >
+                                  {getTranslation("Activate / सक्रिय करें", lang)}
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </CommonModal>
 
       {/* View user details modal */}
       <UserDetailsModal
