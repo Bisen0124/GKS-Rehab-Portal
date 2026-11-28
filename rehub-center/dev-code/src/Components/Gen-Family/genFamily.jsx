@@ -144,13 +144,14 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
   Table,
   Button,
   InputGroup,
   Spinner,
   Badge,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { translateFormDataObject } from "../../utils/hindiTranslator";
 import { H5, Btn } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
@@ -2326,6 +2327,8 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
 
   const [viewGenFamilyModel, setviewGenFamilyModel] = useState(false);
   const [viewgenData, setviewgenData] = useState(null);
+  const rawViewGenDataRef = useRef(null);
+  const prevLangRef = useRef(lang);
 
   const viewGenFamily = async (userId = null) => {
     if (typeof userId === "object" && userId !== null) {
@@ -2337,6 +2340,7 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       return;
     }
 
+    rawViewGenDataRef.current = null;
     setviewgenData(null);
     setviewGenFamilyModel(true);
     setIsLoading(true);
@@ -2413,7 +2417,9 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       }
 
       if (fullData.data) {
-        setviewgenData(fullData.data);
+        rawViewGenDataRef.current = fullData.data;
+        const translatedView = await translateFormDataObject(fullData.data, lang);
+        setviewgenData(translatedView);
       }
     } catch (error) {
       console.error("Fetch error:", error);
@@ -2980,6 +2986,72 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
 
   //Edit individual gen family from data hanlder
   const [genEditIndividualmodal,setEditIndividualmodal]=useState(false);
+  const lastEditTranslatedKeyRef = useRef("");
+
+  // Bidirectional auto-translation when switching between English <-> Hindi
+  useEffect(() => {
+    let cancelled = false;
+
+    // 1) Re-translate View modal data from original raw record whenever lang changes
+    if (viewGenFamilyModel && rawViewGenDataRef.current) {
+      translateFormDataObject(rawViewGenDataRef.current, lang).then((translated) => {
+        if (!cancelled && translated) {
+          setviewgenData(translated);
+        }
+      });
+    }
+
+    // 2) Re-translate Create form data when user switches language mid-entry
+    if (prevLangRef.current !== lang) {
+      prevLangRef.current = lang;
+      if (genFamilyModal) {
+        translateFormDataObject(formData, lang).then((translated) => {
+          if (!cancelled && translated) {
+            setFormData(translated);
+          }
+        });
+      }
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, viewGenFamilyModel]);
+
+  // 3) Auto-translate Edit / Readmission form data on open and on language switch
+  useEffect(() => {
+    let cancelled = false;
+    const isEditOpen = GeneditModal || genEditIndividualmodal;
+    if (!isEditOpen || !GenfamiltEditData) {
+      if (!isEditOpen) {
+        lastEditTranslatedKeyRef.current = "";
+      }
+      return;
+    }
+
+    const recordId =
+      GenfamiltEditData.gen_fam_id ||
+      GenfamiltEditData.id ||
+      GenfamiltEditData.user_id ||
+      "edit";
+    const modeTag = GeneditModal ? "readm" : "edit";
+    const translateKey = `${modeTag}_${recordId}_${lang}`;
+
+    if (lastEditTranslatedKeyRef.current === translateKey) {
+      return;
+    }
+    lastEditTranslatedKeyRef.current = translateKey;
+
+    translateFormDataObject(GenfamiltEditData, lang).then((translated) => {
+      if (!cancelled && translated) {
+        setGenfamilyEditData(translated);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, GeneditModal, genEditIndividualmodal, GenfamiltEditData]);
 
   const handleGenFamilyData = async (userId = null) => {
     setEditIndividualmodal(true);

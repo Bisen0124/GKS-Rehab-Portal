@@ -3,7 +3,7 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
+  
   Col,
   Button,
   Row,
@@ -14,6 +14,8 @@ import {
   Table,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import {
   yes,
   no,
@@ -1159,6 +1161,11 @@ const handleIRFUpdate = async () => {
 //Prefill IRF form data by IRF id handler start
 const [IRFPrefillData, setIRFPrefillData] = useState({});
 const [IRFPrefillModal, setIRFPrefillModal] = useState(false);
+
+  useBilingualCreate(isIRFModalOpen, formData, setFormData, lang);
+  useBilingualEdit(IRFEditModal, IRFEditData, setIRFEditData, lang, "irf_edit");
+  useBilingualEdit(IRFPrefillModal, IRFPrefillData, setIRFPrefillData, lang, "irf_prefill");
+  useBilingualView(viewIRFModal, viewIRFData, setViewIRFData, lang, "irf_view");
 
 const handleIRFprefill = async (prefillIRFID = null) => {
   setIRFPrefillModal(true);

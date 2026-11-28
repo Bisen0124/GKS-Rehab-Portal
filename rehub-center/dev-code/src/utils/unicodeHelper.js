@@ -1,5 +1,10 @@
 // src/utils/unicodeHelper.js
 // Guards against Latin-1 '?' corruption of Devanagari/Hindi & Unicode text across API requests/responses.
+import {
+  hasDevanagari,
+  translateFormDataObject,
+  translateStructuredField,
+} from "./hindiTranslator";
 
 const CACHE_KEY = "gks_utf8_field_cache_v1";
 const MAX_ENTITY_ENTRIES = 250;
@@ -347,6 +352,66 @@ function walkAndProcessResponseNode(node, urlStr, cache, state, inheritedKeys = 
   return node;
 }
 
+async function normalizeOutgoingHindiBody(body) {
+  if (!body) return body;
+
+  // 1) JSON string payload
+  if (typeof body === "string") {
+    if (!hasDevanagari(body)) return body;
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed && typeof parsed === "object") {
+        const translated = await translateFormDataObject(parsed, "en");
+        return JSON.stringify(translated);
+      }
+    } catch {
+      // Non-JSON string body
+      return translateStructuredField("", body, "en");
+    }
+    return body;
+  }
+
+  // 2) Multipart FormData payload (e.g. Register patient with files)
+  if (typeof FormData !== "undefined" && body instanceof FormData) {
+    const entries = [];
+    let needsTranslation = false;
+    body.forEach((val, key) => {
+      entries.push([key, val]);
+      if (typeof val === "string" && hasDevanagari(val)) {
+        needsTranslation = true;
+      }
+    });
+
+    if (!needsTranslation) return body;
+
+    const nextFormData = new FormData();
+    for (const [key, val] of entries) {
+      if (typeof val !== "string" || !hasDevanagari(val)) {
+        nextFormData.append(key, val);
+        continue;
+      }
+
+      const trimmed = val.trim();
+      if ((trimmed.startsWith("[") || trimmed.startsWith("{")) && trimmed.length > 2) {
+        try {
+          const parsed = JSON.parse(trimmed);
+          const translatedInner = await translateFormDataObject(parsed, "en");
+          nextFormData.append(key, JSON.stringify(translatedInner));
+          continue;
+        } catch {
+          // Fall through to plain string translation
+        }
+      }
+
+      const translatedVal = await translateStructuredField(key, val, "en");
+      nextFormData.append(key, translatedVal);
+    }
+    return nextFormData;
+  }
+
+  return body;
+}
+
 export function installUnicodeFetchGuard() {
   if (typeof window === "undefined" || window.__gksUnicodeFetchInstalled) return;
   window.__gksUnicodeFetchInstalled = true;
@@ -364,6 +429,7 @@ export function installUnicodeFetchGuard() {
     const method = String(init?.method || (typeof input !== "string" ? input?.method : "GET") || "GET").toUpperCase();
     let sentNonAscii = {};
     let sentPhone = "";
+    let finalInit = init;
 
     if (["POST", "PUT", "PATCH"].includes(method)) {
       const payloadInfo = extractPayloadInfo(init?.body);
@@ -378,9 +444,22 @@ export function installUnicodeFetchGuard() {
           sentNonAscii
         );
       }
+
+      // Translate any Devanagari Hindi fields to ASCII English BEFORE sending to backend MySQL
+      // so Latin-1 DB columns never corrupt Hindi into "???? ??????".
+      if (init?.body) {
+        try {
+          const normalizedBody = await normalizeOutgoingHindiBody(init.body);
+          if (normalizedBody !== init.body) {
+            finalInit = { ...init, body: normalizedBody };
+          }
+        } catch {
+          // Keep original body if normalization fails
+        }
+      }
     }
 
-    const response = await originalFetch(input, init);
+    const response = await originalFetch(input, finalInit);
     const contentType = String(response.headers?.get("content-type") || "").toLowerCase();
     if (!contentType.includes("application/json")) {
       return response;

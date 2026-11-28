@@ -8,12 +8,13 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
   InputGroup,
   Button,
   Table,
   Badge,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
 import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
@@ -115,6 +116,9 @@ function BriefIntervation() {
 
   // ─── View Modal Data & PDF Ref ────────────────────────────────────────────────
   const [viewData, setViewData] = useState(null);
+
+  useBilingualEdit(modal, formData, setFormData, lang, "brief");
+  useBilingualView(viewModal, viewData, setViewData, lang, "brief_view");
   const [isDownloading, setIsDownloading] = useState(false);
   const pdfRef = useRef();
 

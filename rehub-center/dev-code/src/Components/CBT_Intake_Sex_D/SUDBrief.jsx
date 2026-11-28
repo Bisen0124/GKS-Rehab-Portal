@@ -3,7 +3,7 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
+  
   Col,
   Button,
   Row,
@@ -14,6 +14,8 @@ import {
   Table,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 
 import {
   dateOfAssessment,
@@ -820,6 +822,10 @@ const textareaLabels = {
 
   const [SUDBriefEditData, setSUDBriefEditData] = useState(null);
   const [SUDBriefeditModal, setSUDBriefeditModal] = useState(false);
+
+  useBilingualCreate(isSUDbriefModalOpen, formData, setFormData, lang);
+  useBilingualEdit(SUDBriefeditModal, SUDBriefEditData, setSUDBriefEditData, lang, "sudbrief_edit");
+  useBilingualView(viewSUDBriefModal, viewSUDBriefData, setViewSUDBriefData, lang, "sudbrief_view");
   const handleSUDBriefindividualEdit = async (editSUDID = null) => {
     setSUDBriefeditModal(true);
 

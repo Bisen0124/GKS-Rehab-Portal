@@ -9,7 +9,7 @@ import {
   Badge,
   Form,
   Label,
-  Input,
+  
   InputGroup,
   Modal,
   ModalHeader,
@@ -18,6 +18,7 @@ import {
   Spinner,
   Table,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";
 import {

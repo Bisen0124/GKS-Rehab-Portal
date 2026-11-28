@@ -7,7 +7,7 @@ import {
   Table,
   Button,
   Badge,
-  Input,
+  
   InputGroup,
   Label,
   Modal,
@@ -16,6 +16,7 @@ import {
   ModalFooter,
   Form,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
 import {
   Plus,
   Edit2,

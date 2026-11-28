@@ -11,12 +11,14 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
+  
   InputGroup,
   Button,
   Table,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
 import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
@@ -131,6 +133,9 @@ function PersonalDetails() {
 
   // ─── Create / Edit form state ─────────────────────────────────────────────────
   const [formData, setFormData] = useState(initialFormData);
+
+  useBilingualEdit(modal, formData, setFormData, lang, "pd_form");
+  useBilingualView(viewModal, viewData, setViewData, lang, "pd_view");
   const [isEditMode, setIsEditMode] = useState(false);
   const [personalDetailsId, setPersonalDetailsId] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);

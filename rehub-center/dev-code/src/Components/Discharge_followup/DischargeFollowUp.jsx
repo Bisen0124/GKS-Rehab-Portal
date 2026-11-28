@@ -8,12 +8,13 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
   InputGroup,
   Button,
   Badge,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
 import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
@@ -154,6 +155,10 @@ function DischargeFollowUp() {
   });
   const [editSelectedFile, setEditSelectedFile] = useState(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  useBilingualCreate(submitModal, formData, setFormData, lang);
+  useBilingualEdit(editModal, editFormData, setEditFormData, lang, "discharge");
+  useBilingualView(viewModal, selectedRecord, setSelectedRecord, lang, "discharge_view");
 
   // ─── View / Print / PDF States ─────────────────────────────────────────────
   const reportPrintRef = useRef(null);

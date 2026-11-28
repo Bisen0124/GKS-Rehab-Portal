@@ -3,7 +3,7 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
+  
   Col,
   Button,
   Row,
@@ -14,6 +14,8 @@ import {
   Table,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
@@ -1103,6 +1105,11 @@ const handlePBUpdate = async () => {
 // Prefill patient behaviour form handler start
 const [PBPrefillData, setPBPrefillData] = useState({});
 const [PBPrefillModal, setPBPrefillModal] = useState(false);
+
+  useBilingualCreate(isPatientBehaviourModalOpen, formData, setFormData, lang);
+  useBilingualEdit(PBEditModal, PBEditData, setPBEditData, lang, "pb_edit");
+  useBilingualEdit(PBPrefillModal, PBPrefillData, setPBPrefillData, lang, "pb_prefill");
+  useBilingualView(viewPBModal, viewPBData, setViewPBData, lang, "pb_view");
 
 const handlePatientBehaviourPreFill = async (prefillPBID = null) => {
   // Normalize ID if object

@@ -74,11 +74,13 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
+  
   Table,
   InputGroup,
   Button,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import { H5 } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 
@@ -875,6 +877,11 @@ function SexualDesire() {
   //Edit sexual desire individual form handler
   const [editindividualModal,seteditindividualModal]=useState(false);
   const [editindividualSDData,seteditindividualSDData]=useState(null);
+
+  useBilingualCreate(modal, forData, setFormData, lang);
+  useBilingualEdit(prefillSDModal, prefillSDdata, setprefillSDdata, lang, "sd_prefill");
+  useBilingualEdit(editindividualModal, editindividualSDData, seteditindividualSDData, lang, "sd_edit");
+  useBilingualView(viewSexualDataModal, viewSexualData, setSexualData, lang, "sd_view");
   const handleEditSDIndividualData = async (editIndiSDID) => {
     seteditindividualModal(true);
   

@@ -3,7 +3,7 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
+  
   Col,
   Button,
   Row,
@@ -14,6 +14,8 @@ import {
   Table,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import { H5 } from "../../AbstractElements";
 import {
   yes,
@@ -871,6 +873,11 @@ const handleSocialBehaviorUpdate = async () => {
 
 const [SBPrefillData, setSBPrefillData] = useState({});
 const [SBPrefillModal, setSBPrefillModal] = useState(false);
+
+  useBilingualCreate(isSocialModalOpen, formData, setFormData, lang);
+  useBilingualEdit(socialBehaviorEditModal, socialBehaviorEditData, setSocialBehaviorEditData, lang, "sb_edit");
+  useBilingualEdit(SBPrefillModal, SBPrefillData, setSBPrefillData, lang, "sb_prefill");
+  useBilingualView(viewSocailModal, viewSocailData, setViewSocialData, lang, "sb_view");
 
 const handleSBPreFill = async (prefillSBID = null) => {
   setSBPrefillModal(true);

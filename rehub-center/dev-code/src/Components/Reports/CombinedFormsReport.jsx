@@ -8,11 +8,12 @@ import {
   CardHeader,
   Button,
   Badge,
-  Input,
+  
   InputGroup,
   Progress,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
 import { Link, useNavigate } from "react-router-dom";
 import DataTable from "react-data-table-component";
 import { useBranch } from "../../contexts/BranchContext";

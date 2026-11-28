@@ -64,13 +64,14 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
   Table,
   Button,
   InputGroup,
   Spinner,
   Badge,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import UserDetailsModal from "../Common/UserDetailsModal";
 import ModalLoading from "../Common/ModalLoading";
 import { H5, Btn, P, H4 } from "../../AbstractElements";
@@ -1429,6 +1430,10 @@ const tablePFAPatientListColumns = [
   const [PFAEditModal, setPFAEditModal] = useState(false);
 
   const [PFAEditIndividualDataModal, setPFAEditIndividualDataModal] = useState(false);
+
+  useBilingualCreate(modal, formData, setFormData, lang);
+  useBilingualEdit(PFAEditModal || PFAEditIndividualDataModal, PFAeditData, setPFAeditData, lang, "pfa");
+  useBilingualView(viewModal, selectedUser, setSelectedUser, lang, "pfa_view");
   //fetch the latest assessment based on created_at, then simply sort the assessments and pick the first one: - Not applicable
   //Re-admission patient by handlePDAEdit
     //🔧 Convert DD/MM/YYYY to Date Object:

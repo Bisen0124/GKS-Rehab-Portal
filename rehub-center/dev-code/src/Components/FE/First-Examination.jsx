@@ -1,6 +1,5 @@
 import React, { useState, useEffect, Fragment, useRef } from "react";
 import {
-  Input,
   Col,
   Button,
   Row,
@@ -11,6 +10,8 @@ import {
   Table,
   Badge,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
@@ -1401,6 +1402,10 @@ const FirstExamination = () => {
 
   // Pre-fill readmission modal with latest existing FE + PFA + Register data
   const [FEPrefillModal, setFEPrefillModal] = useState(false);
+
+  useBilingualCreate(isFEModalOpen, formData, setFormData, lang);
+  useBilingualEdit(FEEditModal || FEPrefillModal, FEEditData, setFEEditData, lang, "fe");
+  useBilingualView(viewFEModal, viewFEData, setViewFEData, lang, "fe_view");
   const [FEPrefillData, setFEPrefillData] = useState(null);
 
   const handleFEprefill = async (prefillFEID = null) => {

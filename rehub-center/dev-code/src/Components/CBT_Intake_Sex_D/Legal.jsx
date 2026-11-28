@@ -3,7 +3,7 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
+  
   Col,
   Button,
   Row,
@@ -14,6 +14,8 @@ import {
   Table,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import { H5 } from "../../AbstractElements";
 import {
   yes,
@@ -871,6 +873,11 @@ const handleLegalUpdate = async () => {
 // Prefill Legal History form handler start
 const [LegalPrefillData, setLegalPrefillData] = useState({});
 const [LegalPrefillModal, setLegalPrefillModal] = useState(false);
+
+  useBilingualCreate(isLegalModalOpen, formData, setFormData, lang);
+  useBilingualEdit(LegalEditModal, LegalEditData, setLegalEditData, lang, "legal_edit");
+  useBilingualEdit(LegalPrefillModal, LegalPrefillData, setLegalPrefillData, lang, "legal_prefill");
+  useBilingualView(viewLegalModal, viewLegalData, setViewLegalData, lang, "legal_view");
 
 const handleLegalPreFill = async (prefillLegalID = null) => {
   setLegalPrefillModal(true);

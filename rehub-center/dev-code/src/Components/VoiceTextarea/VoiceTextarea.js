@@ -1,11 +1,57 @@
 import React, { useRef, useState } from "react";
 import { useLang } from "../../contexts/LangContext";
+import { transliterateTextToHindi } from "../../utils/hindiTranslator";
 
-const VoiceTextarea = ({ label, name, value, onChange, lang = "", rows = 3 }) => {
+const VoiceTextarea = ({
+  label,
+  name,
+  value,
+  onChange,
+  lang = "",
+  rows = 3,
+  placeholder = "",
+  disableHindiTyping = false,
+}) => {
   const textareaRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
+  const [phoneticEnabled, setPhoneticEnabled] = useState(true);
   const langCtx = useLang();
   const contextLang = langCtx?.lang || "en";
+  const isHindiMode = !disableHindiTyping && (lang ? lang.startsWith("hi") : contextLang === "hi");
+
+  const emitChange = (nextVal) => {
+    if (typeof onChange === "function") {
+      onChange({
+        target: {
+          name,
+          value: nextVal,
+        },
+      });
+    }
+  };
+
+  const handleTextChange = async (e) => {
+    const rawVal = e.target.value;
+    // Update immediately so typing feels instant
+    onChange(e);
+
+    if (isHindiMode && phoneticEnabled && /[A-Za-z]+[\s.,?!;:\n]$/.test(rawVal)) {
+      const converted = await transliterateTextToHindi(rawVal, { transliterateAll: false });
+      if (converted !== rawVal) {
+        emitChange(converted);
+      }
+    }
+  };
+
+  const handleBlur = async (e) => {
+    const rawVal = e.target.value;
+    if (isHindiMode && phoneticEnabled && /[A-Za-z]/.test(rawVal)) {
+      const converted = await transliterateTextToHindi(rawVal, { transliterateAll: true });
+      if (converted !== rawVal) {
+        emitChange(converted);
+      }
+    }
+  };
 
   const handleSpeech = () => {
     const SpeechRecognition =
@@ -27,13 +73,7 @@ const VoiceTextarea = ({ label, name, value, onChange, lang = "", rows = 3 }) =>
     recognition.onresult = (event) => {
       const spokenText = event.results[0][0].transcript;
 
-      // Update the specific field dynamically
-      onChange({
-        target: {
-          name,
-          value: value + (value ? " " : "") + spokenText,
-        },
-      });
+      emitChange((value || "") + (value ? " " : "") + spokenText);
       setIsListening(false);
     };
 
@@ -61,14 +101,53 @@ const VoiceTextarea = ({ label, name, value, onChange, lang = "", rows = 3 }) =>
           name={name}
           rows={rows}
           value={value || ""}
-          onChange={onChange}
+          placeholder={
+            placeholder ||
+            (isHindiMode && phoneticEnabled
+              ? "हिन्दी में टाइप करें (e.g. mera naam + Space)..."
+              : "")
+          }
+          onChange={handleTextChange}
+          onBlur={handleBlur}
           className="form-control"
           style={{
-            paddingRight: "46px",
+            paddingRight: isHindiMode ? "86px" : "46px",
             borderRadius: "10px",
             fontSize: "13.5px",
           }}
         />
+
+        {isHindiMode && (
+          <button
+            type="button"
+            onClick={() => setPhoneticEnabled((prev) => !prev)}
+            title={
+              phoneticEnabled
+                ? "Hindi phonetic typing ON (click for English)"
+                : "Hindi phonetic typing OFF (click for Hindi)"
+            }
+            style={{
+              position: "absolute",
+              right: "44px",
+              bottom: "8px",
+              height: "32px",
+              padding: "0 7px",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: phoneticEnabled ? "#e6f4ea" : "#f1f5f9",
+              border: phoneticEnabled ? "1px solid #1e7e34" : "1px solid #cbd5e1",
+              color: phoneticEnabled ? "#1e7e34" : "#64748b",
+              cursor: "pointer",
+              fontSize: "11px",
+              fontWeight: 700,
+              zIndex: 3,
+            }}
+          >
+            {phoneticEnabled ? "हिं" : "EN"}
+          </button>
+        )}
 
         <button
           type="button"

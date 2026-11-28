@@ -20,7 +20,6 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
   Col,
   Button,
   Row,
@@ -31,6 +30,8 @@ import {
   Table,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { translateFormDataObject } from "../../utils/hindiTranslator";
 import { Btn} from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
@@ -357,18 +358,16 @@ function Register() {
     fetchBranchPatientTypes(branchId);
   }, [branchId, fetchBranchPatientTypes]);
 
-  const ensureBranchPatientTypesExist = async (selectedNames = []) => {
+  const ensureBranchPatientTypesExist = async (selectedNames = [], targetBranch = branchId) => {
     const cleanNames = parsePatientTypeSelection(selectedNames);
-    if (!branchId || cleanNames.length === 0) return cleanNames;
+    const activeBranch = targetBranch || branchId;
+    if (!activeBranch || cleanNames.length === 0) return cleanNames;
     const authToken = localStorage.getItem("Authorization");
 
-    let currentActive = branchPatientTypes;
-    let currentAll = allBranchPatientTypes;
-    if (currentActive.length === 0 && currentAll.length === 0) {
-      const fetched = await fetchBranchPatientTypes(branchId);
-      currentActive = fetched.active || [];
-      currentAll = fetched.all || [];
-    }
+    // Always fetch fresh custom patient types for the target branch so stale state never causes 400s
+    const fetched = await fetchBranchPatientTypes(activeBranch);
+    const currentActive = fetched.active || [];
+    const currentAll = fetched.all || [];
 
     let didMutate = false;
     const canonicalSelections = [];
@@ -391,14 +390,17 @@ function Register() {
       );
       if (inactiveMatch && inactiveMatch.custom_patient_type_id) {
         const reactivateRes = await fetch(
-          `https://gks-yjdc.onrender.com/api/custom-patient-types/${inactiveMatch.custom_patient_type_id}?branch_id=${branchId}`,
+          `https://gks-yjdc.onrender.com/api/custom-patient-types/${inactiveMatch.custom_patient_type_id}?branch_id=${activeBranch}`,
           {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",
               Authorization: `${authToken}`,
             },
-            body: JSON.stringify({ isActive: true }),
+            body: JSON.stringify({
+              custom_patient_type_name: inactiveMatch.custom_patient_type_name,
+              isActive: 1,
+            }),
           }
         ).catch(() => null);
         if (reactivateRes && reactivateRes.ok) {
@@ -409,7 +411,7 @@ function Register() {
       }
 
       const createRes = await fetch(
-        `https://gks-yjdc.onrender.com/api/custom-patient-types?branch_id=${branchId}`,
+        `https://gks-yjdc.onrender.com/api/custom-patient-types?branch_id=${activeBranch}`,
         {
           method: "POST",
           headers: {
@@ -1876,7 +1878,8 @@ function Register() {
       const parsedRegisterPatientTypes = parsePatientTypeSelection(formToSubmit.patient_type);
       if (parsedRegisterPatientTypes.length > 0) {
         const validatedRegisterPatientTypes = await ensureBranchPatientTypesExist(
-          parsedRegisterPatientTypes
+          parsedRegisterPatientTypes,
+          branch_id
         );
         payload.append("patient_type", JSON.stringify(validatedRegisterPatientTypes));
       }
@@ -1934,7 +1937,36 @@ function Register() {
 
       if (!response.ok && response.status === 400 && payload.has("patient_type")) {
         const ptErr = JSON.stringify(result || "").toLowerCase();
-        if (ptErr.includes("patient_type") && (ptErr.includes("not allowed") || ptErr.includes("unknown"))) {
+        if (ptErr.includes("not found in the selected branch")) {
+          // Create any missing patient types in the selected branch and retry registration once
+          const missingTypes = parsePatientTypeSelection(formToSubmit.patient_type);
+          for (const typeName of missingTypes) {
+            await fetch(
+              `https://gks-yjdc.onrender.com/api/custom-patient-types?branch_id=${branch_id}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `${authToken}`,
+                },
+                body: JSON.stringify({ custom_patient_type_name: typeName }),
+              }
+            ).catch(() => null);
+          }
+          await fetchBranchPatientTypes(branch_id);
+          response = await fetch(
+            `https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `${authToken}`,
+              },
+              body: payload,
+              signal: controller.signal,
+            }
+          );
+          result = await response.json().catch(() => ({}));
+        } else if (ptErr.includes("patient_type") && (ptErr.includes("not allowed") || ptErr.includes("unknown"))) {
           payload.delete("patient_type");
           response = await fetch(
             `https://gks-yjdc.onrender.com/api/users?branch_id=${branch_id}`,
@@ -2202,7 +2234,9 @@ function Register() {
             userData.relative_contacts = [];
           }
         }
-        setSelectedUser(userData);
+        rawViewUserRef.current = userData;
+        const translatedUser = await translateFormDataObject(userData, lang);
+        setSelectedUser(translatedUser);
       }
     } catch (error) {
       console.error("Fetch error:", error);
@@ -2590,6 +2624,64 @@ function Register() {
   //handle edit user details by id's
   const [editData, setEditData] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const rawViewUserRef = useRef(null);
+  const prevRegLangRef = useRef(lang);
+  const lastRegEditTranslatedKeyRef = useRef("");
+
+  // Bidirectional Hindi <-> English translation for Register Create, Edit & View modals
+  useEffect(() => {
+    let cancelled = false;
+
+    if (viewModal && rawViewUserRef.current) {
+      translateFormDataObject(rawViewUserRef.current, lang).then((translated) => {
+        if (!cancelled && translated) {
+          setSelectedUser(translated);
+        }
+      });
+    }
+
+    if (prevRegLangRef.current !== lang) {
+      prevRegLangRef.current = lang;
+      if (modal) {
+        translateFormDataObject(formData, lang).then((translated) => {
+          if (!cancelled && translated) {
+            setFormData(translated);
+          }
+        });
+      }
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, viewModal]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!showEditModal || !editData) {
+      if (!showEditModal) {
+        lastRegEditTranslatedKeyRef.current = "";
+      }
+      return;
+    }
+
+    const recordId = editData.user_id || editData.id || "edit";
+    const translateKey = `reg_${recordId}_${lang}`;
+    if (lastRegEditTranslatedKeyRef.current === translateKey) {
+      return;
+    }
+    lastRegEditTranslatedKeyRef.current = translateKey;
+
+    translateFormDataObject(editData, lang).then((translated) => {
+      if (!cancelled && translated) {
+        setEditData(translated);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lang, showEditModal, editData]);
 
   const handleEdit = async (userId = null) => {
     if (typeof userId === "object" && userId !== null) {

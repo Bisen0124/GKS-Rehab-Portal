@@ -3,7 +3,7 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
+  
   Col,
   Button,
   Row,
@@ -14,6 +14,8 @@ import {
   Table,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import {
   yes,
   no,
@@ -922,6 +924,11 @@ function Childhood() {
 //Prefill Childhood History form data by ID handler start
 const [ChildhoodPrefillData, setChildhoodPrefillData] = useState({});
 const [ChildhoodPrefillModal, setChildhoodPrefillModal] = useState(false);
+
+  useBilingualCreate(isChildhoodModalOpen, formData, setFormData, lang);
+  useBilingualEdit(SUDChildhoodeditModal, ChildhoodEditData, setChildhoodEditData, lang, "childhood_edit");
+  useBilingualEdit(ChildhoodPrefillModal, ChildhoodPrefillData, setChildhoodPrefillData, lang, "childhood_prefill");
+  useBilingualView(viewChildhoodModal, viewChildhoodData, setViewChildhoodData, lang, "childhood_view");
 
 const handleChildhoodPreFill = async (prefillChildhoodID = null) => {
   setChildhoodPrefillModal(true);

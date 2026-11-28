@@ -27,13 +27,14 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
   Table,
   Button,
   InputGroup,
   Spinner,
   Badge,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
@@ -772,6 +773,10 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
 
   const [viewFDAData, setviewFDAData] = useState(null)
   const [viewFDADataModal, setviewDADataModal] = useState(false);
+
+  useBilingualCreate(modal, formData, setFormData, lang);
+  useBilingualEdit(FDAeditModal || FDAReadmissionModal, FDAEditData, setFDAEditData, lang, "fda");
+  useBilingualView(viewFDADataModal, viewFDAData, setviewFDAData, lang, "fda_view");
   const viewFDAFamily = async (FDAID) => {
     if (typeof FDAID === "object" && FDAID !== null) {
       FDAID = FDAID.fda_id || FDAID.id;
@@ -831,6 +836,186 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
   };
 
 
+    // ASI (Severity Scale Breakdown) helper & renderer
+    const ASI_SCALE_ROWS = [
+      {
+        min: 0,
+        max: 1,
+        range: "0-1",
+        diagnose: "No Real Problem / कोई वास्तविक समस्या नहीं",
+        action: "Treatment is not Indicated / उपचार की आवश्यकता नहीं है",
+        textColor: "#15803d",
+        bgColor: "#dcfce7",
+      },
+      {
+        min: 2,
+        max: 3,
+        range: "2-3",
+        diagnose: "Slight Problem / हल्की समस्या",
+        action: "Treatment is not Probably Necessary / संभवतः उपचार आवश्यक नहीं है",
+        textColor: "#0369a1",
+        bgColor: "#e0f2fe",
+      },
+      {
+        min: 4,
+        max: 5,
+        range: "4-5",
+        diagnose: "Moderate Problem / मध्यम समस्या",
+        action: "A Treatment Plan Should be Considered / उपचार योजना पर विचार किया जाना चाहिए",
+        textColor: "#b45309",
+        bgColor: "#fef3c7",
+      },
+      {
+        min: 6,
+        max: 7,
+        range: "6-7",
+        diagnose: "Considerable Difficulty / काफी कठिनाई",
+        action: "Begin A Treatment Plan / उपचार योजना शुरू करें",
+        textColor: "#c2410c",
+        bgColor: "#ffedd5",
+      },
+      {
+        min: 8,
+        max: 10,
+        range: "8-10",
+        diagnose: "Extreme Problem / अत्यधिक समस्या",
+        action: "Treatment is Vital / उपचार अत्यंत आवश्यक है",
+        textColor: "#b91c1c",
+        bgColor: "#fee2e2",
+      },
+    ];
+
+    const getAsiScaleMatch = (score) => {
+      const n = Math.max(0, Math.min(10, Number(score) || 0));
+      return ASI_SCALE_ROWS.find((row) => n >= row.min && n <= row.max) || ASI_SCALE_ROWS[0];
+    };
+
+    const getAsiScoreFromViewData = (rec) => {
+      if (!rec) return 0;
+      const keys = [
+        "desire_to_quit",
+        "lack_control",
+        "lack_responsibility",
+        "time_purchasing_using",
+        "cravings",
+        "relationship_problems",
+        "using_dangerously",
+        "losing_interest",
+        "increasing_tolerance",
+        "experiencing_withdrawal",
+      ];
+      const yesCount = keys.filter((k) => rec[k] === "Yes" || rec[k] === "हाँ").length;
+      if (yesCount > 0) return yesCount;
+      const numericRating = Number(rec.addiction_severity_rating);
+      return Number.isFinite(numericRating) && numericRating >= 0 ? numericRating : 0;
+    };
+
+    const renderAsiResultSection = (score) => {
+      const numericScore = Math.max(0, Math.min(10, Number(score) || 0));
+      const matched = getAsiScaleMatch(numericScore);
+      return (
+        <div
+          className="mt-3 mb-2 p-3 rounded-3 border bg-white"
+          style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+        >
+          <div className="row g-3 align-items-end mb-3">
+            <div className="col-md-3 col-sm-6">
+              <Label className="fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                {getTranslation("ASI Total Count / कुल स्कोर", lang)}
+              </Label>
+              <Input
+                type="text"
+                readOnly
+                value={`${numericScore} / 10`}
+                className="form-control fw-bold text-center"
+                style={{
+                  backgroundColor: matched.bgColor,
+                  color: matched.textColor,
+                  borderColor: matched.textColor,
+                }}
+              />
+            </div>
+            <div className="col-md-4 col-sm-6">
+              <Label className="fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                {getTranslation("Diagnose / निदान", lang)}
+              </Label>
+              <Input
+                type="text"
+                readOnly
+                value={getTranslation(matched.diagnose, lang)}
+                className="form-control fw-semibold"
+                style={{
+                  backgroundColor: matched.bgColor,
+                  color: matched.textColor,
+                  borderColor: matched.textColor,
+                }}
+              />
+            </div>
+            <div className="col-md-5 col-sm-12">
+              <Label className="fw-semibold text-dark mb-1" style={{ fontSize: "13px" }}>
+                {getTranslation("Action / अनुशंसित कार्रवाई", lang)}
+              </Label>
+              <Input
+                type="text"
+                readOnly
+                value={getTranslation(matched.action, lang)}
+                className="form-control fw-semibold"
+                style={{
+                  backgroundColor: matched.bgColor,
+                  color: matched.textColor,
+                  borderColor: matched.textColor,
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="table-responsive">
+            <Table bordered size="sm" className="mb-0" style={{ fontSize: "12.5px" }}>
+              <thead>
+                <tr>
+                  <th
+                    colSpan="3"
+                    className="text-center fw-bold py-2"
+                    style={{ backgroundColor: "#fef08a", color: "#1e293b" }}
+                  >
+                    {getTranslation("ASI (Severity Scale Breakdown) / एएसआई (गंभीरता पैमाना विवरण)", lang)}
+                  </th>
+                </tr>
+                <tr style={{ backgroundColor: "#f1f5f9" }}>
+                  <th style={{ width: "16%" }}>{getTranslation("Rating / रेटिंग", lang)}</th>
+                  <th style={{ width: "36%" }}>{getTranslation("Diagnose / निदान", lang)}</th>
+                  <th style={{ width: "48%" }}>{getTranslation("Action / कार्रवाई", lang)}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {ASI_SCALE_ROWS.map((row) => {
+                  const isActive = numericScore >= row.min && numericScore <= row.max;
+                  return (
+                    <tr
+                      key={row.range}
+                      style={
+                        isActive
+                          ? {
+                              backgroundColor: row.bgColor,
+                              color: row.textColor,
+                              fontWeight: 700,
+                            }
+                          : undefined
+                      }
+                    >
+                      <td>{row.range}</td>
+                      <td>{getTranslation(row.diagnose, lang)}</td>
+                      <td>{getTranslation(row.action, lang)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </Table>
+          </div>
+        </div>
+      );
+    };
+
    //PDf view download pdf code handler
     const [pfaDownload, setpfaDownload] = useState(false);
     const handleDownloadPDF = () => {
@@ -846,14 +1031,16 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
       const safeId = String(gksId).trim().replace(/\s+/g, "_");
 
       const opt = {
-        margin: [10, 10, 10, 10], // top, left, bottom, right
+        margin: [8, 8, 8, 8], // top, left, bottom, right (mm)
         filename: `patient_${safeName}_${safeId || "fda_report"}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: {
           scale: 2,
           useCORS: true,
           scrollY: 0,
+          windowWidth: 1024,
         },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       };
   
@@ -1401,6 +1588,9 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                 ))}
               </tbody>
             </Table>
+            {renderAsiResultSection(
+              Object.values(formData.addiction || {}).filter((v) => v === "Yes").length
+            )}
           </div>
           <div className="col-md-12 px-2">
             <FormGroup className="mb-4 mt-4">
@@ -1542,6 +1732,9 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                 ))}
               </tbody>
             </Table>
+            {renderAsiResultSection(
+              Object.values(FDAEditData?.addictionSeverity || {}).filter((v) => v === "Yes").length
+            )}
           </div>
 
           <div className="col-md-12">
@@ -1615,6 +1808,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   borderRadius: "14px",
                   overflow: "hidden",
                   border: "1px solid #e2e8f0",
+                  pageBreakInside: "avoid",
+                  breakInside: "avoid",
                 }}
               >
                 <div
@@ -1709,6 +1904,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   borderRadius: "14px",
                   overflow: "hidden",
                   border: "1px solid #e2e8f0",
+                  pageBreakInside: "avoid",
+                  breakInside: "avoid",
                 }}
               >
                 <div
@@ -1872,6 +2069,11 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                 </div>
               </div>
 
+              {/* ASI Severity Scale Breakdown */}
+              <div className="mb-4" style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
+                {renderAsiResultSection(getAsiScoreFromViewData(viewFDAData))}
+              </div>
+
               {/* Card 3: Administrative details */}
               <div
                 className="card shadow-sm border-0 mb-4"
@@ -1879,6 +2081,8 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                   borderRadius: "14px",
                   overflow: "hidden",
                   border: "1px solid #e2e8f0",
+                  pageBreakInside: "avoid",
+                  breakInside: "avoid",
                 }}
               >
                 <div
@@ -2049,6 +2253,9 @@ const [FDAReadmissionModal, setFDAReadmissionModal] = useState(false);
                 ))}
               </tbody>
             </Table>
+            {renderAsiResultSection(
+              Object.values(FDAEditData?.addictionSeverity || {}).filter((v) => v === "Yes").length
+            )}
           </div>
 
           <div className="col-md-12 px-3">

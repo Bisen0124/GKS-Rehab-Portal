@@ -11,7 +11,7 @@ import {
   Badge,
   Form,
   Label,
-  Input,
+  
   InputGroup,
   Modal,
   ModalHeader,
@@ -20,6 +20,7 @@ import {
   Spinner,
   Table,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
 import { useLocation, useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { toast } from "react-toastify";

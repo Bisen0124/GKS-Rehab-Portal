@@ -77,12 +77,14 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
+  
   Table,
   Button,
   InputGroup,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import { H5 } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
@@ -923,6 +925,10 @@ const ViewCBTindividualData = async (CBTID) =>{
 // Edit cbt individual form data handler
 const [CBTindividuallUpdateData, setCBTindividuallUpdateData] = useState(null);
 const [CBTindividuallUpdateDataModal, setCBTindividuallUpdateDataModal]=useState(false);
+
+  useBilingualEdit(CBTpreefillModal, CBTpreefillData, setCBTpreefillData, lang, "cbt_prefill");
+  useBilingualEdit(CBTindividuallUpdateDataModal, CBTindividuallUpdateData, setCBTindividuallUpdateData, lang, "cbt_edit");
+  useBilingualView(viewCBTDataModal, viewCBTData, setCBTData, lang, "cbt_view");
 const handleEditCBTIndividualData = async (CBTID)=>{
   setCBTindividuallUpdateDataModal(true);
   if (typeof CBTID === "object" && CBTID !== null) {

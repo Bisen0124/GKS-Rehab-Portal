@@ -3,7 +3,6 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
   Col,
   Button,
   Row,
@@ -18,6 +17,8 @@ import {
   NavItem,
   NavLink,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 
 import {
   dateOfAssessment,
@@ -2478,6 +2479,13 @@ const updateBAHandler = async (e) => {
 // ✅ Prefill BA form handler start
 const [BAPrefillData, setBAPrefillData] = useState({});
 const [BAPrefillModal, setBAPrefillModal] = useState(false);
+
+  useBilingualCreate(isBAModalOpen, formData, setFormData, lang);
+  useBilingualCreate(isObservationModalOpen, observationFormData, setObservationFormData, lang);
+  useBilingualCreate(uploadModalOpen, uploadFormData, setUploadFormData, lang);
+  useBilingualCreate(reviewModalOpen, reviewFormData, setReviewFormData, lang);
+  useBilingualEdit(IsBAEditModal || BAPrefillModal, BAEditData, setBAEditData, lang, "ba");
+  useBilingualView(viewBAModal, viewBAData, setViewBAData, lang, "ba_view");
 
 const handleBAprefill = async (prefillBAID = null) => {
   if (typeof prefillBAID === "object" && prefillBAID !== null) {

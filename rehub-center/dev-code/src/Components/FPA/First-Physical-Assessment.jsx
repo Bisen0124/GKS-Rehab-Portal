@@ -85,9 +85,9 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
   Table,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
 import { H5 } from "../../AbstractElements";
 import DatePicker from "react-datepicker";
 

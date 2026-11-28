@@ -8,12 +8,13 @@ import {
   Form,
   FormGroup,
   Label,
-  Input,
   Table,
   InputGroup,
   Button,
   Badge,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import DatePicker from "react-datepicker";
 import HeaderCard from "../Common/Component/HeaderCard";
 import { ActionButtonsGroup, TableActionButton } from "../Common/Component/ActionButtons";
@@ -730,6 +731,10 @@ const Detoxification = () => {
   // View Assessment State
   const [viewModalOpen, setViewModalOpen] = useState(false);
   const [viewDetoxData, setViewDetoxData] = useState(null);
+
+  useBilingualCreate(createModalOpen, formData, setFormData, lang);
+  useBilingualEdit(editModalOpen, editData, setEditData, lang, "detox");
+  useBilingualView(viewModalOpen, viewDetoxData, setViewDetoxData, lang, "detox_view");
 
   const pdfRef = useRef();
   const [pdfDownloading, setPdfDownloading] = useState(false);

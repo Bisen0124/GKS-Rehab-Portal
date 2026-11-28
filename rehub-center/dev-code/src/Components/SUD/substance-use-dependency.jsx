@@ -30,13 +30,14 @@ import {
     Form,
     FormGroup,
     Label,
-    Input,
     Table,
     Button,
     InputGroup,
     Spinner,
     Badge,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
+import { useBilingualCreate, useBilingualEdit, useBilingualView } from "../../CustomHook/useBilingualFormData";
 import DatePicker from "react-datepicker";
 import CommonModal from "../UiKits/Modals/common/modal";
 import HeaderCard from "../Common/Component/HeaderCard";
@@ -451,7 +452,35 @@ function SUD() {
 
     const handleSubstances = (index, field, value) => {
         const updated = [...substances];
-        updated[index][field] = value;
+        const prevRow = updated[index] || {};
+        if (field === "ever_used") {
+            if (value === "No") {
+                updated[index] = {
+                    ...prevRow,
+                    ever_used: "No",
+                    duration: "No",
+                    current_use: "No",
+                    current_use_pattern: "No",
+                    usual_dose: "No",
+                    remarks: "No",
+                };
+            } else {
+                updated[index] = {
+                    ...prevRow,
+                    ever_used: value,
+                    duration: prevRow.duration === "No" ? "" : prevRow.duration,
+                    current_use: prevRow.current_use === "No" ? "" : prevRow.current_use,
+                    current_use_pattern: prevRow.current_use_pattern === "No" ? "" : prevRow.current_use_pattern,
+                    usual_dose: prevRow.usual_dose === "No" ? "" : prevRow.usual_dose,
+                    remarks: prevRow.remarks === "No" ? "" : prevRow.remarks,
+                };
+            }
+        } else {
+            updated[index] = {
+                ...prevRow,
+                [field]: value,
+            };
+        }
         setSubstances(updated);
     };
 
@@ -656,10 +685,35 @@ function SUD() {
     const handleEditSubstances = (index, field, value) => {
         const updatedUser = { ...SUDselectedUser };
         updatedUser.substance_details = [...updatedUser.substance_details];
-        updatedUser.substance_details[index] = {
-            ...updatedUser.substance_details[index],
-            [field]: value,
-        };
+        const prevRow = updatedUser.substance_details[index] || {};
+        if (field === "ever_used") {
+            if (value === "No") {
+                updatedUser.substance_details[index] = {
+                    ...prevRow,
+                    ever_used: "No",
+                    duration: "No",
+                    current_use: "No",
+                    current_use_pattern: "No",
+                    usual_dose: "No",
+                    remarks: "No",
+                };
+            } else {
+                updatedUser.substance_details[index] = {
+                    ...prevRow,
+                    ever_used: value,
+                    duration: prevRow.duration === "No" ? "" : prevRow.duration,
+                    current_use: prevRow.current_use === "No" ? "" : prevRow.current_use,
+                    current_use_pattern: prevRow.current_use_pattern === "No" ? "" : prevRow.current_use_pattern,
+                    usual_dose: prevRow.usual_dose === "No" ? "" : prevRow.usual_dose,
+                    remarks: prevRow.remarks === "No" ? "" : prevRow.remarks,
+                };
+            }
+        } else {
+            updatedUser.substance_details[index] = {
+                ...prevRow,
+                [field]: value,
+            };
+        }
         setSUDselectedUser(updatedUser);
     };
 
@@ -764,6 +818,10 @@ function SUD() {
     const [viewSUDmodal, setviewSUDmodal] = useState(false);
     const [SUDindiviualEditmodal, setSUDindiviualEditmodal] = useState(false);
 
+    useBilingualCreate(modal, formData, setformData, lang);
+    useBilingualEdit(SUDeditModal || SUDindiviualEditmodal, SUDselectedUser, setSUDselectedUser, lang, "sud");
+    useBilingualView(viewSUDmodal, viewSUDData, setViewSUDData, lang, "sud_view");
+
     const viewSUDdataHandler = async (sda_id) => {
         setIsLoading(true);
         try {
@@ -771,7 +829,7 @@ function SUD() {
             const branch_id = selectedBranch;
 
             const response = await fetch(
-                `https://gks-yjdc.onrender.com/api/sda/get-recent-sda-entry/${sda_id}?branch_id=${branch_id}`,
+                `https://gks-yjdc.onrender.com/api/sda/assessment/${sda_id}?branch_id=${branch_id}`,
                 {
                     method: "GET",
                     headers: {
@@ -788,7 +846,7 @@ function SUD() {
             const data = await response.json();
             console.log("View SUD single entry data:", data);
 
-            setViewSUDData(data.data || data); // Save the fetched data to state
+            setViewSUDData(data.assessment || data.data || data); // Save the fetched data to state
             setviewSUDmodal(true); // Open the modal
         } catch (error) {
             console.error("Error fetching user details:", error);
@@ -810,7 +868,7 @@ function SUD() {
             const branch_id = selectedBranch;
 
             const response = await fetch(
-                `https://gks-yjdc.onrender.com/api/sda/get-recent-sda-entry/${sda_id}?branch_id=${branch_id}`,
+                `https://gks-yjdc.onrender.com/api/sda/assessment/${sda_id}?branch_id=${branch_id}`,
                 {
                     method: "GET",
                     headers: {
@@ -825,7 +883,7 @@ function SUD() {
             }
 
             const data = await response.json();
-            const assessmentData = data.data || data;
+            const assessmentData = data.assessment || data.data || data;
 
             setSUDselectedUser({
                 sda_id: assessmentData.sda_id || assessmentData.id || sda_id,
@@ -1304,44 +1362,28 @@ function SUD() {
                         </Table>
 
 
-                        <div className="checkbox ms-3 mb-2">
-                            <Input
-                                id="checkbox1"
-                                type="checkbox"
-                                checked={formData.consent === "Yes"}
-                                onChange={(e) =>
-                                    setformData((prev) => ({
-                                        ...prev,
-                                        consent: e.target.checked ? "Yes" : "No",
-                                    }))
-                                }
-                            />
-                            <Label className="text-muted" for="checkbox1">
-                                {getTranslation(consent,lang)}
-                            </Label>
+                        <div className="mt-4 mb-3 px-3">
+                            <div className="d-flex align-items-center gap-2 p-2 rounded border bg-light">
+                                <Input
+                                    id="sud_consent_create"
+                                    type="checkbox"
+                                    className="m-0"
+                                    style={{ cursor: "pointer", width: "16px", height: "16px" }}
+                                    checked={formData.consent === "Yes"}
+                                    onChange={(e) =>
+                                        setformData((prev) => ({
+                                            ...prev,
+                                            consent: e.target.checked ? "Yes" : "No",
+                                        }))
+                                    }
+                                />
+                                <Label className="text-dark fw-semibold mb-0" for="sud_consent_create" style={{ cursor: "pointer", fontSize: "13px" }}>
+                                    {getTranslation(consent,lang)}
+                                </Label>
+                            </div>
                         </div>
-                        {/* <div className="col-md-12 px-3">
-                            <Col md="4">
-                                <FormGroup>
-                                    <Label>{getTranslation(signature,lang)}</Label>
-                                    <Input
-                                        type="text"
-                                        placeholder="Signature"
-                                        name="SUDsignature"
-                                        value={formData.SUDsignature}
-                                        onChange={(e) =>
-                                            setformData((prev) => ({
-                                                ...prev,
-                                                SUDsignature: e.target.value,
-                                            }))
-                                        }
-                                    />
-                                </FormGroup>
-                            </Col>
-                        </div> */}
-
                         {/* Submit Button & Save Draft */}
-                        <div className="d-flex align-items-center gap-3 px-3 mb-3 mt-4 flex-wrap">
+                        <div className="d-flex align-items-center gap-3 px-3 pt-3 mt-3 mb-4 border-top flex-wrap">
                             <SaveDraftButton
                                 formKey="sud"
                                 targetId={selectedUser?.[0]?.user_id || selectedUser?.user_id || selectedUser?.id || currentSUDUserId}
@@ -1478,11 +1520,13 @@ function SUD() {
                                     ))}
                                 </tbody>
                             </Table>
-                            <div className="col-md-12">
-                                <div className="checkbox ms-3">
+                            <div className="col-md-12 mt-4 mb-3">
+                                <div className="d-flex align-items-center gap-2 p-2 rounded border bg-light">
                                     <Input
-                                        id="checkbox2"
+                                        id="sud_consent_readm"
                                         type="checkbox"
+                                        className="m-0"
+                                        style={{ cursor: "pointer", width: "16px", height: "16px" }}
                                         checked={SUDselectedUser?.consent === "Yes"}
                                         onChange={(e) =>
                                             setSUDselectedUser({
@@ -1491,35 +1535,14 @@ function SUD() {
                                             })
                                         }
                                     />
-                                    <Label className="text-muted" for="checkbox2">
+                                    <Label className="text-dark fw-semibold mb-0" for="sud_consent_readm" style={{ cursor: "pointer", fontSize: "13px" }}>
                                         {getTranslation(consent,lang)}
                                     </Label>
                                 </div>
                             </div>
 
-                            {/* <div className="col-md-12">
-                                <Col md="4">
-                                    <FormGroup>
-                                        <Label>{getTranslation(signature,lang)}</Label>
-                                        <Input
-                                            type="text"
-                                            name="signature"
-                                            placeholder="Signature"
-                                            value={SUDselectedUser?.signature}
-                                            onChange={(e) =>
-                                                setSUDselectedUser({
-                                                    ...SUDselectedUser,
-                                                    signature: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </FormGroup>
-                                </Col>
-                            </div> */}
-
-
                             {/* Submit Button */}
-                            <div className="d-flex gap-3">
+                            <div className="d-flex align-items-center gap-3 pt-3 mt-3 mb-4 border-top flex-wrap">
                                 <Button color="primary" type="submit" disabled={isLoading}>
                                     {isLoading ? (
                                         <span
@@ -1672,7 +1695,16 @@ function SUD() {
                                         <td className="py-2 px-3 fw-semibold text-muted">{idx + 1}</td>
                                         <td className="py-2 px-3 fw-semibold text-dark">{getTranslation(sub.substance_name, lang) || "-"}</td>
                                         <td className="py-2 px-3">
-                                          <Badge color={sub.ever_used === "Yes" || sub.ever_used === "हाँ" ? "danger" : "light"} className="border">
+                                          <Badge
+                                            color={
+                                              sub.ever_used === "Yes" || sub.ever_used === "हाँ"
+                                                ? "success"
+                                                : sub.ever_used === "No" || sub.ever_used === "नहीं"
+                                                ? "danger"
+                                                : "light"
+                                            }
+                                            className="border"
+                                          >
                                             {sub.ever_used || "-"}
                                           </Badge>
                                         </td>
@@ -1817,11 +1849,13 @@ function SUD() {
                                     ))}
                                 </tbody>
                             </Table>
-                            <div className="col-md-12">
-                                <div className="checkbox ms-3">
+                            <div className="col-md-12 mt-4 mb-3">
+                                <div className="d-flex align-items-center gap-2 p-2 rounded border bg-light">
                                     <Input
-                                        id="checkbox2"
+                                        id="sud_consent_edit"
                                         type="checkbox"
+                                        className="m-0"
+                                        style={{ cursor: "pointer", width: "16px", height: "16px" }}
                                         checked={SUDselectedUser?.consent === "Yes"}
                                         onChange={(e) =>
                                             setSUDselectedUser({
@@ -1830,35 +1864,14 @@ function SUD() {
                                             })
                                         }
                                     />
-                                    <Label className="text-muted" for="checkbox2">
+                                    <Label className="text-dark fw-semibold mb-0" for="sud_consent_edit" style={{ cursor: "pointer", fontSize: "13px" }}>
                                         {getTranslation(consent,lang)}
                                     </Label>
                                 </div>
                             </div>
 
-                            {/* <div className="col-md-12">
-                                <Col md="4">
-                                    <FormGroup>
-                                        <Label>{getTranslation(signature,lang)}</Label>
-                                        <Input
-                                            type="text"
-                                            name="signature"
-                                            placeholder="Signature"
-                                            value={SUDselectedUser?.signature}
-                                            onChange={(e) =>
-                                                setSUDselectedUser({
-                                                    ...SUDselectedUser,
-                                                    signature: e.target.value,
-                                                })
-                                            }
-                                        />
-                                    </FormGroup>
-                                </Col>
-                            </div> */}
-
-
                             {/* Submit Button */}
-                            <div className="d-flex gap-3">
+                            <div className="d-flex align-items-center gap-3 pt-3 mt-3 mb-4 border-top flex-wrap">
                                 <Button color="primary" type="submit" disabled={isLoading}>
                                     {isLoading ? (
                                         <span

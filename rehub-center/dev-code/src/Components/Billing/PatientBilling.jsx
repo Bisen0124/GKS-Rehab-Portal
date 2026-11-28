@@ -8,7 +8,7 @@ import {
   Table,
   Button,
   Badge,
-  Input,
+  
   InputGroup,
   Label,
   Modal,
@@ -17,6 +17,7 @@ import {
   ModalFooter,
   Spinner,
 } from "reactstrap";
+import Input from "../Common/BilingualInput";
 import {
   CreditCard,
   Plus,
