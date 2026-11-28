@@ -1508,11 +1508,11 @@ export const TheftInHome = "5.Theft in home / 5.घर में चोरी";
 export const ByBluff = "6.by bluff / 6.झांसा देकर";
 export const Illegal = "7.Illegal / 7.अवैध";
 export const AnyOther = "8.Any other / 8.कोई अन्य";
-export const Ifarrange = "If arranges by family than reaction on refusal / अगर परिवार से पैसे तो मना करने पर प्रतिक्रिया ?"
-export const mentionYear = "When (mention year) you know about substance abuse what was your action than? What was  reaction of patient ? / जब (वर्ष ) आपको रोगी के मादक पदार्थ सेवन के  बारे में पता चला तो आपने क्या किया? रोगी की प्रतिक्रिया क्या थी?";
-export const action = "When started using excess quantity? what was the pattern?/अधिक मात्रा का उपयोग कब शुरू किया गया? पैटर्न क्या था?";
+export const Ifarrange = "If arranged by family than reaction on refusal / अगर परिवार से पैसे तो मना करने पर प्रतिक्रिया ?"
+export const mentionYear = "When (mention year) you find out about substance abuse what was your action than? What was reaction of patient ? / जब (वर्ष ) आपको रोगी के मादक पदार्थ सेवन के  बारे में पता चला तो आपने क्या किया? रोगी की प्रतिक्रिया क्या थी?";
+export const action = "When did he start consuming excess quantity? What was the pattern? / अधिक मात्रा का उपयोग कब शुरू किया गया? पैटर्न क्या था?";
 export const Residence = "Residence status of patient when started regularly? / नियमित रूप से शुरू करने पर रोगी की आवासीय स्थिति?";
-export const experiencedTrauma = "Experienced any Trauma, if yes when & what, what effect on Substance use? Reason for regular use was shock Trauma? / कोई सदमा ,यदि हाँ तो कब और क्या, मादक पदार्थ के उपयोग पर इसका क्या प्रभाव पड़ा? क्नियमित उपयोग का कारण सदमा था?";
+export const experiencedTrauma = "Experienced any Trauma, if yes when & what, what was effect on Substance use? Reason for regular use was shock/Trauma? / कोई सदमा ,यदि हाँ तो कब और क्या, मादक पदार्थ के उपयोग पर इसका क्या प्रभाव पड़ा? क्या नियमित उपयोग का कारण सदमा था?";
 export const occurredPatientBehavior = "When and what changes occurred in the patient's behavior? / मरीज के व्यव्हार में कब और क्या परिवर्तन आया?";
 export const sociality = "Did patient's friends and sociality changed with his dependency? if yes, is he is in contact with old sober friends? / क्या रोगी के मित्र और सामाजिकता उसकी निर्भरता के साथ बदल गए? यदि हाँ, तो क्या वह पुराने संयमित मित्रों के संपर्क में है?";
 export const effectOfSubstance = "Effect of Substance  in Physical, personal, married, Educational, Professional Life & Family ? & Your Reaction? / शारीरिक, व्यक्तिगत, विवाहित, शैक्षिक, व्यावसायिक जीवन और परिवार पर मादक पदार्थ का प्रभाव और आपकी प्रतिक्रिया?";
@@ -1523,17 +1523,17 @@ export const TreatmentOfSubstance = "Prior Treatment for substance use Dependenc
 export const howManyTimes = "How Many Times/कितनी बार?";
 export const year = "Year / वर्ष";
 export const placeOfTreatment = "Place of treatment / उपचार का स्थान ";
-export const durationOfTime = "Duration & no of Time / अवधि एवं  संख्या ";
+export const durationOfTime = "Duration / अवधि";
 // export const DetailsOfTreatment = "Details of treatment उपचार का विवरण";
 export const daysOfSobriety = "Days of sobriety / संयमके दिन ";
 export const cheifAction = "Action / एक्शन";
 //section 5
-export const absuingSubstance = "Does he ask you to stop abusing substance? How often has he been successful and for how long? / क्या वह आपसे मादक पदार्थों का सेवन बंद करने के लिए कहता है? वह कितनी बार सफल हुआ है और कितने समय तक?";
+export const absuingSubstance = "Did he ask you to quit abusing substance by himself and what influenced him to quit substance? / क्या वह आपसे मादक पदार्थों का सेवन खुद बंद करने के लिए कहता था और उसे नशा छोड़ने के लिए किस बात ने प्रेरित किया?";
 export const influenceStop = "What Influence or condition made him stop? / किस प्रभाव या परिस्थिति ने उसे रुकने पर मजबूर किया?";
 export const whenStopUsing = "When Stopped using, what work did you do? (In life) / जब पदार्थ के उपयोग बंद कर दिया तो आपने क्या काम किया?(जीवन में)";
 export const itReplaceWhenWhom = "If Relapse When? Why? With Whom? / यदि रिलैप्स हुए कब? क्यों? किसके साथ ?";
-export const afterRelapse = "After Relapse did you change your substance and is your Substance quantity increased? /  रिलैप्स के बाद क्या आपने अपना मादक पदार्थ बदल दिया और क्या आपकी मादक पदार्थ मात्रा की बढ़ गई है?";
-export const haveDisorder = "Have any mental or physical disorder any accident or injury / रोगी को कोई मानसिक या शारीरिक रोग है?दुर्घटना या चोट?";
+export const afterRelapse = "After Relapse did he change his substance and was the quantity increased? / रिलैप्स के बाद क्या उसने अपना मादक पदार्थ बदल दिया और क्या मात्रा बढ़ गई?";
+export const haveDisorder = "Any mental / physical disorder or accident / injury? to be disclosed. / कोई भी मानसिक या शारीरिक विकार या दुर्घटना / चोट? (कृपया बताएं)";
 export const isProblmeOrInjury = "Is problem or injury is due to Substance Dependency / क्या समस्या या चोट नशे के कारण है?";
 export const DiagnosedOnTreatment = "Diagnosed on? Treatment? if took or Undergoing / बीमारी का पता कब चला? कोई उपचार लिया या चल रहा हो तो जानकारी ";
 export const DoctorPlaceDuration = "Doctor, Place and duration & Result of Treatment? / चिकित्सक का नाम, अस्पताल, उपचार का समय और परिणाम? ";
@@ -1543,7 +1543,7 @@ export const YouFamiliar = "You familiar with treatment? Effect of the treatment
 export const relationshipFamilyStatus = "Relationship & Family Status / रिश्ते और पारिवारिक स्थिति";
 export const relationshipStatus = "Relationship status: / रिलेशनशिप स्टेटस ?:";
 export const MarriageArrangement = "Marriage Arrangement & Since / वैवाहिक व्यवस्था और कब से";
-export const afterMerriageLife = "After marriage life or relationship Status (Happy or not & what about bonding)? if not married Reason? / वैवाहिक जीवन या रिलेशनशिप कैसा है (खुश हैं या नहीं / बनती है या नहीं)?  विवाह नहीं हुआ है तो कारण?";
+export const afterMerriageLife = "Married life or relationship Status (Happy or not & what about bonding)? if not married Reason? / वैवाहिक जीवन या रिलेशनशिप कैसा है (खुश हैं या नहीं / बनती है या नहीं)?  विवाह नहीं हुआ है तो कारण?";
 export const isThereInterference = "Is there interference of wife's family or any relative in the internal matters of your family. If yes than whom & in which affairs. / क्या आपके परिवार के अंदरूनी मामलों में पत्नी के परिवार या किसी रिश्तेदार का हस्तक्षेप है? यदि हाँ तो कौन और किन मामलों में?";
 export const nameisThere = "Name / नाम ";
 export const relationisThere = "Relation / संबंध ";
@@ -1570,10 +1570,10 @@ export const uncle1 = "Uncle / चाचा";
 export const anyOtherPlsMention = "any other pls mention / कोई अन्य उल्लेख करें ";
 export const anyOtherPlsMention1 = "If any Please mention since From? and Psychiatric Problem and Substance (quantity, substance type) use details ? / यदि कोई हो तो कृपया बताएं कि यह कब से है और मनोरोग समस्या एवं मादक पदार्थ विवरण दें(मात्रा, मादक पदार्थका प्रकार)?";
 export const currentStatus = "Current Status? / वर्तमान स्थिति? ";
-export const howWasBonding = "How was bonding & relation with substance user person? / पदार्थ पर निर्भर व्यक्ति के साथ संबंध या लगाव बंधन कैसे थे/हैं?";
+export const howWasBonding = "What was bonding & relation with substance user person? / पदार्थ पर निर्भर व्यक्ति के साथ संबंध या लगाव बंधन कैसे थे/हैं?";
 export const familyBehaviorPatient = "Family's behavior with the patient / मरीज से परिवार का व्यवहार";
-export const monitoringFamily = "Who is the head & monitoring family? / परिवार का मुखिया और निगरानीकर्ता कौन है?";
-export const ralationshipFamilyMember = "How are your relationships with family members? / परिवार के सदस्यों के साथ संबंध कैसे हैं?";
+export const monitoringFamily = "Who is head of family? / परिवार का मुखिया कौन है?";
+export const ralationshipFamilyMember = "How are his relationships with family members? / परिवार के सदस्यों के साथ उसके संबंध कैसे हैं?";
 export const childhood = "Childhood /बचपन";
 export const birthConditions = "Birth Conditions / जन्म की स्थिति";
 export const parentingHistory = "Parenting History / पालन पोषण कैसा था? ";
@@ -1598,19 +1598,19 @@ export const withWhomSpendFreeTime = "With Whom spend most of the free time / �
 export const howManyFriends = "How many Friends have / वर्तमान में  कितने मित्र हैं";
 export const friendSocialStatus = "There Social Status / उनकी सामाजिक स्थिति ";
 export const howMuchDependent = "How much of them are substance dependent give Numbers / उनमें कितने लोग पदार्थ पर निर्भर हैं, संख्या बताइए?";
-export const whoClosedWellWisher = "Who is or was the closed & well wisher person in life? / जीवन में सबसे करीबी और शुभचिंतक व्यक्ति कौन है या था?";
+export const whoClosedWellWisher = "Who is or was the close & well wisher person in life? / जीवन में सबसे करीबी और शुभचिंतक व्यक्ति कौन है या था?";
 
 //section 9 Legal History / लीगल इतिहास 
 
 export const legalHistory = "Legal History / लीगल इतिहास";
 export const domesticViolence = "Domestic violence case if any & on Whom? / घरेलू हिंसा अगर हो तो और किस पर ?";
 export const reasonBehindDomesticViolence = "Reason behind Domestic Violence? / घरेलू हिंसा के पीछे का कारण?";
-export const drugStatus = "Drug status & QTY at time / क्या नशे में थे ?(मात्रा क्या थी ?)";
-export const ifThereIsAnyCriminalCase = "If there is any criminal case / कोई आपराधिक मामला अगर हो तो ";
+export const drugStatus = "Drug status & Qty at time / क्या नशे में थे ?(मात्रा क्या थी ?)";
+export const ifThereIsAnyCriminalCase = "If there is any criminal case mention - / कोई आपराधिक मामला अगर हो तो उल्लेख करें -";
 export const specificCaseDetails = "Specify Case Details ? / केस का विवरण दीजिये ";
 export const currentCaseStatus = "Current case status? / केस की वर्तमान स्थिति";
-export const ifWentToJail = " If went to jail mention period & no's / जेल गए तो कितने दिनों और कितनी बार ";
-export const ifThereIsAnyCriminalCase5 = "If there is any criminal case / कोई आपराधिक मामला अगर हो तो";
+export const ifWentToJail = "If jailed mention how many times & duration. / यदि जेल गए तो कितनी बार और अवधि का उल्लेख करें।";
+export const ifThereIsAnyCriminalCase5 = "If there is any criminal case mention - / कोई आपराधिक मामला अगर हो तो उल्लेख करें -";
 
 //section Patient behavior  / रोगी का व्यवहार
 export const patientBeh ="Patient behavior  / रोगी का व्यवहार";
@@ -1678,13 +1678,13 @@ export const patientBehaviorFormattedList = [
   { key: "theft", label: "Steals Theft? / क्या चोरी की है?" },
   { key: "borrows", label: "Borrows? / क्या उधार लिया है?" },
   { key: "gambles", label: "Do gambles/speculate? / क्या जुआ खेलते हैं?" },
-  { key: "bluffs", label: "Did you Bluff the people? / क्या लोगों को झांसा दिया?" },
+  { key: "bluffs", label: "Did he Bluff the people? / क्या वह लोगों को झांसा देता है?" },
   { key: "admits_mistake", label: "Admit mistakes? / क्या अपनी गलती स्वीकार करते हैं?" },
   { key: "irresponsible", label: "There is no sense of responsibility? / क्या जिम्मेदारी का कोई अहसास नहीं है?" },
   { key: "selfish", label: "Selfish in nature? / स्वभाव से स्वार्थी?" },
   { key: "has_empathy", label: "Do Compassion and sympathy for anyone? / किसी के प्रति दया और सहानुभूति है?" },
   { key: "lazy", label: "Are lazy or slacker or careless?/क्या आप आलसी, कामचोर या लापरवाह हैं?" },
-  { key: "nervous_anxiety_symptoms", label: "Can you get nervous & anxiety without getting drugs? / क्या आपको बिना नशे के घबराहट, चिड़चिड़ापन होता है?" },
+  { key: "nervous_anxiety_symptoms", label: "Can he get nervous & anxiety without getting drugs? / क्या उसे बिना नशे के घबराहट, चिड़चिड़ापन और चिंता होती है?" },
   { key: "emotional_post_use", label: "Do patients become very emotional after taking substance abuse? / क्या मादक पदार्थ के सेवन के बाद मरीज़ भावुक हो जाते हैं?" },
   { key: "prioritizes_substance", label: "Do patient put the purchase of Substance ahead of his financial Responsibility? / क्या मरीज़ मादक पदार्थ की खरीद को अपनी वित्तीय जिम्मेदारी से आगे रखते हैं?" },
   { key: "feels_guilty", label: "Have Patient ever felt defensive, guilty, or ashamed about substance abuse? / क्या मरीज़ ने कभी मादक पदार्थ के सेवन के बारे में शर्म महसूस की है?" },
@@ -1769,6 +1769,7 @@ export const religionOptions = [
 ];
 
 export const moneySources = [
+  { id: "source_self_earnings", label: "Self Earnings / स्वयं की कमाई" },
   { id: "source_family", label: "Family / परिवार" },
   { id: "source_friends", label: "Friends / मित्र" },
   { id: "source_borrowings", label: "Borrowings / उधार" },

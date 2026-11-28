@@ -889,6 +889,7 @@ function GenFamily() {
     patient_monthly_income: "",
     family_monthly_income: "",
     //source of money
+    source_self_earnings: "No",
     source_family: "No",
     source_friends: "No",
     source_borrowings: "No",
@@ -910,7 +911,7 @@ function GenFamily() {
 
     //Chief Complaint
     prior_treatment: "Yes",
-    how_many_times: 2,
+    how_many_times: "",
     chief_complaints: "",
     treatment_records: [
       {
@@ -1533,6 +1534,510 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
     }));
   };
 
+  const LIVING_SITUATION_STANDARD = ["Single", "With Family", "Joint Family"];
+
+  const ABUSE_TYPE_OPTIONS = [
+    { value: "Physically", label: "Physically / शारीरिक रूप से" },
+    { value: "Emotionally", label: "Emotionally / भावनात्मक रूप से" },
+    { value: "Sexually", label: "Sexually / यौन रूप से" },
+  ];
+
+  const FREE_TIME_OPTIONS = [
+    { value: "Alone", label: "Alone / अकेले" },
+    { value: "With Family", label: "With Family / परिवार के साथ" },
+    { value: "In addict Community", label: "In addict Community / नशेड़ी समुदाय में" },
+    { value: "With Friends", label: "With Friends / दोस्तों के साथ" },
+    { value: "Other", label: "Other / अन्य" },
+  ];
+
+  const saveLocalGenFamilyExtra = (userId, genFamId, extraObj = {}) => {
+    try {
+      const record = {
+        source_self_earnings: extraObj.source_self_earnings || "No",
+        updatedAt: Date.now(),
+      };
+      if (genFamId) {
+        localStorage.setItem(`gks_gen_family_extra_id_${genFamId}`, JSON.stringify(record));
+      }
+      if (userId) {
+        localStorage.setItem(`gks_gen_family_extra_user_${userId}`, JSON.stringify(record));
+      }
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  const loadLocalGenFamilyExtra = (userId, genFamId = null) => {
+    try {
+      const byId = genFamId ? localStorage.getItem(`gks_gen_family_extra_id_${genFamId}`) : null;
+      const byUser = userId ? localStorage.getItem(`gks_gen_family_extra_user_${userId}`) : null;
+      const parsedId = byId ? JSON.parse(byId) : {};
+      const parsedUser = byUser ? JSON.parse(byUser) : {};
+      return { ...parsedUser, ...parsedId };
+    } catch {
+      return {};
+    }
+  };
+
+  const submitGenFamilyWithFallback = async (url, method, token, payloadObj) => {
+    const doFetch = async (bodyObj) => {
+      const res = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `${token}`,
+        },
+        body: JSON.stringify(bodyObj),
+      });
+      const json = await res.json().catch(() => ({}));
+      return { response: res, result: json };
+    };
+
+    let { response, result } = await doFetch(payloadObj);
+    if (!response.ok && response.status === 400) {
+      const errStr = JSON.stringify(result || "").toLowerCase();
+      if (
+        errStr.includes("source_self_earnings") &&
+        (errStr.includes("not allowed") || errStr.includes("unknown"))
+      ) {
+        const cloned = {
+          ...payloadObj,
+          substance_use_dependency: { ...(payloadObj.substance_use_dependency || {}) },
+        };
+        delete cloned.substance_use_dependency.source_self_earnings;
+        ({ response, result } = await doFetch(cloned));
+      }
+    }
+    return { response, result };
+  };
+
+  const parseLivingSituation = (rawVal) => {
+    const str = String(rawVal || "").trim();
+    if (!str) return { selectVal: "", otherText: "" };
+    if (LIVING_SITUATION_STANDARD.includes(str)) {
+      return { selectVal: str, otherText: "" };
+    }
+    if (str === "Others" || str === "Other") {
+      return { selectVal: "Others", otherText: "" };
+    }
+    if (/^others?\s*:/i.test(str)) {
+      return { selectVal: "Others", otherText: str.replace(/^others?\s*:\s*/i, "") };
+    }
+    return { selectVal: "Others", otherText: str };
+  };
+
+  const renderLivingSituationField = (currentVal, onChangeVal) => {
+    const { selectVal, otherText } = parseLivingSituation(currentVal);
+    return (
+      <>
+        <select
+          className="form-control mt-2"
+          name="living_situation"
+          value={selectVal}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === "Others") {
+              onChangeVal(otherText ? `Others: ${otherText}` : "Others");
+            } else {
+              onChangeVal(val);
+            }
+          }}
+        >
+          <option value="">{getTranslation("Select / चुनें", lang)}</option>
+          <option value="Single">{getTranslation("Single / अकेला", lang)}</option>
+          <option value="With Family">{getTranslation("With Family / परिवार के साथ", lang)}</option>
+          <option value="Joint Family">{getTranslation("Joint Family / संयुक्त परिवार", lang)}</option>
+          <option value="Others">{getTranslation("Others / अन्य", lang)}</option>
+        </select>
+        {selectVal === "Others" && (
+          <Input
+            type="text"
+            className="form-control mt-2"
+            placeholder={getTranslation("Specify living situation... / रहने की स्थिति दर्ज करें...", lang)}
+            value={otherText}
+            onChange={(e) => {
+              const txt = e.target.value;
+              onChangeVal(txt.trim() ? `Others: ${txt}` : "Others");
+            }}
+          />
+        )}
+      </>
+    );
+  };
+
+  const renderSourceOfMoneyField = (dataObj = {}, onToggleSource, onOtherTextChange, idPrefix = "create") => {
+    const selectedSources = moneySources.filter((s) => dataObj?.[s.id] === "Yes");
+    const selectedLabels = selectedSources.map((s) => {
+      const base = getTranslation(s.label, lang);
+      if (s.id === "source_any_other" && dataObj?.source_other_text?.trim()) {
+        return `${base} (${dataObj.source_other_text.trim()})`;
+      }
+      return base;
+    });
+
+    return (
+      <div className="mt-3 mb-3">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <h5 className="mb-0">{getTranslation(sourceOfMoney, lang)}</h5>
+          <span
+            style={{
+              fontSize: "11.5px",
+              fontWeight: 600,
+              padding: "3px 10px",
+              borderRadius: "999px",
+              backgroundColor: selectedSources.length > 0 ? "#24695c" : "#64748b",
+              color: "#ffffff",
+            }}
+          >
+            {selectedSources.length} {getTranslation("Selected / चयनित", lang)}
+          </span>
+        </div>
+
+        <div
+          className="p-3 rounded-3 border"
+          style={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }}
+        >
+          <div className="d-flex flex-wrap gap-2">
+            {moneySources.map((source) => {
+              const inputId = `${idPrefix}-${source.id}`;
+              const isChecked = dataObj?.[source.id] === "Yes";
+              return (
+                <div
+                  key={source.id}
+                  className="d-inline-flex align-items-center"
+                  style={{
+                    gap: "8px",
+                    backgroundColor: isChecked ? "#ecfdf5" : "#ffffff",
+                    border: isChecked ? "1px solid #24695c" : "1px solid #cbd5e1",
+                    borderRadius: "8px",
+                    padding: "6px 10px",
+                    minHeight: "34px",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  <Input
+                    type="checkbox"
+                    id={inputId}
+                    name={source.id}
+                    className="form-check-input m-0"
+                    style={{ width: "16px", height: "16px", margin: 0, flexShrink: 0, cursor: "pointer" }}
+                    checked={isChecked}
+                    onChange={(e) => onToggleSource(source.id, e.target.checked)}
+                  />
+                  <Label
+                    htmlFor={inputId}
+                    className="m-0"
+                    style={{
+                      fontWeight: isChecked ? "600" : "500",
+                      color: isChecked ? "#14532d" : "#334155",
+                      fontSize: "13px",
+                      lineHeight: 1.2,
+                      margin: 0,
+                      cursor: "pointer",
+                      userSelect: "none",
+                    }}
+                  >
+                    {getTranslation(source.label, lang)}
+                  </Label>
+                </div>
+              );
+            })}
+          </div>
+
+          {dataObj?.source_any_other === "Yes" && (
+            <div className="mt-3">
+              <VoiceTextarea
+                className="form-control"
+                placeholder={getTranslation("Please specify / कृपया निर्दिष्ट करें", lang)}
+                name="source_other_text"
+                value={dataObj?.source_other_text || ""}
+                onChange={(e) => onOtherTextChange(e.target.value)}
+              />
+            </div>
+          )}
+
+          <div className="mt-3">
+            <Input
+              type="text"
+              readOnly
+              value={
+                selectedLabels.length > 0
+                  ? `(${selectedLabels.length} ${getTranslation("Selected / चयनित", lang)}) ${selectedLabels.join(", ")}`
+                  : ""
+              }
+              placeholder={getTranslation(
+                "Selected money source(s) will appear here... / चयनित आय के स्रोत यहाँ दिखेंगे...",
+                lang
+              )}
+              className="form-control bg-white fw-semibold"
+              style={{ borderRadius: "8px", height: "38px" }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const parseAbuseHistory = (rawVal) => {
+    const str = String(rawVal || "").trim();
+    if (!str) return { selectedTypes: [], description: "" };
+    const knownVals = ABUSE_TYPE_OPTIONS.map((o) => o.value);
+    const parts = str.split("|").map((p) => p.trim());
+    const firstTokens = parts[0]
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const matchedTypes = firstTokens
+      .map((t) => knownVals.find((k) => k.toLowerCase() === t.toLowerCase()))
+      .filter(Boolean);
+    if (matchedTypes.length > 0 && matchedTypes.length === firstTokens.length) {
+      return {
+        selectedTypes: Array.from(new Set(matchedTypes)),
+        description: parts.slice(1).join(" | "),
+      };
+    }
+    return { selectedTypes: [], description: str };
+  };
+
+  const serializeAbuseHistory = (selectedTypes, description) => {
+    const cleanTypes = Array.from(new Set((selectedTypes || []).filter(Boolean)));
+    const cleanDesc = String(description || "").trim();
+    if (cleanTypes.length > 0 && cleanDesc) {
+      return `${cleanTypes.join(", ")} | ${cleanDesc}`;
+    }
+    if (cleanTypes.length > 0) return cleanTypes.join(", ");
+    return cleanDesc;
+  };
+
+  const renderAbuseHistoryField = (currentVal, onChangeVal, idPrefix = "create") => {
+    const { selectedTypes, description } = parseAbuseHistory(currentVal);
+
+    const toggleAbuseType = (val, checked) => {
+      const nextTypes = checked
+        ? Array.from(new Set([...selectedTypes, val]))
+        : selectedTypes.filter((x) => x.toLowerCase() !== val.toLowerCase());
+      onChangeVal(serializeAbuseHistory(nextTypes, description));
+    };
+
+    return (
+      <div className="col-md-12 mt-2 mb-2">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <Label className="mb-0 fw-semibold">
+            {getTranslation(hasAnyoneEverAbused, lang)}
+          </Label>
+          <span
+            style={{
+              fontSize: "11.5px",
+              fontWeight: 600,
+              padding: "3px 10px",
+              borderRadius: "999px",
+              backgroundColor: selectedTypes.length > 0 ? "#24695c" : "#64748b",
+              color: "#ffffff",
+            }}
+          >
+            {selectedTypes.length} {getTranslation("Selected / चयनित", lang)}
+          </span>
+        </div>
+
+        <div
+          className="p-3 rounded-3 border"
+          style={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }}
+        >
+          <div className="d-flex flex-wrap gap-2 mb-3">
+            {ABUSE_TYPE_OPTIONS.map((opt, idx) => {
+              const inputId = `${idPrefix}-abuse-${idx}`;
+              const isChecked = selectedTypes.some(
+                (x) => x.toLowerCase() === opt.value.toLowerCase()
+              );
+              return (
+                <div
+                  key={opt.value}
+                  className="d-inline-flex align-items-center"
+                  style={{
+                    gap: "8px",
+                    backgroundColor: isChecked ? "#ecfdf5" : "#ffffff",
+                    border: isChecked ? "1px solid #24695c" : "1px solid #cbd5e1",
+                    borderRadius: "8px",
+                    padding: "6px 10px",
+                    minHeight: "34px",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  <Input
+                    id={inputId}
+                    type="checkbox"
+                    className="form-check-input m-0"
+                    style={{ width: "16px", height: "16px", margin: 0, flexShrink: 0, cursor: "pointer" }}
+                    checked={isChecked}
+                    onChange={(e) => toggleAbuseType(opt.value, e.target.checked)}
+                  />
+                  <Label
+                    htmlFor={inputId}
+                    className="m-0"
+                    style={{
+                      fontWeight: isChecked ? "600" : "500",
+                      color: isChecked ? "#14532d" : "#334155",
+                      fontSize: "13px",
+                      lineHeight: 1.2,
+                      margin: 0,
+                      cursor: "pointer",
+                      userSelect: "none",
+                    }}
+                  >
+                    {getTranslation(opt.label, lang)}
+                  </Label>
+                </div>
+              );
+            })}
+          </div>
+
+          <VoiceTextarea
+            label={<Translated text={getTranslation("Description / विवरण", lang)} />}
+            className="form-control"
+            name="abuse_history"
+            value={description}
+            onChange={(e) => onChangeVal(serializeAbuseHistory(selectedTypes, e.target.value))}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const parseFreeTime = (rawVal) => {
+    const str = String(rawVal || "").trim();
+    if (!str) return { selected: [], otherText: "" };
+    const standardVals = FREE_TIME_OPTIONS.filter((o) => o.value !== "Other").map((o) => o.value);
+    const tokens = str.split(",").map((t) => t.trim()).filter(Boolean);
+    const selected = [];
+    let otherText = "";
+    tokens.forEach((tok) => {
+      const stdMatch = standardVals.find((s) => s.toLowerCase() === tok.toLowerCase());
+      if (stdMatch) {
+        if (!selected.includes(stdMatch)) selected.push(stdMatch);
+      } else if (/^others?\s*:/i.test(tok)) {
+        if (!selected.includes("Other")) selected.push("Other");
+        otherText = tok.replace(/^others?\s*:\s*/i, "").trim();
+      } else if (/^others?$/i.test(tok)) {
+        if (!selected.includes("Other")) selected.push("Other");
+      } else {
+        if (!selected.includes("Other")) selected.push("Other");
+        otherText = otherText ? `${otherText}, ${tok}` : tok;
+      }
+    });
+    return { selected, otherText };
+  };
+
+  const serializeFreeTime = (selected, otherText) => {
+    const list = [];
+    (selected || []).forEach((item) => {
+      if (item === "Other") {
+        const cleanOther = String(otherText || "").trim();
+        list.push(cleanOther ? `Other: ${cleanOther}` : "Other");
+      } else if (item) {
+        list.push(item);
+      }
+    });
+    return list.join(", ");
+  };
+
+  const renderFreeTimeField = (currentVal, onChangeVal, idPrefix = "create") => {
+    const { selected, otherText } = parseFreeTime(currentVal);
+    const isOtherChecked = selected.includes("Other");
+
+    const toggleOption = (optVal, checked) => {
+      const nextSelected = checked
+        ? Array.from(new Set([...selected, optVal]))
+        : selected.filter((x) => x !== optVal);
+      const nextOther = optVal === "Other" && !checked ? "" : otherText;
+      onChangeVal(serializeFreeTime(nextSelected, nextOther));
+    };
+
+    return (
+      <div className="col-md-12 mt-2 mb-2">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <Label className="mb-0 fw-semibold">
+            {getTranslation(withWhomSpendFreeTime, lang)}
+          </Label>
+          <span
+            style={{
+              fontSize: "11.5px",
+              fontWeight: 600,
+              padding: "3px 10px",
+              borderRadius: "999px",
+              backgroundColor: selected.length > 0 ? "#24695c" : "#64748b",
+              color: "#ffffff",
+            }}
+          >
+            {selected.length} {getTranslation("Selected / चयनित", lang)}
+          </span>
+        </div>
+
+        <div
+          className="p-3 rounded-3 border"
+          style={{ backgroundColor: "#f8fafc", borderColor: "#e2e8f0" }}
+        >
+          <div className="d-flex flex-wrap gap-2">
+            {FREE_TIME_OPTIONS.map((opt, idx) => {
+              const inputId = `${idPrefix}-freetime-${idx}`;
+              const isChecked = selected.includes(opt.value);
+              return (
+                <div
+                  key={opt.value}
+                  className="d-inline-flex align-items-center"
+                  style={{
+                    gap: "8px",
+                    backgroundColor: isChecked ? "#ecfdf5" : "#ffffff",
+                    border: isChecked ? "1px solid #24695c" : "1px solid #cbd5e1",
+                    borderRadius: "8px",
+                    padding: "6px 10px",
+                    minHeight: "34px",
+                    lineHeight: 1.2,
+                  }}
+                >
+                  <Input
+                    id={inputId}
+                    type="checkbox"
+                    className="form-check-input m-0"
+                    style={{ width: "16px", height: "16px", margin: 0, flexShrink: 0, cursor: "pointer" }}
+                    checked={isChecked}
+                    onChange={(e) => toggleOption(opt.value, e.target.checked)}
+                  />
+                  <Label
+                    htmlFor={inputId}
+                    className="m-0"
+                    style={{
+                      fontWeight: isChecked ? "600" : "500",
+                      color: isChecked ? "#14532d" : "#334155",
+                      fontSize: "13px",
+                      lineHeight: 1.2,
+                      margin: 0,
+                      cursor: "pointer",
+                      userSelect: "none",
+                    }}
+                  >
+                    {getTranslation(opt.label, lang)}
+                  </Label>
+                </div>
+              );
+            })}
+          </div>
+
+          {isOtherChecked && (
+            <div className="mt-3">
+              <Input
+                type="text"
+                className="form-control bg-white"
+                placeholder={getTranslation("Specify other... / अन्य विवरण दर्ज करें...", lang)}
+                value={otherText}
+                onChange={(e) => onChangeVal(serializeFreeTime(selected, e.target.value))}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   //General Family Submit Handler
   const handleGeneralFamilySubmit = async (e) => {
     e.preventDefault();
@@ -1541,10 +2046,6 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       {
         label: getTranslation("Date of Form Filling / फॉर्म भरने की तिथि", lang),
         value: formData.dateOfFormFilling,
-      },
-      {
-        label: getTranslation("UID / यूआईडी", lang),
-        value: formData.genUID,
       },
     ];
 
@@ -1557,7 +2058,7 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       user_id: selectedUser[0].user_id,
 
       gen_family: {
-        uid: formData.genUID,
+        uid: formData.genUID || selectedUser?.[0]?.gks_id || "",
         form_fill_date: formData.dateOfFormFilling,
         occupational_status: formData.occupational_status,
         marital_status: formData.marital_status,
@@ -1570,6 +2071,7 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
         daily_spent_amount: formData.daily_spent_amount,
         patient_monthly_income: formData.patient_monthly_income,
         family_monthly_income: formData.family_monthly_income,
+        source_self_earnings: formData.source_self_earnings || "No",
         source_family: formData.source_family,
         source_friends: formData.source_friends,
         source_borrowings: formData.source_borrowings,
@@ -1592,9 +2094,12 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       },
 
       treatment_history: {
-        chief_complaints: formData.chief_complaints,
+        chief_complaints: formData.chief_complaints || "",
         prior_treatment: formData.prior_treatment,
-        how_many_times: formData.how_many_times,
+        how_many_times:
+          formData.how_many_times !== "" && formData.how_many_times !== null && formData.how_many_times !== undefined
+            ? Number(formData.how_many_times) || 0
+            : 0,
         treatment_records: formData.treatment_records.map((record) => ({
           treatment_year: record.treatment_year.trim(),
           treatment_place: record.treatment_place.trim(),
@@ -1729,19 +2234,12 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       console.log("Payload to be sent:", JSON.stringify(payload));
 
       //Normal create gen family
-      const response = await fetch(
+      const { response, result } = await submitGenFamilyWithFallback(
         `https://gks-yjdc.onrender.com/api/gen-family/create-gen-family?branch_id=${branch_id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
+        "POST",
+        token,
+        payload
       );
-
-      const result = await response.json();
       console.log("Response from server:", result);
 
       if (!response.ok) {
@@ -1753,6 +2251,11 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
 
       setIsLoading(false);
       const userTargetId = selectedUser?.[0]?.user_id || selectedUser?.[0]?.id || selectedUser?.user_id || selectedUser?.id || currentGenFamilyUserId;
+      saveLocalGenFamilyExtra(
+        userTargetId,
+        result?.data?.gen_fam_id || result?.data?.gen_family?.gen_fam_id || result?.gen_fam_id,
+        formData
+      );
       clearDraft("general_family", userTargetId);
       setDraftTimestamp(null);
       setgetFamilyModal(false);
@@ -2001,6 +2504,10 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
         patient_monthly_income: latestGenFamilyData.patient_monthly_income,
         family_monthly_income: latestGenFamilyData.family_monthly_income,
 
+        source_self_earnings:
+          latestGenFamilyData.source_self_earnings ||
+          loadLocalGenFamilyExtra(latestGenFamilyData.user_id, latestGenFamilyData.gen_fam_id).source_self_earnings ||
+          "No",
         source_family: latestGenFamilyData.source_family,
         source_friends: latestGenFamilyData.source_friends,
         source_borrowings: latestGenFamilyData.source_borrowings,
@@ -2063,7 +2570,13 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
         achievements: latestGenFamilyData.achievements,
         social_behavior: latestGenFamilyData.social_behavior,
         with_whom_spend_time: latestGenFamilyData.with_whom_spend_time,
-        number_of_friends: latestGenFamilyData.number_of_friends,
+        number_of_friends: [
+          latestGenFamilyData.number_of_friends,
+          latestGenFamilyData.friends_social_status,
+        ]
+          .map((v) => String(v || "").trim())
+          .filter(Boolean)
+          .join(" | "),
         friends_social_status: latestGenFamilyData.friends_social_status,
         substance_dependent_friends: latestGenFamilyData.substance_dependent_friends,
         well_wisher_person: latestGenFamilyData.well_wisher_person,
@@ -2206,6 +2719,7 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
         daily_spent_amount: GenfamiltEditData.daily_spent_amount,
         patient_monthly_income: GenfamiltEditData.patient_monthly_income,
         family_monthly_income: GenfamiltEditData.family_monthly_income,
+        source_self_earnings: GenfamiltEditData.source_self_earnings || "No",
         source_family: GenfamiltEditData.source_family,
         source_friends: GenfamiltEditData.source_friends,
         source_borrowings: GenfamiltEditData.source_borrowings,
@@ -2228,9 +2742,14 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       },
 
       treatment_history: {
-        chief_complaints: GenfamiltEditData.chief_complaints,
+        chief_complaints: GenfamiltEditData.chief_complaints || "",
         prior_treatment: GenfamiltEditData.prior_treatment,
-        how_many_times: GenfamiltEditData.how_many_times,
+        how_many_times:
+          GenfamiltEditData.how_many_times !== "" &&
+          GenfamiltEditData.how_many_times !== null &&
+          GenfamiltEditData.how_many_times !== undefined
+            ? Number(GenfamiltEditData.how_many_times) || 0
+            : 0,
         // treatment_records: JSON.parse(GenfamiltEditData.treatment_records || '[]'),
         treatment_records: GenfamiltEditData.treatment_records.map((record) => ({
           treatment_year: record.treatment_year.trim(),
@@ -2363,20 +2882,14 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
       const token = localStorage.getItem("Authorization");
 
       //Readmission PFA API
-      const response = await fetch(
+      const { response, result } = await submitGenFamilyWithFallback(
         `https://gks-yjdc.onrender.com/api/gen-family/create-gen-family?branch_id=${branch_id}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
+        "POST",
+        token,
+        payload
       );
 
       console.log("Gen Family Re admission", payload);
-      const result = await response.json();
       console.log("result", result);
 
       if (!response.ok) {
@@ -2384,6 +2897,11 @@ const handleFamilyHistoryChange = (side, relation, field, value) => {
         showApiErrorAlert(result, lang, getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल", lang));
         return;
       }
+      saveLocalGenFamilyExtra(
+        GenfamiltEditData.user_id,
+        result?.data?.gen_fam_id || result?.data?.gen_family?.gen_fam_id || GenfamiltEditData.gen_fam_id,
+        GenfamiltEditData
+      );
       // ✅ Success Case
       setIsLoading(false);
       Swal.fire({
@@ -2551,6 +3069,13 @@ console.log(latestGenFamilyData.substance_use_dependency)
         ...latestGenFamilyData?.childhood_history,
         ...latestGenFamilyData?.education_employment,
         ...latestGenFamilyData?.social_behavior,
+        number_of_friends: [
+          latestGenFamilyData?.social_behavior?.number_of_friends,
+          latestGenFamilyData?.social_behavior?.friends_social_status,
+        ]
+          .map((v) => String(v || "").trim())
+          .filter(Boolean)
+          .join(" | "),
         ...latestGenFamilyData?.legal_history,
         ...latestGenFamilyData?.consent_info,
 
@@ -2562,6 +3087,13 @@ console.log(latestGenFamilyData.substance_use_dependency)
       
         // ✅ Substance Use Dependency mapping added
         ...latestGenFamilyData.substance_use_dependency,
+        source_self_earnings:
+          latestGenFamilyData.substance_use_dependency?.source_self_earnings ||
+          loadLocalGenFamilyExtra(
+            latestGenFamilyData?.gen_family?.user_id,
+            latestGenFamilyData?.gen_family?.gen_fam_id
+          ).source_self_earnings ||
+          "No",
         
          
       
@@ -2653,6 +3185,7 @@ console.log(latestGenFamilyData.substance_use_dependency)
         daily_spent_amount: GenfamiltEditData.daily_spent_amount,
         patient_monthly_income: GenfamiltEditData.patient_monthly_income,
         family_monthly_income: GenfamiltEditData.family_monthly_income,
+        source_self_earnings: GenfamiltEditData.source_self_earnings || "No",
         source_family: GenfamiltEditData.source_family,
         source_friends: GenfamiltEditData.source_friends,
         source_borrowings: GenfamiltEditData.source_borrowings,
@@ -2675,9 +3208,14 @@ console.log(latestGenFamilyData.substance_use_dependency)
       },
 
       treatment_history: {
-        chief_complaints: GenfamiltEditData.chief_complaints,
+        chief_complaints: GenfamiltEditData.chief_complaints || "",
         prior_treatment: GenfamiltEditData.prior_treatment,
-        how_many_times: GenfamiltEditData.how_many_times,
+        how_many_times:
+          GenfamiltEditData.how_many_times !== "" &&
+          GenfamiltEditData.how_many_times !== null &&
+          GenfamiltEditData.how_many_times !== undefined
+            ? Number(GenfamiltEditData.how_many_times) || 0
+            : 0,
         // treatment_records: JSON.parse(GenfamiltEditData.treatment_records || '[]'),
         treatment_records: GenfamiltEditData.treatment_records.map((record) => ({
           treatment_year: record.treatment_year.trim(),
@@ -2809,28 +3347,27 @@ console.log(latestGenFamilyData.substance_use_dependency)
       const branch_id = selectedBranch; // make sure `selectedBranch` comes from your BranchContext
       const token = localStorage.getItem("Authorization");
 
-      //Readmission PFA API
-      const response = await fetch(
+      //Update Gen Family API
+      const { response, result } = await submitGenFamilyWithFallback(
         `https://gks-yjdc.onrender.com/api/gen-family/update-gen-family/${GenfamiltEditData.gen_fam_id}?branch_id=${branch_id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `${token}`,
-          },
-          body: JSON.stringify(payload),
-        }
+        "PUT",
+        token,
+        payload
       );
 
-      console.log("Gen Family Re admission", payload);
-      const result = await response.json();
+      console.log("Gen Family Update", payload);
       console.log("result", result);
 
       if (!response.ok) {
         setIsLoading(false);
-        showApiErrorAlert(result, lang, getTranslation("Readmission Submission Failed/पुनः प्रवेश सबमिशन विफल", lang));
+        showApiErrorAlert(result, lang, getTranslation("Update Failed / अद्यतन विफल", lang));
         return;
       }
+      saveLocalGenFamilyExtra(
+        GenfamiltEditData.user_id,
+        GenfamiltEditData.gen_fam_id,
+        GenfamiltEditData
+      );
       // ✅ Success Case
       
       Swal.fire({
@@ -2893,24 +3430,8 @@ console.log(latestGenFamilyData.substance_use_dependency)
             />
 
             {/* <Form className="theme-form"> */}
-            {/*UID*/}
-            {/*UID & Date of Form Filling*/}
+            {/*Date of Form Filling*/}
             <div className="row g-3 pt-3 pb-2">
-              <div className="col-12 col-md-6">
-                <FormGroup className="mb-3">
-                  <Label>
-                    {getTranslation(UID,lang)}
-                  </Label>
-                  <Input
-                    className="form-control"
-                    type="text"
-                    name="genUID"
-                    value={formData.genUID}
-                    onChange={onChangeEventHandler}
-                  />
-                </FormGroup>
-              </div>
-
               <div className="col-12 col-md-6">
                 <FormGroup className="mb-3">
                   <Label>
@@ -3025,36 +3546,9 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/*Living Situation*/}
               <div className="col-md-3">
                 <Label>{getTranslation(living,lang)}</Label>
-                {/* <Input
-                  type="text"
-                  className="form-control mt-2"
-                  // placeholder="Enter your living situation"
-                  name="living_situation"
-                  value={formData.living_situation}
-                  onChange={onChangeEventHandler}
-                /> */}
-
-<select
-  className="form-control mt-2"
-  name="living_situation"
-  value={formData.living_situation}
-  onChange={onChangeEventHandler}
->
-  <option value="">
-    {getTranslation("Select / चुनें", lang)}
-  </option>
-  <option value="With Family">
-    {getTranslation("With Family / परिवार के साथ", lang)}
-  </option>
-  <option value="Single for Job">
-    {getTranslation("Single for Job / नौकरी के लिए सिंगल", lang)}
-  </option>
-  <option value="Single for Study">
-    {getTranslation("Single for Study / पढ़ाई के लिए सिंगल", lang)}
-  </option>
-</select>
-
-
+                {renderLivingSituationField(formData.living_situation, (val) =>
+                  setFormData((prev) => ({ ...prev, living_situation: val }))
+                )}
               </div>
               {/*Religion*/}
               <div className="col-md-3">
@@ -3132,42 +3626,17 @@ console.log(latestGenFamilyData.substance_use_dependency)
             </div>
             {/*End Substance Use Dependency*/}
             {/*Source of money? Kindly mention which are applicable?पैसे का अरैंजमेंट? कृपया बताएं कि कौन से लागू हैं?*/}
-            <h5 className="mt-3">{getTranslation(sourceOfMoney,lang)}</h5>
-            <div className="row pt-3 pb-3 ">
-              {moneySources.map((source) => (
-                <div key={source.id} className="moneySource col-md-3">
-                  <Input
-                    type="checkbox"
-                    id={source.id}
-                    name={source.id}
-                    checked={formData[source.id] === "Yes"}
-                    className="checkbox_animated"
-                    onChange={handleSourceOfMoney}
-                  />
-                  <Label htmlFor={source.id}>{getTranslation(source.label,lang)}</Label>
-
-                  {source.id === "source_any_other" &&
-                    formData[source.id] === "Yes" && (
-                      // <textarea
-                      //   className="form-control mt-2"
-                      //   rows="3"
-                      //   placeholder="Please specify"
-                      //   name="source_other_text"
-                      //   value={formData.source_other_text || ""}
-                      //   onChange={onChangeEventHandler}
-                      // />
-                      <VoiceTextarea
-                      className="form-control mt-2"
-                      // label={<Translated text={pateintAddress} />}
-                      placeholder="Please specify"
-                      name="source_other_text"
-                      value={formData.source_other_text || ""}
-                      onChange={onChangeEventHandler}
-                    />
-                    )}
-                </div>
-              ))}
-            </div>
+            {renderSourceOfMoneyField(
+              formData,
+              (fieldId, checked) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  [fieldId]: checked ? "Yes" : "No",
+                  ...(fieldId === "source_any_other" && !checked ? { source_other_text: "" } : {}),
+                })),
+              (val) => setFormData((prev) => ({ ...prev, source_other_text: val })),
+              "create"
+            )}
 
             {/*End Source of money? Kindly mention which are applicable?*/}
             {/*Arrangements? / अरैंजमेंट्स?*/}
@@ -3340,29 +3809,6 @@ console.log(latestGenFamilyData.substance_use_dependency)
 />
                 </FormGroup>
               </div>
-
-              <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  {/* <Label>{getTranslation(ChiefComplaint,lang)}</Label>
-                  <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="chief_complaints"
-                    value={formData.chief_complaints}
-                    onChange={onChangeEventHandler}
-                  /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(ChiefComplaint,lang)} />}
-  className="form-control"
-  name="chief_complaints"
-  value={formData.chief_complaints}
-  onChange={onChangeEventHandler}
-/>
-
-                </FormGroup>
-              </div>
             </div>
             {/*End Arrangements? / अरैंजमेंट्स?*/}
 
@@ -3374,8 +3820,23 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 <Table bordered>
                   <thead>
                     <tr>
-                      <th scope="col">{getTranslation(TreatmentOfSubstance,lang)}</th>
-                      <th scope="col">{getTranslation(howManyTimes,lang)}</th>
+                      <th scope="col" colSpan="2" className="align-middle">
+                        {getTranslation(TreatmentOfSubstance,lang)}
+                      </th>
+                      <th scope="col" colSpan="3" className="align-middle">
+                        <div className="d-flex align-items-center gap-2 flex-wrap">
+                          <span>{getTranslation(howManyTimes,lang)}</span>
+                          <Input
+                            type="number"
+                            min="0"
+                            name="how_many_times"
+                            value={formData.how_many_times}
+                            onChange={onChangeEventHandler}
+                            placeholder={getTranslation("Enter count... / संख्या दर्ज करें...", lang)}
+                            style={{ maxWidth: "180px", backgroundColor: "#ffffff" }}
+                          />
+                        </div>
+                      </th>
                     </tr>
                     <tr>
                       <th scope="col">{getTranslation(year,lang)}</th>
@@ -3471,52 +3932,6 @@ console.log(latestGenFamilyData.substance_use_dependency)
   className="form-control"
   name="asked_to_stop"
   value={formData.asked_to_stop}
-  onChange={onChangeEventHandler}
-/>
-
-              </FormGroup>
-            </div>
-
-            <div className="col-md-12">
-              <FormGroup className="mb-0">
-                {/* <Label>{getTranslation(influenceStop,lang)}</Label>
-                <Input
-                  type="textarea"
-                  className="form-control"
-                  rows="3"
-                  name="reason_to_stop"
-                  value={formData.reason_to_stop}
-                  onChange={onChangeEventHandler}
-                /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(influenceStop,lang)} />}
-  className="form-control"
-  name="reason_to_stop"
-  value={formData.reason_to_stop}
-  onChange={onChangeEventHandler}
-/>
-
-              </FormGroup>
-            </div>
-
-            <div className="col-md-12">
-              <FormGroup className="mb-0">
-                {/* <Label>{getTranslation(whenStopUsing,lang)}</Label>
-                <Input
-                  type="textarea"
-                  className="form-control"
-                  rows="3"
-                  name="work_after_stop"
-                  value={formData.work_after_stop}
-                  onChange={onChangeEventHandler}
-                /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(whenStopUsing,lang)} />}
-  className="form-control"
-  name="work_after_stop"
-  value={formData.work_after_stop}
   onChange={onChangeEventHandler}
 />
 
@@ -3685,29 +4100,6 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </FormGroup>
             </div>
 
-            <div className="col-md-12">
-              <FormGroup className="mb-0">
-                {/* <Label>{getTranslation(YouFamiliar,lang)}</Label>
-                <Input
-                  type="textarea"
-                  className="form-control"
-                  rows="3"
-                  name="effect_of_treatment"
-                  value={formData.effect_of_treatment}
-                  onChange={onChangeEventHandler}
-                /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(YouFamiliar,lang)} />}
-  className="form-control"
-  name="effect_of_treatment"
-  value={formData.effect_of_treatment}
-  onChange={onChangeEventHandler}
-/>
-
-              </FormGroup>
-            </div>
-
             {/*Relationship status: रिलेशनशिप स्टेटस ?: */}
             <div className="row">
               <H5 className="mt-3 mb-3">{getTranslation(relationshipFamilyStatus,lang)}</H5>
@@ -3868,32 +4260,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </FormGroup>
               </div>
 
-              {/*Is there interference of wife's family or any relative in the internal matters of your family. If yes than whom & in which affairs*/}
               <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  {/* <Label>{getTranslation(isThereInterference,lang)}</Label>
-                  <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="relatives_interference"
-                    value={formData.relatives_interference}
-                    onChange={onChangeEventHandler}
-                  /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(isThereInterference,lang)} />}
-  className="form-control"
-  name="relatives_interference"
-  value={formData.relatives_interference}
-  onChange={onChangeEventHandler}
-/>
-
-
-                </FormGroup>
-              </div>
-
-              <div className="col-md-12">
+                <h6 className="fw-bold mb-2">
+                  {getTranslation("Family Details / पारिवारिक विवरण", lang)}
+                </h6>
                 <div className="table-responsive">
                   <Table bordered>
                     <thead>
@@ -4968,65 +5338,20 @@ console.log(latestGenFamilyData.substance_use_dependency)
     {getTranslation("Anti Social Locality / असामाजिक इलाका", lang)}
   </option>
 </select>
-
-
-                <br />
-                <Label htmlFor="birthPlace">{getTranslation(highRiskBehavior,lang)}</Label>
-                <Input
-                  type="text"
-                  id="currentLocation"
-                  name="high_risk_behavior"
-                  value={formData.childhood_history.high_risk_behavior}
-                  onChange={childhoodHandleChange}
-                  // placeholder="Enter current location..."
-                />
               </div>
 
-              <div className="col-md-12 mt-3 mb-3">
-                <FormGroup className="mb-0">
-                  {/* <Label>{getTranslation(whatWasImpect,lang)}</Label>
-                  <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="impact_of_movies"
-                    value={formData.childhood_history.impact_of_movies}
-                    onChange={childhoodHandleChange}
-                  /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(whatWasImpect,lang)} />}
-  className="form-control"
-  name="impact_of_movies"
-  value={formData.childhood_history.impact_of_movies}
-  onChange={childhoodHandleChange}
-/>
-
-                </FormGroup>
-              </div>
-
-              <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  {/* <Label>{getTranslation(hasAnyoneEverAbused,lang)}</Label>
-                  <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="abuse_history"
-                    value={formData.childhood_history.abuse_history}
-                    onChange={childhoodHandleChange}
-                  /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(hasAnyoneEverAbused,lang)} />}
-  className="form-control"
-  name="abuse_history"
-  value={formData.childhood_history.abuse_history}
-  onChange={childhoodHandleChange}
-/>
-
-                </FormGroup>
-              </div>
+              {renderAbuseHistoryField(
+                formData.childhood_history.abuse_history,
+                (val) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    childhood_history: {
+                      ...prev.childhood_history,
+                      abuse_history: val,
+                    },
+                  })),
+                "create"
+              )}
 
               {/* Academics Occupational Details Start */}
 
@@ -5395,98 +5720,35 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </FormGroup>
               </div>
 
-              <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
-                  {/* <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="with_whom_spend_time"
-                    value={formData.social_behavior.with_whom_spend_time}
-                    onChange={socialBehaviorHandler}
-                  /> */}
-
-{/* <VoiceTextarea
-  label={<Translated text={getTranslation(withWhomSpendFreeTime,lang)} />}
-  className="form-control"
-  name="with_whom_spend_time"
-  value={formData.social_behavior.with_whom_spend_time}
-  onChange={socialBehaviorHandler}
-/> */}
-
-<select
-  className="form-control"
-  name="with_whom_spend_time"
-  value={formData.social_behavior.with_whom_spend_time}
-  onChange={socialBehaviorHandler}
->
-  <option value="">{getTranslation("Select / चुनें", lang)}</option>
-
-  <option value="Alone">
-    {getTranslation("Alone / अकेले", lang)}
-  </option>
-
-  <option value="With Family">
-    {getTranslation("With Family / परिवार के साथ", lang)}
-  </option>
-
-  <option value="In addict Community">
-    {getTranslation("In addict Community / नशेड़ी समुदाय में", lang)}
-  </option>
-
-  <option value="With Friends">
-    {getTranslation("With Friends / दोस्तों के साथ", lang)}
-  </option>
-</select>
-
-
-                </FormGroup>
-              </div>
+              {renderFreeTimeField(
+                formData.social_behavior.with_whom_spend_time,
+                (val) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    social_behavior: {
+                      ...prev.social_behavior,
+                      with_whom_spend_time: val,
+                    },
+                  })),
+                "create"
+              )}
 
               <div className="col-md-12">
                 <FormGroup className="mb-0">
-                  <Label>{getTranslation(howManyFriends,lang)}</Label>
-                  <Input
-                    type="textarea"
+                  <VoiceTextarea
+                    label={
+                      <Translated
+                        text={getTranslation(
+                          "Number of friends & their Social / Dependency Status? / मित्रों की संख्या और उनकी सामाजिक / निर्भरता स्थिति?",
+                          lang
+                        )}
+                      />
+                    }
                     className="form-control"
-                    rows="3"
                     name="number_of_friends"
                     value={formData.social_behavior.number_of_friends}
                     onChange={socialBehaviorHandler}
                   />
-
-{/* <VoiceTextarea
-  label={<Translated text={getTranslation(howManyFriends,lang)} />}
-  className="form-control"
-  name="number_of_friends"
-  value={formData.social_behavior.number_of_friends}
-  onChange={socialBehaviorHandler}
-/> */}
-
-                </FormGroup>
-              </div>
-
-              <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  {/* <Label>{getTranslation(friendSocialStatus,lang)}</Label>
-                  <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="friends_social_status"
-                    value={formData.social_behavior.friends_social_status}
-                    onChange={socialBehaviorHandler}
-                  /> */}
-
-<VoiceTextarea
-  label={<Translated text={getTranslation(friendSocialStatus,lang)} />}
-  className="form-control"
-  name="friends_social_status"
-  value={formData.social_behavior.friends_social_status}
-  onChange={socialBehaviorHandler}
-/>
-
                 </FormGroup>
               </div>
 
@@ -6385,28 +6647,8 @@ console.log(latestGenFamilyData.substance_use_dependency)
             e.preventDefault();
             handleGenFamilyReadmission();
           }}>
-            {/* UID & Form Fill Date */}
+            {/* Form Fill Date */}
             <div className="row g-3 pt-3 pb-2">
-              <div className="col-12 col-md-6">
-                <FormGroup className="mb-3">
-                  <Label>
-                    {getTranslation(UID,lang)}
-                  </Label>
-                  <Input
-                    className="form-control"
-                    type="text"
-                    name="genUID"
-                    value={GenfamiltEditData.uid || ""}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        uid: e.target.value,
-                      })
-                    }
-                  />
-                </FormGroup>
-              </div>
-
               <div className="col-12 col-md-6">
                 <FormGroup className="mb-3">
                   <Label>
@@ -6534,46 +6776,12 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/* Living Situation */}
               <div className="col-md-3">
                 <Label>{getTranslation(living,lang)}</Label>
-                {/* <Input
-                  type="text"
-                  className="form-control mt-2"
-                  placeholder="Enter your living situation"
-                  name="living_situation"
-                  value={GenfamiltEditData.living_situation}
-                  onChange={(e) =>
-                    setGenfamilyEditData({
-                      ...GenfamiltEditData,
-                      living_situation: e.target.value,
-                    })
-                  }
-                /> */}
-
-<select
-  className="form-control mt-2"
-  name="living_situation"
-  value={GenfamiltEditData.living_situation}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      living_situation: e.target.value,
-    })
-  }
->
-  <option value="">
-    {getTranslation("Select / चुनें", lang)}
-  </option>
-  <option value="With Family">
-    {getTranslation("With Family / परिवार के साथ", lang)}
-  </option>
-  <option value="Single for Job">
-    {getTranslation("Single for Job / नौकरी के लिए सिंगल", lang)}
-  </option>
-  <option value="Single for Study">
-    {getTranslation("Single for Study / पढ़ाई के लिए सिंगल", lang)}
-  </option>
-</select>
-
-
+                {renderLivingSituationField(GenfamiltEditData.living_situation, (val) =>
+                  setGenfamilyEditData((prev) => ({
+                    ...prev,
+                    living_situation: val,
+                  }))
+                )}
               </div>
 
               {/* Religion */}
@@ -6672,45 +6880,17 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               {/*End Substance Use Dependency*/}
               {/*Source of money? Kindly mention which are applicable?पैसे का अरैंजमेंट? कृपया बताएं कि कौन से लागू हैं?*/}
-              <h5 className="mt-3">{getTranslation(sourceOfMoney,lang)}</h5>
-              <div className="row pt-3 pb-3 ">
-                {moneySources.map((source) => (
-                  <div key={source.id} className="moneySource col-md-3">
-                    <Input
-                      type="checkbox"
-                      id={source.id}
-                      name={source.id}
-                      checked={GenfamiltEditData[source.id] === "Yes"}
-                      className="checkbox_animated"
-                      onChange={(e) =>
-                        setGenfamilyEditData((prev) => ({
-                          ...prev,
-                          [e.target.name]: e.target.checked ? "Yes" : "No",
-                        }))
-                      }
-                    />
-                    <Label htmlFor={source.id}>{getTranslation(source.label,lang)}</Label>
-
-                    {source.id === "source_any_other" &&
-                      GenfamiltEditData[source.id] === "Yes" && (
-                        <VoiceTextarea
-                        className="form-control mt-2"
-                        name="source_other_text"
-                        value={GenfamiltEditData.source_other_text || ""}
-                        onChange={(e) =>
-                          setGenfamilyEditData((prev) => ({
-                            ...prev,
-                            source_other_text: e.target.value,
-                          }))
-                        }
-                      />
-                      )}
-
-                      
-                  </div>
-                ))}
-
-              </div>
+              {renderSourceOfMoneyField(
+                GenfamiltEditData,
+                (fieldId, checked) =>
+                  setGenfamilyEditData((prev) => ({
+                    ...prev,
+                    [fieldId]: checked ? "Yes" : "No",
+                    ...(fieldId === "source_any_other" && !checked ? { source_other_text: "" } : {}),
+                  })),
+                (val) => setGenfamilyEditData((prev) => ({ ...prev, source_other_text: val })),
+                "readmit"
+              )}
 
 
               {/*End Source of money? Kindly mention which are applicable?*/}
@@ -6966,38 +7146,6 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                   </FormGroup>
                 </div>
-
-                <div className="col-md-12">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(ChiefComplaint,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="chief_complaints"
-                      value={GenfamiltEditData.chief_complaints}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          chief_complaints: e.target.value,
-                        })
-                      }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  name="chief_complaints"
-  value={GenfamiltEditData.chief_complaints}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      chief_complaints: e.target.value,
-    })
-  }
-/>
-
-                  </FormGroup>
-                </div>
               </div>
               {/*End Arrangements? / अरैंजमेंट्स?*/}
 
@@ -7009,8 +7157,28 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   <Table bordered>
                     <thead>
                       <tr>
-                        <th scope="col">{getTranslation(TreatmentOfSubstance,lang)}</th>
-                        <th scope="col">{getTranslation(howManyTimes,lang)}</th>
+                        <th scope="col" colSpan="2" className="align-middle">
+                          {getTranslation(TreatmentOfSubstance,lang)}
+                        </th>
+                        <th scope="col" colSpan="3" className="align-middle">
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <span>{getTranslation(howManyTimes,lang)}</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              name="how_many_times"
+                              value={GenfamiltEditData.how_many_times ?? ""}
+                              onChange={(e) =>
+                                setGenfamilyEditData({
+                                  ...GenfamiltEditData,
+                                  how_many_times: e.target.value,
+                                })
+                              }
+                              placeholder={getTranslation("Enter count... / संख्या दर्ज करें...", lang)}
+                              style={{ maxWidth: "180px", backgroundColor: "#ffffff" }}
+                            />
+                          </div>
+                        </th>
                       </tr>
                       <tr>
                         <th scope="col">{getTranslation(year,lang)}</th>
@@ -7114,70 +7282,6 @@ console.log(latestGenFamilyData.substance_use_dependency)
       asked_to_stop: e.target.value,
     })
   }
-/>
-
-                </FormGroup>
-              </div>
-
-              <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  <Label>{getTranslation(influenceStop,lang)}</Label>
-                  {/* <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="reason_to_stop"
-                    value={GenfamiltEditData.reason_to_stop}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        reason_to_stop: e.target.value,
-                      })
-                    }
-                  /> */}
-
-<VoiceTextarea
-  className="form-control"
-  name="reason_to_stop"
-  value={GenfamiltEditData.reason_to_stop}
-  onChange={(e) =>
-  setGenfamilyEditData({
-  ...GenfamiltEditData,
-  reason_to_stop: e.target.value,
-})
-}
-/>
-
-                </FormGroup>
-              </div>
-
-              <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  <Label>{getTranslation(whenStopUsing,lang)}</Label>
-                  {/* <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="work_after_stop"
-                    value={GenfamiltEditData.work_after_stop}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        work_after_stop: e.target.value,
-                      })
-                    }
-                  /> */}
-
-<VoiceTextarea
-  className="form-control"
-  name="work_after_stop"
-                    value={GenfamiltEditData.work_after_stop}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        work_after_stop: e.target.value,
-                      })
-                    }
 />
 
                 </FormGroup>
@@ -7408,38 +7512,6 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </FormGroup>
               </div>
 
-              <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  <Label>{getTranslation(YouFamiliar,lang)}</Label>
-                  {/* <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="effect_of_treatment"
-                    value={GenfamiltEditData.traditional_treatment}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        traditional_treatment: e.target.value,
-                      })
-                    }
-                  /> */}
-
-<VoiceTextarea
-  className="form-control"
-  name="effect_of_treatment"
-  value={GenfamiltEditData.traditional_treatment}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      traditional_treatment: e.target.value,
-    })
-  }
-/>
-
-                </FormGroup>
-              </div>
-
               {/*Relationship status: रिलेशनशिप स्टेटस ?: */}
               <div className="row">
                 <H5 className="mt-3 mb-3">{getTranslation(relationshipFamilyStatus,lang)}</H5>
@@ -7637,40 +7709,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </FormGroup>
                 </div>
 
-                {/*Is there interference of wife's family or any relative in the internal matters of your family. If yes than whom & in which affairs*/}
                 <div className="col-md-12">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(isThereInterference,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="relatives_interference"
-                      value={GenfamiltEditData.traditional_treatment}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          traditional_treatment: e.target.value,
-                        })
-                      }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  name="relatives_interference"
-  value={GenfamiltEditData.traditional_treatment}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      traditional_treatment: e.target.value,
-    })
-  }
-/>
-
-                  </FormGroup>
-                </div>
-
-                <div className="col-md-12">
+                  <h6 className="fw-bold mb-2">
+                    {getTranslation("Family Details / पारिवारिक विवरण", lang)}
+                  </h6>
                   <div className="table-responsive">
                     <Table bordered>
                       <thead>
@@ -8851,87 +8893,17 @@ console.log(latestGenFamilyData.substance_use_dependency)
     {getTranslation("Anti Social Locality / असामाजिक इलाका", lang)}
   </option>
 </select>
-
-
-                  <br />
-                  <Label htmlFor="birthPlace">{getTranslation(highRiskBehavior,lang)}</Label>
-                  <Input
-                    type="text"
-                    id="currentLocation"
-                    name="high_risk_behavior"
-                    value={GenfamiltEditData.high_risk_behavior}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        high_risk_behavior: e.target.value,
-                      })
-                    }
-                  />
                 </div>
 
-                <div className="col-md-12 mt-3 mb-3">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(whatWasImpect,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="impact_of_movies"
-                      value={GenfamiltEditData.impact_of_movies}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          impact_of_movies: e.target.value,
-                        })
-                      }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  name="impact_of_movies"
-                      value={GenfamiltEditData.impact_of_movies}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          impact_of_movies: e.target.value,
-                        })
-                      }
-/>
-
-                  </FormGroup>
-                </div>
-
-                <div className="col-md-12">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(hasAnyoneEverAbused,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="abuse_history"
-                      value={GenfamiltEditData.abuse_history}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          abuse_history: e.target.value,
-                        })
-                      }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  name="abuse_history"
-  value={GenfamiltEditData.abuse_history}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      abuse_history: e.target.value,
-    })
-  }
-/>
-
-                  </FormGroup>
-                </div>
+                {renderAbuseHistoryField(
+                  GenfamiltEditData.abuse_history,
+                  (val) =>
+                    setGenfamilyEditData((prev) => ({
+                      ...prev,
+                      abuse_history: val,
+                    })),
+                  "readmit"
+                )}
 
                 {/* Academics Occupational Details Start */}
 
@@ -9393,130 +9365,37 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </FormGroup>
                 </div>
 
+                {renderFreeTimeField(
+                  GenfamiltEditData.with_whom_spend_time,
+                  (val) =>
+                    setGenfamilyEditData((prev) => ({
+                      ...prev,
+                      with_whom_spend_time: val,
+                    })),
+                  "readmit"
+                )}
+
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="with_whom_spend_time"
-                      value={GenfamiltEditData.with_whom_spend_time}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          with_whom_spend_time: e.target.value,
-                        })
+                    <VoiceTextarea
+                      label={
+                        <Translated
+                          text={getTranslation(
+                            "Number of friends & their Social / Dependency Status? / मित्रों की संख्या और उनकी सामाजिक / निर्भरता स्थिति?",
+                            lang
+                          )}
+                        />
                       }
-                    /> */}
-{/* 
-<VoiceTextarea
-  className="form-control"
-  name="with_whom_spend_time"
-  value={GenfamiltEditData.with_whom_spend_time}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      with_whom_spend_time: e.target.value,
-    })
-  }
-/> */}
-
-<select
-  className="form-control"
-  name="with_whom_spend_time"
-  value={GenfamiltEditData.with_whom_spend_time}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      with_whom_spend_time: e.target.value,
-    })
-  }
->
-  <option value="">{getTranslation("Select / चुनें", lang)}</option>
-
-  <option value="Alone">
-    {getTranslation("Alone / अकेले", lang)}
-  </option>
-
-  <option value="With Family">
-    {getTranslation("With Family / परिवार के साथ", lang)}
-  </option>
-
-  <option value="In addict Community">
-    {getTranslation("In addict Community / नशेड़ी समुदाय में", lang)}
-  </option>
-
-  <option value="With Friends">
-    {getTranslation("With Friends / दोस्तों के साथ", lang)}
-  </option>
-</select>
-
-
-                  </FormGroup>
-                </div>
-
-                <div className="col-md-12">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(howManyFriends,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
                       className="form-control"
-                      rows="3"
                       name="number_of_friends"
-                      value={GenfamiltEditData.number_of_friends}
+                      value={GenfamiltEditData.number_of_friends || ""}
                       onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
+                        setGenfamilyEditData((prev) => ({
+                          ...prev,
                           number_of_friends: e.target.value,
-                        })
+                        }))
                       }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  name="number_of_friends"
-  value={GenfamiltEditData.number_of_friends}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      number_of_friends: e.target.value,
-    })
-  }
-/>
-
-                  </FormGroup>
-                </div>
-
-                <div className="col-md-12">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(friendSocialStatus,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="friends_social_status"
-                      value={GenfamiltEditData.friends_social_status}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          friends_social_status: e.target.value,
-                        })
-                      }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  name="friends_social_status"
-  value={GenfamiltEditData.friends_social_status}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      friends_social_status: e.target.value,
-    })
-  }
-/>
-
+                    />
                   </FormGroup>
                 </div>
 
@@ -10059,52 +9938,29 @@ console.log(latestGenFamilyData.substance_use_dependency)
             e.preventDefault();
             handleUpdateIndividualGenFammilyData();
           }}>
-            {/* UID */}
-            <div className="row pt-3 pb-3">
-              <FormGroup className="form-group row col-md-6">
-                <Label className="col-sm-12 col-form-label  col-xl-6">
-                  {getTranslation(UID,lang)}
-                </Label>
-                <Col xl="5" sm="12">
-                  <div className="input-group">
-                    <Input
-                      className="form-control"
-                      type="text"
-                      name="genUID"
-                      value={GenfamiltEditData.uid}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          uid: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </Col>
-              </FormGroup>
-            </div>
-
             {/* Form Fill Date */}
-            <div className="col-md-6">
-              <FormGroup className="form-group row">
-                <Label className="col-sm-12 col-form-label col-xl-6">
-                  {getTranslation(dateOfFormFilling,lang)}
-                </Label>
-                <Col xl="5" sm="12">
-                  <div className="input-group">
-                    <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
-                      className="form-control digits"
-                      selected={safeDate(GenfamiltEditData?.form_fill_date)}
-                      onChange={(date) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          form_fill_date: date,
-                        })
-                      }
-                    />
-                  </div>
-                </Col>
-              </FormGroup>
+            <div className="row pt-3 pb-2">
+              <div className="col-md-6">
+                <FormGroup className="form-group row">
+                  <Label className="col-sm-12 col-form-label col-xl-6">
+                    {getTranslation(dateOfFormFilling,lang)}
+                  </Label>
+                  <Col xl="5" sm="12">
+                    <div className="input-group">
+                      <DatePicker showMonthDropdown showYearDropdown dropdownMode="select"
+                        className="form-control digits"
+                        selected={safeDate(GenfamiltEditData?.form_fill_date)}
+                        onChange={(date) =>
+                          setGenfamilyEditData({
+                            ...GenfamiltEditData,
+                            form_fill_date: date,
+                          })
+                        }
+                      />
+                    </div>
+                  </Col>
+                </FormGroup>
+              </div>
             </div>
 
             {/* Occupation Status */}
@@ -10212,44 +10068,12 @@ console.log(latestGenFamilyData.substance_use_dependency)
               {/* Living Situation */}
               <div className="col-md-3">
                 <Label>{getTranslation(living,lang)}</Label>
-                {/* <Input
-                  type="text"
-                  className="form-control mt-2"
-                  placeholder="Enter your living situation"
-                  name="living_situation"
-                  value={GenfamiltEditData.living_situation}
-                  onChange={(e) =>
-                    setGenfamilyEditData({
-                      ...GenfamiltEditData,
-                      living_situation: e.target.value,
-                    })
-                  }
-                /> */}
-                <select
-  className="form-control mt-2"
-  name="living_situation"
-  value={GenfamiltEditData.living_situation}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      living_situation: e.target.value,
-    })
-  }
->
-  <option value="">
-    {getTranslation("Select / चुनें", lang)}
-  </option>
-  <option value="With Family">
-    {getTranslation("With Family / परिवार के साथ", lang)}
-  </option>
-  <option value="Single for Job">
-    {getTranslation("Single for Job / नौकरी के लिए सिंगल", lang)}
-  </option>
-  <option value="Single for Study">
-    {getTranslation("Single for Study / पढ़ाई के लिए सिंगल", lang)}
-  </option>
-</select>
-
+                {renderLivingSituationField(GenfamiltEditData.living_situation, (val) =>
+                  setGenfamilyEditData((prev) => ({
+                    ...prev,
+                    living_situation: val,
+                  }))
+                )}
               </div>
 
               {/* Religion */}
@@ -10348,61 +10172,17 @@ console.log(latestGenFamilyData.substance_use_dependency)
               </div>
               {/*End Substance Use Dependency*/}
               {/*Source of money? Kindly mention which are applicable?पैसे का अरैंजमेंट? कृपया बताएं कि कौन से लागू हैं?*/}
-              <h5 className="mt-3">{getTranslation(sourceOfMoney,lang)}</h5>
-              <div className="row pt-3 pb-3 ">
-                {moneySources.map((source) => (
-                  <div key={source.id} className="moneySource col-md-3">
-                    <Input
-                      type="checkbox"
-                      id={source.id}
-                      name={source.id}
-                      checked={GenfamiltEditData[source.id] === "Yes"}
-                      className="checkbox_animated"
-                      onChange={(e) =>
-                        setGenfamilyEditData((prev) => ({
-                          ...prev,
-                          [e.target.name]: e.target.checked ? "Yes" : "No",
-                        }))
-                      }
-                    />
-                    <Label htmlFor={source.id}>{getTranslation(source.label,lang)}</Label>
-
-                    {source.id === "source_any_other" &&
-                      GenfamiltEditData[source.id] === "Yes" && (
-                        // <textarea
-                        //   className="form-control mt-2"
-                        //   rows="3"
-                        //   placeholder="Please specify"
-                        //   name="source_other_text"
-                        //   value={GenfamiltEditData.source_other_text || ""}
-                        //   onChange={(e) =>
-                        //     setGenfamilyEditData((prev) => ({
-                        //       ...prev,
-                        //       source_other_text: e.target.value,
-                        //     }))
-                        //   }
-                        // />
-                        <VoiceTextarea
-  className="form-control mt-2"
-  rows="3"
-  placeholder="Please specify"
-  name="source_other_text"
-  value={GenfamiltEditData.source_other_text || ""}
-  onChange={(e) =>
-    setGenfamilyEditData((prev) => ({
-      ...prev,
-      source_other_text: e.target.value,
-    }))
-  }
-/>
-
-                        
-
-                      )}
-                  </div>
-                ))}
-
-              </div>
+              {renderSourceOfMoneyField(
+                GenfamiltEditData,
+                (fieldId, checked) =>
+                  setGenfamilyEditData((prev) => ({
+                    ...prev,
+                    [fieldId]: checked ? "Yes" : "No",
+                    ...(fieldId === "source_any_other" && !checked ? { source_other_text: "" } : {}),
+                  })),
+                (val) => setGenfamilyEditData((prev) => ({ ...prev, source_other_text: val })),
+                "edit"
+              )}
 
 
               {/*End Source of money? Kindly mention which are applicable?*/}
@@ -10666,39 +10446,6 @@ console.log(latestGenFamilyData.substance_use_dependency)
 
                   </FormGroup>
                 </div>
-
-                <div className="col-md-12">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(ChiefComplaint,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="chief_complaints"
-                      value={GenfamiltEditData.chief_complaints}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          chief_complaints: e.target.value,
-                        })
-                      }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  rows="3"
-  name="chief_complaints"
-  value={GenfamiltEditData.chief_complaints}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      chief_complaints: e.target.value,
-    })
-  }
-/>
-
-                  </FormGroup>
-                </div>
               </div>
               {/*End Arrangements? / अरैंजमेंट्स?*/}
 
@@ -10710,14 +10457,34 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   <Table bordered>
                     <thead>
                       <tr>
-                        <th scope="col">{getTranslation(TreatmentOfSubstance,lang)}</th>
-                        <th scope="col">{getTranslation(howManyTimes,lang)}</th>
+                        <th scope="col" colSpan="2" className="align-middle">
+                          {getTranslation(TreatmentOfSubstance,lang)}
+                        </th>
+                        <th scope="col" colSpan="3" className="align-middle">
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <span>{getTranslation(howManyTimes,lang)}</span>
+                            <Input
+                              type="number"
+                              min="0"
+                              name="how_many_times"
+                              value={GenfamiltEditData.how_many_times ?? ""}
+                              onChange={(e) =>
+                                setGenfamilyEditData({
+                                  ...GenfamiltEditData,
+                                  how_many_times: e.target.value,
+                                })
+                              }
+                              placeholder={getTranslation("Enter count... / संख्या दर्ज करें...", lang)}
+                              style={{ maxWidth: "180px", backgroundColor: "#ffffff" }}
+                            />
+                          </div>
+                        </th>
                       </tr>
                       <tr>
                         <th scope="col">{getTranslation(year,lang)}</th>
                         <th scope="col">{getTranslation(placeOfTreatment,lang)}</th>
                         <th scope="col">{getTranslation(durationOfTime,lang)}</th>
-                        <th scope="col">{getTranslation(daysOfSobriety)}</th>
+                        <th scope="col">{getTranslation(daysOfSobriety,lang)}</th>
                         <th scope="col">{getTranslation(cheifAction,lang)}</th>
                       </tr>
                     </thead>
@@ -10813,72 +10580,6 @@ console.log(latestGenFamilyData.substance_use_dependency)
     setGenfamilyEditData({
       ...GenfamiltEditData,
       asked_to_stop: e.target.value,
-    })
-  }
-/>
-
-                </FormGroup>
-              </div>
-
-              <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  <Label>{getTranslation(influenceStop,lang)}</Label>
-                  {/* <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="reason_to_stop"
-                    value={GenfamiltEditData.reason_to_stop}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        reason_to_stop: e.target.value,
-                      })
-                    }
-                  /> */}
-
-<VoiceTextarea
-  className="form-control"
-  rows="3"
-  name="reason_to_stop"
-                    value={GenfamiltEditData.reason_to_stop}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        reason_to_stop: e.target.value,
-                      })
-                    }
-/>
-
-                </FormGroup>
-              </div>
-
-              <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  <Label>{getTranslation(whenStopUsing,lang)}</Label>
-                  {/* <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="work_after_stop"
-                    value={GenfamiltEditData.work_after_stop}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        work_after_stop: e.target.value,
-                      })
-                    }
-                  /> */}
-
-<VoiceTextarea
-  className="form-control"
-  rows="3"
-  name="work_after_stop"
-  value={GenfamiltEditData.work_after_stop}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      work_after_stop: e.target.value,
     })
   }
 />
@@ -11117,39 +10818,6 @@ console.log(latestGenFamilyData.substance_use_dependency)
                 </FormGroup>
               </div>
 
-              <div className="col-md-12">
-                <FormGroup className="mb-0">
-                  <Label>{getTranslation(YouFamiliar,lang)}</Label>
-                  {/* <Input
-                    type="textarea"
-                    className="form-control"
-                    rows="3"
-                    name="effect_of_treatment"
-                    value={GenfamiltEditData.traditional_treatment}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        traditional_treatment: e.target.value,
-                      })
-                    }
-                  /> */}
-
-<VoiceTextarea
-  className="form-control"
-  rows="3"
-  name="effect_of_treatment"
-                    value={GenfamiltEditData.traditional_treatment}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        traditional_treatment: e.target.value,
-                      })
-                    }
-/>
-
-                </FormGroup>
-              </div>
-
               {/*Relationship status: रिलेशनशिप स्टेटस ?: */}
               <div className="row">
                 <H5 className="mt-3 mb-3">{getTranslation(relationshipFamilyStatus,lang)}</H5>
@@ -11350,41 +11018,10 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </FormGroup>
                 </div>
 
-                {/*Is there interference of wife's family or any relative in the internal matters of your family. If yes than whom & in which affairs*/}
                 <div className="col-md-12">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(isThereInterference,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="relatives_interference"
-                      value={GenfamiltEditData.traditional_treatment}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          traditional_treatment: e.target.value,
-                        })
-                      }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  rows="3"
-  name="relatives_interference"
-  value={GenfamiltEditData.traditional_treatment}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      traditional_treatment: e.target.value,
-    })
-  }
-/>
-
-                  </FormGroup>
-                </div>
-
-                <div className="col-md-12">
+                  <h6 className="fw-bold mb-2">
+                    {getTranslation("Family Details / पारिवारिक विवरण", lang)}
+                  </h6>
                   <div className="table-responsive">
                     <Table bordered>
                       <thead>
@@ -12497,89 +12134,17 @@ console.log(latestGenFamilyData.substance_use_dependency)
     {getTranslation("Anti Social Locality / असामाजिक इलाका", lang)}
   </option>
 </select>
-
-
-                  <br />
-                  <Label htmlFor="birthPlace">{getTranslation(highRiskBehavior,lang)}</Label>
-                  <Input
-                    type="text"
-                    id="currentLocation"
-                    name="high_risk_behavior"
-                    value={GenfamiltEditData.high_risk_behavior}
-                    onChange={(e) =>
-                      setGenfamilyEditData({
-                        ...GenfamiltEditData,
-                        high_risk_behavior: e.target.value,
-                      })
-                    }
-                  />
                 </div>
 
-                <div className="col-md-12 mt-3 mb-3">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(whatWasImpect,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="impact_of_movies"
-                      value={GenfamiltEditData.impact_of_movies}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          impact_of_movies: e.target.value,
-                        })
-                      }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  rows="3"
-  name="impact_of_movies"
-                      value={GenfamiltEditData.impact_of_movies}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          impact_of_movies: e.target.value,
-                        })
-                      }
-/>
-
-                  </FormGroup>
-                </div>
-
-                <div className="col-md-12">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(hasAnyoneEverAbused,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="abuse_history"
-                      value={GenfamiltEditData.abuse_history}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          abuse_history: e.target.value,
-                        })
-                      }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  rows="3"
-  name="abuse_history"
-  value={GenfamiltEditData.abuse_history}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      abuse_history: e.target.value,
-    })
-  }
-/>
-
-                  </FormGroup>
-                </div>
+                {renderAbuseHistoryField(
+                  GenfamiltEditData.abuse_history,
+                  (val) =>
+                    setGenfamilyEditData((prev) => ({
+                      ...prev,
+                      abuse_history: val,
+                    })),
+                  "edit"
+                )}
 
                 {/* Academics Occupational Details Start */}
 
@@ -13050,133 +12615,37 @@ console.log(latestGenFamilyData.substance_use_dependency)
                   </FormGroup>
                 </div>
 
+                {renderFreeTimeField(
+                  GenfamiltEditData.with_whom_spend_time,
+                  (val) =>
+                    setGenfamilyEditData((prev) => ({
+                      ...prev,
+                      with_whom_spend_time: val,
+                    })),
+                  "edit"
+                )}
+
                 <div className="col-md-12">
                   <FormGroup className="mb-0">
-                    <Label>{getTranslation(withWhomSpendFreeTime,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="with_whom_spend_time"
-                      value={GenfamiltEditData.with_whom_spend_time}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          with_whom_spend_time: e.target.value,
-                        })
+                    <VoiceTextarea
+                      label={
+                        <Translated
+                          text={getTranslation(
+                            "Number of friends & their Social / Dependency Status? / मित्रों की संख्या और उनकी सामाजिक / निर्भरता स्थिति?",
+                            lang
+                          )}
+                        />
                       }
-                    /> */}
-
-{/* <VoiceTextarea
-  className="form-control"
-  rows="3"
-  name="with_whom_spend_time"
-  value={GenfamiltEditData.with_whom_spend_time}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      with_whom_spend_time: e.target.value,
-    })
-  }
-/> */}
-
-<select
-  className="form-control"
-  name="with_whom_spend_time"
-  value={GenfamiltEditData.with_whom_spend_time}
-  onChange={(e) =>
-    setGenfamilyEditData({
-      ...GenfamiltEditData,
-      with_whom_spend_time: e.target.value,
-    })
-  }
->
-  <option value="">{getTranslation("Select / चुनें", lang)}</option>
-
-  <option value="Alone">
-    {getTranslation("Alone / अकेले", lang)}
-  </option>
-
-  <option value="With Family">
-    {getTranslation("With Family / परिवार के साथ", lang)}
-  </option>
-
-  <option value="In addict Community">
-    {getTranslation("In addict Community / नशेड़ी समुदाय में", lang)}
-  </option>
-
-  <option value="With Friends">
-    {getTranslation("With Friends / दोस्तों के साथ", lang)}
-  </option>
-</select>
-
-
-                  </FormGroup>
-                </div>
-
-                <div className="col-md-12">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(howManyFriends,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
                       className="form-control"
-                      rows="3"
                       name="number_of_friends"
-                      value={GenfamiltEditData.number_of_friends}
+                      value={GenfamiltEditData.number_of_friends || ""}
                       onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
+                        setGenfamilyEditData((prev) => ({
+                          ...prev,
                           number_of_friends: e.target.value,
-                        })
+                        }))
                       }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  rows="3"
-  name="number_of_friends"
-                      value={GenfamiltEditData.number_of_friends}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          number_of_friends: e.target.value,
-                        })
-                      }
-/>
-
-                  </FormGroup>
-                </div>
-
-                <div className="col-md-12">
-                  <FormGroup className="mb-0">
-                    <Label>{getTranslation(friendSocialStatus,lang)}</Label>
-                    {/* <Input
-                      type="textarea"
-                      className="form-control"
-                      rows="3"
-                      name="friends_social_status"
-                      value={GenfamiltEditData.friends_social_status}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          friends_social_status: e.target.value,
-                        })
-                      }
-                    /> */}
-
-<VoiceTextarea
-  className="form-control"
-  rows="3"
-  name="friends_social_status"
-                      value={GenfamiltEditData.friends_social_status}
-                      onChange={(e) =>
-                        setGenfamilyEditData({
-                          ...GenfamiltEditData,
-                          friends_social_status: e.target.value,
-                        })
-                      }
-/>
-
+                    />
                   </FormGroup>
                 </div>
 
